@@ -1,0 +1,351 @@
+/* =========================================
+   1. ROOT VARIABLES & RESET
+========================================= */
+:root {
+    --bg-main: #f0f4f8; 
+    --card-bg: #ffffff;
+    --text-main: #2c3e50;
+    --text-muted: #7f8c8d;
+    --primary: #2ecc71; 
+    --primary-dark: #27ae60; 
+    --secondary: #3498db; 
+    --secondary-dark: #2980b9;
+    --warning: #f1c40f; 
+    --warning-dark: #f39c12;
+    --danger: #e74c3c; 
+    --danger-dark: #c0392b;
+    --bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+}
+
+body { 
+    background-color: var(--bg-main); 
+    color: var(--text-main); 
+    height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+}
+
+/* =========================================
+   2. HEADER & LAYOUT UMUM
+========================================= */
+header { 
+    background: white; 
+    height: 65px;        /* Tinggi ditingkatkan dari 70px */
+    padding: 0 30px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    z-index: 100;
+}
+
+.school-info { display: flex; align-items: center; gap: 15px; }
+.school-logo { 
+    width: 260px;         /* Ukuran ditingkatkan dari 45px */
+    height: 150px; 
+    object-fit: contain; 
+}
+.school-title h1 { font-size: 1.2rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; }
+
+.main-container { 
+    display: flex; 
+    flex: 1; 
+    padding: 25px; 
+    gap: 25px; 
+    overflow: hidden; 
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* =========================================
+   3. KOMPONEN KARTU & INPUT (GAYA 3D)
+========================================= */
+.card { 
+    background: var(--card-bg); 
+    border-radius: 20px; 
+    border: 2px solid #cbd5e1; /* Garis tegas untuk memperkuat efek 3D */
+    box-shadow: 0 8px 0 #cbd5e1; /* Bayangan solid 3D */
+    transition: all 0.3s ease;
+}
+
+.input-group { 
+    margin-bottom: 20px; /* Jarak dilebarkan sedikit untuk ruang bayangan */
+}
+
+.input-group label { 
+    display: block; 
+    margin-bottom: 8px; 
+    font-weight: 700; 
+    font-size: 0.9rem; 
+    color: var(--text-main); 
+}
+
+/* Form Input 3D */
+.input-text, .input-textarea { 
+    width: 100%; 
+    padding: 14px 15px; 
+    background: #ffffff;
+    border: 2px solid #cbd5e1; 
+    border-radius: 12px; 
+    font-size: 1rem; 
+    font-weight: 600;
+    color: var(--text-main);
+    transition: all 0.2s var(--bounce); 
+    outline: none;
+    box-shadow: 0 4px 0 #cbd5e1; /* Efek timbul 3D pada input */
+    margin-bottom: 4px; /* Ruang untuk bayangan agar tidak terpotong */
+}
+
+/* Efek ketika input diklik/fokus (seperti ditekan ke dalam) */
+.input-text:focus, .input-textarea:focus { 
+    border-color: var(--secondary); 
+    box-shadow: 0 0 0 transparent; /* Bayangan hilang saat ditekan */
+    transform: translateY(4px); /* Turun ke bawah, memberi ilusi tertekan */
+}
+
+.input-textarea { 
+    min-height: 100px; 
+    resize: vertical; 
+}
+
+
+/* =========================================
+   4. TOMBOL STYLE 3D (TETAP SAMA, HANYA PENYESUAIAN KECIL)
+========================================= */
+.btn-3d { 
+    padding: 14px 25px; /* Dibuat sedikit lebih tebal */
+    border: 2px solid transparent; 
+    border-radius: 12px; 
+    font-weight: 800; 
+    font-size: 0.95rem; 
+    cursor: pointer; 
+    transition: all 0.2s var(--bounce); 
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+    color: white;
+}
+
+.btn-next { background: var(--primary); box-shadow: 0 6px 0 var(--primary-dark); }
+.btn-prev { background: var(--text-muted); box-shadow: 0 6px 0 #636e72; }
+.btn-doubt { background: var(--warning); box-shadow: 0 6px 0 var(--warning-dark); color: #856404; }
+
+.btn-3d:hover { filter: brightness(1.1); }
+/* Efek saat tombol ditekan */
+.btn-3d:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+.btn-3d:disabled { background: #ccc; box-shadow: 0 5px 0 #aaa; cursor: not-allowed; transform: none; }
+
+
+/* =========================================
+   5. HALAMAN LOGIN & REGISTRASI
+========================================= */
+.login-page { 
+    justify-content: center; 
+    align-items: center; 
+    /* Background yang lebih cerah agar efek 3D menonjol */
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); 
+}
+
+.login-container { 
+    width: 100%; 
+    max-width: 450px; 
+    padding: 20px; 
+}
+
+/* Memastikan kartu login mengambil gaya 3D dengan padding yang pas */
+.login-card { 
+    padding: 40px; 
+}
+
+.login-header { 
+    text-align: center; 
+    margin-bottom: 30px; 
+}
+
+.main-logo {
+    max-width: 280px; /* Ukuran ditingkatkan agar lebih besar */
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    margin: 0 auto 20px auto; /* Jarak bawah ditambah sedikit agar seimbang */
+    display: block;
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,0.15)); /* Bayangan dibuat sedikit lebih tegas */
+    transform: scale(1.05); /* Sedikit pembesaran untuk menonjolkan logo */
+}
+
+.login-header h2 { 
+    margin: 0; 
+    font-size: 1.6rem; 
+    font-weight: 800;
+    color: var(--text-main); 
+}
+
+.login-header p { 
+    margin: 5px 0 0 0; 
+    font-size: 0.9rem; 
+    font-weight: 600;
+    color: var(--text-muted); 
+}
+
+.btn-login {
+    display: block;
+    width: 100%;
+    max-width: 220px;            /* Membuat tombol lebih ramping (tidak memenuhi lebar kartu) */
+    margin: 30px auto 0;        /* Tetap berada di tengah secara horizontal */
+    background: var(--secondary); /* Mengubah warna menjadi biru (#3498db) */
+    box-shadow: 0 6px 0 var(--secondary-dark); /* Shadow biru tua agar efek 3D konsisten */
+}
+
+/* Pastikan efek klik tetap mengikuti warna biru */
+.btn-login:active {
+    background: var(--secondary);
+    box-shadow: 0 0 0 transparent;
+    transform: translateY(6px);
+}
+
+.register-box { 
+    text-align: center; 
+    margin-top: 25px; 
+    font-size: 0.95rem; 
+    font-weight: 600;
+}
+
+.register-link { 
+    color: var(--secondary); 
+    text-decoration: none; 
+    font-weight: 800; 
+    transition: color 0.2s;
+}
+
+.register-link:hover {
+    color: var(--secondary-dark);
+}
+
+.login-footer {
+    text-align: center; 
+    margin-top: 30px; 
+    font-size: 0.85rem; 
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* =========================================
+   6. DASHBOARD GURU (TAMBAHAN BARU)
+========================================= */
+.section-title { 
+    margin-bottom: 25px; 
+    padding-bottom: 10px; 
+    border-bottom: 2px solid var(--bg-main);
+    color: var(--text-main);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.options-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+}
+
+.info-box { 
+    background: #e8f4fd; 
+    border-left: 5px solid var(--secondary); 
+    padding: 15px; 
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.info-box ul { margin-left: 20px; margin-top: 5px; }
+
+/* Targetkan tombol simpan agar berwarna biru 3D */
+.btn-save-db {
+    background: var(--secondary) !important; /* Warna Biru */
+    box-shadow: 0 5px 0 var(--secondary-dark) !important;
+    color: white;
+}
+
+.btn-save-db:active {
+    transform: translateY(5px);
+    box-shadow: 0 0 0 transparent !important;
+}
+
+.btn-logout-custom {
+    background: var(--danger); 
+    color: white; 
+    border: none; 
+    padding: 10px 20px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-logout-custom:hover { background: var(--danger-dark); transform: translateY(-2px); }
+
+/* Navigasi Sidebar Dashboard Guru */
+.option-item { 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    padding: 12px 15px;
+    border-radius: 8px;
+    transition: 0.3s;
+    font-weight: 600;
+}
+
+.option-item:hover { background: var(--bg-main); }
+.option-item.selected { background: var(--primary); color: white; }
+
+/* Pengaturan Konten Dinamis */
+.content-section { display: none; }
+.content-section.active { display: block; animation: fadeIn 0.4s ease; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   7. INTERFACE UJIAN (SISWA)
+========================================= */
+.question-section { flex: 1; padding: 40px; display: flex; flex-direction: column; overflow-y: auto; }
+.timer-card { background: var(--text-main); color: var(--warning); padding: 8px 20px; border-radius: 50px; font-weight: 800; font-size: 1.2rem; font-family: 'Courier New', monospace; }
+
+.sidebar { width: 320px; padding: 20px; flex-shrink: 0; }
+.sidebar-title { text-align: center; font-weight: 800; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #e0e6ed; font-size: 0.9rem; }
+
+.q-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 10px; }
+
+.num-box { 
+    aspect-ratio: 1; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    background: white; 
+    border: 2px solid #e0e6ed; 
+    border-radius: 8px; 
+    font-weight: 700; 
+    font-size: 0.85rem; 
+    color: var(--text-muted); 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    box-shadow: 0 3px 0 #e0e6ed;
+}
+
+.num-box:hover { border-color: var(--secondary); transform: translateY(-2px); }
+.num-box.active { border-color: var(--secondary); background: #ebf5fb; color: var(--secondary); }
+.num-box.answered { background: var(--primary); border-color: var(--primary-dark); color: white; box-shadow: 0 3px 0 var(--primary-dark); }
+.num-box.doubt { background: var(--warning); border-color: var(--warning-dark); color: #856404; box-shadow: 0 3px 0 var(--warning-dark); }
+
+.loading-text { text-align: center; color: var(--text-muted); padding: 40px; font-style: italic; }

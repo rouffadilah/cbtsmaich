@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT Modern - Multi Tipe Soal & Validasi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="school-info">
+            <img src="logo-smaich.png" alt="Logo SMAICH" class="school-logo">
+            <div class="school-title">
+                <h1>SMAI CIKAL HARAPAN I BSD</h1>
+            </div>
+        </div>
+        <div class="timer-card" id="timer">01:30:00</div>
+    </header>
+
+    <main class="main-container">
+        <section class="question-section card">
+            <div class="question-content" id="q-container">
+                </div>
+
+            <div class="nav-controls">
+                <button class="btn-3d btn-prev" id="prev-btn">Kembali</button>
+                <button class="btn-3d btn-doubt" id="doubt-btn">Ragu-Ragu</button>
+                <button class="btn-3d btn-next" id="next-btn">Lanjut</button>
+            </div>
+        </section>
+
+        <aside class="sidebar card">
+            <div class="sidebar-title">NAVIGASI SOAL</div>
+            <div class="q-grid" id="q-grid"></div>
+            <button class="btn-3d btn-finish" id="finish-btn">SELESAI</button>
+        </aside>
+    </main>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
