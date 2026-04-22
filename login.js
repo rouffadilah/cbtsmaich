@@ -15,8 +15,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
             const inputUsername = document.getElementById("username").value;
             const inputPassword = document.getElementById("password").value;
-            const loginRole = document.getElementById("login-role").value; // AMBIL ROLE
+            const loginRole = document.getElementById("login-role").value;
 
+            // Format dummy email untuk autentikasi Firebase
             const dummyEmail = inputUsername + "@cbt.smaich.id";
 
             try {
@@ -25,11 +26,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 alert("Login Berhasil! Selamat Datang, " + userName);
                 
-                // --- LOGIKA PENGALIHAN HALAMAN ---
+                // Pengalihan Halaman berdasarkan Role
                 if (loginRole === "guru") {
-                    window.location.href = "guru-dashboard.html"; // Ke Dashboard Guru
+                    window.location.href = "guru-dashboard.html"; 
                 } else {
-                    window.location.href = "attempt.html"; // Ke Halaman Ujian Siswa
+                    window.location.href = "attempt.html"; // Pastikan file attempt.html ada untuk Siswa
                 }
 
             } catch (error) {
@@ -40,7 +41,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     alert("Terjadi kesalahan: " + error.message);
                 }
                 
-                btnSubmit.innerHTML = "MASUK KE UJIAN";
+                btnSubmit.innerHTML = "Masuk";
                 btnSubmit.disabled = false;
             }
         });
