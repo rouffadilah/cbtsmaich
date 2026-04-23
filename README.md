@@ -1,2 +1,2 @@
-# cbtsmaich
+# cbt-smaich
 cbt
