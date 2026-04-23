@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrasi - CBT SMA ICH</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="login-page">
+
+    <div class="login-container">
+        <div class="login-card card">
+            <div class="login-header">
+                <img src="logo-smaich.png" alt="Logo SMAICH" class="school-logo main-logo">
+                <h2 id="reg-title">REGISTRASI SISWA</h2>
+                <p>SMA ISLAM CIKAL HARAPAN I BSD</p>
+            </div>
+
+            <div class="role-selection-container" style="display: flex; gap: 10px; margin: 20px 0;">
+                <div class="role-box" id="select-siswa" style="flex: 1; border: 2px solid #3498db; padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; transition: 0.3s; background: #f8fbff;">
+                    <i class="fas fa-user-graduate" style="font-size: 1.8rem; display: block; margin-bottom: 8px; color: #3498db;"></i>
+                    <span style="font-weight: bold; font-size: 0.9rem;">SISWA</span>
+                </div>
+                <div class="role-box" id="select-guru" style="flex: 1; border: 2px solid #eee; padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; transition: 0.3s;">
+                    <i class="fas fa-chalkboard-teacher" style="font-size: 1.8rem; display: block; margin-bottom: 8px; color: #7f8c8d;"></i>
+                    <span style="font-weight: bold; font-size: 0.9rem;">GURU</span>
+                </div>
+            </div>
+
+            <form id="register-form" class="login-form">
+                <input type="hidden" id="reg-role" value="siswa">
+
+                <div class="input-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="reg-name" class="input-text" placeholder="Masukkan nama lengkap" required>
+                </div>
+
+                <div class="input-group">
+                    <label id="username-label">Nomor Peserta / NIS</label>
+                    <input type="text" id="reg-username" class="input-text" placeholder="Gunakan sebagai Username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" class="input-text" placeholder="Minimal 6 karakter" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Konfirmasi Password</label>
+                    <input type="password" id="reg-confirm-password" class="input-text" placeholder="Ketik ulang password" required>
+                </div>
+
+                <button type="submit" class="btn-3d btn-next btn-login" id="btn-submit">DAFTAR SEKARANG</button>
+                
+                <div class="register-box">
+                    Sudah punya akun? <a href="index.html" class="register-link">Masuk di sini</a>
+                </div>
+            </form>
+            
+            <div class="login-footer">
+                &copy; 2026 IT Support SMAICH. All rights reserved.
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="registrasi.js"></script>
+</body>
+</html>
