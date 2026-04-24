@@ -18,12 +18,7 @@
     --bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-* { 
-    box-sizing: border-box; 
-    margin: 0; 
-    padding: 0; 
-    font-family: 'Inter', 'Poppins', 'Segoe UI', sans-serif; 
-}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', 'Poppins', 'Segoe UI', sans-serif; }
 
 body { 
     background-color: var(--bg-main); 
@@ -88,11 +83,17 @@ body {
    4. CBT EXAM INTERFACE (ATTEMPT.HTML)
 ========================================= */
 .exam-page { background: var(--bg-main); }
-.cbt-header { padding: 15px 3%; background: #ffffff; border-bottom: 1px solid var(--border-color); }
-.user-info-exam { display: flex; align-items: center; gap: 15px; padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border-color); }
+.cbt-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 3%; background: #ffffff; border-bottom: 1px solid var(--border-color); }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.cbt-logo { height: 35px; width: auto; }
+.school-info-header h1 { font-size: 1.1rem; font-weight: 700; margin: 0; line-height: 1.2; color: var(--text-main); }
+.school-info-header p { font-size: 0.75rem; margin: 0; color: var(--text-muted); }
+
+.user-info-exam { display: flex; align-items: center; gap: 10px; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border-color); }
 .user-text { display: flex; flex-direction: column; text-align: right; }
-.user-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
-.user-name { font-weight: 600; color: var(--text-main); font-size: 0.9rem;}
+.user-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+.user-name { font-weight: 600; color: var(--text-main); font-size: 0.85rem;}
+.user-info-exam .fa-user-circle { font-size: 1.5em; }
 
 .cbt-container { display: flex; padding: 20px 3%; gap: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
 
