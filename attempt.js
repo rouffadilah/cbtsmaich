@@ -6,7 +6,7 @@ let questions = [];
 let currentIdx = 0;
 let userAnswers = [];
 let doubtStatus = [];
-let mapelTerpilih = ""; // Menyimpan mata pelajaran yang dipilih siswa
+let mapelTerpilih = ""; 
 
 const KEY_ANS = 'cbt_jawaban_smaich';
 const KEY_DOUBT = 'cbt_ragu_smaich';
@@ -33,41 +33,45 @@ btnVerifikasi.addEventListener('click', async () => {
         return;
     }
 
-    // Ubah UI tombol menjadi mode loading
     const originalText = btnVerifikasi.innerHTML;
     btnVerifikasi.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMVALIDASI...';
     btnVerifikasi.disabled = true;
     tokenError.style.display = 'none';
 
     try {
-        // Ambil token aktif dari database Firestore
+        // Ambil token dari Firestore
         const pengaturanRef = doc(db, "pengaturan", "token_ujian");
         const pengaturanSnap = await getDoc(pengaturanRef);
         
-        let tokenAktif = "SMAICH-26XQ"; // Token default jika database gagal dibaca
+        let tokenAktif = "SMAICH-26XQ"; // Default fallback
+        
         if (pengaturanSnap.exists() && pengaturanSnap.data().token_aktif) {
             tokenAktif = pengaturanSnap.data().token_aktif;
+        } else {
+            // Fallback ke LocalStorage jika di database belum ada dokumennya
+            const localToken = localStorage.getItem('cbt_token');
+            if(localToken) tokenAktif = localToken;
         }
 
-        // Cek kecocokan token
         if (inputToken !== tokenAktif) {
+            tokenError.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Token tidak valid atau salah!';
             tokenError.style.display = 'block';
             btnVerifikasi.innerHTML = originalText;
             btnVerifikasi.disabled = false;
             return;
         }
 
-        // Jika token benar: simpan mapel, sembunyikan form persiapan, dan tampilkan UI ujian
+        // Lolos Validasi
         mapelTerpilih = selectMapel;
         preExamSection.style.display = 'none';
-        mainExamLayout.style.display = 'grid'; // Menggunakan grid sesuai CSS layout ujian
+        mainExamLayout.style.display = 'grid'; 
         
-        // Mulai muat soal dari database
         initUjian(); 
 
     } catch (error) {
-        console.error("Error validasi token:", error);
-        alert("Terjadi kesalahan sistem saat memvalidasi token. Pastikan internet Anda stabil.");
+        console.error("Error Detail validasi token:", error);
+        // Tampilkan pesan error ASLI dari Firebase agar mudah didebug
+        alert("Gagal memvalidasi token. Pesan Error: " + error.message);
         btnVerifikasi.innerHTML = originalText;
         btnVerifikasi.disabled = false;
     }
@@ -88,11 +92,10 @@ async function initUjian() {
     try {
         const snapshot = await getDocs(collection(db, "bank_soal"));
         if (snapshot.empty) {
-            qContainer.innerHTML = "<p style='text-align:center;'>Belum ada soal tersedia di database untuk saat ini.</p>";
+            qContainer.innerHTML = "<p style='text-align:center; color: var(--danger);'>Belum ada soal tersedia di database.</p>";
             return;
         }
 
-        // Memasukkan data soal dari Firestore ke dalam array
         snapshot.forEach(doc => {
             const d = doc.data();
             const pilihanArray = [d.opsi_a, d.opsi_b, d.opsi_c, d.opsi_d, d.opsi_e].filter(Boolean);
@@ -105,21 +108,20 @@ async function initUjian() {
             });
         });
 
-        // Memuat progress jawaban sebelumnya (jika siswa ter-refresh/keluar tidak sengaja)
         const savedAns = localStorage.getItem(KEY_ANS);
         const savedDoubt = localStorage.getItem(KEY_DOUBT);
         
         userAnswers = savedAns ? JSON.parse(savedAns) : new Array(questions.length).fill(null);
         doubtStatus = savedDoubt ? JSON.parse(savedDoubt) : new Array(questions.length).fill(false);
 
-        // Render UI awal
         buildGrid();
         renderSoal(0);
-        startTimer(120 * 60); // Set waktu: 120 Menit (dalam detik)
+        startTimer(120 * 60); 
 
     } catch (error) {
-        console.error("Error loading soal:", error);
-        qContainer.innerHTML = `<p style='text-align:center; color:red;'>Gagal memuat ujian. Periksa koneksi internet atau rules Firestore Anda.</p>`;
+        console.error("Error Detail loading soal:", error);
+        // Tampilkan pesan error spesifik jika gagal memuat bank soal
+        qContainer.innerHTML = `<div style='text-align:center; padding:30px;'><i class='fas fa-times-circle fa-3x' style='color:red;'></i><p style='color:red; margin-top:15px;'>Gagal memuat bank soal.<br><small>${error.message}</small></p></div>`;
     }
 }
 
@@ -131,7 +133,6 @@ function renderSoal(idx) {
     const qContainer = document.getElementById('q-container');
     const q = questions[idx];
 
-    // Update nomor soal di header card
     document.getElementById('current-q-num').innerText = idx + 1;
 
     let html = `
@@ -160,12 +161,10 @@ window.saveAnswer = (idx, val) => {
     userAnswers[idx] = val;
     localStorage.setItem(KEY_ANS, JSON.stringify(userAnswers));
     
-    // Highlight jawaban yang dipilih secara visual
     document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected', 'active-border'));
     const selectedInput = document.querySelector(`input[value="${val}"]`);
     if(selectedInput) {
         selectedInput.parentElement.classList.add('selected');
-        // Tambahkan inline styling langsung jika kelas CSS belum menangani active state dengan baik
         selectedInput.parentElement.style.borderColor = 'var(--primary)';
         selectedInput.parentElement.style.backgroundColor = 'var(--primary-light)';
     }
@@ -174,7 +173,6 @@ window.saveAnswer = (idx, val) => {
 };
 
 function updateUI() {
-    // Pengaturan visibilitas Tombol Navigasi
     document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
     const nextBtn = document.getElementById('next-btn');
     
@@ -186,7 +184,6 @@ function updateUI() {
         nextBtn.classList.remove('btn-finish');
     }
 
-    // Status Tombol Ragu-Ragu
     const doubtBtn = document.getElementById('doubt-btn');
     if(doubtStatus[currentIdx]) {
         doubtBtn.classList.add('active');
@@ -194,17 +191,13 @@ function updateUI() {
         doubtBtn.style.color = '#fff';
     } else {
         doubtBtn.classList.remove('active');
-        doubtBtn.style.backgroundColor = '#fef3c7'; // Default styling
+        doubtBtn.style.backgroundColor = '#fef3c7'; 
         doubtBtn.style.color = '#92400e';
     }
 
-    // Pembaruan Grid Navigasi Soal Kanan
     const boxes = document.querySelectorAll('.q-box');
     boxes.forEach((box, i) => {
-        // Reset class ke default dulu
         box.className = 'q-box';
-        
-        // Tambahkan class sesuai status
         if (i === currentIdx) box.classList.add('active-q');
         if (doubtStatus[i]) box.classList.add('doubt');
         else if (userAnswers[i]) box.classList.add('answered');
@@ -237,13 +230,11 @@ function startTimer(durationInSeconds) {
 
         display.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
-        // Peringatan 5 menit terakhir (300 detik)
         if (timer <= 300) {
             display.style.color = 'var(--danger)'; 
             display.classList.add('blink');
         }
 
-        // Waktu habis
         if (--timer < 0) {
             clearInterval(interval);
             alert("Waktu Habis! Jawaban Anda akan dikumpulkan secara otomatis.");
@@ -274,7 +265,6 @@ document.getElementById('doubt-btn').onclick = () => {
 };
 
 document.getElementById('finish-btn').onclick = async () => {
-    // Validasi apakah ada soal yang belum dijawab
     const belumDijawab = userAnswers.filter(ans => ans === null).length;
     let pesanKonfirmasi = "Apakah Anda yakin ingin mengakhiri ujian? Jawaban tidak dapat diubah lagi setelah ini.";
     
@@ -284,9 +274,7 @@ document.getElementById('finish-btn').onclick = async () => {
 
     if (!confirm(pesanKonfirmasi)) return;
 
-    // Proses Submit Jawaban
     try {
-        // Ubah teks tombol selesai
         const finishBtn = document.getElementById('finish-btn');
         finishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGIRIM JAWABAN...';
         finishBtn.disabled = true;
@@ -296,13 +284,12 @@ document.getElementById('finish-btn').onclick = async () => {
         await addDoc(collection(db, "hasil_ujian"), {
             userId: user?.uid || "Anonymous", 
             namaSiswa: user?.displayName || "Siswa",
-            mataPelajaran: mapelTerpilih, // Mapel yang dipilih saat verifikasi
+            mataPelajaran: mapelTerpilih, 
             jawabanSiswa: userAnswers, 
             waktuSelesai: new Date(), 
             status: "Selesai"
         });
         
-        // Bersihkan cache jawaban setelah berhasil submit
         localStorage.removeItem(KEY_ANS); 
         localStorage.removeItem(KEY_DOUBT);
         
@@ -310,7 +297,7 @@ document.getElementById('finish-btn').onclick = async () => {
         window.location.href = "index.html"; 
     } catch (error) {
         console.error("Gagal mengirim hasil:", error);
-        alert("Gagal mengirim jawaban! Pastikan Anda terhubung ke internet yang stabil.");
+        alert("Gagal mengirim jawaban! Pesan Error: " + error.message);
         document.getElementById('finish-btn').innerHTML = '<i class="fas fa-check-double"></i> SELESAI UJIAN';
         document.getElementById('finish-btn').disabled = false;
     }
@@ -321,10 +308,8 @@ document.getElementById('finish-btn').onclick = async () => {
 // ==========================================
 auth.onAuthStateChanged(user => {
     if (user) {
-        // Tampilkan nama siswa di header, fallback ke email jika display name kosong
         document.getElementById('student-name').innerText = user.displayName || user.email.split('@')[0];
     } else {
-        // Redirect kembali ke login jika belum terautentikasi
         window.location.href = "index.html"; 
     }
 });
