@@ -9,22 +9,30 @@
 </head>
 <body>
 
-    <header class="app-header">
-        <div class="school-info">
-            <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo" style="height: 40px; margin-bottom: 0;">
-            <div>
-                <h1>CBT SMAICH</h1>
-                <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">SMA Islam Cikal Harapan I BSD</p>
+    <header class="app-header" style="justify-content: space-between;">
+        
+        <!-- Bagian Kiri: Logo & Nama Sekolah -->
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 45px; width: auto; object-fit: contain;">
+            <div style="display: flex; flex-direction: column; justify-content: center;">
+                <h1 style="font-size: 1.25rem; font-weight: 700; color: var(--secondary); margin: 0; line-height: 1.2;">CBT SMAICH</h1>
+                <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin: 0;">SMA Islam Cikal Harapan I BSD</p>
             </div>
         </div>
+
+        <!-- Bagian Kanan: Info Peserta -->
         <div style="display: flex; align-items: center; gap: 15px;">
             <div style="text-align: right;">
-                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Peserta</span>
-                <span class="user-name" id="student-name" style="font-weight: 700; display: block;">Memuat Nama...</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Peserta</span>
+                <span class="user-name" id="student-name" style="font-weight: 700; display: block; color: var(--secondary); font-size: 0.95rem;">Memuat Nama...</span>
             </div>
-            <i class="fas fa-user-circle fa-2x" style="color: var(--primary);"></i>
+            <div style="background: var(--primary-light); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-user-graduate" style="color: var(--primary); font-size: 1.5rem;"></i>
+            </div>
         </div>
+
     </header>
+    
     <!-- TAMBAHKAN: Bagian Persiapan Ujian (Pilih Mapel & Token) -->
     <section id="pre-exam-section" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
         <div class="card" style="width: 100%; max-width: 450px; padding: 40px; text-align: center;">
