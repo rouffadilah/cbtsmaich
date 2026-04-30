@@ -1,31 +1,22 @@
 import { auth, db } from './firebase-config.js';
 import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { collection, addDoc, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// Tambahan 'getDoc' untuk membaca token yang tersimpan di database
+import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // ==========================================
 // 0. AUTENTIKASI & KEAMANAN DASHBOARD
 // ==========================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // Ambil nama lengkap dari profil (atau email jika kosong)
         const fullName = user.displayName || user.email.split('@')[0] || "Guru";
-        
-        // Ambil nama panggilan (kata pertama dari nama lengkap)
         const firstName = fullName.split(' ')[0];
 
-        // 1. Update nama di Header Kanan Atas
         const adminNameEl = document.getElementById('admin-name');
-        if (adminNameEl) {
-            adminNameEl.innerText = fullName;
-        }
+        if (adminNameEl) adminNameEl.innerText = fullName;
 
-        // 2. Update ucapan di Banner Beranda
         const greetingEl = document.querySelector('.welcome-banner h2');
-        if (greetingEl) {
-            greetingEl.innerHTML = `Assalamu'alaikum, ${firstName}! 👋`;
-        }
+        if (greetingEl) greetingEl.innerHTML = `Assalamu'alaikum, ${firstName}! 👋`;
     } else {
-        // Jika tidak ada sesi login, kembalikan ke halaman login
         window.location.href = "index.html";
     }
 });
@@ -41,11 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { nama: 'Ahmad Fauzi', nilai: 88, waktu: '24 Apr 2026, 10:15' },
         { nama: 'Siti Nurhaliza', nilai: 95, waktu: '24 Apr 2026, 10:30' }
     ];
-    let tokenUjian = localStorage.getItem('cbt_token') || 'SMAICH-26XQ';
-    
-    document.getElementById('input-token').value = tokenUjian;
 
-    // Fungsi Render Statistik
     function updateStats() {
         document.getElementById('stat-siswa').innerText = dataSiswa.length;
         document.getElementById('stat-soal').innerText = dataSoal.length;
@@ -68,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Jam Waktu Nyata
     setInterval(() => {
         const liveTimeEl = document.getElementById('live-time');
         if (liveTimeEl) {
@@ -77,16 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000);
 
-    // Logout dengan mematikan sesi Firebase
     document.getElementById('btn-logout')?.addEventListener('click', () => {
         if(confirm('Apakah Anda yakin ingin keluar dari panel?')) {
-            // Ubah tombol jadi loading saat proses logout
             const btnLogout = document.getElementById('btn-logout');
             btnLogout.innerHTML = '<i class="fas fa-spinner fa-spin"></i> KELUAR...';
             btnLogout.disabled = true;
 
             signOut(auth).then(() => {
-                localStorage.removeItem("userRole"); // Hapus otorisasi lokal
+                localStorage.removeItem("userRole"); 
                 window.location.href = 'index.html'; 
             }).catch((error) => {
                 alert('Gagal keluar dari sesi: ' + error.message);
@@ -121,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
     }
 
-    // Modal Tambah Siswa
     const modalSiswa = document.getElementById('modal-tambah-siswa');
     document.getElementById('btn-tambah-siswa')?.addEventListener('click', () => modalSiswa.style.display = 'flex');
     document.getElementById('close-modal-siswa')?.addEventListener('click', () => modalSiswa.style.display = 'none');
@@ -141,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Siswa berhasil ditambahkan!');
     });
 
-    // Hapus Siswa
     tbodySiswa.addEventListener('click', (e) => {
         if(e.target.closest('.btn-delete-siswa')) {
             if(confirm('Hapus siswa ini?')) {
@@ -153,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Fitur Pencarian
     document.getElementById('search-siswa')?.addEventListener('keyup', function() {
         const filter = this.value.toLowerCase();
         document.querySelectorAll('#table-siswa tbody tr').forEach(row => {
@@ -187,18 +168,15 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
     }
 
-    // Modal Tambah Soal
     const modalSoal = document.getElementById('modal-tambah-soal');
     const selectJenisSoal = document.getElementById('input-jenis-soal');
     
-    // Area DOM
     const areaPG = document.getElementById('area-pg');
     const areaPGKompleks = document.getElementById('area-pg-kompleks');
     const areaBenarSalah = document.getElementById('area-benar-salah');
     const areaUraian = document.getElementById('area-uraian');
     const areaStimulus = document.getElementById('area-stimulus');
 
-    // Tampilkan nama file yang dipilih
     document.getElementById('media-soal')?.addEventListener('change', function() {
         if(this.files[0]) {
             document.getElementById('nama-file-soal').innerText = "File terlampir: " + this.files[0].name;
@@ -210,10 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
         modalSoal.style.display = 'none';
         document.getElementById('form-tambah-soal').reset();
         document.getElementById('nama-file-soal').innerText = "";
-        selectJenisSoal.dispatchEvent(new Event('change')); // Reset tampilan
+        selectJenisSoal.dispatchEvent(new Event('change')); 
     });
 
-    // Logika ganti UI form berdasarkan jenis soal
     selectJenisSoal?.addEventListener('change', function() {
         const jenis = this.value;
         
@@ -295,9 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSoal();
     });
 
-    // ==========================================
-    // FUNGSI DOWNLOAD TEMPLATE (EXCEL & WORD)
-    // ==========================================
     document.getElementById('btn-template-excel')?.addEventListener('click', () => {
         const csvData = [
             ["No", "Jenis Soal", "Wacana/Stimulus", "Pertanyaan", "Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E", "Kunci Jawaban"],
@@ -352,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(link);
     });
 
-    // Hapus Soal
     tbodySoal.addEventListener('click', (e) => {
         if(e.target.closest('.btn-delete-soal')) {
             if(confirm('Hapus soal ini?')) {
@@ -364,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Tombol Terbitkan
     document.getElementById('btn-terbitkan')?.addEventListener('click', () => {
         if(dataSoal.length === 0) return alert('Tidak ada soal untuk diterbitkan!');
         alert('Soal berhasil diterbitkan! Siswa sekarang dapat mengaksesnya.');
@@ -398,48 +370,96 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 6. PENGATURAN: RESET TOKEN (DIINTEGRASIKAN DENGAN FIRESTORE)
+    // 6. PENGATURAN TOKEN BERDASARKAN MAPEL
     // ==========================================
-    async function simpanTokenKeDatabase(tokenBaru) {
+    const selectMapelToken = document.getElementById('select-mapel-token');
+    const inputToken = document.getElementById('input-token');
+    const labelMapelAktif = document.getElementById('label-mapel-aktif');
+    const btnResetToken = document.getElementById('btn-reset-token');
+
+    // Fungsi untuk memuat token spesifik dari Firestore
+    async function loadTokenByMapel(mapel) {
+        inputToken.value = "Memuat data...";
         try {
             const pengaturanRef = doc(db, "pengaturan", "token_ujian");
-            await setDoc(pengaturanRef, {
-                token_aktif: tokenBaru,
-                diupdate_pada: serverTimestamp() 
-            }, { merge: true });
-            console.log("Token berhasil disinkronisasi ke Firestore.");
+            const docSnap = await getDoc(pengaturanRef);
+            
+            // Nama field dinamis di database: token_informatika, token_tkj, dst.
+            if (docSnap.exists() && docSnap.data()[`token_${mapel}`]) {
+                inputToken.value = docSnap.data()[`token_${mapel}`];
+            } else {
+                inputToken.value = "BELUM ADA TOKEN";
+            }
         } catch (error) {
-            console.error("Gagal menyimpan token ke Firestore:", error);
-            alert("Gagal menyinkronkan token ke database. Pastikan koneksi internet stabil.");
+            console.error("Gagal memuat token:", error);
+            inputToken.value = "Gagal memuat";
         }
     }
 
-    document.getElementById('btn-reset-token')?.addEventListener('click', async () => {
-        if(confirm('Generate token baru? Token lama tidak akan berlaku lagi.')) {
+    // Listener saat Guru mengganti mapel di dropdown
+    if (selectMapelToken) {
+        selectMapelToken.addEventListener('change', (e) => {
+            const mapel = e.target.value;
+            const textMapel = e.target.options[e.target.selectedIndex].text;
+            
+            // Update UI
+            labelMapelAktif.innerText = textMapel;
+            
+            // Muat token untuk mapel yang baru dipilih
+            loadTokenByMapel(mapel);
+        });
+
+        // Muat token awal saat halaman pertama kali dirender
+        loadTokenByMapel(selectMapelToken.value);
+    }
+
+    // Fungsi menyimpan token spesifik ke Firestore
+    async function simpanTokenKeDatabase(tokenBaru, mapel) {
+        try {
+            const pengaturanRef = doc(db, "pengaturan", "token_ujian");
+            await setDoc(pengaturanRef, {
+                [`token_${mapel}`]: tokenBaru,
+                diupdate_pada: serverTimestamp() 
+            }, { merge: true });
+        } catch (error) {
+            console.error("Gagal menyimpan token ke Firestore:", error);
+            alert("Gagal menyinkronkan token ke database. Pastikan koneksi internet stabil.");
+            throw error; // Lempar error agar bisa ditangkap oleh catch di bawah
+        }
+    }
+
+    // Generate Token Baru
+    btnResetToken?.addEventListener('click', async () => {
+        const mapel = selectMapelToken.value;
+        const textMapel = selectMapelToken.options[selectMapelToken.selectedIndex].text;
+
+        if(confirm(`Generate token baru untuk mata pelajaran ${textMapel}? Token lama tidak akan berlaku lagi.`)) {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let newToken = 'SMAICH-';
             for(let i = 0; i < 4; i++) {
                 newToken += chars.charAt(Math.floor(Math.random() * chars.length));
             }
             
-            const btnToken = document.getElementById('btn-reset-token');
-            const originalText = btnToken.innerHTML;
-            btnToken.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Memproses...`;
-            btnToken.disabled = true;
+            const originalText = btnResetToken.innerHTML;
+            btnResetToken.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Memproses...`;
+            btnResetToken.disabled = true;
 
-            document.getElementById('input-token').value = newToken;
-            localStorage.setItem('cbt_token', newToken);
-            
-            await simpanTokenKeDatabase(newToken);
-            
-            btnToken.innerHTML = originalText;
-            btnToken.disabled = false;
-            
-            alert('Token Baru berhasil digenerate dan diaktifkan: ' + newToken);
+            try {
+                // Simpan ke Firestore
+                await simpanTokenKeDatabase(newToken, mapel);
+                
+                // Perbarui UI
+                inputToken.value = newToken;
+                alert(`Token Baru untuk ${textMapel} berhasil dibuat: ` + newToken);
+            } catch (error) {
+                // Error sudah ditangani di fungsi simpanTokenKeDatabase
+            } finally {
+                btnResetToken.innerHTML = originalText;
+                btnResetToken.disabled = false;
+            }
         }
     });
 
-    // Panggil render awal saat halaman dimuat
     renderSiswa();
     renderSoal();
     renderHasil();
