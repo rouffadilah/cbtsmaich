@@ -1,2 +1,0 @@
-# cbt-smaich
-cbt-smaich
