@@ -1,6 +1,5 @@
 import { auth, db } from './firebase-config.js';
 import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-// Tambahan 'getDoc' untuk membaca token yang tersimpan di database
 import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // ==========================================
@@ -28,9 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     let dataSiswa = JSON.parse(localStorage.getItem('cbt_siswa')) || [];
     let dataSoal = JSON.parse(localStorage.getItem('cbt_soal')) || [];
+    
+    // UPDATE: Penambahan struktur kelas dan mapel pada data hasil ujian
     let dataHasil = JSON.parse(localStorage.getItem('cbt_hasil')) || [
-        { nama: 'Ahmad Fauzi', nilai: 88, waktu: '24 Apr 2026, 10:15' },
-        { nama: 'Siti Nurhaliza', nilai: 95, waktu: '24 Apr 2026, 10:30' }
+        { nama: 'Ahmad Fauzi', kelas: 'XII TKJ 1', mapel: 'Informatika', nilai: 88, waktu: '24 Apr 2026, 10:15' },
+        { nama: 'Siti Nurhaliza', kelas: 'XII AKL 2', mapel: 'Informatika', nilai: 95, waktu: '24 Apr 2026, 10:30' },
+        { nama: 'Budi Santoso', kelas: 'XI RPL 1', mapel: 'Coding & AI', nilai: 78, waktu: '24 Apr 2026, 11:05' }
     ];
 
     function updateStats() {
@@ -343,21 +345,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 5. FITUR: HASIL UJIAN & CETAK PDF
+    // 5. FITUR: HASIL UJIAN & CETAK PDF / EXCEL
     // ==========================================
     const tbodyHasil = document.querySelector('#table-hasil tbody');
 
     function renderHasil() {
         tbodyHasil.innerHTML = '';
         if(dataHasil.length === 0) {
-            tbodyHasil.innerHTML = `<tr><td colspan="3" style="text-align: center;">Belum ada siswa yang menyelesaikan ujian.</td></tr>`;
+            tbodyHasil.innerHTML = `<tr><td colspan="5" style="text-align: center;">Belum ada siswa yang menyelesaikan ujian.</td></tr>`;
         } else {
             dataHasil.forEach((hasil) => {
                 const tr = document.createElement('tr');
+                // UPDATE: Struktur tabel ditambahkan Kelas & Mapel
                 tr.innerHTML = `
-                    <td>${hasil.nama}</td>
-                    <td><strong>${hasil.nilai}</strong></td>
-                    <td>${hasil.waktu}</td>
+                    <td>${hasil.nama || '-'}</td>
+                    <td>${hasil.kelas || '-'}</td>
+                    <td><span style="background: var(--primary-light); color: var(--primary-hover); padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">${hasil.mapel || '-'}</span></td>
+                    <td><strong style="color: var(--primary); font-size: 1.1rem;">${hasil.nilai || 0}</strong></td>
+                    <td>${hasil.waktu || '-'}</td>
                 `;
                 tbodyHasil.appendChild(tr);
             });
@@ -365,8 +370,47 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
     }
 
+    // Aksi Cetak PDF
     document.getElementById('btn-print-pdf')?.addEventListener('click', () => {
         window.print();
+    });
+
+    // UPDATE: Logika Cetak / Export ke Excel (CSV format)
+    document.getElementById('btn-print-excel')?.addEventListener('click', () => {
+        if (dataHasil.length === 0) {
+            alert('Tidak ada data hasil ujian untuk di-export!');
+            return;
+        }
+
+        // Header Tabel Excel
+        let csvContent = "Nama Siswa,Kelas,Mata Pelajaran,Nilai,Waktu Submit\n";
+
+        // Melakukan perulangan untuk mengambil data tiap baris
+        dataHasil.forEach(row => {
+            // Gunakan tanda kutip agar jika ada spasi/koma pada teks tidak merusak format kolom Excel
+            let rowData = [
+                `"${row.nama || '-'}"`,
+                `"${row.kelas || '-'}"`,
+                `"${row.mapel || '-'}"`,
+                `"${row.nilai || 0}"`,
+                `"${row.waktu || '-'}"`
+            ];
+            csvContent += rowData.join(",") + "\n";
+        });
+
+        // Membuat file Blob dan memicu fitur unduhan browser
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        
+        // Nama file dinamis dengan timestamp
+        const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,"");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Rekap_Nilai_CBT_${dateStr}.csv`);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
 
     // ==========================================
@@ -377,14 +421,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const labelMapelAktif = document.getElementById('label-mapel-aktif');
     const btnResetToken = document.getElementById('btn-reset-token');
 
-    // Fungsi untuk memuat token spesifik dari Firestore
     async function loadTokenByMapel(mapel) {
         inputToken.value = "Memuat data...";
         try {
             const pengaturanRef = doc(db, "pengaturan", "token_ujian");
             const docSnap = await getDoc(pengaturanRef);
             
-            // Nama field dinamis di database: token_informatika, token_tkj, dst.
             if (docSnap.exists() && docSnap.data()[`token_${mapel}`]) {
                 inputToken.value = docSnap.data()[`token_${mapel}`];
             } else {
@@ -396,24 +438,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Listener saat Guru mengganti mapel di dropdown
     if (selectMapelToken) {
         selectMapelToken.addEventListener('change', (e) => {
             const mapel = e.target.value;
             const textMapel = e.target.options[e.target.selectedIndex].text;
             
-            // Update UI
             labelMapelAktif.innerText = textMapel;
-            
-            // Muat token untuk mapel yang baru dipilih
             loadTokenByMapel(mapel);
         });
 
-        // Muat token awal saat halaman pertama kali dirender
         loadTokenByMapel(selectMapelToken.value);
     }
 
-    // Fungsi menyimpan token spesifik ke Firestore
     async function simpanTokenKeDatabase(tokenBaru, mapel) {
         try {
             const pengaturanRef = doc(db, "pengaturan", "token_ujian");
@@ -424,11 +460,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Gagal menyimpan token ke Firestore:", error);
             alert("Gagal menyinkronkan token ke database. Pastikan koneksi internet stabil.");
-            throw error; // Lempar error agar bisa ditangkap oleh catch di bawah
+            throw error; 
         }
     }
 
-    // Generate Token Baru
     btnResetToken?.addEventListener('click', async () => {
         const mapel = selectMapelToken.value;
         const textMapel = selectMapelToken.options[selectMapelToken.selectedIndex].text;
@@ -445,14 +480,11 @@ document.addEventListener('DOMContentLoaded', () => {
             btnResetToken.disabled = true;
 
             try {
-                // Simpan ke Firestore
                 await simpanTokenKeDatabase(newToken, mapel);
-                
-                // Perbarui UI
                 inputToken.value = newToken;
                 alert(`Token Baru untuk ${textMapel} berhasil dibuat: ` + newToken);
             } catch (error) {
-                // Error sudah ditangani di fungsi simpanTokenKeDatabase
+                // Error ditangani di catch simpanTokenKeDatabase
             } finally {
                 btnResetToken.innerHTML = originalText;
                 btnResetToken.disabled = false;
@@ -460,6 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Render Awal
     renderSiswa();
     renderSoal();
     renderHasil();
