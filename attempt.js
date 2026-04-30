@@ -1,61 +1,80 @@
 import { db, auth } from './firebase-config.js';
-import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { collection, getDocs, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 let questions = [], currentIdx = 0, userAnswers = [], doubtStatus = [];
 const KEY_ANS = 'cbt_jawaban_smaich', KEY_DOUBT = 'cbt_ragu_smaich';
 
 async function initUjian() {
-    // ==========================================
-    // SISTEM KEAMANAN TOKEN UJIAN
-    // ==========================================
-    const userToken = prompt("Masukkan Token Ujian (Diberikan oleh Pengawas):");
-    
-    // Sesuaikan dengan token yang Anda set di Dashboard Guru
-    if (userToken !== "SMAICH-26XQ") {
-        alert("Token Salah atau Tidak Valid! Anda akan dialihkan ke halaman login.");
-        window.location.href = "index.html";
-        return;
-    }
-
     const qContainer = document.getElementById('q-container');
-    qContainer.innerHTML = "<p style='text-align:center; padding:50px;'><i class='fas fa-spinner fa-spin'></i> Memuat Soal...</p>";
+    // Beri indikator loading saat mengecek token
+    qContainer.innerHTML = "<p style='text-align:center; padding:50px;'><i class='fas fa-spinner fa-spin'></i> Memvalidasi Sistem...</p>";
 
     try {
-        const snapshot = await getDocs(collection(db, "bank_soal"));
-        if (snapshot.empty) {
-            qContainer.innerHTML = "<p style='text-align:center;'>Belum ada soal tersedia di database.</p>";
+        // ==========================================
+        // SISTEM KEAMANAN TOKEN UJIAN (DINAMIS)
+        // ==========================================
+        
+        // 1. Ambil token aktif dari Firestore
+        // Asumsi: Token disimpan pada koleksi 'pengaturan', dokumen 'token_ujian'
+        const pengaturanRef = doc(db, "pengaturan", "token_ujian");
+        const pengaturanSnap = await getDoc(pengaturanRef);
+        
+        let tokenAktif = "SMAICH-26XQ"; // Fallback ke token lama jika database gagal dibaca
+        
+        if (pengaturanSnap.exists() && pengaturanSnap.data().token_aktif) {
+            tokenAktif = pengaturanSnap.data().token_aktif;
+        } else {
+            console.warn("Data token tidak ditemukan di database. Menggunakan token default.");
+        }
+
+        // 2. Minta input dari siswa
+        const userToken = prompt("Masukkan Token Ujian (Diberikan oleh Pengawas):");
+        
+        // 3. Validasi token
+        if (userToken !== tokenAktif) {
+            alert("Token Salah atau Tidak Valid! Anda akan dialihkan ke halaman login.");
+            window.location.href = "index.html";
             return;
         }
 
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            
-            // Gabungkan field opsi_a s/d opsi_e menjadi satu Array
-            // .filter(Boolean) berfungsi untuk membuang opsi yang kosong
-            const pilihanArray = [d.opsi_a, d.opsi_b, d.opsi_c, d.opsi_d, d.opsi_e].filter(Boolean);
+        // Jika token benar, ubah loading ke mode memuat soal
+        qContainer.innerHTML = "<p style='text-align:center; padding:50px;'><i class='fas fa-spinner fa-spin'></i> Memuat Soal...</p>";
 
-            questions.push({ 
-                id: doc.id, 
-                teks: d.teks_soal, 
-                pilihan: pilihanArray, 
-                kunci: d.kunci_jawaban 
-            });
-        });
+        // ==========================================
+        // LANJUT MEMUAT BANK SOAL
+        // ==========================================
+        const snapshot = await getDocs(collection(db, "bank_soal"));[cite: 2]
+        if (snapshot.empty) {[cite: 2]
+            qContainer.innerHTML = "<p style='text-align:center;'>Belum ada soal tersedia di database.</p>";[cite: 2]
+            return;[cite: 2]
+        }[cite: 2]
 
-        // Load saved progress
-        const savedAns = localStorage.getItem(KEY_ANS);
-        const savedDoubt = localStorage.getItem(KEY_DOUBT);
-        userAnswers = savedAns ? JSON.parse(savedAns) : new Array(questions.length).fill(null);
-        doubtStatus = savedDoubt ? JSON.parse(savedDoubt) : new Array(questions.length).fill(false);
+        snapshot.forEach(doc => {[cite: 2]
+            const d = doc.data();[cite: 2]
+            const pilihanArray = [d.opsi_a, d.opsi_b, d.opsi_c, d.opsi_d, d.opsi_e].filter(Boolean);[cite: 2]
 
-        buildGrid();
-        renderSoal(0);
-        startTimer(120 * 60); // 120 Menit
+            questions.push({  [cite: 2]
+                id: doc.id, [cite: 2]
+                teks: d.teks_soal, [cite: 2]
+                pilihan: pilihanArray, [cite: 2]
+                kunci: d.kunci_jawaban [cite: 2]
+            });[cite: 2]
+        });[cite: 2]
 
-    } catch (error) {
-        console.error("Error loading soal:", error);
-        qContainer.innerHTML = `<p style='text-align:center; color:red;'>Gagal memuat soal. Periksa koneksi atau rules Firestore.</p>`;
-    }
+        // Load saved progress[cite: 2]
+        const savedAns = localStorage.getItem(KEY_ANS);[cite: 2]
+        const savedDoubt = localStorage.getItem(KEY_DOUBT);[cite: 2]
+        userAnswers = savedAns ? JSON.parse(savedAns) : new Array(questions.length).fill(null);[cite: 2]
+        doubtStatus = savedDoubt ? JSON.parse(savedDoubt) : new Array(questions.length).fill(false);[cite: 2]
+
+        buildGrid();[cite: 2]
+        renderSoal(0);[cite: 2]
+        startTimer(120 * 60); // 120 Menit[cite: 2]
+
+    } catch (error) {[cite: 2]
+        console.error("Error loading soal atau validasi token:", error);[cite: 2]
+        qContainer.innerHTML = `<p style='text-align:center; color:red;'>Gagal memuat ujian. Periksa koneksi atau rules Firestore.</p>`;[cite: 2]
+    }[cite: 2]
 }
 
 function renderSoal(idx) {
