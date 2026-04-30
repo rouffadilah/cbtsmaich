@@ -173,14 +173,31 @@
 
                 <div id="section-pengaturan" class="content-section">
                     <div class="card">
-                        <h2 class="section-title">Pengaturan Sistem</h2>
-                        <div style="margin-bottom: 20px;">
-                            <label style="font-weight: 600; display: block; margin-bottom: 5px;">Token Ujian Saat Ini:</label>
+                        <h2 class="section-title">Pengaturan Token Ujian</h2>
+        
+                        <div style="margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            
+                            <div class="input-group" style="max-width: 400px; margin-bottom: 20px;">
+                                <label style="font-weight: 600; color: var(--secondary);"><i class="fas fa-book"></i> Pilih Mata Pelajaran:</label>
+                                <select id="select-mapel-token" class="input-text" style="font-weight: bold;">
+                                    <!-- Pastikan value sama dengan di attempt.html -->
+                                    <option value="informatika">Informatika</option>
+                                    <option value="tkj">Teknik Komputer dan Jaringan (TKJ)</option>
+                                    <option value="coding-ai">Coding & Artificial Intelligence</option>
+                                </select>
+                            </div>
+
+                            <label style="font-weight: 600; display: block; margin-bottom: 8px;">
+                                Token Ujian Saat Ini (<span id="label-mapel-aktif" style="color: var(--primary);">Informatika</span>):
+                            </label>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <input type="text" id="input-token" class="input-text" value="SMAICH-26XQ" readonly style="width: 200px; font-weight: bold; color: var(--primary);">
+                                <input type="text" id="input-token" class="input-text" placeholder="Memuat token..." readonly style="width: 250px; font-weight: bold; color: var(--primary); background: white;">
                                 <button id="btn-reset-token" class="btn-3d btn-secondary" style="width: auto;"><i class="fas fa-sync"></i> Generate Token Baru</button>
                             </div>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Berikan token ini kepada siswa saat ujian akan dimulai.</p>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+                                Berikan token ini HANYA kepada siswa yang akan ujian mapel di atas.
+                            </p>
+            
                         </div>
                     </div>
                 </div>
