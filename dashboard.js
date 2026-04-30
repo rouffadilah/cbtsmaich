@@ -1,11 +1,12 @@
 import { auth, db } from './firebase-config.js';
 import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// Tambahkan 'doc' dan 'setDoc' untuk sinkronisasi token dengan database
+import { collection, addDoc, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     
     // ==========================================
-    // 1. Inisialisasi Data (Simulasi Database via LocalStorage)
+    // 1. INISIALISASI DATA 
     // ==========================================
     let dataSiswa = JSON.parse(localStorage.getItem('cbt_siswa')) || [];
     let dataSoal = JSON.parse(localStorage.getItem('cbt_soal')) || [];
@@ -197,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (jenis === 'pg-kompleks') {
             areaPGKompleks.style.display = 'block';
             document.querySelectorAll('.opsi-pgk-teks').forEach(el => el.required = true);
-            // Checkbox tidak diset required via HTML agar bisa divalidasi manual di JS
         }
         else if (jenis === 'benar-salah') {
             areaBenarSalah.style.display = 'block';
@@ -214,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Hapus duplikasi event listener submit soal. Kita cukup gunakan satu ini saja.
     document.getElementById('form-tambah-soal')?.addEventListener('submit', (e) => {
         e.preventDefault();
         
@@ -241,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (jenis === 'pg-kompleks') {
             const kunciTerpilih = Array.from(document.querySelectorAll('input[name="kunci_pgk"]:checked')).map(cb => cb.value);
             if(kunciTerpilih.length === 0) return alert("Pilih minimal 1 kunci jawaban untuk PG Kompleks!");
-            kunci = kunciTerpilih.join(", "); // Contoh output: "A, C, D"
+            kunci = kunciTerpilih.join(", "); 
         }
         else if (jenis === 'benar-salah') {
             const kunciTerpilih = document.querySelector('input[name="kunci_bs"]:checked');
@@ -265,33 +266,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // FUNGSI DOWNLOAD TEMPLATE (EXCEL & WORD)
     // ==========================================
-
-    // Download Template Excel (Format CSV)
     document.getElementById('btn-template-excel')?.addEventListener('click', () => {
-        // Struktur Kolom dengan tambahan "Wacana/Stimulus"
         const csvData = [
             ["No", "Jenis Soal", "Wacana/Stimulus", "Pertanyaan", "Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E", "Kunci Jawaban"],
-            // 1. Contoh Soal PG Biasa
             [1, "pg", "", "Manakah dari berikut ini yang merupakan protokol layer Transport pada model OSI?", "HTTP", "TCP", "IP", "MAC", "FTP", "B"],
-            
-            // 2. Contoh Soal PG Kompleks (Kunci lebih dari satu, dipisah koma)
             [2, "pg-kompleks", "", "Pilihlah tag HTML yang sering digunakan dalam pembuatan struktur dasar form CBT web!", "<form>", "<table>", "<input>", "<button>", "<img>", "A, C, D"],
-            
-            // 3. Contoh Soal Benar-Salah
             [3, "benar-salah", "", "Python adalah bahasa pemrograman yang membutuhkan kompilasi penuh sebelum dijalankan (compiled language).", "Benar", "Salah", "", "", "", "Salah"],
-            
-            // 4. Contoh Soal Stimulus (Memiliki Teks Wacana)
             [4, "stimulus", "Di laboratorium komputer sekolah, terdapat 30 PC siswa dan 1 PC guru yang dihubungkan ke sebuah switch terpusat. Guru ingin memantau layar siswa secara realtime.", "Berdasarkan wacana di atas, topologi jaringan apa yang sedang digunakan secara fisik di laboratorium tersebut?", "Star", "Ring", "Bus", "Mesh", "Tree", "A"],
-            
-            // 5. Contoh Soal Uraian
             [5, "uraian-singkat", "", "Tuliskan fungsi dari perintah 'ping' dalam troubleshooting jaringan OS MikroTik!", "", "", "", "", "", "Untuk menguji konektivitas jaringan antar perangkat"],
             [6, "uraian-panjang", "", "Jelaskan perbedaan mendasar antara IPv4 dan IPv6 dari segi kapasitas dan format penulisan!", "", "", "", "", "", "Siswa menjelaskan format 32-bit vs 128-bit dan desimal vs heksadesimal"]
         ];
 
-        // Konversi array ke format CSV yang valid
         let csvContent = csvData.map(e => e.map(item => `"${item}"`).join(",")).join("\n");
-        
-        // Buat file Blob dan unduh
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -302,9 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(link);
     });
 
-    // Download Template Word (Format .doc)
     document.getElementById('btn-template-word')?.addEventListener('click', () => {
-        // Struktur HTML yang akan dikenali oleh MS Word
         const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Template Soal CBT</title></head><body style='font-family: Arial, sans-serif;'>";
         const content = `
             <h2 style="text-align: center;">TEMPLATE IMPORT SOAL CBT - SMA ISLAM CIKAL HARAPAN 1</h2>
@@ -313,7 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
             - Hapus teks contoh dan ganti dengan soal Anda.<br>
             - Jangan ubah label seperti <b>[NO]</b>, <b>[JENIS_SOAL]</b>, <b>[WACANA]</b>, <b>[SOAL]</b>, dan <b>[KUNCI]</b> agar sistem bisa membacanya.</p>
             <hr>
-            
             <p><b>[NO]</b> 1</p>
             <p><b>[JENIS_SOAL]</b> pg</p>
             <p><b>[SOAL]</b> Dalam pemrograman Python, struktur data apa yang tidak dapat diubah (immutable) setelah dideklarasikan?</p>
@@ -323,45 +306,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <p><b>[D]</b> Set</p>
             <p><b>[E]</b> Array</p>
             <p><b>[KUNCI]</b> C</p>
-            <br>
-
-            <p><b>[NO]</b> 2</p>
-            <p><b>[JENIS_SOAL]</b> pg-kompleks</p>
-            <p><b>[SOAL]</b> Manakah dari perangkat berikut yang bekerja pada layer Data Link pada model OSI? (Pilih lebih dari 1)</p>
-            <p><b>[A]</b> Hub</p>
-            <p><b>[B]</b> Switch</p>
-            <p><b>[C]</b> Router</p>
-            <p><b>[D]</b> Bridge</p>
-            <p><b>[E]</b> Repeater</p>
-            <p><b>[KUNCI]</b> B, D</p>
-            <br>
-            
-            <p><b>[NO]</b> 3</p>
-            <p><b>[JENIS_SOAL]</b> benar-salah</p>
-            <p><b>[SOAL]</b> IP Address 192.168.1.1 dengan prefix /24 memiliki subnet mask 255.255.255.0.</p>
-            <p><b>[KUNCI]</b> Benar</p>
-            <br>
-
-            <p><b>[NO]</b> 4</p>
-            <p><b>[JENIS_SOAL]</b> stimulus</p>
-            <p><b>[WACANA]</b> Pak Guru mengeluhkan jaringan internet di ruang guru sering lambat saat jam istirahat. Setelah dicek, ternyata banyak perangkat asing yang terhubung ke WiFi ruang guru karena password tersebar.</p>
-            <p><b>[SOAL]</b> Fitur keamanan apa pada Access Point yang paling efektif diterapkan untuk memastikan hanya laptop guru yang bisa terkoneksi ke WiFi tersebut?</p>
-            <p><b>[A]</b> WPA2-PSK</p>
-            <p><b>[B]</b> MAC Address Filtering</p>
-            <p><b>[C]</b> Hide SSID</p>
-            <p><b>[D]</b> DHCP Reservation</p>
-            <p><b>[E]</b> Captive Portal</p>
-            <p><b>[KUNCI]</b> B</p>
-            <br>
-
-            <p><b>[NO]</b> 5</p>
-            <p><b>[JENIS_SOAL]</b> uraian-panjang</p>
-            <p><b>[SOAL]</b> Buatlah deskripsi singkat rancangan algoritma chatbot sederhana menggunakan Python!</p>
-            <p><b>[KUNCI]</b> [Rubrik: Siswa menyebutkan input user, percabangan if-else/NLP dasar, dan respons output]</p>
         `;
         const footer = "</body></html>";
         
-        // Buat file Blob dan unduh
         const sourceHTML = header + content + footer;
         const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
         const url = URL.createObjectURL(blob);
@@ -371,39 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    });
-    
-    document.getElementById('form-tambah-soal')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const jenis = selectJenisSoal.value;
-        const pertanyaan = document.getElementById('input-pertanyaan').value;
-        const mediaFile = document.getElementById('media-soal').files[0];
-        
-        let kunci = "";
-        let detailSoal = `[${jenis.toUpperCase()}] ` + pertanyaan;
-
-        // Simulasi penamaan file lampiran jika ada
-        if(mediaFile) detailSoal += ` <br><small style='color:blue;'>(Berisi Lampiran: ${mediaFile.name})</small>`;
-
-        if(jenis === 'pg') {
-            const kunciTerpilih = document.querySelector('input[name="kunci_pg"]:checked');
-            kunci = kunciTerpilih ? kunciTerpilih.value : "-";
-        } else {
-            const kunciUraian = document.getElementById('input-kunci-uraian').value;
-            kunci = kunciUraian ? "Rubrik Tersimpan" : "Menunggu Review Manual";
-        }
-
-        // Catatan: Di sistem sungguhan, upload 'mediaFile' ke Firebase Storage di sini,
-        // lalu simpan URL-nya ke Firestore.
-
-        dataSoal.push({ pertanyaan: detailSoal, kunci });
-        localStorage.setItem('cbt_soal', JSON.stringify(dataSoal));
-        
-        e.target.reset();
-        document.getElementById('nama-file-soal').innerText = "";
-        modalSoal.style.display = 'none';
-        renderSoal();
     });
 
     // Hapus Soal
@@ -448,25 +362,57 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
     }
 
-    // Cetak PDF menggunakan window.print bawaan browser
     document.getElementById('btn-print-pdf')?.addEventListener('click', () => {
         window.print();
     });
 
 
     // ==========================================
-    // 6. PENGATURAN: RESET TOKEN
+    // 6. PENGATURAN: RESET TOKEN (DIINTEGRASIKAN DENGAN FIRESTORE)
     // ==========================================
-    document.getElementById('btn-reset-token')?.addEventListener('click', () => {
+    
+    // Fungsi baru untuk sinkronisasi token ke database Firestore
+    async function simpanTokenKeDatabase(tokenBaru) {
+        try {
+            const pengaturanRef = doc(db, "pengaturan", "token_ujian");
+            await setDoc(pengaturanRef, {
+                token_aktif: tokenBaru,
+                diupdate_pada: serverTimestamp() // Menggunakan timestamp server Firestore
+            }, { merge: true });
+            console.log("Token berhasil disinkronisasi ke Firestore.");
+        } catch (error) {
+            console.error("Gagal menyimpan token ke Firestore:", error);
+            alert("Gagal menyinkronkan token ke database. Pastikan koneksi internet stabil.");
+        }
+    }
+
+    document.getElementById('btn-reset-token')?.addEventListener('click', async () => {
         if(confirm('Generate token baru? Token lama tidak akan berlaku lagi.')) {
+            // Generate token acak
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let newToken = 'SMAICH-';
             for(let i = 0; i < 4; i++) {
                 newToken += chars.charAt(Math.floor(Math.random() * chars.length));
             }
+            
+            // Ubah UI
+            const btnToken = document.getElementById('btn-reset-token');
+            const originalText = btnToken.innerHTML;
+            btnToken.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Memproses...`;
+            btnToken.disabled = true;
+
+            // Simpan ke LocalStorage (sebagai backup)
             document.getElementById('input-token').value = newToken;
             localStorage.setItem('cbt_token', newToken);
-            alert('Token Baru berhasil digenerate: ' + newToken);
+            
+            // Simpan ke Firestore
+            await simpanTokenKeDatabase(newToken);
+            
+            // Kembalikan UI
+            btnToken.innerHTML = originalText;
+            btnToken.disabled = false;
+            
+            alert('Token Baru berhasil digenerate dan diaktifkan: ' + newToken);
         }
     });
 
