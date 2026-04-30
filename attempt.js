@@ -12,7 +12,7 @@ const KEY_ANS = 'cbt_jawaban_smaich';
 const KEY_DOUBT = 'cbt_ragu_smaich';
 
 // ==========================================
-// 1. LOGIKA VALIDASI TOKEN & MAPEL
+// 1. LOGIKA VALIDASI TOKEN BERDASARKAN MAPEL
 // ==========================================
 const preExamSection = document.getElementById('pre-exam-section');
 const mainExamLayout = document.getElementById('main-exam-layout');
@@ -39,20 +39,27 @@ btnVerifikasi.addEventListener('click', async () => {
     tokenError.style.display = 'none';
 
     try {
-        // Ambil token dari Firestore
+        // Ambil data pengaturan token dari Firestore
         const pengaturanRef = doc(db, "pengaturan", "token_ujian");
         const pengaturanSnap = await getDoc(pengaturanRef);
         
-        let tokenAktif = "SMAICH-26XQ"; // Default fallback
+        let tokenAktif = null;
         
-        if (pengaturanSnap.exists() && pengaturanSnap.data().token_aktif) {
-            tokenAktif = pengaturanSnap.data().token_aktif;
-        } else {
-            // Fallback ke LocalStorage jika di database belum ada dokumennya
-            const localToken = localStorage.getItem('cbt_token');
-            if(localToken) tokenAktif = localToken;
+        // Cek token di database spesifik untuk mapel yang dipilih siswa
+        if (pengaturanSnap.exists() && pengaturanSnap.data()[`token_${selectMapel}`]) {
+            tokenAktif = pengaturanSnap.data()[`token_${selectMapel}`];
         }
 
+        // Jika Guru belum pernah generate token untuk mapel ini
+        if (!tokenAktif) {
+            tokenError.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Token untuk mata pelajaran ini belum diaktifkan oleh pengawas!';
+            tokenError.style.display = 'block';
+            btnVerifikasi.innerHTML = originalText;
+            btnVerifikasi.disabled = false;
+            return;
+        }
+
+        // Jika token tidak cocok
         if (inputToken !== tokenAktif) {
             tokenError.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Token tidak valid atau salah!';
             tokenError.style.display = 'block';
@@ -70,7 +77,6 @@ btnVerifikasi.addEventListener('click', async () => {
 
     } catch (error) {
         console.error("Error Detail validasi token:", error);
-        // Tampilkan pesan error ASLI dari Firebase agar mudah didebug
         alert("Gagal memvalidasi token. Pesan Error: " + error.message);
         btnVerifikasi.innerHTML = originalText;
         btnVerifikasi.disabled = false;
@@ -120,7 +126,6 @@ async function initUjian() {
 
     } catch (error) {
         console.error("Error Detail loading soal:", error);
-        // Tampilkan pesan error spesifik jika gagal memuat bank soal
         qContainer.innerHTML = `<div style='text-align:center; padding:30px;'><i class='fas fa-times-circle fa-3x' style='color:red;'></i><p style='color:red; margin-top:15px;'>Gagal memuat bank soal.<br><small>${error.message}</small></p></div>`;
     }
 }
