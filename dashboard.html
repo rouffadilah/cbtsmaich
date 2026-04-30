@@ -153,19 +153,28 @@
                     <div class="card" id="area-cetak-hasil">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                             <h2 class="section-title" style="margin: 0;">Hasil Ujian Siswa</h2>
-                            <button id="btn-print-pdf" class="btn-3d" style="width: auto;"><i class="fas fa-print"></i> Cetak PDF</button>
+            
+                            <!-- Tambahan Tombol Export Excel di sini -->
+                            <div style="display: flex; gap: 10px;">
+                                <button id="btn-print-excel" class="btn-3d" style="width: auto; background-color: #107c41; box-shadow: var(--shadow-sm);"><i class="fas fa-file-excel"></i> Export Excel</button>
+                                <button id="btn-print-pdf" class="btn-3d btn-secondary" style="width: auto;"><i class="fas fa-print"></i> Cetak PDF</button>
+                            </div>
                         </div>
+        
                         <div class="table-container">
                             <table id="table-hasil">
                                 <thead>
                                     <tr>
                                         <th>Nama Siswa</th>
+                                        <th>Kelas</th>
+                                        <th>Mata Pelajaran</th>
                                         <th>Nilai</th>
                                         <th>Waktu Submit</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    </tbody>
+                                    <!-- Data akan dirender dari JS -->
+                                </tbody>
                             </table>
                         </div>
                     </div>
