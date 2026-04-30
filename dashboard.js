@@ -1,7 +1,34 @@
 import { auth, db } from './firebase-config.js';
 import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-// Tambahkan 'doc' dan 'setDoc' untuk sinkronisasi token dengan database
 import { collection, addDoc, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// ==========================================
+// 0. AUTENTIKASI & KEAMANAN DASHBOARD
+// ==========================================
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // Ambil nama lengkap dari profil (atau email jika kosong)
+        const fullName = user.displayName || user.email.split('@')[0] || "Guru";
+        
+        // Ambil nama panggilan (kata pertama dari nama lengkap)
+        const firstName = fullName.split(' ')[0];
+
+        // 1. Update nama di Header Kanan Atas
+        const adminNameEl = document.getElementById('admin-name');
+        if (adminNameEl) {
+            adminNameEl.innerText = fullName;
+        }
+
+        // 2. Update ucapan di Banner Beranda
+        const greetingEl = document.querySelector('.welcome-banner h2');
+        if (greetingEl) {
+            greetingEl.innerHTML = `Assalamu'alaikum, ${firstName}! 👋`;
+        }
+    } else {
+        // Jika tidak ada sesi login, kembalikan ke halaman login
+        window.location.href = "index.html";
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -50,11 +77,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000);
 
-    // Logout
+    // Logout dengan mematikan sesi Firebase
     document.getElementById('btn-logout')?.addEventListener('click', () => {
-        if(confirm('Keluar dari panel?')) window.location.href = 'index.html'; 
-    });
+        if(confirm('Apakah Anda yakin ingin keluar dari panel?')) {
+            // Ubah tombol jadi loading saat proses logout
+            const btnLogout = document.getElementById('btn-logout');
+            btnLogout.innerHTML = '<i class="fas fa-spinner fa-spin"></i> KELUAR...';
+            btnLogout.disabled = true;
 
+            signOut(auth).then(() => {
+                localStorage.removeItem("userRole"); // Hapus otorisasi lokal
+                window.location.href = 'index.html'; 
+            }).catch((error) => {
+                alert('Gagal keluar dari sesi: ' + error.message);
+                btnLogout.innerHTML = '<i class="fas fa-sign-out-alt"></i> KELUAR';
+                btnLogout.disabled = false;
+            });
+        }
+    });
 
     // ==========================================
     // 3. FITUR: DATA SISWA
@@ -122,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
     // ==========================================
     // 4. FITUR: BANK SOAL
     // ==========================================
@@ -178,18 +217,15 @@ document.addEventListener('DOMContentLoaded', () => {
     selectJenisSoal?.addEventListener('change', function() {
         const jenis = this.value;
         
-        // Sembunyikan semua area terlebih dahulu
         areaPG.style.display = 'none';
         areaPGKompleks.style.display = 'none';
         areaBenarSalah.style.display = 'none';
         areaUraian.style.display = 'none';
         areaStimulus.style.display = 'none';
 
-        // Reset atribut required
         document.querySelectorAll('.opsi-pg-teks, .opsi-pgk-teks').forEach(el => el.required = false);
         document.querySelectorAll('input[name="kunci_pg"], input[name="kunci_bs"]').forEach(el => el.required = false);
 
-        // Tampilkan area sesuai jenis yang dipilih
         if(jenis === 'pg') {
             areaPG.style.display = 'block';
             document.querySelectorAll('.opsi-pg-teks').forEach(el => el.required = true);
@@ -205,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         else if (jenis === 'stimulus') {
             areaStimulus.style.display = 'block';
-            areaPG.style.display = 'block'; // Asumsi default soal turunan stimulus adalah PG
+            areaPG.style.display = 'block'; 
             document.querySelectorAll('.opsi-pg-teks').forEach(el => el.required = true);
             document.querySelectorAll('input[name="kunci_pg"]').forEach(el => el.required = true);
         }
@@ -214,7 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Hapus duplikasi event listener submit soal. Kita cukup gunakan satu ini saja.
     document.getElementById('form-tambah-soal')?.addEventListener('submit', (e) => {
         e.preventDefault();
         
@@ -224,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let kunci = "";
         
-        // Jika soal stimulus, gabungkan wacana ke dalam teks soal
         if (jenis === 'stimulus') {
             const wacana = document.getElementById('input-wacana').value;
             pertanyaan = `<div style="background:#f1f5f9; padding:15px; margin-bottom:15px; border-radius:8px;"><strong>Wacana:</strong><br>${wacana}</div>${pertanyaan}`;
@@ -234,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if(mediaFile) detailSoal += ` <br><small style='color:blue;'>(Berisi Lampiran: ${mediaFile.name})</small>`;
 
-        // Ambil kunci jawaban berdasarkan jenis
         if(jenis === 'pg' || jenis === 'stimulus') {
             const kunciTerpilih = document.querySelector('input[name="kunci_pg"]:checked');
             kunci = kunciTerpilih ? kunciTerpilih.value : "-";
@@ -262,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSoal();
     });
 
-   
     // ==========================================
     // FUNGSI DOWNLOAD TEMPLATE (EXCEL & WORD)
     // ==========================================
@@ -338,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Soal berhasil diterbitkan! Siswa sekarang dapat mengaksesnya.');
     });
 
-
     // ==========================================
     // 5. FITUR: HASIL UJIAN & CETAK PDF
     // ==========================================
@@ -366,18 +397,15 @@ document.addEventListener('DOMContentLoaded', () => {
         window.print();
     });
 
-
     // ==========================================
     // 6. PENGATURAN: RESET TOKEN (DIINTEGRASIKAN DENGAN FIRESTORE)
     // ==========================================
-    
-    // Fungsi baru untuk sinkronisasi token ke database Firestore
     async function simpanTokenKeDatabase(tokenBaru) {
         try {
             const pengaturanRef = doc(db, "pengaturan", "token_ujian");
             await setDoc(pengaturanRef, {
                 token_aktif: tokenBaru,
-                diupdate_pada: serverTimestamp() // Menggunakan timestamp server Firestore
+                diupdate_pada: serverTimestamp() 
             }, { merge: true });
             console.log("Token berhasil disinkronisasi ke Firestore.");
         } catch (error) {
@@ -388,27 +416,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-reset-token')?.addEventListener('click', async () => {
         if(confirm('Generate token baru? Token lama tidak akan berlaku lagi.')) {
-            // Generate token acak
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let newToken = 'SMAICH-';
             for(let i = 0; i < 4; i++) {
                 newToken += chars.charAt(Math.floor(Math.random() * chars.length));
             }
             
-            // Ubah UI
             const btnToken = document.getElementById('btn-reset-token');
             const originalText = btnToken.innerHTML;
             btnToken.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Memproses...`;
             btnToken.disabled = true;
 
-            // Simpan ke LocalStorage (sebagai backup)
             document.getElementById('input-token').value = newToken;
             localStorage.setItem('cbt_token', newToken);
             
-            // Simpan ke Firestore
             await simpanTokenKeDatabase(newToken);
             
-            // Kembalikan UI
             btnToken.innerHTML = originalText;
             btnToken.disabled = false;
             
