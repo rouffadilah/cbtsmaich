@@ -25,8 +25,37 @@
             <i class="fas fa-user-circle fa-2x" style="color: var(--primary);"></i>
         </div>
     </header>
+    <!-- TAMBAHKAN: Bagian Persiapan Ujian (Pilih Mapel & Token) -->
+    <section id="pre-exam-section" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+        <div class="card" style="width: 100%; max-width: 450px; padding: 40px; text-align: center;">
+            <i class="fas fa-laptop-code fa-3x" style="color: var(--primary); margin-bottom: 20px;"></i>
+            <h2 style="margin-bottom: 5px; color: var(--secondary);">Persiapan Ujian</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;">Pilih mata pelajaran dan masukkan token dari pengawas.</p>
 
-    <main class="exam-layout">
+            <div class="input-group" style="text-align: left;">
+                <label>Mata Pelajaran</label>
+                <select id="select-mapel" class="input-text">
+                    <option value="" disabled selected>-- Pilih Mata Pelajaran --</option>
+                    <!-- Opsi disesuaikan dengan mapel yang biasa diujikan -->
+                    <option value="informatika">Informatika</option>
+                    <option value="tkj">Teknik Komputer dan Jaringan (TKJ)</option>
+                    <option value="coding-ai">Coding & Artificial Intelligence</option>
+                </select>
+            </div>
+
+            <div class="input-group" style="text-align: left;">
+                <label>Token Ujian</label>
+                <input type="text" id="input-token" class="input-text" placeholder="Contoh: SMAICH-XXXX" style="text-transform: uppercase;">
+            </div>
+
+            <div id="token-error" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 15px; display: none; font-weight: 600;">
+                <i class="fas fa-exclamation-triangle"></i> Token tidak valid atau salah!
+            </div>
+
+            <button id="btn-verifikasi" class="btn-3d" style="width: 100%;"><i class="fas fa-key"></i> VERIFIKASI & MULAI</button>
+        </div>
+    </section>
+    <main class="exam-layout" id="main-exam-layout" style="display: none;">
         <section class="question-section">
             <div class="card question-card">
                 <div class="question-header">
