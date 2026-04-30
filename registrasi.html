@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrasi - CBT SMA ICH</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="login-page-bg">
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo">
+                <h2 id="reg-title">REGISTRASI SISWA</h2> 
+                <p>SMA ISLAM CIKAL HARAPAN I BSD</p>
+            </div>
+
+            <div class="role-selection-container">
+                <div class="role-box active" id="select-siswa">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>SISWA</span>
+                </div>
+                <div class="role-box" id="select-guru">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>GURU</span>
+                </div>
+            </div>
+
+            <form id="register-form">
+                <input type="hidden" id="reg-role" value="siswa">
+
+                <div class="input-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="reg-name" class="input-text" placeholder="Masukkan nama lengkap" required>
+                </div>
+
+                <div class="input-group">
+                    <label id="username-label">Nomor Peserta / NIS</label>
+                    <input type="text" id="reg-username" class="input-text" placeholder="Gunakan sebagai Username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" class="input-text" placeholder="Minimal 6 karakter" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Konfirmasi Password</label>
+                    <input type="password" id="reg-confirm-password" class="input-text" placeholder="Ketik ulang password" required>
+                </div>
+
+                <button type="submit" class="btn-3d" id="btn-submit">DAFTAR SEKARANG</button>
+                
+                <div style="margin-top: 20px; font-size: 0.9rem;">
+                    Sudah punya akun? <a href="index.html">Masuk di sini</a>
+                </div>
+            </form>
+            
+            <div class="login-footer">
+                &copy; 2026 IT Support SMAICH. All rights reserved.
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="registrasi.js"></script>
+</body>
+</html>
