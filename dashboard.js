@@ -27,18 +27,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     let dataSiswa = JSON.parse(localStorage.getItem('cbt_siswa')) || [];
     let dataSoal = JSON.parse(localStorage.getItem('cbt_soal')) || [];
-    
-    // UPDATE: Penambahan struktur kelas dan mapel pada data hasil ujian
     let dataHasil = JSON.parse(localStorage.getItem('cbt_hasil')) || [
-        { nama: 'Ahmad Fauzi', kelas: 'XII TKJ 1', mapel: 'Informatika', nilai: 88, waktu: '24 Apr 2026, 10:15' },
-        { nama: 'Siti Nurhaliza', kelas: 'XII AKL 2', mapel: 'Informatika', nilai: 95, waktu: '24 Apr 2026, 10:30' },
-        { nama: 'Budi Santoso', kelas: 'XI RPL 1', mapel: 'Coding & AI', nilai: 78, waktu: '24 Apr 2026, 11:05' }
+        { nama: 'Ahmad Fauzi', kelas: 'XII TKJ 1', mapel: 'Informatika', benar: 44, salah: 6, totalSoal: 50, nilai: 88, waktu: '24 Apr 2026, 10:15' },
+        { nama: 'Siti Nurhaliza', kelas: 'XII AKL 2', mapel: 'Informatika', benar: 47, salah: 3, totalSoal: 50, nilai: 94, waktu: '24 Apr 2026, 10:30' },
+        { nama: 'Budi Santoso', kelas: 'XI RPL 1', mapel: 'Coding & AI', benar: 39, salah: 11, totalSoal: 50, nilai: 78, waktu: '24 Apr 2026, 11:05' }
     ];
+
+    // Mengambil hasil yang sudah difilter sesuai mapel yang diampu guru
+    function getFilteredHasil() {
+        const mapelGuru = localStorage.getItem('cbt_guru_mapel') || 'semua';
+        if (mapelGuru === 'semua') return dataHasil;
+        return dataHasil.filter(hasil => hasil.mapel === mapelGuru);
+    }
 
     function updateStats() {
         document.getElementById('stat-siswa').innerText = dataSiswa.length;
         document.getElementById('stat-soal').innerText = dataSoal.length;
-        document.getElementById('stat-ujian').innerText = dataHasil.length;
+        
+        // Ubah stat ujian agar mencerminkan jumlah siswa pada mapel si Guru tersebut
+        const filteredHasil = getFilteredHasil();
+        document.getElementById('stat-ujian').innerText = filteredHasil.length;
     }
 
     // ==========================================
@@ -278,11 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const csvData = [
             ["No", "Jenis Soal", "Wacana/Stimulus", "Pertanyaan", "Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E", "Kunci Jawaban"],
             [1, "pg", "", "Manakah dari berikut ini yang merupakan protokol layer Transport pada model OSI?", "HTTP", "TCP", "IP", "MAC", "FTP", "B"],
-            [2, "pg-kompleks", "", "Pilihlah tag HTML yang sering digunakan dalam pembuatan struktur dasar form CBT web!", "<form>", "<table>", "<input>", "<button>", "<img>", "A, C, D"],
-            [3, "benar-salah", "", "Python adalah bahasa pemrograman yang membutuhkan kompilasi penuh sebelum dijalankan (compiled language).", "Benar", "Salah", "", "", "", "Salah"],
-            [4, "stimulus", "Di laboratorium komputer sekolah, terdapat 30 PC siswa dan 1 PC guru yang dihubungkan ke sebuah switch terpusat. Guru ingin memantau layar siswa secara realtime.", "Berdasarkan wacana di atas, topologi jaringan apa yang sedang digunakan secara fisik di laboratorium tersebut?", "Star", "Ring", "Bus", "Mesh", "Tree", "A"],
-            [5, "uraian-singkat", "", "Tuliskan fungsi dari perintah 'ping' dalam troubleshooting jaringan OS MikroTik!", "", "", "", "", "", "Untuk menguji konektivitas jaringan antar perangkat"],
-            [6, "uraian-panjang", "", "Jelaskan perbedaan mendasar antara IPv4 dan IPv6 dari segi kapasitas dan format penulisan!", "", "", "", "", "", "Siswa menjelaskan format 32-bit vs 128-bit dan desimal vs heksadesimal"]
+            [2, "pg-kompleks", "", "Pilihlah tag HTML yang sering digunakan dalam pembuatan struktur dasar form CBT web!", "<form>", "<table>", "<input>", "<button>", "<img>", "A, C, D"]
         ];
 
         let csvContent = csvData.map(e => e.map(item => `"${item}"`).join(",")).join("\n");
@@ -291,38 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const link = document.createElement("a");
         link.href = url;
         link.setAttribute("download", "Template_Soal_CBT_SMAICH.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    });
-
-    document.getElementById('btn-template-word')?.addEventListener('click', () => {
-        const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Template Soal CBT</title></head><body style='font-family: Arial, sans-serif;'>";
-        const content = `
-            <h2 style="text-align: center;">TEMPLATE IMPORT SOAL CBT - SMA ISLAM CIKAL HARAPAN 1</h2>
-            <p><b>Petunjuk Pengisian:</b><br>
-            - Gunakan format di bawah ini untuk menulis soal ujian.<br>
-            - Hapus teks contoh dan ganti dengan soal Anda.<br>
-            - Jangan ubah label seperti <b>[NO]</b>, <b>[JENIS_SOAL]</b>, <b>[WACANA]</b>, <b>[SOAL]</b>, dan <b>[KUNCI]</b> agar sistem bisa membacanya.</p>
-            <hr>
-            <p><b>[NO]</b> 1</p>
-            <p><b>[JENIS_SOAL]</b> pg</p>
-            <p><b>[SOAL]</b> Dalam pemrograman Python, struktur data apa yang tidak dapat diubah (immutable) setelah dideklarasikan?</p>
-            <p><b>[A]</b> List</p>
-            <p><b>[B]</b> Dictionary</p>
-            <p><b>[C]</b> Tuple</p>
-            <p><b>[D]</b> Set</p>
-            <p><b>[E]</b> Array</p>
-            <p><b>[KUNCI]</b> C</p>
-        `;
-        const footer = "</body></html>";
-        
-        const sourceHTML = header + content + footer;
-        const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", "Template_Soal_CBT_SMAICH.doc");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -350,13 +322,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbodyHasil = document.querySelector('#table-hasil tbody');
 
     function renderHasil() {
+        const mapelGuru = localStorage.getItem('cbt_guru_mapel') || 'semua';
+        
+        // Update label badge UI di atas tabel
+        const labelFilter = document.getElementById('label-filter-hasil');
+        if (labelFilter) {
+            labelFilter.innerHTML = mapelGuru === 'semua' 
+                ? '<i class="fas fa-filter"></i> Mapel: Semua (Admin)' 
+                : `<i class="fas fa-filter"></i> Mapel: ${mapelGuru}`;
+        }
+
+        // Ambil data yang sudah difilter
+        const filteredHasil = getFilteredHasil();
+
         tbodyHasil.innerHTML = '';
-        if(dataHasil.length === 0) {
-            tbodyHasil.innerHTML = `<tr><td colspan="5" style="text-align: center;">Belum ada siswa yang menyelesaikan ujian.</td></tr>`;
+        if(filteredHasil.length === 0) {
+            tbodyHasil.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Tidak ada data hasil ujian untuk mata pelajaran ini.</td></tr>`;
         } else {
-            dataHasil.forEach((hasil) => {
+            filteredHasil.forEach((hasil) => {
                 const tr = document.createElement('tr');
-                // UPDATE: Struktur tabel ditambahkan Kelas & Mapel
                 tr.innerHTML = `
                     <td>${hasil.nama || '-'}</td>
                     <td>${hasil.kelas || '-'}</td>
@@ -375,38 +359,40 @@ document.addEventListener('DOMContentLoaded', () => {
         window.print();
     });
 
-    // UPDATE: Logika Cetak / Export ke Excel (CSV format)
+    // Aksi Export Excel (HANYA MENG-EXPORT HASIL YANG SUDAH DIFILTER)
     document.getElementById('btn-print-excel')?.addEventListener('click', () => {
-        if (dataHasil.length === 0) {
-            alert('Tidak ada data hasil ujian untuk di-export!');
+        const filteredHasil = getFilteredHasil();
+
+        if (filteredHasil.length === 0) {
+            alert('Tidak ada data hasil ujian untuk di-export pada mata pelajaran Anda!');
             return;
         }
 
-        // Header Tabel Excel
-        let csvContent = "Nama Siswa,Kelas,Mata Pelajaran,Nilai,Waktu Submit\n";
+        let csvContent = "Nama Siswa,Kelas,Mata Pelajaran,Jumlah Benar,Jumlah Salah,Total Soal,Nilai Akhir,Waktu Submit\n";
 
-        // Melakukan perulangan untuk mengambil data tiap baris
-        dataHasil.forEach(row => {
-            // Gunakan tanda kutip agar jika ada spasi/koma pada teks tidak merusak format kolom Excel
+        filteredHasil.forEach(row => {
             let rowData = [
                 `"${row.nama || '-'}"`,
                 `"${row.kelas || '-'}"`,
                 `"${row.mapel || '-'}"`,
+                `"${row.benar || 0}"`,        
+                `"${row.salah || 0}"`,        
+                `"${row.totalSoal || 0}"`,    
                 `"${row.nilai || 0}"`,
                 `"${row.waktu || '-'}"`
             ];
             csvContent += rowData.join(",") + "\n";
         });
 
-        // Membuat file Blob dan memicu fitur unduhan browser
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         
-        // Nama file dinamis dengan timestamp
         const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,"");
+        const mapelClean = (localStorage.getItem('cbt_guru_mapel') || 'Semua').replace(/\s+/g, '_');
+        
         link.setAttribute("href", url);
-        link.setAttribute("download", `Rekap_Nilai_CBT_${dateStr}.csv`);
+        link.setAttribute("download", `Rekap_Nilai_${mapelClean}_${dateStr}.csv`);
         
         document.body.appendChild(link);
         link.click();
@@ -414,8 +400,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 6. PENGATURAN TOKEN BERDASARKAN MAPEL
+    // 6. PENGATURAN HAK AKSES DAN TOKEN MAPEL
     // ==========================================
+
+    // Logika simpan Hak Akses Guru
+    const selectGuruMapel = document.getElementById('select-guru-mapel');
+    const savedGuruMapel = localStorage.getItem('cbt_guru_mapel') || 'semua';
+    if(selectGuruMapel) selectGuruMapel.value = savedGuruMapel;
+
+    document.getElementById('btn-save-guru-mapel')?.addEventListener('click', () => {
+        const selectedMapel = selectGuruMapel.value;
+        localStorage.setItem('cbt_guru_mapel', selectedMapel);
+        alert('Hak akses mata pelajaran berhasil disimpan! Tabel hasil ujian telah diperbarui.');
+        renderHasil(); // Render ulang tabel agar data langsung tersaring
+    });
+
+    // Logika manajemen Token Ujian (tetap seperti sebelumnya)
     const selectMapelToken = document.getElementById('select-mapel-token');
     const inputToken = document.getElementById('input-token');
     const labelMapelAktif = document.getElementById('label-mapel-aktif');
