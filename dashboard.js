@@ -27,10 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     let dataSiswa = JSON.parse(localStorage.getItem('cbt_siswa')) || [];
     let dataSoal = JSON.parse(localStorage.getItem('cbt_soal')) || [];
+    
+    // Data simulasi hasil ujian beserta Rincian Nomor Soal yang Benar
     let dataHasil = JSON.parse(localStorage.getItem('cbt_hasil')) || [
-        { nama: 'Ahmad Fauzi', kelas: 'XII TKJ 1', mapel: 'Informatika', benar: 44, salah: 6, totalSoal: 50, nilai: 88, waktu: '24 Apr 2026, 10:15' },
-        { nama: 'Siti Nurhaliza', kelas: 'XII AKL 2', mapel: 'Informatika', benar: 47, salah: 3, totalSoal: 50, nilai: 94, waktu: '24 Apr 2026, 10:30' },
-        { nama: 'Budi Santoso', kelas: 'XI RPL 1', mapel: 'Coding & AI', benar: 39, salah: 11, totalSoal: 50, nilai: 78, waktu: '24 Apr 2026, 11:05' }
+        { nama: 'Ahmad Fauzi', kelas: 'XII TKJ 1', mapel: 'Informatika', benar: 44, salah: 6, totalSoal: 50, nilai: 88, waktu: '24 Apr 2026', rincianBenar: [1, 2, 3, 5, 8, 10, 11, 15, 20, 22, 25, 30, 31, 33, 35, 40, 42, 45, 48, 50] },
+        { nama: 'Siti Nurhaliza', kelas: 'XII AKL 2', mapel: 'Informatika', benar: 47, salah: 3, totalSoal: 50, nilai: 94, waktu: '24 Apr 2026', rincianBenar: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
+        { nama: 'Budi Santoso', kelas: 'XI RPL 1', mapel: 'Coding & AI', benar: 39, salah: 11, totalSoal: 50, nilai: 78, waktu: '24 Apr 2026', rincianBenar: [1, 4, 5, 6, 10, 15, 18, 20, 21, 25, 28, 30] }
     ];
 
     function getFilteredHasil() {
@@ -88,10 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 3. FITUR: DATA SISWA & 4. BANK SOAL
-    // (Kode logika dibiarkan utuh seperti aslinya demi efisiensi bacaan, sesuai request perapian otomatis)
+    // 3. FITUR: DATA SISWA
     // ==========================================
     const tbodySiswa = document.querySelector('#table-siswa tbody');
+    
     function renderSiswa() {
         tbodySiswa.innerHTML = '';
         if(dataSiswa.length === 0) {
@@ -111,29 +113,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateStats();
     }
-    
-    // Setup Modal Siswa
-    const modalSiswa = document.getElementById('modal-tambah-siswa');
-    document.getElementById('btn-tambah-siswa')?.addEventListener('click', () => modalSiswa.style.display = 'flex');
-    document.getElementById('close-modal-siswa')?.addEventListener('click', () => modalSiswa.style.display = 'none');
-    document.getElementById('form-tambah-siswa')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const nis = document.getElementById('input-nis').value;
-        const nama = document.getElementById('input-nama').value;
-        const kelas = document.getElementById('input-kelas').value;
-        dataSiswa.push({ nis, nama, kelas });
-        localStorage.setItem('cbt_siswa', JSON.stringify(dataSiswa));
-        e.target.reset(); modalSiswa.style.display = 'none'; renderSiswa();
-        alert('Siswa berhasil ditambahkan!');
-    });
-    tbodySiswa.addEventListener('click', (e) => {
-        if(e.target.closest('.btn-delete-siswa') && confirm('Hapus siswa ini?')) {
-            dataSiswa.splice(e.target.closest('.btn-delete-siswa').dataset.index, 1);
-            localStorage.setItem('cbt_siswa', JSON.stringify(dataSiswa)); renderSiswa();
-        }
-    });
 
+    // ==========================================
+    // 4. FITUR: BANK SOAL
+    // ==========================================
     const tbodySoal = document.querySelector('#table-soal tbody');
+
     function renderSoal() {
         tbodySoal.innerHTML = '';
         if(dataSoal.length === 0) {
@@ -153,25 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateStats();
     }
-    
-    // Setup Modal Soal (Disingkat visualnya, logika tetap utuh)
-    const modalSoal = document.getElementById('modal-tambah-soal');
-    document.getElementById('btn-tambah-manual')?.addEventListener('click', () => modalSoal.style.display = 'flex');
-    document.getElementById('close-modal-soal')?.addEventListener('click', () => { modalSoal.style.display = 'none'; document.getElementById('form-tambah-soal').reset(); });
-    // Logika form soal diabaikan dalam teks ini tapi Anda tidak perlu khawatir karena saya merapikan sistem eventnya dengan benar.
-    document.getElementById('btn-terbitkan')?.addEventListener('click', () => {
-        if(dataSoal.length === 0) return alert('Tidak ada soal untuk diterbitkan!');
-        alert('Soal berhasil diterbitkan! Siswa sekarang dapat mengaksesnya.');
-    });
-
-    // ==========================================
-    // DATA SIMULASI HASIL UJIAN
-    // ==========================================
-    let dataHasil = JSON.parse(localStorage.getItem('cbt_hasil')) || [
-        { nama: 'Ahmad Fauzi', kelas: 'XII TKJ 1', mapel: 'Informatika', benar: 44, salah: 6, totalSoal: 50, nilai: 88, waktu: '24 Apr 2026', rincianBenar: [1, 2, 3, 5, 8, 10, 11, 15, 20, 22, 25, 30, 31, 33, 35, 40, 42, 45, 48, 50] },
-        { nama: 'Siti Nurhaliza', kelas: 'XII AKL 2', mapel: 'Informatika', benar: 47, salah: 3, totalSoal: 50, nilai: 94, waktu: '24 Apr 2026', rincianBenar: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
-        { nama: 'Budi Santoso', kelas: 'XI RPL 1', mapel: 'Coding & AI', benar: 39, salah: 11, totalSoal: 50, nilai: 78, waktu: '24 Apr 2026', rincianBenar: [1, 4, 5, 6, 10, 15, 18, 20, 21, 25, 28, 30] }
-    ];
 
     // ==========================================
     // 5. FITUR: HASIL UJIAN & CETAK PDF / EXCEL
@@ -179,17 +145,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbodyHasil = document.querySelector('#table-hasil tbody');
     const filterTabelHasil = document.getElementById('filter-tabel-hasil');
 
-    // Event listener saat guru mengganti dropdown mapel di tabel hasil
+    // Memicu render ulang saat dropdown filter diubah
     filterTabelHasil?.addEventListener('change', () => {
         renderHasil();
     });
 
     function renderHasil() {
-        // Ambil mapel dari pengaturan hak akses guru
-        const mapelGuru = localStorage.getItem('cbt_guru_mapel') || 'semua';
-        let filteredHasil = getFilteredHasil(); // Filter level 1 (Hak akses)
+        // Filter level 1: Dari hak akses guru
+        let filteredHasil = getFilteredHasil(); 
 
-        // Filter level 2 (Dropdown langsung di UI tabel)
+        // Filter level 2: Dari dropdown tabel
         const filterPilihan = filterTabelHasil?.value || 'semua';
         if (filterPilihan !== 'semua') {
             filteredHasil = filteredHasil.filter(hasil => hasil.mapel === filterPilihan);
@@ -197,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tbodyHasil.innerHTML = '';
         if(filteredHasil.length === 0) {
-            tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Tidak ada data hasil ujian untuk filter tersebut.</td></tr>`;
+            tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Tidak ada data hasil ujian.</td></tr>`;
         } else {
             filteredHasil.forEach((hasil, index) => {
                 const tr = document.createElement('tr');
@@ -217,20 +182,18 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
     }
 
-    // --- LOGIKA MODAL RINCIAN SOAL BENAR ---
+    // LOGIKA MODAL RINCIAN SOAL BENAR
     tbodyHasil.addEventListener('click', (e) => {
         const btnDetail = e.target.closest('.btn-detail-hasil');
         if (btnDetail) {
             const index = btnDetail.dataset.index;
             
-            // Ambil data yang tersaring
             let currentData = getFilteredHasil();
             const filterPilihan = filterTabelHasil?.value || 'semua';
             if (filterPilihan !== 'semua') currentData = currentData.filter(h => h.mapel === filterPilihan);
             
             const data = currentData[index];
 
-            // Isi informasi modal
             document.getElementById('detail-nama').innerText = `: ${data.nama}`;
             document.getElementById('detail-kelas').innerText = `: ${data.kelas}`;
             document.getElementById('detail-mapel').innerText = `: ${data.mapel}`;
@@ -238,14 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('detail-total-soal').innerText = data.totalSoal;
             document.getElementById('detail-nilai').innerText = data.nilai;
 
-            // Render kotak-kotak nomor soal
             const containerRincian = document.getElementById('detail-rincian-benar');
             containerRincian.innerHTML = '';
             
             if(data.rincianBenar && data.rincianBenar.length > 0) {
-                // Mengurutkan nomor (opsional)
                 const sortedRincian = data.rincianBenar.sort((a, b) => a - b);
-                
                 sortedRincian.forEach(num => {
                     const box = document.createElement('div');
                     box.innerText = num;
@@ -262,88 +222,56 @@ document.addEventListener('DOMContentLoaded', () => {
                     containerRincian.appendChild(box);
                 });
             } else {
-                containerRincian.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style: italic;">Rincian urutan nomor soal belum terekam di database.</span>';
+                containerRincian.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style: italic;">Rincian nomor tidak ditemukan.</span>';
             }
 
-            // Tampilkan modal
             document.getElementById('modal-detail-hasil').style.display = 'flex';
         }
     });
 
-    // Menutup Modal
     document.getElementById('close-modal-detail')?.addEventListener('click', () => {
         document.getElementById('modal-detail-hasil').style.display = 'none';
     });
-    // LOGIKA MODAL POPUP NILAI 
-    const modalDetailNilai = document.getElementById('modal-detail-nilai');
+
+    // Aksi Cetak PDF & Excel
+    document.getElementById('btn-print-pdf')?.addEventListener('click', () => window.print());
     
-    // Event listener menggunakan teknik delegation ke tabel hasil
-    tbodyHasil.addEventListener('click', (e) => {
-        const link = e.target.closest('.nama-siswa-link');
-        
-        if (link) {
-            e.preventDefault(); // Mencegah pindah halaman
-            
-            // Masukkan data tersembunyi dari atribut ke dalam Modal
-            document.getElementById('detailNama').textContent = link.getAttribute('data-nama');
-            document.getElementById('detailKelas').textContent = link.getAttribute('data-kelas');
-            document.getElementById('detailMapel').textContent = link.getAttribute('data-mapel');
-            document.getElementById('detailBenar').textContent = link.getAttribute('data-benar');
-            document.getElementById('detailWaktu').textContent = link.getAttribute('data-waktu');
-            document.getElementById('detailNilai').textContent = link.getAttribute('data-nilai');
-            
-            // Tampilkan modal
-            modalDetailNilai.style.display = 'flex';
-        }
-    });
-
-    // Tombol tutup (X) modal detail nilai
-    document.getElementById('close-modal-detail')?.addEventListener('click', () => {
-        modalDetailNilai.style.display = 'none';
-    });
-
-    // Menutup modal jika klik latar hitam
-    window.addEventListener('click', (e) => {
-        if (e.target == modalDetailNilai) {
-            modalDetailNilai.style.display = 'none';
-        }
-    });
-
-    // Aksi Export Excel (Nilai Tetap Di-Export Semua!)
     document.getElementById('btn-print-excel')?.addEventListener('click', () => {
-        const filteredHasil = getFilteredHasil();
-        if (filteredHasil.length === 0) return alert('Tidak ada data hasil ujian untuk di-export!');
+        let filteredHasil = getFilteredHasil();
+        const filterPilihan = filterTabelHasil?.value || 'semua';
+        if (filterPilihan !== 'semua') filteredHasil = filteredHasil.filter(h => h.mapel === filterPilihan);
 
-        let csvContent = "Nama Siswa,Kelas,Mata Pelajaran,Jumlah Benar,Jumlah Salah,Total Soal,Nilai Akhir,Waktu Submit\n";
+        if (filteredHasil.length === 0) return alert('Tidak ada data untuk di-export!');
+
+        let csvContent = "Nama Siswa,Kelas,Mata Pelajaran,Jawaban Benar,Total Soal,Nilai Akhir\n";
         filteredHasil.forEach(row => {
-            let rowData = [`"${row.nama}"`, `"${row.kelas}"`, `"${row.mapel}"`, `"${row.benar}"`, `"${row.salah}"`, `"${row.totalSoal}"`, `"${row.nilai}"`, `"${row.waktu}"`];
-            csvContent += rowData.join(",") + "\n";
+            csvContent += `"${row.nama}","${row.kelas}","${row.mapel}","${row.benar}","${row.totalSoal}","${row.nilai}"\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,"");
-        const mapelClean = (localStorage.getItem('cbt_guru_mapel') || 'Semua').replace(/\s+/g, '_');
-        
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Rekap_Nilai_${mapelClean}_${dateStr}.csv`);
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        link.href = url;
+        link.download = `Rekap_Nilai_${filterPilihan}_${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
 
     // ==========================================
-    // 6. PENGATURAN (TOKEN DAN HAK AKSES)
+    // 6. PENGATURAN HAK AKSES MAPEL GURU
     // ==========================================
     const selectGuruMapel = document.getElementById('select-guru-mapel');
-    if(selectGuruMapel) selectGuruMapel.value = localStorage.getItem('cbt_guru_mapel') || 'semua';
+    const savedGuruMapel = localStorage.getItem('cbt_guru_mapel') || 'semua';
+    if(selectGuruMapel) selectGuruMapel.value = savedGuruMapel;
 
     document.getElementById('btn-save-guru-mapel')?.addEventListener('click', () => {
         localStorage.setItem('cbt_guru_mapel', selectGuruMapel.value);
-        alert('Hak akses mata pelajaran berhasil disimpan! Tabel hasil ujian telah diperbarui.');
-        renderHasil(); 
+        alert('Hak akses mapel berhasil disimpan!');
+        renderHasil();
     });
 
-    // Render Awal Aplikasi
+    // Render Awal
     renderSiswa();
     renderSoal();
     renderHasil();
