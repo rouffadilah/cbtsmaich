@@ -165,45 +165,51 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 5. FITUR: HASIL UJIAN (UPDATE PRIVASI)
+    // DATA SIMULASI HASIL UJIAN
+    // ==========================================
+    let dataHasil = JSON.parse(localStorage.getItem('cbt_hasil')) || [
+        { nama: 'Ahmad Fauzi', kelas: 'XII TKJ 1', mapel: 'Informatika', benar: 44, salah: 6, totalSoal: 50, nilai: 88, waktu: '24 Apr 2026', rincianBenar: [1, 2, 3, 5, 8, 10, 11, 15, 20, 22, 25, 30, 31, 33, 35, 40, 42, 45, 48, 50] },
+        { nama: 'Siti Nurhaliza', kelas: 'XII AKL 2', mapel: 'Informatika', benar: 47, salah: 3, totalSoal: 50, nilai: 94, waktu: '24 Apr 2026', rincianBenar: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
+        { nama: 'Budi Santoso', kelas: 'XI RPL 1', mapel: 'Coding & AI', benar: 39, salah: 11, totalSoal: 50, nilai: 78, waktu: '24 Apr 2026', rincianBenar: [1, 4, 5, 6, 10, 15, 18, 20, 21, 25, 28, 30] }
+    ];
+
+    // ==========================================
+    // 5. FITUR: HASIL UJIAN & CETAK PDF / EXCEL
     // ==========================================
     const tbodyHasil = document.querySelector('#table-hasil tbody');
+    const filterTabelHasil = document.getElementById('filter-tabel-hasil');
+
+    // Event listener saat guru mengganti dropdown mapel di tabel hasil
+    filterTabelHasil?.addEventListener('change', () => {
+        renderHasil();
+    });
 
     function renderHasil() {
+        // Ambil mapel dari pengaturan hak akses guru
         const mapelGuru = localStorage.getItem('cbt_guru_mapel') || 'semua';
-        
-        // Update label badge UI di atas tabel
-        const labelFilter = document.getElementById('label-filter-hasil');
-        if (labelFilter) {
-            labelFilter.innerHTML = mapelGuru === 'semua' 
-                ? '<i class="fas fa-filter"></i> Mapel: Semua (Admin)' 
-                : `<i class="fas fa-filter"></i> Mapel: ${mapelGuru}`;
+        let filteredHasil = getFilteredHasil(); // Filter level 1 (Hak akses)
+
+        // Filter level 2 (Dropdown langsung di UI tabel)
+        const filterPilihan = filterTabelHasil?.value || 'semua';
+        if (filterPilihan !== 'semua') {
+            filteredHasil = filteredHasil.filter(hasil => hasil.mapel === filterPilihan);
         }
 
-        const filteredHasil = getFilteredHasil();
         tbodyHasil.innerHTML = '';
-
         if(filteredHasil.length === 0) {
-            tbodyHasil.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--danger);">Tidak ada data hasil ujian untuk mata pelajaran ini.</td></tr>`;
+            tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Tidak ada data hasil ujian untuk filter tersebut.</td></tr>`;
         } else {
-            filteredHasil.forEach((hasil) => {
+            filteredHasil.forEach((hasil, index) => {
                 const tr = document.createElement('tr');
-                
-                // BARU: Hanya merender Nama, Kelas, dan Mapel. Data nilai disimpan dalam atribut.
                 tr.innerHTML = `
-                    <td>
-                        <a href="#" class="nama-siswa-link" 
-                           data-nama="${hasil.nama || '-'}" 
-                           data-kelas="${hasil.kelas || '-'}" 
-                           data-mapel="${hasil.mapel || '-'}" 
-                           data-benar="${hasil.benar || 0}" 
-                           data-nilai="${hasil.nilai || 0}" 
-                           data-waktu="${hasil.waktu || '-'}">
-                           <i class="fas fa-user-circle"></i> ${hasil.nama || '-'}
-                        </a>
-                    </td>
+                    <td><strong>${hasil.nama || '-'}</strong></td>
                     <td>${hasil.kelas || '-'}</td>
                     <td><span style="background: var(--primary-light); color: var(--primary-hover); padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">${hasil.mapel || '-'}</span></td>
+                    <td><span style="color: var(--success); font-weight: bold;">${hasil.benar || 0}</span> / ${hasil.totalSoal || 0}</td>
+                    <td><strong style="color: var(--primary); font-size: 1.1rem;">${hasil.nilai || 0}</strong></td>
+                    <td>
+                        <button class="btn-3d btn-secondary btn-detail-hasil" data-index="${index}" style="padding: 6px 12px; font-size: 0.8rem; width: auto;"><i class="fas fa-list-ol"></i> Rincian</button>
+                    </td>
                 `;
                 tbodyHasil.appendChild(tr);
             });
@@ -211,6 +217,63 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
     }
 
+    // --- LOGIKA MODAL RINCIAN SOAL BENAR ---
+    tbodyHasil.addEventListener('click', (e) => {
+        const btnDetail = e.target.closest('.btn-detail-hasil');
+        if (btnDetail) {
+            const index = btnDetail.dataset.index;
+            
+            // Ambil data yang tersaring
+            let currentData = getFilteredHasil();
+            const filterPilihan = filterTabelHasil?.value || 'semua';
+            if (filterPilihan !== 'semua') currentData = currentData.filter(h => h.mapel === filterPilihan);
+            
+            const data = currentData[index];
+
+            // Isi informasi modal
+            document.getElementById('detail-nama').innerText = `: ${data.nama}`;
+            document.getElementById('detail-kelas').innerText = `: ${data.kelas}`;
+            document.getElementById('detail-mapel').innerText = `: ${data.mapel}`;
+            document.getElementById('detail-jml-benar').innerText = data.benar;
+            document.getElementById('detail-total-soal').innerText = data.totalSoal;
+            document.getElementById('detail-nilai').innerText = data.nilai;
+
+            // Render kotak-kotak nomor soal
+            const containerRincian = document.getElementById('detail-rincian-benar');
+            containerRincian.innerHTML = '';
+            
+            if(data.rincianBenar && data.rincianBenar.length > 0) {
+                // Mengurutkan nomor (opsional)
+                const sortedRincian = data.rincianBenar.sort((a, b) => a - b);
+                
+                sortedRincian.forEach(num => {
+                    const box = document.createElement('div');
+                    box.innerText = num;
+                    box.style.background = 'var(--success)';
+                    box.style.color = 'white';
+                    box.style.fontWeight = 'bold';
+                    box.style.width = '35px';
+                    box.style.height = '35px';
+                    box.style.display = 'flex';
+                    box.style.alignItems = 'center';
+                    box.style.justifyContent = 'center';
+                    box.style.borderRadius = '6px';
+                    box.style.boxShadow = 'var(--shadow-sm)';
+                    containerRincian.appendChild(box);
+                });
+            } else {
+                containerRincian.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style: italic;">Rincian urutan nomor soal belum terekam di database.</span>';
+            }
+
+            // Tampilkan modal
+            document.getElementById('modal-detail-hasil').style.display = 'flex';
+        }
+    });
+
+    // Menutup Modal
+    document.getElementById('close-modal-detail')?.addEventListener('click', () => {
+        document.getElementById('modal-detail-hasil').style.display = 'none';
+    });
     // LOGIKA MODAL POPUP NILAI 
     const modalDetailNilai = document.getElementById('modal-detail-nilai');
     
