@@ -151,16 +151,20 @@
 
                 <div id="section-hasil" class="content-section">
                     <div class="card" id="area-cetak-hasil">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                            <h2 class="section-title" style="margin: 0;">Hasil Ujian Siswa</h2>
-            
-                            <!-- Tambahan Tombol Export Excel di sini -->
-                            <div style="display: flex; gap: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; align-items: flex-start;">
+                            <div>
+                                <h2 class="section-title" style="margin: 0;">Hasil Ujian Siswa</h2>
+                                <p id="label-filter-hasil" style="font-size: 0.85rem; color: var(--info); font-weight: 600; margin-top: 5px; background: #eff6ff; display: inline-block; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--info);">
+                                    <i class="fas fa-filter"></i> Mapel: Semua (Admin)
+                                </p>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; align-items: center;">
                                 <button id="btn-print-excel" class="btn-3d" style="width: auto; background-color: #107c41; box-shadow: var(--shadow-sm);"><i class="fas fa-file-excel"></i> Export Excel</button>
                                 <button id="btn-print-pdf" class="btn-3d btn-secondary" style="width: auto;"><i class="fas fa-print"></i> Cetak PDF</button>
                             </div>
                         </div>
-        
+                        
                         <div class="table-container">
                             <table id="table-hasil">
                                 <thead>
@@ -168,28 +172,40 @@
                                         <th>Nama Siswa</th>
                                         <th>Kelas</th>
                                         <th>Mata Pelajaran</th>
-                                        <th>Nilai</th>
+                                        <th>Nilai Akhir</th>
                                         <th>Waktu Submit</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- Data akan dirender dari JS -->
-                                </tbody>
+                                    </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-
                 <div id="section-pengaturan" class="content-section">
                     <div class="card">
-                        <h2 class="section-title">Pengaturan Token Ujian</h2>
-        
-                        <div style="margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-            
+                        <h2 class="section-title">Pengaturan Sistem</h2>
+                        
+                        <div style="margin-bottom: 25px; background: #eff6ff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--info);">
+                            <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-user-shield"></i> Hak Akses Mata Pelajaran Anda:</label>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                <select id="select-guru-mapel" class="input-text" style="width: 250px; font-weight: bold; border-color: var(--info);">
+                                    <option value="semua">-- Semua Mapel (Admin) --</option>
+                                    <option value="Informatika">Informatika</option>
+                                    <option value="TKJ">Teknik Komputer dan Jaringan (TKJ)</option>
+                                    <option value="Coding & AI">Coding & Artificial Intelligence</option>
+                                </select>
+                                <button id="btn-save-guru-mapel" class="btn-3d" style="width: auto; background-color: var(--info);"><i class="fas fa-save"></i> Simpan Akses</button>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+                                *Pilih mata pelajaran yang Anda ajarkan. Menu "Hasil Ujian" dan "Export Excel" akan otomatis memblokir mapel lain dan hanya menampilkan nilai siswa Anda.
+                            </p>
+                        </div>
+
+                        <div style="background: #f8fafc; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
                             <div class="input-group" style="max-width: 400px; margin-bottom: 20px;">
-                                <label style="font-weight: 600; color: var(--secondary);"><i class="fas fa-book"></i> Pilih Mata Pelajaran:</label>
+                                <label style="font-weight: 600; color: var(--secondary);"><i class="fas fa-key"></i> Atur Token Ujian Untuk Mapel:</label>
                                 <select id="select-mapel-token" class="input-text" style="font-weight: bold;">
-                                    <!-- Pastikan value sama dengan di attempt.html -->
                                     <option value="informatika">Informatika</option>
                                     <option value="tkj">Teknik Komputer dan Jaringan (TKJ)</option>
                                     <option value="coding-ai">Coding & Artificial Intelligence</option>
@@ -206,7 +222,6 @@
                             <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
                                 Berikan token ini HANYA kepada siswa yang akan ujian mapel di atas.
                             </p>
-            
                         </div>
                     </div>
                 </div>
