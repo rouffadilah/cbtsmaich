@@ -1,34 +1,23 @@
-import { auth, db } from './firebase-config.js';
-import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
 // ==========================================
-// 0. AUTENTIKASI & KEAMANAN DASHBOARD
+// VERSI UJI COBA UI (FIREBASE DINONAKTIFKAN)
 // ==========================================
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        const fullName = user.displayName || user.email.split('@')[0] || "Guru";
-        const firstName = fullName.split(' ')[0];
-
-        const adminNameEl = document.getElementById('admin-name');
-        if (adminNameEl) adminNameEl.innerText = fullName;
-
-        const greetingEl = document.querySelector('.welcome-banner h2');
-        if (greetingEl) greetingEl.innerHTML = `Assalamu'alaikum, ${firstName}! 👋`;
-    } else {
-        window.location.href = "index.html";
-    }
-});
 
 document.addEventListener('DOMContentLoaded', () => {
     
+    // Set Nama Pengguna Manual (Simulasi Login)
+    const adminNameEl = document.getElementById('admin-name');
+    if (adminNameEl) adminNameEl.innerText = "Rouf Fadilah";
+
+    const greetingEl = document.querySelector('.welcome-banner h2');
+    if (greetingEl) greetingEl.innerHTML = `Assalamu'alaikum, Rouf! 👋`;
+
     // ==========================================
     // 1. INISIALISASI DATA 
     // ==========================================
     let dataSiswa = JSON.parse(localStorage.getItem('cbt_siswa')) || [];
     let dataSoal = JSON.parse(localStorage.getItem('cbt_soal')) || [];
     
-    // Data simulasi hasil ujian beserta Rincian Nomor Soal yang Benar
+    // Data simulasi hasil ujian
     let dataHasil = JSON.parse(localStorage.getItem('cbt_hasil')) || [
         { nama: 'Ahmad Fauzi', kelas: 'XII TKJ 1', mapel: 'Informatika', benar: 44, salah: 6, totalSoal: 50, nilai: 88, waktu: '24 Apr 2026', rincianBenar: [1, 2, 3, 5, 8, 10, 11, 15, 20, 22, 25, 30, 31, 33, 35, 40, 42, 45, 48, 50] },
         { nama: 'Siti Nurhaliza', kelas: 'XII AKL 2', mapel: 'Informatika', benar: 47, salah: 3, totalSoal: 50, nilai: 94, waktu: '24 Apr 2026', rincianBenar: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
@@ -58,12 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
         option.addEventListener('click', () => {
             menuOptions.forEach(opt => opt.classList.remove('selected'));
             contentSections.forEach(sec => sec.classList.remove('active'));
+            
             option.classList.add('selected');
             const target = option.dataset.section;
             document.getElementById(target)?.classList.add('active');
         });
     });
 
+    // Menjalankan Jam
     setInterval(() => {
         const liveTimeEl = document.getElementById('live-time');
         if (liveTimeEl) {
@@ -72,20 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000);
 
+    // Tombol Logout
     document.getElementById('btn-logout')?.addEventListener('click', () => {
         if(confirm('Apakah Anda yakin ingin keluar dari panel?')) {
-            const btnLogout = document.getElementById('btn-logout');
-            btnLogout.innerHTML = '<i class="fas fa-spinner fa-spin"></i> KELUAR...';
-            btnLogout.disabled = true;
-
-            signOut(auth).then(() => {
-                localStorage.removeItem("userRole"); 
-                window.location.href = 'index.html'; 
-            }).catch((error) => {
-                alert('Gagal keluar dari sesi: ' + error.message);
-                btnLogout.innerHTML = '<i class="fas fa-sign-out-alt"></i> KELUAR';
-                btnLogout.disabled = false;
-            });
+            window.location.href = 'index.html'; 
         }
     });
 
@@ -95,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbodySiswa = document.querySelector('#table-siswa tbody');
     
     function renderSiswa() {
+        if(!tbodySiswa) return;
         tbodySiswa.innerHTML = '';
         if(dataSiswa.length === 0) {
             tbodySiswa.innerHTML = `<tr><td colspan="5" style="text-align: center;">Belum ada data siswa.</td></tr>`;
@@ -120,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbodySoal = document.querySelector('#table-soal tbody');
 
     function renderSoal() {
+        if(!tbodySoal) return;
         tbodySoal.innerHTML = '';
         if(dataSoal.length === 0) {
             tbodySoal.innerHTML = `<tr><td colspan="5" style="text-align: center;">Belum ada soal. Silakan tambah manual.</td></tr>`;
@@ -140,21 +123,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 5. FITUR: HASIL UJIAN & CETAK PDF / EXCEL
+    // 5. FITUR: HASIL UJIAN
     // ==========================================
     const tbodyHasil = document.querySelector('#table-hasil tbody');
     const filterTabelHasil = document.getElementById('filter-tabel-hasil');
 
-    // Memicu render ulang saat dropdown filter diubah
     filterTabelHasil?.addEventListener('change', () => {
         renderHasil();
     });
 
     function renderHasil() {
-        // Filter level 1: Dari hak akses guru
+        if(!tbodyHasil) return;
         let filteredHasil = getFilteredHasil(); 
 
-        // Filter level 2: Dari dropdown tabel
         const filterPilihan = filterTabelHasil?.value || 'semua';
         if (filterPilihan !== 'semua') {
             filteredHasil = filteredHasil.filter(hasil => hasil.mapel === filterPilihan);
@@ -182,80 +163,57 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
     }
 
-    // LOGIKA MODAL RINCIAN SOAL BENAR
-    tbodyHasil.addEventListener('click', (e) => {
-        const btnDetail = e.target.closest('.btn-detail-hasil');
-        if (btnDetail) {
-            const index = btnDetail.dataset.index;
-            
-            let currentData = getFilteredHasil();
-            const filterPilihan = filterTabelHasil?.value || 'semua';
-            if (filterPilihan !== 'semua') currentData = currentData.filter(h => h.mapel === filterPilihan);
-            
-            const data = currentData[index];
+    // Modal Rincian
+    if(tbodyHasil) {
+        tbodyHasil.addEventListener('click', (e) => {
+            const btnDetail = e.target.closest('.btn-detail-hasil');
+            if (btnDetail) {
+                const index = btnDetail.dataset.index;
+                
+                let currentData = getFilteredHasil();
+                const filterPilihan = filterTabelHasil?.value || 'semua';
+                if (filterPilihan !== 'semua') currentData = currentData.filter(h => h.mapel === filterPilihan);
+                
+                const data = currentData[index];
 
-            document.getElementById('detail-nama').innerText = `: ${data.nama}`;
-            document.getElementById('detail-kelas').innerText = `: ${data.kelas}`;
-            document.getElementById('detail-mapel').innerText = `: ${data.mapel}`;
-            document.getElementById('detail-jml-benar').innerText = data.benar;
-            document.getElementById('detail-total-soal').innerText = data.totalSoal;
-            document.getElementById('detail-nilai').innerText = data.nilai;
+                document.getElementById('detail-nama').innerText = `: ${data.nama}`;
+                document.getElementById('detail-kelas').innerText = `: ${data.kelas}`;
+                document.getElementById('detail-mapel').innerText = `: ${data.mapel}`;
+                document.getElementById('detail-jml-benar').innerText = data.benar;
+                document.getElementById('detail-total-soal').innerText = data.totalSoal;
+                document.getElementById('detail-nilai').innerText = data.nilai;
 
-            const containerRincian = document.getElementById('detail-rincian-benar');
-            containerRincian.innerHTML = '';
-            
-            if(data.rincianBenar && data.rincianBenar.length > 0) {
-                const sortedRincian = data.rincianBenar.sort((a, b) => a - b);
-                sortedRincian.forEach(num => {
-                    const box = document.createElement('div');
-                    box.innerText = num;
-                    box.style.background = 'var(--success)';
-                    box.style.color = 'white';
-                    box.style.fontWeight = 'bold';
-                    box.style.width = '35px';
-                    box.style.height = '35px';
-                    box.style.display = 'flex';
-                    box.style.alignItems = 'center';
-                    box.style.justifyContent = 'center';
-                    box.style.borderRadius = '6px';
-                    box.style.boxShadow = 'var(--shadow-sm)';
-                    containerRincian.appendChild(box);
-                });
-            } else {
-                containerRincian.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style: italic;">Rincian nomor tidak ditemukan.</span>';
+                const containerRincian = document.getElementById('detail-rincian-benar');
+                containerRincian.innerHTML = '';
+                
+                if(data.rincianBenar && data.rincianBenar.length > 0) {
+                    const sortedRincian = data.rincianBenar.sort((a, b) => a - b);
+                    sortedRincian.forEach(num => {
+                        const box = document.createElement('div');
+                        box.innerText = num;
+                        box.style.background = 'var(--success)';
+                        box.style.color = 'white';
+                        box.style.fontWeight = 'bold';
+                        box.style.width = '35px';
+                        box.style.height = '35px';
+                        box.style.display = 'flex';
+                        box.style.alignItems = 'center';
+                        box.style.justifyContent = 'center';
+                        box.style.borderRadius = '6px';
+                        box.style.boxShadow = 'var(--shadow-sm)';
+                        containerRincian.appendChild(box);
+                    });
+                } else {
+                    containerRincian.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; font-style: italic;">Rincian tidak tersedia.</span>';
+                }
+
+                document.getElementById('modal-detail-hasil').style.display = 'flex';
             }
-
-            document.getElementById('modal-detail-hasil').style.display = 'flex';
-        }
-    });
+        });
+    }
 
     document.getElementById('close-modal-detail')?.addEventListener('click', () => {
         document.getElementById('modal-detail-hasil').style.display = 'none';
-    });
-
-    // Aksi Cetak PDF & Excel
-    document.getElementById('btn-print-pdf')?.addEventListener('click', () => window.print());
-    
-    document.getElementById('btn-print-excel')?.addEventListener('click', () => {
-        let filteredHasil = getFilteredHasil();
-        const filterPilihan = filterTabelHasil?.value || 'semua';
-        if (filterPilihan !== 'semua') filteredHasil = filteredHasil.filter(h => h.mapel === filterPilihan);
-
-        if (filteredHasil.length === 0) return alert('Tidak ada data untuk di-export!');
-
-        let csvContent = "Nama Siswa,Kelas,Mata Pelajaran,Jawaban Benar,Total Soal,Nilai Akhir\n";
-        filteredHasil.forEach(row => {
-            csvContent += `"${row.nama}","${row.kelas}","${row.mapel}","${row.benar}","${row.totalSoal}","${row.nilai}"\n`;
-        });
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `Rekap_Nilai_${filterPilihan}_${new Date().toISOString().slice(0,10)}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     });
 
     // ==========================================
