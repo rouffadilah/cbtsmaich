@@ -29,22 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = "index.html"; return;
         }
 
-        // Tampilkan Nama di Pojok Kanan Atas
         document.getElementById('admin-name').innerText = user.displayName || userRole.toUpperCase();
         
-        // PERBAIKAN: Tampilkan Nama di Sapaan Banner Utama
         const greetingText = document.getElementById('greeting-text');
-        if(greetingText) {
-            greetingText.innerHTML = `Assalamu'alaikum, ${user.displayName}! 👋`;
-        }
+        if(greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${user.displayName}! 👋`;
         
         if (userRole === "admin") {
             document.getElementById('panel-title-role').innerText = "PANEL ADMIN";
+            fetchStatusReg(); // Tarik pengaturan pendaftaran khusus untuk admin
         } else if (userRole === "guru") {
             document.getElementById('panel-title-role').innerText = "PANEL GURU";
+            
             document.getElementById('menu-pengguna').style.display = 'none';
+            
+            const adminRegStatus = document.getElementById('admin-reg-status');
+            if(adminRegStatus) adminRegStatus.style.display = 'none';
             const adminDataMaster = document.getElementById('admin-data-master');
-            if (adminDataMaster) adminDataMaster.style.display = 'none';
+            if(adminDataMaster) adminDataMaster.style.display = 'none';
+            
             const pengaturanTitle = document.getElementById('pengaturan-title');
             if (pengaturanTitle) pengaturanTitle.innerText = "Pengaturan Token Ujian";
             const menuPengaturan = document.getElementById('menu-pengaturan');
@@ -150,6 +152,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!confirm("Hapus Kelas ini?")) return; listKelas.splice(index, 1);
         await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true }); loadDataMaster();
     };
+
+
+    // ==========================================
+    // PENGATURAN STATUS REGISTRASI (KHUSUS ADMIN)
+    // ==========================================
+    async function fetchStatusReg() {
+        try {
+            const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
+            if (regSnap.exists()) {
+                document.getElementById('status-reg-siswa').value = regSnap.data().siswa_aktif !== false ? "buka" : "tutup";
+                document.getElementById('status-reg-guru').value = regSnap.data().guru_aktif !== false ? "buka" : "tutup";
+            } else {
+                document.getElementById('status-reg-siswa').value = "buka";
+                document.getElementById('status-reg-guru').value = "buka";
+            }
+        } catch (e) {
+            console.error("Gagal memuat status registrasi", e);
+        }
+    }
+
+    document.getElementById('btn-save-reg-status')?.addEventListener('click', async () => {
+        const statusSiswa = document.getElementById('status-reg-siswa').value === "buka";
+        const statusGuru = document.getElementById('status-reg-guru').value === "buka";
+        
+        const btn = document.getElementById('btn-save-reg-status');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+        
+        try {
+            await setDoc(doc(db, "pengaturan", "status_registrasi"), {
+                siswa_aktif: statusSiswa,
+                guru_aktif: statusGuru
+            }, { merge: true });
+            alert("Status pendaftaran (registrasi) berhasil diperbarui!");
+        } catch (error) {
+            console.error(error);
+            alert("Gagal memperbarui status registrasi.");
+        }
+        btn.innerHTML = '<i class="fas fa-save"></i> Simpan Status';
+    });
 
 
     // ==========================================
