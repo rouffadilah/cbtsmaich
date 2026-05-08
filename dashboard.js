@@ -56,12 +56,32 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadDataMaster();
         loadDataSoal();
         loadDataHasil();
-        loadActiveTokens(); // Tarik data token saat halaman dimuat
+        loadActiveTokens(); 
         if(userRole === "admin") loadDataPengguna();
     });
 
     document.getElementById('btn-logout').addEventListener('click', async () => {
         if(confirm('Yakin ingin keluar?')) { await signOut(auth); localStorage.clear(); window.location.href = 'index.html'; }
+    });
+
+    // PERBAIKAN: Fungsi Klik pada Kotak Statistik di Beranda
+    document.querySelectorAll('.stat-clickable').forEach(box => {
+        box.addEventListener('click', (e) => {
+            const targetId = e.currentTarget.dataset.target; // Dapatkan ID seksi yang dituju
+            
+            // Hapus status 'selected' dari semua menu kiri
+            document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
+            
+            // Hapus status 'active' dari semua seksi konten
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+            
+            // Aktifkan menu dan seksi yang sesuai
+            const targetMenu = document.querySelector(`.option-item[data-section="${targetId}"]`);
+            const targetSection = document.getElementById(targetId);
+            
+            if (targetMenu) targetMenu.classList.add('selected');
+            if (targetSection) targetSection.classList.add('active');
+        });
     });
 
     const menuOptions = document.querySelectorAll('.option-item');
@@ -203,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>`;
         try {
             const snap = await getDocs(collection(db, "users"));
+            // Memperbarui UI Statistik agar angkanya akurat dengan database
             document.getElementById('stat-siswa').innerText = snap.size;
             tbody.innerHTML = ''; allUsersData = []; 
             
@@ -359,7 +380,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userMapel.length === 0) { tbodySoal.innerHTML = `<tr><td colspan="4" style="text-align:center;">Anda belum ditugaskan ke mapel apapun.</td></tr>`; return; }
                 qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "in", userMapel));
             }
-            const snap = await getDocs(qSoal); document.getElementById('stat-soal').innerText = snap.size;
+            const snap = await getDocs(qSoal); 
+            // Memperbarui UI Statistik Soal
+            document.getElementById('stat-soal').innerText = snap.size;
             tbodySoal.innerHTML = snap.empty ? `<tr><td colspan="4" style="text-align:center;">Bank soal kosong.</td></tr>` : '';
             snap.forEach(docSnap => {
                 const data = docSnap.data();
@@ -379,7 +402,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userMapel.length === 0) { tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align:center;">Tidak ada data.</td></tr>`; return; }
                 qHasil = query(collection(db, "hasil_ujian"), where("mataPelajaran", "in", userMapel));
             }
-            const snap = await getDocs(qHasil); document.getElementById('stat-ujian').innerText = snap.size;
+            const snap = await getDocs(qHasil); 
+            // Memperbarui UI Statistik Hasil Ujian Masuk
+            document.getElementById('stat-ujian').innerText = snap.size;
             allHasilUjian = []; snap.forEach(docSnap => allHasilUjian.push({ id: docSnap.id, ...docSnap.data() }));
             renderHasilTable(); 
         } catch(error) { console.error(error); }
@@ -472,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // PERBAIKAN: TABEL DAFTAR TOKEN AKTIF
+    // TABEL DAFTAR TOKEN AKTIF
     // ==========================================
     async function loadActiveTokens() {
         const tbody = document.querySelector('#table-active-tokens tbody');
@@ -486,7 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(tokenSnap.exists()) {
                 const data = tokenSnap.data();
                 
-                // Filter hanya token yang terkait dengan hak akses guru (Admin melihat semua)
                 let keys = Object.keys(data);
                 if (userRole === "guru") {
                     keys = keys.filter(k => {
@@ -545,7 +569,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadActiveTokens(); 
         } 
         catch(error) { 
-            // Jika dokumen belum ada, gunakan setDoc
             try {
                 const tokenKey = `token_${mapel}_${kelas}`;
                 await setDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: tokenInput }, { merge: true });
