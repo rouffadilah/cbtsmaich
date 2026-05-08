@@ -22,7 +22,6 @@ let allSoalData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // PERBAIKAN: Baca Array Multi-Role
     const userRoles = JSON.parse(localStorage.getItem("userRole") || "[]");
     let userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]");
     let userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]"); 
@@ -39,13 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const greetingText = document.getElementById('greeting-text');
         if(greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${user.displayName}! 👋`;
         
-        // Logika Tampilan Berdasarkan Array Multi-Role
         if (isAdmin) {
-            // ADMIN MELIHAT SEMUANYA
             document.getElementById('panel-title-role').innerText = "PANEL ADMIN";
             fetchStatusReg(); 
         } else if (isGuru && !isAdmin) {
-            // JIKA HANYA GURU, BATASI TAMPILAN
             document.getElementById('panel-title-role').innerText = "PANEL GURU";
             document.getElementById('menu-pengguna').style.display = 'none';
             
@@ -96,7 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     setInterval(() => { document.getElementById('live-time').innerText = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB"; }, 1000);
-
 
     // ==========================================
     // DATA MASTER
@@ -224,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
             snap.forEach(docSnap => {
                 const data = docSnap.data(); data.id = docSnap.id; allUsersData.push(data);
                 
-                // Konversi Role DB menjadi Array
                 const rls = Array.isArray(data.role) ? data.role : [data.role];
                 const roleText = rls.join(', ').toUpperCase();
                 const roleColor = rls.includes('admin') ? 'var(--danger)' : (rls.includes('guru') ? 'var(--info)' : 'var(--success)');
@@ -250,7 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.refreshPengguna = loadDataPengguna;
 
-    // Trigger perlihatkan Form Khusus Guru/Siswa saat Checkbox dicentang
     function updateNewFormVisibility() {
         const checkedRoles = Array.from(document.querySelectorAll('.new-role-cb:checked')).map(cb => cb.value);
         document.getElementById('group-new-mapel').style.display = checkedRoles.includes('guru') ? 'block' : 'none';
@@ -285,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let payload = { nama: nama, username: username, role: selectedRoles, createdAt: new Date() };
             if (selectedRoles.includes('guru')) { payload.mapel = selectedMapels; payload.kelas = selectedKelasGuru; }
             if (selectedRoles.includes('siswa')) {
-                if(!selectedRoles.includes('guru')) payload.kelas = kelasSiswa; // Menghindari bentrok array jika double role
+                if(!selectedRoles.includes('guru')) payload.kelas = kelasSiswa; 
                 else payload.kelas_siswa = kelasSiswa;
             }
 
@@ -326,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         const userCred = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, password);
                         await updateProfile(userCred.user, { displayName: nama });
 
-                        // Konversi Role Excel ke Array
                         const roleArr = roleStr.split(',').map(s => s.trim());
                         let payload = { nama: nama, username: username, role: roleArr, createdAt: new Date() };
                         
@@ -367,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-uid').value = user.id; 
         document.getElementById('edit-nama').value = user.nama; 
         
-        // Centang Role
         const rls = Array.isArray(user.role) ? user.role : [user.role];
         document.querySelectorAll('.edit-role-cb').forEach(cb => { cb.checked = rls.includes(cb.value); });
         
@@ -581,17 +572,39 @@ document.addEventListener('DOMContentLoaded', () => {
         try { await addDoc(collection(db, "bank_soal"), payload); alert("Soal tersimpan!"); modalSoal.style.display = 'none'; loadDataSoal(); } catch (error) { alert("Gagal menyimpan."); }
     });
 
+    // PERBAIKAN: Tombol Upload yang Benar
+    let selectedExcelSoal = null;
+    
     document.getElementById('file-excel')?.addEventListener('change', (e) => {
-        const file = e.target.files[0]; if (!file) return;
+        selectedExcelSoal = e.target.files[0];
+        const label = document.getElementById('label-file-excel');
+        if(selectedExcelSoal) {
+            label.innerHTML = `<i class="fas fa-check"></i> ${selectedExcelSoal.name}`;
+            label.style.background = "var(--secondary)";
+        } else {
+            label.innerHTML = `<i class="fas fa-search"></i> Pilih File`;
+            label.style.background = "var(--success)";
+        }
+    });
+
+    document.getElementById('btn-proses-import-soal')?.addEventListener('click', () => {
+        if (!selectedExcelSoal) return alert("Pilih file Excel terlebih dahulu!");
         const mapel = document.getElementById('import-mapel').value;
         if(!mapel) return alert("Pilih Mapel Terlebih Dahulu!");
+
+        const btn = document.getElementById('btn-proses-import-soal');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+        btn.disabled = true;
 
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
                 const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
                 const jsonSoal = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                if(!confirm(`Import ${jsonSoal.length} soal ke mapel ${mapel}?`)) return;
+                if(!confirm(`Import ${jsonSoal.length} soal ke mapel ${mapel}?`)) {
+                    btn.innerHTML = origText; btn.disabled = false; return;
+                }
 
                 for (let row of jsonSoal) {
                     const tipe = (row.Tipe || 'PG').toString().toUpperCase();
@@ -605,10 +618,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     await addDoc(collection(db, "bank_soal"), payload); 
                 }
-                alert(`Import Berhasil!`); modalSoal.style.display = 'none'; loadDataSoal();
+                alert(`Import Berhasil!`); 
+                modalSoal.style.display = 'none'; 
+                loadDataSoal();
+                
+                selectedExcelSoal = null;
+                document.getElementById('label-file-excel').innerHTML = `<i class="fas fa-search"></i> Pilih File`;
+                document.getElementById('label-file-excel').style.background = "var(--success)";
+                document.getElementById('file-excel').value = '';
+                
             } catch (err) { alert("Gagal membaca file Excel."); }
+            btn.innerHTML = origText; btn.disabled = false;
         };
-        reader.readAsArrayBuffer(file);
+        reader.readAsArrayBuffer(selectedExcelSoal);
     });
 
     // ==========================================
