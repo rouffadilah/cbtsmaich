@@ -7,15 +7,19 @@ let dataKelasSiswa = "-";
 let shuffledTargetsCache = {}; 
 const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 
+// Variabel Anti-Cheat (Baru)
+let cheatWarnings = 0;
+const MAX_CHEAT_WARNINGS = 3;
+let isExamActive = false; 
+let isWarningShowing = false;
+
 // 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA & SAPAAN DINAMIS
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     
-    // Set Nama Peserta di Header
     const namaSiswa = user.displayName || user.email.split('@')[0];
     document.getElementById('student-name').innerText = namaSiswa;
     
-    // PERBAIKAN: Hanya update sapaan utama (teks kecil berdoa ada di HTML)
     const greetingEl = document.getElementById('greeting-peserta');
     if (greetingEl) {
         greetingEl.innerText = `Assalamu'alaikum ${namaSiswa}...`;
@@ -36,7 +40,6 @@ auth.onAuthStateChanged(async (user) => {
     } catch(e) { console.error("Gagal load data awal", e); }
 });
 
-// JAM REALTIME BERJALAN DI HEADER
 setInterval(() => { 
     const liveTimeEl = document.getElementById('live-time-student');
     if (liveTimeEl) {
@@ -44,7 +47,7 @@ setInterval(() => {
     }
 }, 1000);
 
-// 2. VALIDASI TOKEN OTOMATIS BERDASARKAN KELAS SISWA
+// 2. VALIDASI TOKEN OTOMATIS
 const preExamSection = document.getElementById('pre-exam-section');
 const mainExamLayout = document.getElementById('main-exam-layout');
 const btnVerifikasi = document.getElementById('btn-verifikasi');
@@ -76,7 +79,14 @@ btnVerifikasi.addEventListener('click', async () => {
             return;
         }
 
-        mapelTerpilih = selectMapel; preExamSection.style.display = 'none'; mainExamLayout.style.display = 'grid'; 
+        // Token Benar! Aktifkan Ujian dan Mesin Anti-Cheat
+        mapelTerpilih = selectMapel; 
+        preExamSection.style.display = 'none'; 
+        mainExamLayout.style.display = 'grid'; 
+        
+        // PENTING: Aktifkan status ujian untuk memantau tab
+        setTimeout(() => { isExamActive = true; }, 1000); // Jeda 1 detik agar transisi awal tidak dianggap cheat
+        
         initUjian(); 
     } catch (error) { alert("Gagal memvalidasi token."); btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false; }
 });
@@ -179,7 +189,7 @@ function startTimer(durationInSeconds) {
         const h = Math.floor(timer / 3600), m = Math.floor((timer % 3600) / 60), s = timer % 60;
         display.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         if (timer <= 300) { display.style.color = 'var(--danger)'; display.classList.add('blink'); }
-        if (--timer < 0) { clearInterval(interval); alert("Waktu Habis!"); document.getElementById('finish-btn').click(); }
+        if (--timer < 0) { clearInterval(interval); forceSubmitExam("Waktu Habis! Jawaban Anda dikirim secara otomatis."); }
     }, 1000);
 }
 
@@ -187,14 +197,77 @@ document.getElementById('next-btn').onclick = () => { if (currentIdx < questions
 document.getElementById('prev-btn').onclick = () => { if (currentIdx > 0) renderSoal(currentIdx - 1); };
 document.getElementById('doubt-btn').onclick = () => { doubtStatus[currentIdx] = !doubtStatus[currentIdx]; localStorage.setItem(KEY_DOUBT, JSON.stringify(doubtStatus)); updateUI(); };
 
-// 5. KALKULASI & SUBMIT HASIL UJIAN
+
+// ==========================================
+// 5. MESIN ANTI-CHEAT (PENDETEKSI PINDAH TAB)
+// ==========================================
+
+function triggerCheatWarning() {
+    if (!isExamActive || isWarningShowing) return;
+    
+    isWarningShowing = true;
+    cheatWarnings++;
+
+    if (cheatWarnings >= MAX_CHEAT_WARNINGS) {
+        forceSubmitExam("PELANGGARAN FATAL! Anda telah meninggalkan ujian 3 kali. Ujian dihentikan otomatis secara paksa.");
+        return;
+    }
+
+    // Tampilkan Peringatan Pelanggaran
+    document.getElementById('cheat-count').innerText = cheatWarnings;
+    document.getElementById('modal-pelanggaran').style.display = 'flex';
+}
+
+// Event 1: Mendeteksi saat pengguna meminimalkan browser atau pindah ke Tab lain
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'hidden' && isExamActive) {
+        triggerCheatWarning();
+    }
+});
+
+// Event 2: Mendeteksi saat pengguna membuka aplikasi lain (Alt+Tab)
+window.addEventListener("blur", () => {
+    if (isExamActive) {
+        triggerCheatWarning();
+    }
+});
+
+// Tutup peringatan
+document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', () => {
+    document.getElementById('modal-pelanggaran').style.display = 'none';
+    // Beri jeda 1 detik sebelum mesin pengawas menyala lagi (mencegah klik ganda)
+    setTimeout(() => { isWarningShowing = false; }, 1000);
+});
+
+
+// ==========================================
+// 6. KALKULASI & SUBMIT HASIL UJIAN
+// ==========================================
+
+// Fungsi submit paksa (Akibat Waktu Habis / Pelanggaran)
+async function forceSubmitExam(pesanPeringatan) {
+    isExamActive = false; // Matikan anti-cheat agar tidak tumpang tindih saat loading
+    alert(pesanPeringatan);
+    await eksekusiKirimJawaban();
+}
+
+// Fungsi submit manual oleh siswa
 document.getElementById('finish-btn').onclick = async () => {
     const belumDijawab = userAnswers.filter(ans => ans === null || (typeof ans === 'object' && Object.keys(ans).length === 0)).length;
     let pesan = "Apakah Anda yakin mengakhiri ujian?";
-    if(belumDijawab > 0) pesan = `PERINGATAN: Masih ada ${belumDijawab} soal kosong!\n\n` + pesan;
+    if(belumDijawab > 0) pesan = `Masih ada ${belumDijawab} soal kosong!\n\n` + pesan;
+    
     if (!confirm(pesan)) return;
 
-    const btn = document.getElementById('finish-btn'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGHITUNG...'; btn.disabled = true;
+    isExamActive = false; // Matikan anti-cheat karena siswa mensubmit secara sah
+    await eksekusiKirimJawaban();
+};
+
+// Fungsi Eksekusi Utama (Menghitung & Mengirim Data ke Firebase)
+async function eksekusiKirimJawaban() {
+    const btn = document.getElementById('finish-btn'); 
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGHITUNG...'; 
+    btn.disabled = true;
 
     let benar = 0; let rincianBenar = [];
     questions.forEach((q, i) => {
@@ -214,10 +287,17 @@ document.getElementById('finish-btn').onclick = async () => {
             kelas: dataKelasSiswa,
             mataPelajaran: mapelTerpilih, jawabanSiswa: userAnswers, benar: benar,
             nilai: nilaiAkhir, totalSoal: questions.length, rincianBenar: rincianBenar,
+            pelanggaranKecurangan: cheatWarnings, // Simpan histori pelanggaran ke server
             waktuSelesai: new Date(), status: "Selesai"
         });
         
         localStorage.removeItem(KEY_ANS); localStorage.removeItem(KEY_DOUBT);
         alert(`Ujian selesai! Skor (Auto) Anda: ${nilaiAkhir}.`); window.location.href = "index.html"; 
-    } catch (error) { console.error(error); alert("Gagal mengirim jawaban: " + error.message); btn.innerHTML = '<i class="fas fa-check-double"></i> SELESAI UJIAN'; btn.disabled = false; }
-};
+    } catch (error) { 
+        console.error(error); 
+        alert("Gagal mengirim jawaban: " + error.message); 
+        isExamActive = true; // Nyalakan lagi pengawasan jika gagal kirim
+        btn.innerHTML = '<i class="fas fa-check-double"></i> SELESAI UJIAN'; 
+        btn.disabled = false; 
+    }
+}
