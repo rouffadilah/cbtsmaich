@@ -23,7 +23,7 @@
                 <div class="option-item" data-section="section-soal"><i class="fas fa-book"></i> Bank Soal</div>
                 <div class="option-item" data-section="section-hasil"><i class="fas fa-poll"></i> Hasil Ujian</div>
                 <div class="option-item" id="menu-pengguna" data-section="section-pengguna"><i class="fas fa-users-cog"></i> Manajemen Pengguna</div>
-                <div class="option-item" id="menu-pengaturan" data-section="section-pengaturan"><i class="fas fa-cogs"></i> Pengaturan & Token</div>
+                <div class="option-item" id="menu-pengaturan" data-section="section-pengaturan"><i class="fas fa-cogs"></i> Pengaturan & Data Master</div>
             </div>
         </aside>
 
@@ -194,6 +194,28 @@
                     <div class="card">
                         <h2 class="section-title" id="pengaturan-title">Data Master & Pengaturan (Admin)</h2>
                         
+                        <div id="admin-reg-status" style="margin-bottom: 25px; background: #f0fdf4; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--success);">
+                            <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-user-lock"></i> Pengaturan Buka/Tutup Form Registrasi Publik:</label>
+                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                <div>
+                                    <span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Siswa:</span>
+                                    <select id="status-reg-siswa" class="input-text" style="width: auto; font-weight: bold;">
+                                        <option value="buka">Buka (Aktif)</option>
+                                        <option value="tutup">Tutup (Nonaktif)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Guru:</span>
+                                    <select id="status-reg-guru" class="input-text" style="width: auto; font-weight: bold;">
+                                        <option value="buka">Buka (Aktif)</option>
+                                        <option value="tutup">Tutup (Nonaktif)</option>
+                                    </select>
+                                </div>
+                                <button id="btn-save-reg-status" class="btn-3d" style="width: auto; background-color: var(--success);"><i class="fas fa-save"></i> Simpan Status</button>
+                            </div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">*Jika ditutup, formulir pendaftaran pada halaman registrasi.html akan otomatis terkunci untuk mencegah pendaftaran di luar jadwal.</p>
+                        </div>
+
                         <div style="margin-bottom: 25px; background: #fffbeb; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--warning);">
                             <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-key"></i> Set Token Ujian Aktif:</label>
                             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
