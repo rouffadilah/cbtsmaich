@@ -23,7 +23,7 @@
                 <div class="option-item" data-section="section-soal"><i class="fas fa-book"></i> Bank Soal</div>
                 <div class="option-item" data-section="section-hasil"><i class="fas fa-poll"></i> Hasil Ujian</div>
                 <div class="option-item" id="menu-pengguna" data-section="section-pengguna"><i class="fas fa-users-cog"></i> Manajemen Pengguna</div>
-                <div class="option-item" id="menu-pengaturan" data-section="section-pengaturan"><i class="fas fa-cogs"></i> Pengaturan & Data Master</div>
+                <div class="option-item" id="menu-pengaturan" data-section="section-pengaturan"><i class="fas fa-cogs"></i> Pengaturan & Token</div>
             </div>
         </aside>
 
@@ -192,7 +192,7 @@
 
                 <div id="section-pengaturan" class="content-section">
                     <div class="card">
-                        <h2 class="section-title">Data Master & Pengaturan (Admin)</h2>
+                        <h2 class="section-title" id="pengaturan-title">Data Master & Pengaturan (Admin)</h2>
                         
                         <div style="margin-bottom: 25px; background: #fffbeb; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--warning);">
                             <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-key"></i> Set Token Ujian Aktif:</label>
@@ -216,7 +216,7 @@
                             <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">*Sistem otomatis mendeteksi kelas siswa, pastikan Anda membuat token untuk setiap kelas yang ujian.</p>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div id="admin-data-master" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
                                 <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-book"></i> Master Mata Pelajaran</h4>
                                 <div style="display: flex; gap: 10px; margin-bottom: 15px;">
