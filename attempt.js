@@ -270,7 +270,10 @@ async function eksekusiKirimJawaban() {
         });
         
         localStorage.removeItem(KEY_ANS); localStorage.removeItem(KEY_DOUBT);
-        alert(`Ujian selesai! Skor (Auto) Anda: ${nilaiAkhir}.`); window.location.href = "index.html"; 
+        
+        // PERBAIKAN: Tidak memberitahu nilai akhir ke siswa
+        alert(`Ujian telah selesai dan jawaban Anda berhasil tersimpan. Silakan logout.`); 
+        window.location.href = "index.html"; 
     } catch (error) { 
         console.error(error); 
         alert("Gagal mengirim jawaban: " + error.message); 
