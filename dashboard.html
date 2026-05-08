@@ -23,7 +23,7 @@
                 <div class="option-item" data-section="section-soal"><i class="fas fa-book"></i> Bank Soal</div>
                 <div class="option-item" data-section="section-hasil"><i class="fas fa-poll"></i> Hasil Ujian</div>
                 <div class="option-item" id="menu-pengguna" data-section="section-pengguna"><i class="fas fa-users-cog"></i> Manajemen Pengguna</div>
-                <div class="option-item" id="menu-pengaturan" data-section="section-pengaturan"><i class="fas fa-cogs"></i> Pengaturan Sistem</div>
+                <div class="option-item" id="menu-pengaturan" data-section="section-pengaturan"><i class="fas fa-cogs"></i> Pengaturan & Data Master</div>
             </div>
         </aside>
 
@@ -107,10 +107,7 @@
                         <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                             <label style="font-weight: 600; font-size: 0.9rem; color: var(--secondary);"><i class="fas fa-filter"></i> Filter Mapel:</label>
                             <select id="filter-tabel-hasil" class="input-text" style="width: auto; padding: 6px 12px;">
-                                <option value="semua">Semua Mata Pelajaran</option>
-                                <option value="informatika">Informatika</option>
-                                <option value="tkj">Teknik Komputer dan Jaringan (TKJ)</option>
-                                <option value="coding-ai">Coding & Artificial Intelligence</option>
+                                <option value="semua">Memuat Mapel...</option>
                             </select>
                         </div>
                         <div class="table-container">
@@ -118,6 +115,7 @@
                                 <thead>
                                     <tr>
                                         <th>Nama Siswa</th>
+                                        <th>Kelas</th>
                                         <th>Mata Pelajaran</th>
                                         <th>Benar/Total</th>
                                         <th>Nilai Akhir</th>
@@ -139,16 +137,21 @@
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <input type="text" id="new-nama" placeholder="Nama Lengkap" class="input-text" style="flex: 1; min-width: 150px;">
                                 <input type="text" id="new-username" placeholder="Username/NIS/NIP" class="input-text" style="flex: 1; min-width: 150px;">
+                                
                                 <select id="new-role" class="input-text" style="width: 130px;">
                                     <option value="siswa">Siswa</option>
                                     <option value="guru">Guru</option>
                                     <option value="admin">Admin</option>
                                 </select>
+                                
                                 <select id="new-mapel" class="input-text" style="width: 150px; display: none;">
-                                    <option value="informatika">Mapel: Informatika</option>
-                                    <option value="tkj">Mapel: TKJ</option>
-                                    <option value="coding-ai">Mapel: Coding & AI</option>
+                                    <option value="">Memuat Mapel...</option>
                                 </select>
+                                
+                                <select id="new-kelas" class="input-text" style="width: 150px;">
+                                    <option value="">Memuat Kelas...</option>
+                                </select>
+
                                 <input type="password" id="new-pass" placeholder="Password (Min. 6)" class="input-text" style="width: 150px;">
                                 <button id="btn-add-user" class="btn-3d" style="width: auto; background-color: var(--info);"><i class="fas fa-save"></i> Tambah</button>
                             </div>
@@ -160,8 +163,8 @@
                                     <tr>
                                         <th>Username / NIS</th>
                                         <th>Nama Pengguna</th>
-                                        <th>Role / Hak Akses</th>
-                                        <th>Mapel (Khusus Guru)</th>
+                                        <th>Role</th>
+                                        <th>Detail (Mapel/Kelas)</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -173,19 +176,47 @@
 
                 <div id="section-pengaturan" class="content-section">
                     <div class="card">
-                        <h2 class="section-title">Pengaturan Sistem (Admin)</h2>
+                        <h2 class="section-title">Data Master & Pengaturan (Admin)</h2>
+                        
                         <div style="margin-bottom: 25px; background: #fffbeb; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--warning);">
-                            <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-key"></i> Pengaturan Token Ujian Aktif:</label>
+                            <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-key"></i> Set Token Ujian Aktif:</label>
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <select id="set-token-mapel" class="input-text" style="width: auto;">
-                                    <option value="informatika">Informatika</option>
-                                    <option value="tkj">TKJ</option>
-                                    <option value="coding-ai">Coding & AI</option>
+                                    <option value="">Memuat Mapel...</option>
                                 </select>
                                 <input type="text" id="input-token-baru" class="input-text" style="width: 200px;" placeholder="Ketik Token (cth: X7Y8Z)">
                                 <button id="btn-save-token" class="btn-3d" style="width: auto; background-color: var(--warning);"><i class="fas fa-check"></i> Set Token</button>
                             </div>
                         </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-book"></i> Master Mata Pelajaran</h4>
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                    <input type="text" id="input-new-mapel" class="input-text" placeholder="Mapel Baru (cth: Bahasa Inggris)">
+                                    <button id="btn-add-mapel" class="btn-3d" style="width: auto;"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                    <table id="table-master-mapel" style="width: 100%; font-size: 0.85rem;">
+                                        <tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-chalkboard"></i> Master Kelas</h4>
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                    <input type="text" id="input-new-kelas" class="input-text" placeholder="Kelas Baru (cth: XII RPL)">
+                                    <button id="btn-add-kelas" class="btn-3d" style="width: auto;"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                    <table id="table-master-kelas" style="width: 100%; font-size: 0.85rem;">
+                                        <tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -208,9 +239,7 @@
                     <div style="flex: 1;">
                         <label>Mata Pelajaran</label>
                         <select id="soal-mapel" class="input-text">
-                            <option value="informatika">Informatika</option>
-                            <option value="tkj">Teknik Komputer dan Jaringan (TKJ)</option>
-                            <option value="coding-ai">Coding & Artificial Intelligence</option>
+                            <option value="">Memuat Mapel...</option>
                         </select>
                     </div>
                     <div style="flex: 1;">
@@ -243,9 +272,7 @@
                 <div class="input-group">
                     <label>Mata Pelajaran untuk File Import</label>
                     <select id="import-mapel" class="input-text" style="margin-bottom: 15px;">
-                        <option value="informatika">Informatika</option>
-                        <option value="tkj">Teknik Komputer dan Jaringan (TKJ)</option>
-                        <option value="coding-ai">Coding & Artificial Intelligence</option>
+                        <option value="">Memuat Mapel...</option>
                     </select>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -272,6 +299,7 @@
             <h3 style="margin-bottom: 15px; color: var(--secondary);">Rincian Hasil Ujian</h3>
             <table class="table-detail" style="width: 100%; margin-bottom: 15px; font-size: 0.9rem;">
                 <tr><td style="width: 120px; font-weight: bold;">Nama Siswa</td><td id="detail-nama">: -</td></tr>
+                <tr><td style="font-weight: bold;">Kelas</td><td id="detail-kelas">: -</td></tr>
                 <tr><td style="font-weight: bold;">Mata Pelajaran</td><td id="detail-mapel">: -</td></tr>
             </table>
             <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
