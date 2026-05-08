@@ -1,11 +1,26 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ujian Berbasis Komputer - SMAICH</title>
+    <meta name="google" content="notranslate"> <title>Ujian Berbasis Komputer - SMAICH</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* Mencegah kursor menyeleksi/memblok teks soal */
+        body {
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10 and IE 11 */
+            user-select: none; /* Standard syntax */
+        }
+        /* Mengizinkan seleksi HANYA di dalam input teks dan textarea (untuk soal isian/uraian) */
+        input, textarea {
+            -webkit-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+    </style>
 </head>
 <body>
 
@@ -115,7 +130,7 @@
             <i class="fas fa-exclamation-triangle fa-5x" style="color: var(--danger); margin-bottom: 20px; animation: pulse 1.5s infinite;"></i>
             <h2 style="color: var(--danger); margin-bottom: 10px; font-size: 1.8rem; font-weight: 800; text-transform: uppercase;">Pelanggaran Ujian!</h2>
             <p style="font-size: 1.05rem; color: var(--secondary); margin-bottom: 20px; font-weight: 500;">
-                Sistem mendeteksi Anda berusaha keluar dari halaman ujian (Pindah Tab/Minimize Layar).
+                Sistem mendeteksi Anda berusaha keluar dari halaman ujian atau menekan tombol ilegal.
             </p>
             
             <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #f87171;">
