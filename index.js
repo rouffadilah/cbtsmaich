@@ -1,129 +1,55 @@
-import { auth } from './firebase-config.js';
+import { auth, db } from './firebase-config.js';
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// ==========================================
-// 1. ELEMEN DOM & KONSTANTA
-// ==========================================
-const ELEMENTS = {
-    loginForm: document.getElementById("login-form"),
-    roleSelect: document.getElementById("login-role"),
-    btnSubmit: document.getElementById("btn-submit"),
-    portalTitle: document.getElementById("portal-title"),
-    usernameInput: document.getElementById("username"),
-    passwordInput: document.getElementById("password")
-};
+const loginForm = document.getElementById("login-form");
+const btnSubmit = document.getElementById("btn-submit");
 
-const ROLES = {
-    GURU: "guru",
-    SISWA: "siswa"
-};
-
-// ==========================================
-// 2. FUNGSI PENGENDALI UI (TAMPILAN)
-// ==========================================
-
-/**
- * Mengubah teks judul portal dan tombol berdasarkan role yang dipilih
- */
-function handleRoleChange(event) {
-    const isGuru = event.target.value === ROLES.GURU;
-    
-    // Animasi sederhana dengan transisi opacity
-    ELEMENTS.portalTitle.style.opacity = 0;
-    
-    setTimeout(() => {
-        ELEMENTS.portalTitle.innerText = isGuru ? "PORTAL GURU SMAICH" : "CBT SMAICH";
-        ELEMENTS.btnSubmit.innerText = isGuru ? "MASUK PANEL KONTROL" : "MASUK KE UJIAN";
-        ELEMENTS.portalTitle.style.opacity = 1;
-    }, 150);
-}
-
-/**
- * Mengatur status tombol submit (loading / normal)
- */
-function setSubmitState(isLoading, originalText = "") {
-    if (isLoading) {
-        ELEMENTS.btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
-        ELEMENTS.btnSubmit.disabled = true;
-        ELEMENTS.btnSubmit.style.opacity = "0.8";
-    } else {
-        ELEMENTS.btnSubmit.innerHTML = originalText;
-        ELEMENTS.btnSubmit.disabled = false;
-        ELEMENTS.btnSubmit.style.opacity = "1";
-    }
-}
-
-/**
- * Mengonversi kode error Firebase menjadi pesan yang ramah pengguna
- */
-function getErrorMessage(errorCode) {
-    switch (errorCode) {
-        case 'auth/invalid-credential':
-            return "Username atau Password salah!";
-        case 'auth/network-request-failed':
-            return "Koneksi internet terputus. Silakan periksa jaringan Anda.";
-        case 'auth/user-not-found':
-            return "Akun tidak ditemukan.";
-        default:
-            return "Terjadi kesalahan saat masuk. Silakan coba lagi.";
-    }
-}
-
-// ==========================================
-// 3. FUNGSI AUTENTIKASI (LOGIN LOGIC)
-// ==========================================
-
-/**
- * Memproses pengiriman form login
- */
-async function handleLogin(event) {
+loginForm.addEventListener("submit", async (event) => {
     event.preventDefault(); 
     
-    const originalBtnText = ELEMENTS.btnSubmit.innerHTML;
-    setSubmitState(true); // Aktifkan mode loading
+    const originalBtnText = btnSubmit.innerHTML;
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
+    btnSubmit.disabled = true;
 
-    const username = ELEMENTS.usernameInput.value.trim();
-    const password = ELEMENTS.passwordInput.value;
-    const loginRole = ELEMENTS.roleSelect.value;
-    
-    // Format email dummy sesuai sistem
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
     const dummyEmail = `${username}@cbt.smaich.id`;
 
     try {
-        // Proses Autentikasi Firebase
-        await signInWithEmailAndPassword(auth, dummyEmail, password);
+        // 1. Login Firebase Auth
+        const userCred = await signInWithEmailAndPassword(auth, dummyEmail, password);
+        const user = userCred.user;
 
-        // Simpan role ke local storage untuk otorisasi di halaman selanjutnya
-        localStorage.setItem("userRole", loginRole);
-        
-        // Redirect sesuai role
-        if (loginRole === ROLES.GURU) {
-            window.location.href = "dashboard.html"; 
+        // 2. Ambil Role dan Mapel dari Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Simpan sesi ke LocalStorage untuk Dashboard
+            localStorage.setItem("userRole", userData.role);
+            if (userData.role === 'guru') {
+                localStorage.setItem("userMapel", userData.mapel || "informatika"); // default fallback
+            }
+
+            // 3. Arahkan Halaman Sesuai Hak Akses
+            if (userData.role === "admin" || userData.role === "guru") {
+                window.location.href = "dashboard.html"; 
+            } else {
+                window.location.href = "attempt.html"; // Siswa
+            }
         } else {
-            window.location.href = "attempt.html";
+            alert("Akses ditolak! Data pengguna tidak ditemukan di database.");
+            auth.signOut();
+            btnSubmit.innerHTML = originalBtnText;
+            btnSubmit.disabled = false;
         }
 
     } catch (error) {
-        console.error("Login Error:", error.code);
-        
-        // Tampilkan pesan error
-        alert(getErrorMessage(error.code));
-        
-        // Kembalikan tombol ke status awal
-        setSubmitState(false, originalBtnText);
-    }
-}
-
-// ==========================================
-// 4. INISIALISASI EVENT LISTENER
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-    // Pastikan elemen ada sebelum menambahkan event listener untuk mencegah error
-    if (ELEMENTS.roleSelect) {
-        ELEMENTS.roleSelect.addEventListener("change", handleRoleChange);
-    }
-
-    if (ELEMENTS.loginForm) {
-        ELEMENTS.loginForm.addEventListener("submit", handleLogin);
+        console.error("Login Error:", error);
+        alert("Username atau Password salah!");
+        btnSubmit.innerHTML = originalBtnText;
+        btnSubmit.disabled = false;
     }
 });
