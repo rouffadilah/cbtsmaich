@@ -87,7 +87,7 @@
                         <div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; align-items: center;">
                             <h2 class="section-title" style="margin: 0;">Bank Soal Ujian</h2>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button id="btn-tambah-manual" class="btn-3d" style="width: auto;"><i class="fas fa-plus"></i> Tambah Manual</button>
+                                <button id="btn-tambah-manual" class="btn-3d" style="width: auto;"><i class="fas fa-plus"></i> Kelola Soal</button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -95,6 +95,7 @@
                                 <thead>
                                     <tr>
                                         <th>Mapel</th>
+                                        <th>Tipe</th>
                                         <th>Pertanyaan</th>
                                         <th>Kunci Jawaban</th>
                                         <th>Aksi</th>
@@ -151,7 +152,7 @@
                                         <th>Nama Siswa</th>
                                         <th>Mata Pelajaran</th>
                                         <th>Benar/Total</th>
-                                        <th>Nilai Akhir</th>
+                                        <th>Nilai Akhir (Auto)</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -253,7 +254,7 @@
                     <div style="border: 2px dashed var(--info); padding: 20px; border-radius: 8px; text-align: center; background: #eff6ff;">
                         <i class="fas fa-file-word fa-3x" style="color: var(--info); margin-bottom: 10px;"></i>
                         <h4 style="color: var(--secondary); margin-bottom: 5px;">Import dari Word</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Hanya teks. Format tabel/gambar tidak terbaca otomatis.</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Membaca baris teks murni. (Fitur Beta)</p>
                         <input type="file" id="file-word" accept=".docx" style="display: none;">
                         <label for="file-word" class="btn-3d" style="background: var(--info); cursor: pointer; padding: 8px;"><i class="fas fa-upload"></i> Pilih Word</label>
                     </div>
@@ -261,7 +262,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="modal-detail-hasil" class="modal" style="display: none; align-items: center; justify-content: center;">
         <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 500px; max-width: 90%;">
             <span class="close-btn" id="close-modal-detail" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
@@ -273,12 +274,13 @@
             </table>
 
             <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <p style="font-weight: bold; margin-bottom: 10px; color: var(--success);">Nomor Soal Dijawab Benar (<span id="detail-jml-benar">0</span> dari <span id="detail-total-soal">0</span>):</p>
+                <p style="font-weight: bold; margin-bottom: 10px; color: var(--success);">Nomor Soal Dijawab Benar Otomatis (<span id="detail-jml-benar">0</span> dari <span id="detail-total-soal">0</span>):</p>
                 <div id="detail-rincian-benar" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                <p style="font-size: 0.8rem; color: var(--warning); margin-top: 10px;">*Soal Uraian memerlukan pengecekan manual oleh Guru.</p>
             </div>
 
             <div class="nilai-akhir-box" style="margin-top: 15px; text-align: center; background: #eff6ff; padding: 15px; border-radius: 8px;">
-                <span style="font-size: 1rem; color: var(--secondary); font-weight: 600;">NILAI AKHIR</span><br>
+                <span style="font-size: 1rem; color: var(--secondary); font-weight: 600;">NILAI AKHIR (PG, PGK, Jodoh, Isian)</span><br>
                 <strong id="detail-nilai" style="font-size: 2.5rem; color: var(--primary);">0</strong>
             </div>
         </div>
