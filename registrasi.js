@@ -11,11 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const usernameLabel = document.getElementById("username-label");
     const regTitle = document.getElementById("reg-title");
     
-    // Status Pendaftaran Default (Dianggap buka sampai Firebase berkata lain)
     let statusRegSiswa = true;
     let statusRegGuru = true;
 
-    // A. Fungsi Mengecek Status Registrasi ke Database
     async function fetchRegStatus() {
         try {
             const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
@@ -27,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch(e) { console.error("Gagal menarik status registrasi", e); }
     }
 
-    // B. Fungsi Merubah Tampilan Tombol Jika Ditutup
     function updateRegUI(role) {
         const warningBox = document.getElementById("reg-warning");
         
@@ -49,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-   // 1. Fungsi Ganti Role (Visual & Input)
     function setRole(role) {
         roleInput.value = role;
         if (role === 'guru') {
@@ -63,27 +59,24 @@ document.addEventListener("DOMContentLoaded", () => {
             boxSiswa.classList.add('active');
             boxGuru.classList.remove('active');
         }
-        updateRegUI(role); // Cek status izin
+        updateRegUI(role); 
     }
 
     boxSiswa.addEventListener('click', () => setRole('siswa'));
     boxGuru.addEventListener('click', () => setRole('guru'));
 
-    // Panggil fungsi cek di awal
     fetchRegStatus();
 
-    // 2. Proses Pendaftaran
     registerForm?.addEventListener("submit", async (e) => {
         e.preventDefault(); 
         
         const role = roleInput.value;
         
-        // Validasi ganda jika tombol di-hack lewat inspect element
         if (role === 'siswa' && !statusRegSiswa) return alert("Pendaftaran Siswa sedang ditutup!");
         if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Guru sedang ditutup!");
         
         const name = document.getElementById("reg-name").value;
-        const username = document.getElementById("reg-username").value;
+        const username = document.getElementById("reg-username").value.replace(/\s+/g, '');
         const password = document.getElementById("reg-password").value;
 
         if(password !== document.getElementById("reg-confirm-password").value) {
@@ -102,10 +95,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             await updateProfile(user, { displayName: name });
 
+            // PERBAIKAN: Selalu simpan role sebagai Array
             await setDoc(doc(db, "users", user.uid), {
                 nama: name,
                 username: username,
-                role: role,
+                role: [role], // Menyesuaikan dengan format baru multi-role
                 createdAt: serverTimestamp()
             });
 
