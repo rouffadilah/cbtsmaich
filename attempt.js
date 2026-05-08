@@ -4,7 +4,7 @@ import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://
 // Variabel Global
 let questions = []; let currentIdx = 0; let userAnswers = []; let doubtStatus = []; let mapelTerpilih = ""; 
 let dataKelasSiswa = "-"; 
-let dataNamaSiswa = "Siswa"; // Menyimpan nama lengkap dari database
+let dataNamaSiswa = "Siswa"; 
 let shuffledTargetsCache = {}; 
 const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 
@@ -18,32 +18,45 @@ let isWarningShowing = false;
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     
-    // Set default nama (berjaga-jaga jika database lambat)
     dataNamaSiswa = user.displayName || user.email.split('@')[0];
     
     try {
-        // PERBAIKAN: Mengambil Nama Lengkap langsung dari Firestore Database
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if(userDoc.exists()) {
             const userData = userDoc.data();
             if(userData.kelas) dataKelasSiswa = userData.kelas;
-            if(userData.nama) dataNamaSiswa = userData.nama; // Tumpuk dengan nama lengkap asli
+            if(userData.nama) dataNamaSiswa = userData.nama; 
         }
 
-        // Set Nama Lengkap Peserta di Header
         document.getElementById('student-name').innerText = dataNamaSiswa;
         
-        // Set Nama Lengkap di Sapaan Dinamis
         const greetingEl = document.getElementById('greeting-peserta');
         if (greetingEl) {
             greetingEl.innerText = `Assalamu'alaikum ${dataNamaSiswa}...`;
         }
 
         const masterDoc = await getDoc(doc(db, "pengaturan", "data_akademik"));
-        if(masterDoc.exists() && masterDoc.data().list_mapel) {
-            const selectMapel = document.getElementById('select-mapel');
-            selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mata Pelajaran --</option>' +
-                masterDoc.data().list_mapel.map(m => `<option value="${m}">${m}</option>`).join('');
+        if(masterDoc.exists()) {
+            const dataAkademik = masterDoc.data();
+            
+            // Render Pilihan Mapel
+            if(dataAkademik.list_mapel) {
+                const selectMapel = document.getElementById('select-mapel');
+                selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mata Pelajaran --</option>' +
+                    dataAkademik.list_mapel.map(m => `<option value="${m}">${m}</option>`).join('');
+            }
+            
+            // PERBAIKAN: Render Pilihan Kelas
+            if(dataAkademik.list_kelas) {
+                const selectKelas = document.getElementById('select-kelas');
+                selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas --</option>' +
+                    dataAkademik.list_kelas.map(k => `<option value="${k}">${k}</option>`).join('');
+                
+                // Auto-select kelas jika dataKelasSiswa sudah ada dari database
+                if (dataKelasSiswa && dataKelasSiswa !== "-") {
+                    selectKelas.value = dataKelasSiswa;
+                }
+            }
         }
     } catch(e) { console.error("Gagal load data awal", e); }
 });
@@ -64,32 +77,45 @@ const tokenError = document.getElementById('token-error');
 btnVerifikasi.addEventListener('click', async () => {
     const inputToken = document.getElementById('input-token').value.trim().toUpperCase();
     const selectMapel = document.getElementById('select-mapel').value;
+    const selectKelas = document.getElementById('select-kelas').value; // Mengambil nilai dari dropdown kelas
 
-    if (!selectMapel || !inputToken) return alert("Pilih mata pelajaran dan masukkan Token!");
-    
-    if (!dataKelasSiswa || dataKelasSiswa === "-") {
-        alert("PERINGATAN: Akun Anda belum memiliki data Kelas. Harap hubungi Pengawas/Admin untuk mengatur profil Anda!");
-        return;
+    if (!selectMapel || !selectKelas || !inputToken) {
+        return alert("Pilih mata pelajaran, kelas, dan masukkan Token!");
     }
+    
+    // Perbarui data kelas siswa berdasarkan form yang dipilih
+    dataKelasSiswa = selectKelas;
 
     const originalText = btnVerifikasi.innerHTML;
-    btnVerifikasi.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMVALIDASI...'; btnVerifikasi.disabled = true; tokenError.style.display = 'none';
+    btnVerifikasi.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMVALIDASI...'; 
+    btnVerifikasi.disabled = true; 
+    tokenError.style.display = 'none';
 
     try {
         const pengaturanSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-        const tokenKey = `token_${selectMapel}_${dataKelasSiswa}`;
+        
+        // Cek kecocokan token berdasarkan Mapel dan Kelas yang dipilih
+        const tokenKey = `token_${selectMapel}_${selectKelas}`;
         let tokenAktif = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
 
         if (!tokenAktif || inputToken !== tokenAktif) {
-            tokenError.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Token untuk <b>${selectMapel}</b> kelas <b>${dataKelasSiswa}</b> tidak aktif atau salah!`;
-            tokenError.style.display = 'block'; btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false;
+            tokenError.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Token untuk <b>${selectMapel}</b> kelas <b>${selectKelas}</b> tidak aktif atau salah!`;
+            tokenError.style.display = 'block'; 
+            btnVerifikasi.innerHTML = originalText; 
+            btnVerifikasi.disabled = false;
             return;
         }
 
-        mapelTerpilih = selectMapel; preExamSection.style.display = 'none'; mainExamLayout.style.display = 'grid'; 
+        mapelTerpilih = selectMapel; 
+        preExamSection.style.display = 'none'; 
+        mainExamLayout.style.display = 'grid'; 
         setTimeout(() => { isExamActive = true; }, 1000); 
         initUjian(); 
-    } catch (error) { alert("Gagal memvalidasi token."); btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false; }
+    } catch (error) { 
+        alert("Gagal memvalidasi token."); 
+        btnVerifikasi.innerHTML = originalText; 
+        btnVerifikasi.disabled = false; 
+    }
 });
 
 // 3. MEMUAT BANK SOAL
@@ -270,8 +296,8 @@ async function eksekusiKirimJawaban() {
         const user = auth.currentUser;
         await addDoc(collection(db, "hasil_ujian"), {
             userId: user?.uid || "Anonymous", 
-            namaSiswa: dataNamaSiswa, // MENGIRIM NAMA LENGKAP KE LAPORAN GURU
-            kelas: dataKelasSiswa,
+            namaSiswa: dataNamaSiswa, 
+            kelas: dataKelasSiswa, // Menyimpan pilihan kelas
             mataPelajaran: mapelTerpilih, 
             jawabanSiswa: userAnswers, 
             benar: benar,
