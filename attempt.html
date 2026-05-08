@@ -10,8 +10,6 @@
 <body>
 
     <header class="app-header" style="justify-content: space-between;">
-        
-        <!-- Bagian Kiri: Logo & Nama Sekolah -->
         <div style="display: flex; align-items: center; gap: 15px;">
             <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 45px; width: auto; object-fit: contain;">
             <div style="display: flex; flex-direction: column; justify-content: center;">
@@ -19,8 +17,6 @@
                 <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin: 0;">SMA Islam Cikal Harapan I BSD</p>
             </div>
         </div>
-
-        <!-- Bagian Kanan: Info Peserta -->
         <div style="display: flex; align-items: center; gap: 15px;">
             <div style="text-align: right;">
                 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Peserta</span>
@@ -30,45 +26,44 @@
                 <i class="fas fa-user-graduate" style="color: var(--primary); font-size: 1.5rem;"></i>
             </div>
         </div>
-
     </header>
     
-    <!-- TAMBAHKAN: Bagian Persiapan Ujian (Pilih Mapel & Token) -->
     <section id="pre-exam-section" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
         <div class="card" style="width: 100%; max-width: 450px; padding: 40px; text-align: center;">
             <i class="fas fa-laptop-code fa-3x" style="color: var(--primary); margin-bottom: 20px;"></i>
-            <h2 style="margin-bottom: 5px; color: var(--secondary);">Bismillah, Berdoalah maka tuhanmulah yang maha pemurah.</h2>
+            <h2 style="margin-bottom: 5px; color: var(--secondary);">Bismillah, Berdoalah sebelum mulai.</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;">Pilih mata pelajaran dan masukkan token dari pengawas.</p>
 
             <div class="input-group" style="text-align: left;">
                 <label>Mata Pelajaran</label>
                 <select id="select-mapel" class="input-text">
                     <option value="" disabled selected>-- Pilih Mata Pelajaran --</option>
-                    <!-- Opsi disesuaikan dengan mapel yang biasa diujikan -->
                     <option value="informatika">Informatika</option>
                     <option value="tkj">Teknik Komputer dan Jaringan (TKJ)</option>
                     <option value="coding-ai">Coding & Artificial Intelligence</option>
                 </select>
             </div>
-
             <div class="input-group" style="text-align: left;">
                 <label>Token Ujian</label>
                 <input type="text" id="input-token" class="input-text" placeholder="Contoh: SMAICH-XXXX" style="text-transform: uppercase;">
             </div>
 
             <div id="token-error" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 15px; display: none; font-weight: 600;">
-                <i class="fas fa-exclamation-triangle"></i> Token tidak valid atau salah!
+                <i class="fas fa-exclamation-triangle"></i> Token salah atau mapel belum aktif!
             </div>
-
             <button id="btn-verifikasi" class="btn-3d" style="width: 100%;"><i class="fas fa-key"></i> VERIFIKASI & MULAI</button>
         </div>
     </section>
+
     <main class="exam-layout" id="main-exam-layout" style="display: none;">
         <section class="question-section">
             <div class="card question-card">
                 <div class="question-header">
-                    <span class="q-number-label">SOAL NOMOR</span>
-                    <div class="q-number-badge" id="current-q-num">1</div>
+                    <div>
+                        <span class="q-number-label">SOAL NOMOR</span>
+                        <div class="q-number-badge" id="current-q-num">1</div>
+                    </div>
+                    <div id="badge-tipe-soal" style="background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">TIPE SOAL</div>
                 </div>
                 
                 <div class="question-content" id="q-container">
@@ -94,15 +89,7 @@
 
             <div class="card navigation-card">
                 <h3 style="font-size: 0.9rem; color: var(--text-muted); text-align: center;"><i class="fas fa-th"></i> NAVIGASI SOAL</h3>
-                
-                <div class="q-grid" id="q-grid">
-                    <div class="q-box answered">1</div>
-                    <div class="q-box active-q">2</div>
-                    <div class="q-box doubt">3</div>
-                    <div class="q-box">4</div>
-                    <div class="q-box">5</div>
-                </div>
-                
+                <div class="q-grid" id="q-grid"></div>
                 <div class="legend-container">
                     <div class="leg-item"><span class="leg-box answered"></span> Terjawab</div>
                     <div class="leg-item"><span class="leg-box doubt"></span> Ragu-Ragu</div>
