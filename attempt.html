@@ -7,24 +7,14 @@
     <title>Ujian Berbasis Komputer - SMAICH</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
-        body {
-            -webkit-user-select: none; 
-            -ms-user-select: none; 
-            user-select: none; 
-        }
-        input, textarea {
-            -webkit-user-select: text;
-            -ms-user-select: text;
-            user-select: text;
-        }
+        body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: text; -ms-user-select: text; user-select: text; }
     </style>
 </head>
 <body>
 
     <header class="app-header" style="justify-content: space-between;">
-        
         <div style="display: flex; align-items: center; gap: 15px;">
             <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 45px; width: auto; object-fit: contain;">
             <div style="display: flex; flex-direction: column; justify-content: center;">
@@ -32,7 +22,6 @@
                 <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin: 0;">SMA Islam Cikal Harapan I BSD</p>
             </div>
         </div>
-
         <div style="display: flex; align-items: center; gap: 15px;">
             <div style="display: flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 12px; background: #f8fafc; padding: 8px 18px; border-radius: 30px; border: 1px solid var(--border-color); white-space: nowrap; width: max-content;">
                 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin: 0;">PESERTA:</span>
@@ -44,13 +33,11 @@
                 <i class="fas fa-user-graduate" style="color: var(--primary); font-size: 1.5rem;"></i>
             </div>
         </div>
-
     </header>
     
     <section id="pre-exam-section" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
         <div class="card" style="width: 100%; max-width: 550px; padding: 40px; text-align: center;">
             <i class="fas fa-laptop-code fa-3x" style="color: var(--primary); margin-bottom: 15px;"></i>
-            
             <h2 id="greeting-peserta" style="margin-bottom: 8px; color: var(--secondary); font-size: 1.5rem;">Assalamu'alaikum...</h2>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px; line-height: 1.6;">Sebelum mengerjakan soal ujian ini, alangkah baiknya berdo'a terlebih dahulu agar hasilnya sesuai dengan apa yang kita harapkan.</p>
 
@@ -60,24 +47,20 @@
                     <input type="text" id="input-kelas-siswa" class="input-text" readonly value="Memuat..." style="background-color: #e2e8f0; color: var(--text-muted); font-weight: bold; cursor: not-allowed;">
                     <small style="font-size: 0.75rem; color: var(--warning); display: block; margin-top: 5px; text-align: left;">*Diatur otomatis oleh Admin.</small>
                 </div>
-                
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
                     <label>Pilih Mata Pelajaran</label>
-                    <select id="select-mapel" class="input-text">
-                        <option value="" disabled selected>Memuat...</option>
-                    </select>
+                    <select id="select-mapel" class="input-text"><option value="" disabled selected>Memuat...</option></select>
                 </div>
             </div>
 
             <div class="input-group" style="text-align: left; margin-bottom: 25px;">
-                <label>Token Ujian</label>
+                <label>Token Ujian (Waktu Berlaku 15 Menit)</label>
                 <input type="text" id="input-token" class="input-text" placeholder="Contoh: SMAICH-XXXX" style="text-transform: uppercase;">
             </div>
 
             <div id="token-error" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 15px; display: none; font-weight: 600;">
                 <i class="fas fa-exclamation-triangle"></i> Token tidak valid atau salah!
             </div>
-
             <button id="btn-verifikasi" class="btn-3d" style="width: 100%;"><i class="fas fa-key"></i> VERIFIKASI & MULAI</button>
         </div>
     </section>
@@ -92,14 +75,9 @@
                     </div>
                     <div id="badge-tipe-soal" style="background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">TIPE SOAL</div>
                 </div>
-                
                 <div class="question-content" id="q-container">
-                    <div style="text-align: center; color: var(--text-muted); padding: 50px 0;">
-                        <i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i>
-                        <p>Memuat soal...</p>
-                    </div>
+                    <div style="text-align: center; color: var(--text-muted); padding: 50px 0;"><i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i><p>Memuat soal...</p></div>
                 </div>
-
                 <div class="nav-controls">
                     <button class="nav-btn btn-prev" id="prev-btn"><i class="fas fa-chevron-left"></i> SEBELUMNYA</button>
                     <button class="nav-btn btn-doubt" id="doubt-btn"><i class="far fa-flag"></i> RAGU-RAGU</button>
@@ -113,22 +91,16 @@
                 <h3><i class="far fa-clock"></i> SISA WAKTU</h3>
                 <div class="time-display" id="timer">01:30:00</div>
             </div>
-
             <div class="card navigation-card">
                 <h3 style="font-size: 0.9rem; color: var(--text-muted); text-align: center;"><i class="fas fa-th"></i> NAVIGASI SOAL</h3>
-                
                 <div class="q-grid" id="q-grid"></div>
-                
                 <div class="legend-container">
                     <div class="leg-item"><span class="leg-box answered"></span> Terjawab</div>
                     <div class="leg-item"><span class="leg-box doubt"></span> Ragu-Ragu</div>
                     <div class="leg-item"><span class="leg-box active-q" style="border: 2px solid var(--info); background: transparent;"></span> Sedang Dibuka</div>
                 </div>
             </div>
-
-            <button class="btn-finish-exam" id="finish-btn">
-                <i class="fas fa-check-double"></i> SELESAI UJIAN
-            </button>
+            <button class="btn-finish-exam" id="finish-btn"><i class="fas fa-check-double"></i> SELESAI UJIAN</button>
         </aside>
     </main>
 
@@ -136,32 +108,24 @@
         <div class="modal-content" style="background: white; padding: 40px; border-radius: var(--radius-lg); text-align: center; width: 500px; max-width: 95%; border-top: 8px solid var(--danger);">
             <i class="fas fa-exclamation-triangle fa-5x" style="color: var(--danger); margin-bottom: 20px; animation: pulse 1.5s infinite;"></i>
             <h2 style="color: var(--danger); margin-bottom: 10px; font-size: 1.8rem; font-weight: 800; text-transform: uppercase;">Pelanggaran Ujian!</h2>
-            <p style="font-size: 1.05rem; color: var(--secondary); margin-bottom: 20px; font-weight: 500;">
-                Sistem mendeteksi Anda berusaha keluar dari halaman ujian atau menekan tombol ilegal.
+            
+            <p id="cheat-msg-desc" style="font-size: 1.05rem; color: var(--secondary); margin-bottom: 20px; font-weight: 500;">
+                Sistem mendeteksi Anda berusaha keluar dari halaman ujian.
             </p>
             
             <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #f87171;">
                 <span style="font-size: 1rem; color: var(--danger); font-weight: 700;">PERINGATAN KE: <span id="cheat-count" style="font-size: 1.5rem; display: inline-block; margin: 0 5px;">1</span> DARI 3</span>
             </div>
-            
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;">
                 Jika Anda melakukan pelanggaran hingga <b>3 kali</b>, sistem akan menghentikan ujian Anda secara paksa dan mengirim jawaban Anda secara otomatis.
             </p>
-            
             <button id="btn-mengerti-pelanggaran" class="btn-3d" style="background-color: var(--danger); width: 100%; font-size: 0.9rem;">
                 <i class="fas fa-undo-alt"></i> SAYA MENGERTI & KEMBALI UJIAN
             </button>
         </div>
     </div>
 
-    <style>
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); opacity: 0.8; }
-            100% { transform: scale(1); }
-        }
-    </style>
-
+    <style> @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); } } </style>
     <script type="module" src="attempt.js"></script>
 </body>
 </html>
