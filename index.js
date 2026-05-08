@@ -17,38 +17,52 @@ loginForm.addEventListener("submit", async (event) => {
     const dummyEmail = `${username}@cbt.smaich.id`;
 
     try {
-        // 1. Login Firebase Auth
-        const userCred = await signInWithEmailAndPassword(auth, dummyEmail, password);
+        // 1. Coba Login via Firebase Auth
+        let userCred;
+        try {
+            userCred = await signInWithEmailAndPassword(auth, dummyEmail, password);
+        } catch (authError) {
+            console.error("Auth Error:", authError);
+            alert("LOGIN GAGAL: Username atau Password Anda salah!");
+            throw new Error("Henti");
+        }
+
         const user = userCred.user;
 
-        // 2. Ambil Role dan Mapel dari Firestore
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+        // 2. Cek Hak Akses (Role) di Firestore Database
+        let userDoc;
+        try {
+            userDoc = await getDoc(doc(db, "users", user.uid));
+        } catch (dbError) {
+            console.error("Database Error:", dbError);
+            alert("ERROR DATABASE: Koneksi ke Firestore diblokir. Pastikan Rules Firestore sudah disetel 'allow read, write: if true;'");
+            throw new Error("Henti");
+        }
 
+        // 3. Arahkan Halaman
         if (userDoc.exists()) {
             const userData = userDoc.data();
             
-            // Simpan sesi ke LocalStorage untuk Dashboard
+            // Simpan Hak Akses ke memori perangkat
             localStorage.setItem("userRole", userData.role);
             if (userData.role === 'guru') {
-                localStorage.setItem("userMapel", userData.mapel || "informatika"); // default fallback
+                localStorage.setItem("userMapel", userData.mapel || "informatika");
             }
 
-            // 3. Arahkan Halaman Sesuai Hak Akses
+            // Lempar ke halaman yang sesuai
             if (userData.role === "admin" || userData.role === "guru") {
                 window.location.href = "dashboard.html"; 
             } else {
-                window.location.href = "attempt.html"; // Siswa
+                window.location.href = "attempt.html"; 
             }
         } else {
-            alert("Akses ditolak! Data pengguna tidak ditemukan di database.");
-            auth.signOut();
-            btnSubmit.innerHTML = originalBtnText;
-            btnSubmit.disabled = false;
+            alert("AKSES DITOLAK: Akun Anda belum memiliki data (Siswa/Guru/Admin) di dalam database. Silakan daftar ulang.");
+            await auth.signOut();
         }
 
     } catch (error) {
-        console.error("Login Error:", error);
-        alert("Username atau Password salah!");
+        // Error sudah ditangani oleh alert di atas
+    } finally {
         btnSubmit.innerHTML = originalBtnText;
         btnSubmit.disabled = false;
     }
