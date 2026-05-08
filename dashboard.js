@@ -18,13 +18,13 @@ const secondaryAuth = getAuth(secondaryApp);
 let listMapel = [];
 let listKelas = [];
 let allUsersData = []; 
-let allSoalData = []; // Untuk fitur preview
+let allSoalData = []; 
 
 document.addEventListener('DOMContentLoaded', () => {
 
     const userRole = localStorage.getItem("userRole");
     let userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]");
-    let userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]"); // Array khusus guru
+    let userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]"); 
 
     onAuthStateChanged(auth, async (user) => {
         if (!user || (userRole !== "admin" && userRole !== "guru")) {
@@ -115,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function populateSemuaDropdown() {
-        // Build Checkboxes untuk Mapel & Kelas (Guru)
         const mapelCheckboxes = listMapel.map(m => `<label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; margin-bottom:5px; cursor:pointer;"><input type="checkbox" class="new-mapel-cb" value="${m}"> ${m}</label>`).join('');
         const kelasCheckboxes = listKelas.map(k => `<label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; margin-bottom:5px; cursor:pointer;"><input type="checkbox" class="new-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
 
@@ -125,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(document.getElementById('edit-mapel-container')) document.getElementById('edit-mapel-container').innerHTML = listMapel.map(m => `<label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; margin-bottom:5px; cursor:pointer;"><input type="checkbox" class="edit-mapel-cb" value="${m}"> ${m}</label>`).join('');
         if(document.getElementById('edit-kelas-guru-container')) document.getElementById('edit-kelas-guru-container').innerHTML = listKelas.map(k => `<label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; margin-bottom:5px; cursor:pointer;"><input type="checkbox" class="edit-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
 
-        // Filter untuk Guru
         let allowedMapel = listMapel;
         let allowedKelas = listKelas;
         if (userRole === "guru") {
@@ -135,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const optionsMapel = '<option value="" disabled selected>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
         const optionsMapelFilter = '<option value="semua">Semua Mata Pelajaran</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
-        const optionsKelasSiswa = '<option value="" disabled selected>Pilih Kelas Siswa...</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+        const optionsKelasSiswa = '<option value="" disabled selected>Pilih Kelas...</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
         const optionsKelasFilter = '<option value="" disabled selected>-- Pilih Kelas --</option>' + allowedKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
         ['soal-mapel', 'import-mapel', 'set-token-mapel'].forEach(id => {
@@ -145,12 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const filterHasil = document.getElementById('filter-tabel-hasil');
         if(filterHasil) filterHasil.innerHTML = optionsMapelFilter;
 
-        // Opsi kelas untuk form siswa (Semua Kelas)
         ['new-kelas-siswa', 'edit-kelas-siswa'].forEach(id => {
             const el = document.getElementById(id); if(el) el.innerHTML = optionsKelasSiswa;
         });
 
-        // Opsi kelas untuk Set Token (Berdasarkan akses Guru)
         const tokenKelasEl = document.getElementById('set-token-kelas');
         if(tokenKelasEl) tokenKelasEl.innerHTML = optionsKelasFilter;
     }
@@ -241,11 +237,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.refreshPengguna = loadDataPengguna;
 
+    // PERBAIKAN: Toggle Grup Form berdasarkan ID baru HTML
     document.getElementById('new-role')?.addEventListener('change', (e) => {
         const role = e.target.value;
-        document.getElementById('new-mapel-container').style.display = (role === 'guru') ? 'block' : 'none';
-        document.getElementById('new-kelas-guru-container').style.display = (role === 'guru') ? 'block' : 'none';
-        document.getElementById('new-kelas-siswa').style.display = (role === 'siswa') ? 'block' : 'none';
+        document.getElementById('group-new-mapel').style.display = (role === 'guru') ? 'block' : 'none';
+        document.getElementById('group-new-kelas-guru').style.display = (role === 'guru') ? 'block' : 'none';
+        document.getElementById('group-new-kelas-siswa').style.display = (role === 'siswa') ? 'block' : 'none';
     });
 
     document.getElementById('btn-add-user')?.addEventListener('click', async () => {
@@ -281,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.new-mapel-cb, .new-kelas-guru-cb').forEach(cb => cb.checked = false); 
             loadDataPengguna(); await secondaryAuth.signOut();
         } catch (error) { alert("Gagal: Username sudah dipakai atau format salah."); }
-        btn.innerHTML = '<i class="fas fa-save"></i> Tambah'; btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> SIMPAN AKUN'; btn.disabled = false;
     });
 
     document.getElementById('upload-akun-excel')?.addEventListener('change', (e) => {
@@ -301,6 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (let row of jsonAkun) {
                     const nama = row['Nama Lengkap']; const username = row['Username'] ? row['Username'].toString().replace(/\s+/g, '') : null;
                     const role = row['Role'] ? row['Role'].toString().toLowerCase() : 'siswa'; const password = row['Password'] ? row['Password'].toString() : '123456';
+                    const detail = row['Detail (Kelas/Mapel)'];
                     
                     if(!nama || !username) { failedCount++; continue; } 
 
@@ -311,14 +309,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         let payload = { nama: nama, username: username, role: role, createdAt: new Date() };
                         
-                        // Perbaikan import Excel untuk Guru Multi-Mapel/Kelas
                         if (role === 'guru') {
                             const detailMapel = row['Detail (Mapel)'];
                             const detailKelas = row['Detail (Kelas)'];
                             if(detailMapel) payload.mapel = detailMapel.split(',').map(s => s.trim());
                             if(detailKelas) payload.kelas = detailKelas.split(',').map(s => s.trim());
                         }
-                        if (role === 'siswa') payload.kelas = row['Detail (Kelas)'] || row['Detail (Mapel)']; // backward compatible
+                        if (role === 'siswa') payload.kelas = row['Detail (Kelas)'] || row['Detail (Mapel)']; 
 
                         await setDoc(doc(db, "users", userCred.user.uid), payload); successCount++;
                     } catch (err) { failedCount++; }
@@ -416,7 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.refreshSoal = loadDataSoal;
 
-    // FITUR PREVIEW SOAL (POV SISWA)
     window.previewSoal = (id) => {
         const q = allSoalData.find(s => s.id === id);
         if(!q) return alert("Gagal memuat soal untuk preview.");
@@ -473,6 +469,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-preview-soal').style.display = 'none';
     });
 
+    // ==========================================
+    // HASIL UJIAN
+    // ==========================================
     let allHasilUjian = [];
     async function loadDataHasil() {
         const tbodyHasil = document.querySelector('#table-hasil tbody'); if(!tbodyHasil) return;
@@ -498,7 +497,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let filtered = filterVal === 'semua' ? allHasilUjian : allHasilUjian.filter(h => h.mataPelajaran === filterVal);
         
-        // Guru hanya melihat hasil siswa di kelas yang diajarnya (Local Filtering karena Firestore in query limit)
         if (userRole === "guru" && userKelas.length > 0) {
             filtered = filtered.filter(h => userKelas.includes(h.kelas));
         }
