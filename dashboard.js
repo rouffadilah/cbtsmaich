@@ -22,27 +22,36 @@ let allSoalData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    const userRole = localStorage.getItem("userRole");
+    // PERBAIKAN: Baca Array Multi-Role
+    const userRoles = JSON.parse(localStorage.getItem("userRole") || "[]");
     let userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]");
     let userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]"); 
+    
+    const isAdmin = userRoles.includes("admin");
+    const isGuru = userRoles.includes("guru");
 
     onAuthStateChanged(auth, async (user) => {
-        if (!user || (userRole !== "admin" && userRole !== "guru")) {
+        if (!user || (!isAdmin && !isGuru)) {
             window.location.href = "index.html"; return;
         }
 
-        document.getElementById('admin-name').innerText = user.displayName || userRole.toUpperCase();
+        document.getElementById('admin-name').innerText = user.displayName || userRoles.join(", ").toUpperCase();
         const greetingText = document.getElementById('greeting-text');
         if(greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${user.displayName}! 👋`;
         
-        if (userRole === "admin") {
+        // Logika Tampilan Berdasarkan Array Multi-Role
+        if (isAdmin) {
+            // ADMIN MELIHAT SEMUANYA
             document.getElementById('panel-title-role').innerText = "PANEL ADMIN";
             fetchStatusReg(); 
-        } else if (userRole === "guru") {
+        } else if (isGuru && !isAdmin) {
+            // JIKA HANYA GURU, BATASI TAMPILAN
             document.getElementById('panel-title-role').innerText = "PANEL GURU";
             document.getElementById('menu-pengguna').style.display = 'none';
+            
             const adminRegStatus = document.getElementById('admin-reg-status');
             if(adminRegStatus) adminRegStatus.style.display = 'none';
+            
             const adminDataMaster = document.getElementById('admin-data-master');
             if(adminDataMaster) adminDataMaster.style.display = 'none';
             
@@ -56,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadDataSoal();
         loadDataHasil();
         loadActiveTokens(); 
-        if(userRole === "admin") loadDataPengguna();
+        if(isAdmin) loadDataPengguna();
     });
 
     document.getElementById('btn-logout').addEventListener('click', async () => {
@@ -126,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let allowedMapel = listMapel;
         let allowedKelas = listKelas;
-        if (userRole === "guru") {
+        if (!isAdmin && isGuru) {
             allowedMapel = listMapel.filter(m => userMapel.includes(m));
             allowedKelas = listKelas.filter(k => userKelas.includes(k));
         }
@@ -201,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ==========================================
-    // MANAJEMEN PENGGUNA
+    // MANAJEMEN PENGGUNA DENGAN MULTI-ROLE
     // ==========================================
     async function loadDataPengguna() {
         const tbody = document.querySelector('#table-siswa tbody');
@@ -214,19 +223,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             snap.forEach(docSnap => {
                 const data = docSnap.data(); data.id = docSnap.id; allUsersData.push(data);
-                const roleColor = data.role === 'admin' ? 'var(--danger)' : (data.role === 'guru' ? 'var(--info)' : 'var(--success)');
+                
+                // Konversi Role DB menjadi Array
+                const rls = Array.isArray(data.role) ? data.role : [data.role];
+                const roleText = rls.join(', ').toUpperCase();
+                const roleColor = rls.includes('admin') ? 'var(--danger)' : (rls.includes('guru') ? 'var(--info)' : 'var(--success)');
                 
                 let detailText = '-';
-                if (data.role === 'guru') {
+                if (rls.includes('guru')) {
                     const mapels = Array.isArray(data.mapel) ? data.mapel.join(', ') : (data.mapel || '-');
                     const kelases = Array.isArray(data.kelas) ? data.kelas.join(', ') : (data.kelas || '-');
-                    detailText = `Mapel: ${mapels} <br><span style="font-size:0.75rem; color:var(--text-muted);">Kelas: ${kelases}</span>`;
+                    detailText = `Mapel: ${mapels} <br><span style="font-size:0.75rem; color:var(--text-muted);">Kelas Ajar: ${kelases}</span>`;
                 }
-                else if (data.role === 'siswa') detailText = `Kelas: ${data.kelas || '-'}`;
+                else if (rls.includes('siswa')) detailText = `Kelas: ${data.kelas || '-'}`;
                 
                 tbody.innerHTML += `<tr>
                     <td>${data.username}</td><td><strong>${data.nama}</strong></td>
-                    <td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold; text-transform:uppercase;">${data.role}</span></td>
+                    <td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${roleText}</span></td>
                     <td>${detailText}</td>
                     <td style="display: flex; gap: 5px;">
                         <button onclick="window.editPengguna('${docSnap.id}')" class="btn-3d" style="background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width:auto;"><i class="fas fa-edit"></i></button>
@@ -237,27 +250,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.refreshPengguna = loadDataPengguna;
 
-    // PERBAIKAN: Toggle Grup Form berdasarkan ID baru HTML
-    document.getElementById('new-role')?.addEventListener('change', (e) => {
-        const role = e.target.value;
-        document.getElementById('group-new-mapel').style.display = (role === 'guru') ? 'block' : 'none';
-        document.getElementById('group-new-kelas-guru').style.display = (role === 'guru') ? 'block' : 'none';
-        document.getElementById('group-new-kelas-siswa').style.display = (role === 'siswa') ? 'block' : 'none';
-    });
+    // Trigger perlihatkan Form Khusus Guru/Siswa saat Checkbox dicentang
+    function updateNewFormVisibility() {
+        const checkedRoles = Array.from(document.querySelectorAll('.new-role-cb:checked')).map(cb => cb.value);
+        document.getElementById('group-new-mapel').style.display = checkedRoles.includes('guru') ? 'block' : 'none';
+        document.getElementById('group-new-kelas-guru').style.display = checkedRoles.includes('guru') ? 'block' : 'none';
+        document.getElementById('group-new-kelas-siswa').style.display = checkedRoles.includes('siswa') ? 'block' : 'none';
+    }
+    document.querySelectorAll('.new-role-cb').forEach(cb => cb.addEventListener('change', updateNewFormVisibility));
 
     document.getElementById('btn-add-user')?.addEventListener('click', async () => {
         const nama = document.getElementById('new-nama').value.trim();
         const username = document.getElementById('new-username').value.trim().replace(/\s+/g, '');
-        const role = document.getElementById('new-role').value;
         const pass = document.getElementById('new-pass').value;
         
+        const selectedRoles = Array.from(document.querySelectorAll('.new-role-cb:checked')).map(cb => cb.value);
         const selectedMapels = Array.from(document.querySelectorAll('.new-mapel-cb:checked')).map(cb => cb.value);
         const selectedKelasGuru = Array.from(document.querySelectorAll('.new-kelas-guru-cb:checked')).map(cb => cb.value);
         const kelasSiswa = document.getElementById('new-kelas-siswa').value;
 
-        if(!nama || !username || !pass) return alert("Lengkapi form!");
-        if(role === 'guru' && (selectedMapels.length === 0 || selectedKelasGuru.length === 0)) return alert("Centang minimal 1 Mapel & 1 Kelas untuk Guru!");
-        if(role === 'siswa' && !kelasSiswa) return alert("Pilih Kelas untuk Siswa!");
+        if(!nama || !username || !pass) return alert("Lengkapi form nama, username, dan password!");
+        if(selectedRoles.length === 0) return alert("Pilih minimal 1 Role/Hak Akses!");
+        if(selectedRoles.includes('guru') && (selectedMapels.length === 0 || selectedKelasGuru.length === 0)) return alert("Centang minimal 1 Mapel & 1 Kelas untuk Guru!");
+        if(selectedRoles.includes('siswa') && !kelasSiswa) return alert("Pilih Kelas untuk Siswa!");
         if(pass.length < 6) return alert("Password minimal 6 karakter!");
 
         const btn = document.getElementById('btn-add-user'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses'; btn.disabled = true;
@@ -267,15 +282,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const userCred = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, pass);
             await updateProfile(userCred.user, { displayName: nama });
 
-            let payload = { nama: nama, username: username, role: role, createdAt: new Date() };
-            if (role === 'guru') { payload.mapel = selectedMapels; payload.kelas = selectedKelasGuru; }
-            if (role === 'siswa') payload.kelas = kelasSiswa;
+            let payload = { nama: nama, username: username, role: selectedRoles, createdAt: new Date() };
+            if (selectedRoles.includes('guru')) { payload.mapel = selectedMapels; payload.kelas = selectedKelasGuru; }
+            if (selectedRoles.includes('siswa')) {
+                if(!selectedRoles.includes('guru')) payload.kelas = kelasSiswa; // Menghindari bentrok array jika double role
+                else payload.kelas_siswa = kelasSiswa;
+            }
 
             await setDoc(doc(db, "users", userCred.user.uid), payload);
-            alert(`Berhasil membuat akun ${role.toUpperCase()}`);
+            alert(`Berhasil membuat akun!`);
             
             document.getElementById('new-nama').value = ''; document.getElementById('new-username').value = ''; document.getElementById('new-pass').value = '';
-            document.querySelectorAll('.new-mapel-cb, .new-kelas-guru-cb').forEach(cb => cb.checked = false); 
+            document.querySelectorAll('.new-role-cb, .new-mapel-cb, .new-kelas-guru-cb').forEach(cb => cb.checked = false); 
+            document.getElementById('new-kelas-siswa').value = ''; updateNewFormVisibility();
+            
             loadDataPengguna(); await secondaryAuth.signOut();
         } catch (error) { alert("Gagal: Username sudah dipakai atau format salah."); }
         btn.innerHTML = '<i class="fas fa-save"></i> SIMPAN AKUN'; btn.disabled = false;
@@ -297,8 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 for (let row of jsonAkun) {
                     const nama = row['Nama Lengkap']; const username = row['Username'] ? row['Username'].toString().replace(/\s+/g, '') : null;
-                    const role = row['Role'] ? row['Role'].toString().toLowerCase() : 'siswa'; const password = row['Password'] ? row['Password'].toString() : '123456';
-                    const detail = row['Detail (Kelas/Mapel)'];
+                    const roleStr = row['Role'] ? row['Role'].toString().toLowerCase() : 'siswa'; const password = row['Password'] ? row['Password'].toString() : '123456';
                     
                     if(!nama || !username) { failedCount++; continue; } 
 
@@ -307,15 +326,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         const userCred = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, password);
                         await updateProfile(userCred.user, { displayName: nama });
 
-                        let payload = { nama: nama, username: username, role: role, createdAt: new Date() };
+                        // Konversi Role Excel ke Array
+                        const roleArr = roleStr.split(',').map(s => s.trim());
+                        let payload = { nama: nama, username: username, role: roleArr, createdAt: new Date() };
                         
-                        if (role === 'guru') {
+                        if (roleArr.includes('guru')) {
                             const detailMapel = row['Detail (Mapel)'];
                             const detailKelas = row['Detail (Kelas)'];
                             if(detailMapel) payload.mapel = detailMapel.split(',').map(s => s.trim());
                             if(detailKelas) payload.kelas = detailKelas.split(',').map(s => s.trim());
                         }
-                        if (role === 'siswa') payload.kelas = row['Detail (Kelas)'] || row['Detail (Mapel)']; 
+                        if (roleArr.includes('siswa')) {
+                            const ks = row['Detail (Kelas)'] || row['Detail (Mapel)'];
+                            if(!roleArr.includes('guru')) payload.kelas = ks;
+                            else payload.kelas_siswa = ks;
+                        }
 
                         await setDoc(doc(db, "users", userCred.user.uid), payload); successCount++;
                     } catch (err) { failedCount++; }
@@ -329,46 +354,55 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const modalEditAkun = document.getElementById('modal-edit-akun');
-    const editRoleSelect = document.getElementById('edit-role');
+    
+    function updateEditFormVisibility() {
+        const checkedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
+        document.getElementById('group-edit-guru').style.display = checkedRoles.includes('guru') ? 'flex' : 'none';
+        document.getElementById('group-edit-kelas-siswa').style.display = checkedRoles.includes('siswa') ? 'block' : 'none';
+    }
+    document.querySelectorAll('.edit-role-cb').forEach(cb => cb.addEventListener('change', updateEditFormVisibility));
 
     window.editPengguna = (uid) => {
         const user = allUsersData.find(u => u.id === uid); if(!user) return;
-        document.getElementById('edit-uid').value = user.id; document.getElementById('edit-nama').value = user.nama; editRoleSelect.value = user.role;
+        document.getElementById('edit-uid').value = user.id; 
+        document.getElementById('edit-nama').value = user.nama; 
         
-        document.getElementById('group-edit-guru').style.display = (user.role === 'guru') ? 'flex' : 'none';
-        document.getElementById('group-edit-kelas-siswa').style.display = (user.role === 'siswa') ? 'block' : 'none';
+        // Centang Role
+        const rls = Array.isArray(user.role) ? user.role : [user.role];
+        document.querySelectorAll('.edit-role-cb').forEach(cb => { cb.checked = rls.includes(cb.value); });
         
-        if(user.role === 'guru') {
+        updateEditFormVisibility();
+        
+        if(rls.includes('guru')) {
             const mapelArray = Array.isArray(user.mapel) ? user.mapel : [user.mapel];
             const kelasArray = Array.isArray(user.kelas) ? user.kelas : [user.kelas];
             document.querySelectorAll('.edit-mapel-cb').forEach(cb => { cb.checked = mapelArray.includes(cb.value); });
             document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = kelasArray.includes(cb.value); });
         }
-        if(user.role === 'siswa') document.getElementById('edit-kelas-siswa').value = user.kelas || "";
+        if(rls.includes('siswa')) {
+            document.getElementById('edit-kelas-siswa').value = user.kelas_siswa || user.kelas || "";
+        }
         modalEditAkun.style.display = 'flex';
     };
 
     document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { modalEditAkun.style.display = 'none'; });
 
-    editRoleSelect?.addEventListener('change', (e) => {
-        const role = e.target.value;
-        document.getElementById('group-edit-guru').style.display = (role === 'guru') ? 'flex' : 'none';
-        document.getElementById('group-edit-kelas-siswa').style.display = (role === 'siswa') ? 'block' : 'none';
-    });
-
     document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
         const uid = document.getElementById('edit-uid').value;
         const nama = document.getElementById('edit-nama').value.trim();
-        const role = editRoleSelect.value;
-        let payload = { nama: nama, role: role };
+        const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
         
-        if (role === 'guru') { 
+        if(selectedRoles.length === 0) return alert("Pilih minimal 1 Role!");
+        let payload = { nama: nama, role: selectedRoles };
+        
+        if (selectedRoles.includes('guru')) { 
             payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value); 
             payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value); 
-        } else if (role === 'siswa') { 
-            payload.kelas = document.getElementById('edit-kelas-siswa').value; payload.mapel = null; 
-        } else { 
-            payload.kelas = null; payload.mapel = null; 
+        } 
+        if (selectedRoles.includes('siswa')) { 
+            const ks = document.getElementById('edit-kelas-siswa').value;
+            if(!selectedRoles.includes('guru')) payload.kelas = ks;
+            else payload.kelas_siswa = ks;
         }
 
         try {
@@ -386,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tbodySoal.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat bank soal...</td></tr>`;
         try {
             let qSoal = collection(db, "bank_soal");
-            if (userRole === "guru") {
+            if (!isAdmin && isGuru) {
                 if (userMapel.length === 0) { tbodySoal.innerHTML = `<tr><td colspan="4" style="text-align:center;">Anda belum ditugaskan ke mapel apapun.</td></tr>`; return; }
                 qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "in", userMapel));
             }
@@ -469,16 +503,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-preview-soal').style.display = 'none';
     });
 
-    // ==========================================
-    // HASIL UJIAN
-    // ==========================================
     let allHasilUjian = [];
     async function loadDataHasil() {
         const tbodyHasil = document.querySelector('#table-hasil tbody'); if(!tbodyHasil) return;
         tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align:center;">Memuat hasil...</td></tr>`;
         try {
             let qHasil = collection(db, "hasil_ujian");
-            if (userRole === "guru") {
+            if (!isAdmin && isGuru) {
                 if (userMapel.length === 0) { tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align:center;">Tidak ada data.</td></tr>`; return; }
                 qHasil = query(collection(db, "hasil_ujian"), where("mataPelajaran", "in", userMapel));
             }
@@ -497,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let filtered = filterVal === 'semua' ? allHasilUjian : allHasilUjian.filter(h => h.mataPelajaran === filterVal);
         
-        if (userRole === "guru" && userKelas.length > 0) {
+        if (!isAdmin && isGuru && userKelas.length > 0) {
             filtered = filtered.filter(h => userKelas.includes(h.kelas));
         }
 
@@ -596,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = tokenSnap.data();
                 
                 let keys = Object.keys(data);
-                if (userRole === "guru") {
+                if (!isAdmin && isGuru) {
                     keys = keys.filter(k => {
                         const parts = k.replace('token_', '').split('_');
                         const mapel = parts[0] || '';
