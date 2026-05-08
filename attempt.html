@@ -110,6 +110,36 @@
         </aside>
     </main>
 
+    <div id="modal-pelanggaran" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background-color: rgba(15, 23, 42, 0.95); backdrop-filter: blur(5px);">
+        <div class="modal-content" style="background: white; padding: 40px; border-radius: var(--radius-lg); text-align: center; width: 500px; max-width: 95%; border-top: 8px solid var(--danger);">
+            <i class="fas fa-exclamation-triangle fa-5x" style="color: var(--danger); margin-bottom: 20px; animation: pulse 1.5s infinite;"></i>
+            <h2 style="color: var(--danger); margin-bottom: 10px; font-size: 1.8rem; font-weight: 800; text-transform: uppercase;">Pelanggaran Ujian!</h2>
+            <p style="font-size: 1.05rem; color: var(--secondary); margin-bottom: 20px; font-weight: 500;">
+                Sistem mendeteksi Anda berusaha keluar dari halaman ujian (Pindah Tab/Minimize Layar).
+            </p>
+            
+            <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #f87171;">
+                <span style="font-size: 1rem; color: var(--danger); font-weight: 700;">PERINGATAN KE: <span id="cheat-count" style="font-size: 1.5rem; display: inline-block; margin: 0 5px;">1</span> DARI 3</span>
+            </div>
+            
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;">
+                Jika Anda melakukan pelanggaran hingga <b>3 kali</b>, sistem akan menghentikan ujian Anda secara paksa dan mengirim jawaban Anda secara otomatis.
+            </p>
+            
+            <button id="btn-mengerti-pelanggaran" class="btn-3d" style="background-color: var(--danger); width: 100%; font-size: 0.9rem;">
+                <i class="fas fa-undo-alt"></i> SAYA MENGERTI & KEMBALI UJIAN
+            </button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); }
+        }
+    </style>
+
     <script type="module" src="attempt.js"></script>
 </body>
 </html>
