@@ -40,7 +40,7 @@
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* =========================================
-   2. RESET & BASE
+   2. RESET, BASE & ANTI-OVERFLOW
 ========================================= */
 * { 
     box-sizing: border-box; 
@@ -54,6 +54,7 @@ body {
     color: var(--text-main); 
     line-height: 1.6; 
     -webkit-font-smoothing: antialiased; 
+    overflow-x: hidden; /* Mencegah layar bisa digeser ke kanan/kiri secara paksa */
 }
 
 a { 
@@ -63,6 +64,30 @@ a {
 }
 
 a:hover { color: var(--primary-hover); }
+
+/* Mencegah gambar/logo keluar dari kotak parent-nya */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Aturan Truncate (Titik-titik) untuk Nama Panjang agar tidak merusak Header */
+#admin-name, #student-name, .user-name {
+    display: inline-block;
+    max-width: 120px; /* Batas panjang nama di HP */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Di layar PC, nama boleh lebih panjang */
+@media (min-width: 768px) {
+    #admin-name, #student-name, .user-name {
+        max-width: 250px; 
+    }
+}
 
 /* =========================================
    3. AUTHENTICATION (LOGIN & REGISTRASI)
@@ -86,6 +111,7 @@ a:hover { color: var(--primary-hover); }
     padding: 40px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
+    width: 100%;
 }
 
 .login-header { 
@@ -93,10 +119,11 @@ a:hover { color: var(--primary-hover); }
     margin-bottom: 30px; 
 }
 
-.main-logo { 
+.login-header .main-logo { 
     height: 70px; 
+    width: auto;
     object-fit: contain; 
-    margin-bottom: 15px; 
+    margin: 0 auto 15px auto; 
 }
 
 .login-header h2 { 
@@ -222,6 +249,7 @@ a:hover { color: var(--primary-hover); }
     justify-content: center; 
     gap: 8px; 
     box-shadow: var(--shadow-md);
+    max-width: 100%; /* Mencegah tombol melar melebihi parent */
 }
 
 .btn-3d:hover { 
@@ -233,14 +261,21 @@ a:hover { color: var(--primary-hover); }
 .btn-secondary { background-color: var(--secondary); }
 .btn-secondary:hover { background-color: var(--secondary-hover); }
 
-/* Custom Checkbox Container */
+/* Custom Checkbox Container (Mencegah isi checkBox meluber) */
 .checkbox-container { 
     max-height: 120px; 
     overflow-y: auto; 
+    overflow-x: hidden;
     padding: 10px; 
     background: white; 
     border: 1px solid var(--border-color); 
     border-radius: var(--radius-md); 
+    width: 100%;
+}
+
+.checkbox-container label {
+    word-break: break-word; /* Pecah teks mapel/kelas jika terlalu panjang */
+    white-space: normal;
 }
 
 /* =========================================
@@ -250,6 +285,7 @@ a:hover { color: var(--primary-hover); }
     display: flex;
     height: 100vh;
     overflow: hidden;
+    width: 100%;
 }
 
 .sidebar-menu {
@@ -324,7 +360,9 @@ a:hover { color: var(--primary-hover); }
     display: flex;
     flex-direction: column;
     overflow-y: auto; 
+    overflow-x: hidden;
     background-color: var(--bg-main);
+    width: 100%;
 }
 
 .app-header {
@@ -337,10 +375,13 @@ a:hover { color: var(--primary-hover); }
     position: sticky; 
     top: 0; 
     z-index: 90; 
+    flex-wrap: wrap; /* Agar isi header bisa turun ke bawah jika mentok */
+    gap: 15px;
 }
 
 .main-content { 
     padding: 30px; 
+    max-width: 100%;
 }
 
 .content-section { 
@@ -361,6 +402,8 @@ a:hover { color: var(--primary-hover); }
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     margin-bottom: 25px;
+    max-width: 100%;
+    overflow: hidden; /* Mencegah isi meluber */
 }
 
 .section-title {
@@ -403,7 +446,7 @@ a:hover { color: var(--primary-hover); }
 
 .table-container { 
     width: 100%;
-    overflow-x: auto; /* Agar tabel bisa di scroll ke samping di HP */
+    overflow-x: auto; /* TABEL ANTI-POTONG: Bisa di scroll ke samping di HP */
     border: 1px solid var(--border-color); 
     border-radius: var(--radius-md); 
     background: var(--card-bg); 
@@ -412,7 +455,7 @@ a:hover { color: var(--primary-hover); }
 
 table { 
     width: 100%; 
-    min-width: 600px; /* Mencegah tabel menyusut terlalu kecil */
+    min-width: 600px; /* Batas minimum tabel sebelum jadi scrollable */
     border-collapse: collapse; 
     font-size: 0.9rem; 
 }
@@ -453,6 +496,7 @@ tbody tr:hover { background-color: #f1f5f9; }
     padding: 25px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
+    max-width: 100%;
 }
 
 .question-header { 
@@ -462,12 +506,14 @@ tbody tr:hover { background-color: #f1f5f9; }
     border-bottom: 2px dashed var(--border-color); 
     padding-bottom: 15px; 
     margin-bottom: 20px; 
+    flex-wrap: wrap; /* Agar jika mentok akan pindah ke bawah */
+    gap: 10px;
 }
 
 .q-number-label { font-weight: 700; color: var(--text-muted); font-size: 0.9rem; }
 .q-number-badge { background: var(--secondary); color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 1.1rem; }
 
-.question-content { min-height: 350px; font-size: 1.1rem; color: var(--text-main); margin-bottom: 30px; }
+.question-content { min-height: 350px; font-size: 1.1rem; color: var(--text-main); margin-bottom: 30px; word-wrap: break-word;}
 
 .nav-controls { 
     display: flex; 
@@ -475,10 +521,12 @@ tbody tr:hover { background-color: #f1f5f9; }
     gap: 15px; 
     border-top: 1px solid var(--border-color); 
     padding-top: 20px; 
+    flex-wrap: wrap; /* Tombol fleksibel pindah bawah di layar kecil */
 }
 
 .nav-btn { 
     flex: 1; 
+    min-width: 120px; /* Menjaga ukuran tombol tetap nyaman diklik */
     padding: 12px; 
     border-radius: var(--radius-md); 
     border: none; 
@@ -498,7 +546,7 @@ tbody tr:hover { background-color: #f1f5f9; }
 .btn-next { background: var(--primary); color: white; }
 .btn-next:hover { background: var(--primary-hover); }
 
-.sidebar-panel { display: flex; flex-direction: column; gap: 20px; }
+.sidebar-panel { display: flex; flex-direction: column; gap: 20px; max-width: 100%;}
 
 .time-display { 
     font-size: 2.2rem; 
@@ -568,6 +616,7 @@ tbody tr:hover { background-color: #f1f5f9; }
     max-width: 600px; 
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;
     box-shadow: var(--shadow-lg);
     position: relative;
     animation: fadeIn 0.3s ease;
@@ -588,20 +637,29 @@ tbody tr:hover { background-color: #f1f5f9; }
    9. RESPONSIVE DESIGN (TABLET & MOBILE)
 ========================================= */
 
-/* Untuk Layar Tablet / Laptop Kecil */
+/* Tablet & Laptop Kecil */
 @media (max-width: 1024px) {
     .exam-layout { grid-template-columns: 1fr 280px; padding: 20px; }
     .sidebar-menu { width: 220px; }
 }
 
-/* Untuk Layar HP / Mobile */
+/* HP & Mobile */
 @media (max-width: 768px) {
     
+    /* Memaksa elemen yang dikotak putih Header wrap / turun ke bawah */
+    .app-header > div:last-child > div {
+        width: auto !important; /* Timpa lebar mutlak inline HTML */
+        white-space: normal !important; 
+        flex-wrap: wrap; /* Izinkan tulisan/garis berbaris */
+        justify-content: center;
+        text-align: center;
+    }
+
     /* Login & Registrasi */
     .login-card { padding: 30px 20px; }
     .role-selection-container { flex-direction: column; gap: 10px; }
 
-    /* Dashboard Layout Berubah Menjadi Vertikal */
+    /* Dashboard Layout Berubah Menjadi Vertikal Penuh */
     .app-layout { flex-direction: column; }
     
     /* Sidebar Menjadi Menu Atas (Horizontal Scroll) */
@@ -619,41 +677,37 @@ tbody tr:hover { background-color: #f1f5f9; }
     .menu-container { 
         display: flex; 
         flex-direction: row; 
-        overflow-x: auto; /* Bisa di-scroll kanan-kiri */
+        overflow-x: auto; 
         padding: 10px 15px; 
         gap: 10px;
-        white-space: nowrap; /* Menu tidak turun ke baris baru */
+        white-space: nowrap;
     }
 
     .option-item { margin-bottom: 0; padding: 10px 15px; font-size: 0.9rem; }
     
     /* Header Dashboard */
-    .app-header { padding: 15px; flex-direction: column; gap: 15px; align-items: stretch; }
-    .app-header > div:first-child img { height: 40px; }
-    .app-header > div:last-child { justify-content: space-between; width: 100%; }
+    .app-header { padding: 15px; flex-direction: column; gap: 15px; align-items: center; text-align: center; }
+    .app-header > div:first-child { flex-direction: column; text-align: center; }
+    .app-header > div:first-child img { height: 40px; margin-bottom: 5px; }
+    .app-header > div:last-child { justify-content: center; width: 100%; flex-wrap: wrap; }
     
     /* Main Content */
     .main-content { padding: 15px; }
     .welcome-banner { flex-direction: column; text-align: center; gap: 15px; padding: 25px 20px; }
-    .welcome-banner i { display: none; } /* Sembunyikan icon background besar di HP */
+    .welcome-banner i { display: none; } 
     
     /* Halaman Ujian (Attempt) */
     .exam-layout { grid-template-columns: 1fr; padding: 15px; gap: 20px; }
-    .nav-controls { flex-direction: column; } /* Tombol Sebelumnya/Ragu/Selanjutnya menyusun ke bawah */
+    .nav-controls { flex-direction: column; } 
     .btn-finish-exam { padding: 20px; font-size: 1.2rem; }
     
-    /* Filter dan Input Group */
-    .input-group, #admin-reg-status > div { width: 100%; }
-    #admin-reg-status > div > div { margin-bottom: 10px; width: 100%; }
-    #admin-reg-status select { width: 100% !important; }
-    
-    /* Data Master Grid */
+    /* Data Master Grid (Jadikan 1 Kolom) */
     #admin-data-master { grid-template-columns: 1fr; }
 }
 
-/* Untuk Layar HP Sangat Kecil */
+/* HP Sangat Kecil */
 @media (max-width: 480px) {
-    .stats-grid { grid-template-columns: 1fr; } /* Statistik 1 kolom di HP kecil */
-    .q-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; } /* Grid nomor soal jadi 4 kolom */
+    .stats-grid { grid-template-columns: 1fr; }
+    .q-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; } 
     .modal-content { padding: 20px 15px; }
 }
