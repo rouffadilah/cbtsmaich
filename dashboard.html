@@ -8,12 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <style>
-        .stat-clickable { cursor: pointer; transition: all 0.2s ease-in-out; }
-        .stat-clickable:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary-light); }
-        .checkbox-container { max-height: 120px; overflow-y: auto; overflow-x: hidden; padding: 10px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); width: 100%; }
-        .checkbox-container label { word-break: break-word; white-space: normal; }
-    </style>
 </head>
 <body>
 
@@ -88,14 +82,29 @@
 
                 <div id="section-soal" class="content-section">
                     <div class="card">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 15px;">
                             <h2 class="section-title" style="margin: 0;">Bank Soal Ujian</h2>
-                            <button id="btn-tambah-manual" class="btn-3d" style="width: auto;"><i class="fas fa-plus"></i> Kelola Soal</button>
+                            <button id="btn-tambah-manual" class="btn-3d" style="width: auto; background-color: var(--success);"><i class="fas fa-plus"></i> Kelola / Tambah Soal</button>
                         </div>
+                        
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;"><i class="fas fa-filter"></i> Mata Pelajaran:</label>
+                                <select id="filter-soal-mapel" class="input-text"><option value="">Pilih Mapel...</option></select>
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;">Kelas:</label>
+                                <select id="filter-soal-kelas" class="input-text"><option value="">Pilih Kelas...</option></select>
+                            </div>
+                            <button id="btn-tampil-soal" class="btn-3d" style="width: auto;"><i class="fas fa-search"></i> Tampilkan</button>
+                            <button id="btn-preview-full" class="btn-3d" style="width: auto; background-color: var(--info); display: none;"><i class="fas fa-eye"></i> Preview Tampilan Siswa</button>
+                        </div>
+
                         <div class="table-container">
                             <table id="table-soal">
                                 <thead>
                                     <tr>
+                                        <th style="width: 60px; text-align: center;">No</th>
                                         <th>Mapel</th>
                                         <th>Kelas</th>
                                         <th>Tipe</th>
@@ -103,7 +112,9 @@
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody></tbody>
+                                <tbody>
+                                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b> terlebih dahulu.</td></tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -137,7 +148,6 @@
                 </div>
 
                 <div id="section-pengguna" class="content-section">
-                    
                     <div class="card" style="margin-bottom: 20px; background: #f0fdf4; border: 1px solid var(--success);">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                             <div>
@@ -158,57 +168,33 @@
                         <div style="background: #f8fafc; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 30px; max-width: 600px;">
                             <h4 style="margin-bottom: 20px; color: var(--secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-user-plus"></i> Buat Akun Baru (Manual)</h4>
                             
-                            <div class="input-group">
-                                <label>Nama Lengkap</label>
-                                <input type="text" id="new-nama" placeholder="Masukkan nama lengkap pengguna" class="input-text">
-                            </div>
-
-                            <div class="input-group">
-                                <label>Username / NIS / NIP</label>
-                                <input type="text" id="new-username" placeholder="Masukkan ID unik untuk Login" class="input-text">
-                            </div>
-
+                            <div class="input-group"><label>Nama Lengkap</label><input type="text" id="new-nama" placeholder="Masukkan nama lengkap pengguna" class="input-text"></div>
+                            <div class="input-group"><label>Username / NIS / NIP</label><input type="text" id="new-username" placeholder="Masukkan ID unik untuk Login" class="input-text"></div>
                             <div class="input-group">
                                 <label>Role / Hak Akses (Bisa pilih lebih dari 1)</label>
                                 <div style="display: flex; gap: 15px; padding: 12px 16px; background: #fafafa; border: 1.5px solid var(--border-color); border-radius: var(--radius-md);">
-                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
-                                        <input type="checkbox" class="new-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
-                                        <input type="checkbox" class="new-role-cb" value="guru" style="transform: scale(1.2);"> Guru
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
-                                        <input type="checkbox" class="new-role-cb" value="admin" style="transform: scale(1.2);"> Admin
-                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa</label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="guru" style="transform: scale(1.2);"> Guru</label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="admin" style="transform: scale(1.2);"> Admin</label>
                                 </div>
                             </div>
 
                             <div class="input-group" id="group-new-mapel" style="display:none;">
                                 <label>Mata Pelajaran (Khusus Guru)</label>
-                                <div id="new-mapel-container" class="checkbox-container">
-                                    <div style="font-size:0.8rem; color:#888;">Memuat Mapel...</div>
-                                </div>
+                                <div id="new-mapel-container" class="checkbox-container"><div style="font-size:0.8rem; color:#888;">Memuat Mapel...</div></div>
                             </div>
                             
                             <div class="input-group" id="group-new-kelas-guru" style="display:none;">
                                 <label>Kelas Ajar (Khusus Guru)</label>
-                                <div id="new-kelas-guru-container" class="checkbox-container">
-                                    <div style="font-size:0.8rem; color:#888;">Memuat Kelas...</div>
-                                </div>
+                                <div id="new-kelas-guru-container" class="checkbox-container"><div style="font-size:0.8rem; color:#888;">Memuat Kelas...</div></div>
                             </div>
 
                             <div class="input-group" id="group-new-kelas-siswa" style="display:none;">
                                 <label>Kelas (Khusus Siswa)</label>
-                                <select id="new-kelas-siswa" class="input-text">
-                                    <option value="">Pilih Kelas...</option>
-                                </select>
+                                <select id="new-kelas-siswa" class="input-text"><option value="">Pilih Kelas...</option></select>
                             </div>
 
-                            <div class="input-group">
-                                <label>Password (Kata Sandi)</label>
-                                <input type="password" id="new-pass" placeholder="Minimal 6 karakter" class="input-text">
-                            </div>
-
+                            <div class="input-group"><label>Password (Kata Sandi)</label><input type="password" id="new-pass" placeholder="Minimal 6 karakter" class="input-text"></div>
                             <button id="btn-add-user" class="btn-3d" style="width: 100%; background-color: var(--info); margin-top: 10px;"><i class="fas fa-save"></i> SIMPAN AKUN</button>
                         </div>
 
@@ -283,7 +269,6 @@
                                     <table id="table-master-mapel" style="width: 100%; font-size: 0.85rem;"><tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody></table>
                                 </div>
                             </div>
-
                             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
                                 <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-chalkboard"></i> Master Kelas</h4>
                                 <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -316,7 +301,13 @@
                 <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
                     <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
                     <div style="flex: 1; min-width: 150px;"><label>Kelas</label><select id="soal-kelas" class="input-text"><option value="">Memuat Kelas...</option></select></div>
-                    <div style="flex: 1; min-width: 150px;">
+                </div>
+                <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                    <div style="flex: 1; min-width: 100px;">
+                        <label>Nomor Soal</label>
+                        <input type="number" id="soal-nomor" class="input-text" min="1" placeholder="Contoh: 1" required>
+                    </div>
+                    <div style="flex: 2; min-width: 150px;">
                         <label>Tipe Soal</label>
                         <select id="soal-tipe" class="input-text">
                             <option value="PG">Pilihan Ganda (PG)</option>
@@ -334,16 +325,16 @@
 
             <div id="area-import" style="display: none;">
                 <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--info);">
-                    <p style="font-weight: 700; color: var(--info); font-size: 0.85rem; margin-bottom: 10px;"><i class="fas fa-download"></i> UNDUH TEMPLATE SOAL:</p>
+                    <p style="font-weight: 700; color: var(--info); font-size: 0.85rem; margin-bottom: 10px;"><i class="fas fa-download"></i> UNDUH TEMPLATE SOAL (Versi Terbaru):</p>
                     <div style="display: flex; gap: 10px;">
-                        <a href="Template_Soal_CBT_SMAICH.xlsx" download class="btn-3d" style="background: #107c41; font-size: 0.75rem; padding: 8px 12px; width: auto;"><i class="fas fa-file-excel"></i> Template Excel</a>
-                        <a href="Template_Soal_CBT_SMAICH.docx" download class="btn-3d" style="background: #2b579a; font-size: 0.75rem; padding: 8px 12px; width: auto;"><i class="fas fa-file-word"></i> Template Word</a>
+                        <a href="Template_Soal_CBT_SMAICH.xlsx" download class="btn-3d" style="background: #107c41; font-size: 0.75rem; padding: 8px 12px; width: auto;"><i class="fas fa-file-excel"></i> Template Excel Baru</a>
                     </div>
+                    <p style="font-size: 0.75rem; color: var(--secondary); margin-top: 10px; line-height: 1.4;">*Untuk Import Word: Harap gunakan format bernomor seperti <b>1. Pertanyaan...</b> agar sistem mendeteksi urutan nomor soal dengan benar.</p>
                 </div>
                 
                 <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
-                    <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran untuk File Import</label><select id="import-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
-                    <div style="flex: 1; min-width: 150px;"><label>Kelas untuk File Import</label><select id="import-kelas" class="input-text"><option value="">Memuat Kelas...</option></select></div>
+                    <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran</label><select id="import-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
+                    <div style="flex: 1; min-width: 150px;"><label>Kelas</label><select id="import-kelas" class="input-text"><option value="">Memuat Kelas...</option></select></div>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
@@ -370,43 +361,21 @@
         <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 450px; max-width: 90%;">
             <span class="close-btn" id="close-modal-edit-akun" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
             <h3 style="margin-bottom: 15px; color: var(--warning);"><i class="fas fa-user-edit"></i> Edit Profil Pengguna</h3>
-            
             <input type="hidden" id="edit-uid">
-            <div class="input-group">
-                <label>Nama Lengkap</label>
-                <input type="text" id="edit-nama" class="input-text">
-            </div>
+            <div class="input-group"><label>Nama Lengkap</label><input type="text" id="edit-nama" class="input-text"></div>
             <div class="input-group">
                 <label>Role / Hak Akses</label>
                 <div style="display: flex; gap: 15px; padding: 12px 16px; background: #fafafa; border: 1.5px solid var(--border-color); border-radius: var(--radius-md);">
-                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
-                        <input type="checkbox" class="edit-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
-                        <input type="checkbox" class="edit-role-cb" value="guru" style="transform: scale(1.2);"> Guru
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
-                        <input type="checkbox" class="edit-role-cb" value="admin" style="transform: scale(1.2);"> Admin
-                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="edit-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa</label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="edit-role-cb" value="guru" style="transform: scale(1.2);"> Guru</label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="edit-role-cb" value="admin" style="transform: scale(1.2);"> Admin</label>
                 </div>
             </div>
-            
             <div id="group-edit-guru" style="display:none; gap: 10px; margin-bottom: 15px;">
-                <div class="input-group" style="flex:1; margin-bottom: 0;">
-                    <label>Mata Pelajaran</label>
-                    <div id="edit-mapel-container" class="checkbox-container"></div>
-                </div>
-                <div class="input-group" style="flex:1; margin-bottom: 0;">
-                    <label>Kelas Ajar</label>
-                    <div id="edit-kelas-guru-container" class="checkbox-container"></div>
-                </div>
+                <div class="input-group" style="flex:1; margin-bottom: 0;"><label>Mata Pelajaran</label><div id="edit-mapel-container" class="checkbox-container"></div></div>
+                <div class="input-group" style="flex:1; margin-bottom: 0;"><label>Kelas Ajar</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
             </div>
-            
-            <div class="input-group" id="group-edit-kelas-siswa" style="display:none;">
-                <label>Kelas (Siswa)</label>
-                <select id="edit-kelas-siswa" class="input-text"><option value="">Memuat...</option></select>
-            </div>
-
+            <div class="input-group" id="group-edit-kelas-siswa" style="display:none;"><label>Kelas (Siswa)</label><select id="edit-kelas-siswa" class="input-text"><option value="">Memuat...</option></select></div>
             <button id="btn-save-edit-akun" class="btn-3d" style="background-color: var(--warning); width: 100%;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
         </div>
     </div>
@@ -415,28 +384,60 @@
         <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 500px; max-width: 90%;">
             <span class="close-btn" id="close-modal-detail" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
             <h3 style="margin-bottom: 15px; color: var(--secondary);">Rincian Hasil Ujian</h3>
-            <table class="table-detail" style="width: 100%; margin-bottom: 15px; font-size: 0.9rem;">
-                <tr><td style="width: 120px; font-weight: bold;">Nama Siswa</td><td id="detail-nama">: -</td></tr>
-                <tr><td style="font-weight: bold;">Kelas</td><td id="detail-kelas">: -</td></tr>
-                <tr><td style="font-weight: bold;">Mata Pelajaran</td><td id="detail-mapel">: -</td></tr>
-            </table>
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <p style="font-weight: bold; margin-bottom: 10px; color: var(--success);">Nomor Soal Dijawab Benar Otomatis (<span id="detail-jml-benar">0</span> dari <span id="detail-total-soal">0</span>):</p>
-                <div id="detail-rincian-benar" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-            </div>
-            <div class="nilai-akhir-box" style="margin-top: 15px; text-align: center; background: #eff6ff; padding: 15px; border-radius: 8px;">
-                <span style="font-size: 1rem; color: var(--secondary); font-weight: 600;">NILAI AKHIR</span><br>
-                <strong id="detail-nilai" style="font-size: 2.5rem; color: var(--primary);">0</strong>
-            </div>
+            <table class="table-detail" style="width: 100%; margin-bottom: 15px; font-size: 0.9rem;"><tr><td style="width: 120px; font-weight: bold;">Nama Siswa</td><td id="detail-nama">: -</td></tr><tr><td style="font-weight: bold;">Kelas</td><td id="detail-kelas">: -</td></tr><tr><td style="font-weight: bold;">Mata Pelajaran</td><td id="detail-mapel">: -</td></tr></table>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);"><p style="font-weight: bold; margin-bottom: 10px; color: var(--success);">Nomor Soal Dijawab Benar Otomatis (<span id="detail-jml-benar">0</span> dari <span id="detail-total-soal">0</span>):</p><div id="detail-rincian-benar" style="display: flex; flex-wrap: wrap; gap: 8px;"></div></div>
+            <div class="nilai-akhir-box" style="margin-top: 15px; text-align: center; background: #eff6ff; padding: 15px; border-radius: 8px;"><span style="font-size: 1rem; color: var(--secondary); font-weight: 600;">NILAI AKHIR</span><br><strong id="detail-nilai" style="font-size: 2.5rem; color: var(--primary);">0</strong></div>
         </div>
     </div>
 
-    <div id="modal-preview-soal" class="modal" style="display: none; align-items: center; justify-content: center;">
-        <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 700px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
-            <span class="close-btn" id="close-modal-preview" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
-            <h3 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-eye"></i> Preview Point of View (Siswa)</h3>
-            <div style="background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 15px;" id="preview-badge">Tipe</div>
-            <div id="preview-content" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; background: #fff;"></div>
+    <div id="modal-preview-full" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="width: 95%; max-width: 1200px; height: 95vh; display:flex; flex-direction:column; padding:0; overflow:hidden; border-radius: var(--radius-lg);">
+            
+            <div style="background:var(--secondary); color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-size: 1.2rem;"><i class="fas fa-laptop-code"></i> Preview Tampilan Ujian Siswa (Hanya Lihat)</h3>
+                <span class="close-btn" id="close-preview-full" style="position:static; color:white; font-size: 2rem;">&times;</span>
+            </div>
+            
+            <div style="flex:1; overflow-y:auto; padding:20px; background:var(--bg-main);">
+                <div class="exam-layout" style="margin:0; width:100%; max-width:100%; padding:0;">
+                    <section class="question-section">
+                        <div class="card question-card">
+                            <div class="question-header">
+                                <div>
+                                    <span class="q-number-label">SOAL NOMOR</span>
+                                    <div class="q-number-badge" id="prev-current-q-num">1</div>
+                                </div>
+                                <div id="prev-badge-tipe" style="background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">TIPE SOAL</div>
+                            </div>
+                            
+                            <div class="question-content" id="prev-q-container" style="min-height: 250px;">
+                                </div>
+
+                            <div class="nav-controls">
+                                <button class="nav-btn btn-prev" id="prev-btn-prev"><i class="fas fa-chevron-left"></i> SEBELUMNYA</button>
+                                <button class="nav-btn btn-next" id="prev-btn-next">SELANJUTNYA <i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="sidebar-panel">
+                        <div class="card timer-card" style="opacity: 0.5;">
+                            <h3><i class="far fa-clock"></i> SISA WAKTU</h3>
+                            <div class="time-display" style="font-size: 1.5rem;">[TIDAK AKTIF]</div>
+                        </div>
+
+                        <div class="card navigation-card">
+                            <h3 style="font-size: 0.9rem; color: var(--text-muted); text-align: center;"><i class="fas fa-th"></i> NAVIGASI SOAL</h3>
+                            <div class="q-grid" id="prev-q-grid"></div>
+                            
+                            <div class="legend-container">
+                                <div class="leg-item"><span class="leg-box answered"></span> Terjawab</div>
+                                <div class="leg-item"><span class="leg-box active-q" style="border: 2px solid var(--info); background: transparent;"></span> Sedang Dibuka</div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
         </div>
     </div>
 
