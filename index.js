@@ -17,7 +17,6 @@ loginForm.addEventListener("submit", async (event) => {
     const dummyEmail = `${username}@cbt.smaich.id`;
 
     try {
-        // 1. Coba Login via Firebase Auth
         let userCred;
         try {
             userCred = await signInWithEmailAndPassword(auth, dummyEmail, password);
@@ -28,8 +27,6 @@ loginForm.addEventListener("submit", async (event) => {
         }
 
         const user = userCred.user;
-
-        // 2. Cek Hak Akses (Role) di Firestore Database
         let userDoc;
         try {
             userDoc = await getDoc(doc(db, "users", user.uid));
@@ -39,29 +36,35 @@ loginForm.addEventListener("submit", async (event) => {
             throw new Error("Henti");
         }
 
-        // 3. Arahkan Halaman
         if (userDoc.exists()) {
             const userData = userDoc.data();
             
-            // Simpan Hak Akses ke memori perangkat
+            // Simpan Hak Akses
             localStorage.setItem("userRole", userData.role);
+            
+            // PERBARUAN: Simpan Mapel sebagai Array agar mendukung Multi-Mapel
             if (userData.role === 'guru') {
-                localStorage.setItem("userMapel", userData.mapel || "informatika");
+                let mapels = [];
+                if (Array.isArray(userData.mapel)) {
+                    mapels = userData.mapel;
+                } else if (typeof userData.mapel === 'string' && userData.mapel.trim() !== '') {
+                    mapels = [userData.mapel]; // Konversi data lama ke bentuk Array
+                }
+                localStorage.setItem("userMapel", JSON.stringify(mapels));
             }
 
-            // Lempar ke halaman yang sesuai
             if (userData.role === "admin" || userData.role === "guru") {
                 window.location.href = "dashboard.html"; 
             } else {
                 window.location.href = "attempt.html"; 
             }
         } else {
-            alert("AKSES DITOLAK: Akun Anda belum memiliki data (Siswa/Guru/Admin) di dalam database. Silakan daftar ulang.");
+            alert("AKSES DITOLAK: Akun Anda tidak memiliki data di database.");
             await auth.signOut();
         }
 
     } catch (error) {
-        // Error sudah ditangani oleh alert di atas
+        // Error sudah di-handle
     } finally {
         btnSubmit.innerHTML = originalBtnText;
         btnSubmit.disabled = false;
