@@ -8,12 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <style>
-        .stat-clickable { cursor: pointer; transition: all 0.2s ease-in-out; }
-        .stat-clickable:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary-light); }
-        .checkbox-container { max-height: 120px; overflow-y: auto; overflow-x: hidden; padding: 10px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); width: 100%; }
-        .checkbox-container label { word-break: break-word; white-space: normal; }
-    </style>
 </head>
 <body>
 
@@ -305,10 +299,12 @@
         <div class="modal-content" style="width: 750px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
             <span class="close-btn" id="close-modal-soal" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
             <h3 style="margin-bottom: 15px; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Manajemen Bank Soal</h3>
+            
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                 <button id="tab-manual" class="btn-3d" style="flex: 1; font-size: 0.85rem;"><i class="fas fa-edit"></i> Buat Manual</button>
                 <button id="tab-import" class="btn-3d btn-secondary" style="flex: 1; font-size: 0.85rem;"><i class="fas fa-file-upload"></i> Import File</button>
             </div>
+
             <div id="area-manual">
                 <div class="input-group" style="display: flex; gap: 15px;">
                     <div style="flex: 1;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
@@ -327,6 +323,7 @@
                 <div id="area-opsi-dinamis" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;"></div>
                 <button id="btn-simpan-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-save"></i> SIMPAN SOAL</button>
             </div>
+
             <div id="area-import" style="display: none;">
                 <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--info);">
                     <p style="font-weight: 700; color: var(--info); font-size: 0.85rem; margin-bottom: 10px;"><i class="fas fa-download"></i> UNDUH TEMPLATE SOAL:</p>
@@ -336,20 +333,23 @@
                     </div>
                 </div>
                 <div class="input-group"><label>Mata Pelajaran untuk File Import</label><select id="import-mapel" class="input-text" style="margin-bottom: 15px;"><option value="">Memuat Mapel...</option></select></div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                     <div style="border: 2px dashed var(--success); padding: 20px; border-radius: 8px; text-align: center; background: #f0fdf4;">
                         <i class="fas fa-file-excel fa-3x" style="color: var(--success); margin-bottom: 10px;"></i>
                         <h4 style="color: var(--secondary);">Import Excel</h4>
                         <input type="file" id="file-excel" accept=".xlsx, .xls" style="display: none;">
-                        <label for="file-excel" class="btn-3d" style="background: var(--success); cursor: pointer; padding: 8px; margin-top:10px;"><i class="fas fa-upload"></i> Pilih File</label>
+                        <label for="file-excel" id="label-file-excel" class="btn-3d" style="background: var(--success); cursor: pointer; padding: 8px; margin-top:10px; width: 100%;"><i class="fas fa-search"></i> Pilih File</label>
                     </div>
                     <div style="border: 2px dashed var(--info); padding: 20px; border-radius: 8px; text-align: center; background: #eff6ff;">
                         <i class="fas fa-file-word fa-3x" style="color: var(--info); margin-bottom: 10px;"></i>
                         <h4 style="color: var(--secondary);">Import Word</h4>
                         <input type="file" id="file-word" accept=".docx" style="display: none;">
-                        <label for="file-word" class="btn-3d" style="background: var(--info); cursor: pointer; padding: 8px; margin-top:10px;"><i class="fas fa-upload"></i> Pilih File</label>
+                        <label for="file-word" id="label-file-word" class="btn-3d" style="background: var(--info); cursor: pointer; padding: 8px; margin-top:10px; width: 100%;"><i class="fas fa-search"></i> Pilih File</label>
                     </div>
                 </div>
+                
+                <button id="btn-proses-import-soal" class="btn-3d" style="width: 100%; background-color: var(--secondary);"><i class="fas fa-cloud-upload-alt"></i> UPLOAD & PROSES</button>
             </div>
         </div>
     </div>
@@ -364,7 +364,6 @@
                 <label>Nama Lengkap</label>
                 <input type="text" id="edit-nama" class="input-text">
             </div>
-
             <div class="input-group">
                 <label>Role / Hak Akses</label>
                 <div style="display: flex; gap: 15px; padding: 12px 16px; background: #fafafa; border: 1.5px solid var(--border-color); border-radius: var(--radius-md);">
