@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google" content="notranslate"> <title>Ujian Berbasis Komputer - SMAICH</title>
+    <meta name="google" content="notranslate"> 
+    <title>Ujian Berbasis Komputer - SMAICH</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* Mencegah kursor menyeleksi/memblok teks soal */
         body {
-            -webkit-user-select: none; /* Safari */
-            -ms-user-select: none; /* IE 10 and IE 11 */
-            user-select: none; /* Standard syntax */
+            -webkit-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
         }
-        /* Mengizinkan seleksi HANYA di dalam input teks dan textarea (untuk soal isian/uraian) */
         input, textarea {
             -webkit-user-select: text;
             -ms-user-select: text;
@@ -59,6 +58,13 @@
                 <label>Mata Pelajaran</label>
                 <select id="select-mapel" class="input-text">
                     <option value="" disabled selected>Memuat Mata Pelajaran...</option>
+                </select>
+            </div>
+
+            <div class="input-group" style="text-align: left;">
+                <label>Kelas</label>
+                <select id="select-kelas" class="input-text">
+                    <option value="" disabled selected>Memuat Kelas...</option>
                 </select>
             </div>
 
