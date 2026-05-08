@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (userRole === "admin") {
             document.getElementById('panel-title-role').innerText = "PANEL ADMIN";
-            fetchStatusReg(); // Tarik pengaturan pendaftaran khusus untuk admin
+            fetchStatusReg(); 
         } else if (userRole === "guru") {
             document.getElementById('panel-title-role').innerText = "PANEL GURU";
             
@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadDataMaster();
         loadDataSoal();
         loadDataHasil();
+        loadActiveTokens(); // Tarik data token saat halaman dimuat
         if(userRole === "admin") loadDataPengguna();
     });
 
@@ -471,42 +472,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // INDIKATOR TOKEN AKTIF 
+    // PERBAIKAN: TABEL DAFTAR TOKEN AKTIF
     // ==========================================
-    async function fetchTokenAktif() {
-        const mapel = document.getElementById('set-token-mapel').value;
-        const kelas = document.getElementById('set-token-kelas').value;
-        const displayEl = document.getElementById('display-token-aktif');
-        
-        if (!mapel || !kelas) {
-            displayEl.innerText = "Pilih Mapel & Kelas";
-            displayEl.style.color = "var(--text-muted)";
-            return;
-        }
-
-        displayEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 0.9rem;"></i>';
-        displayEl.style.color = "var(--text-muted)";
+    async function loadActiveTokens() {
+        const tbody = document.querySelector('#table-active-tokens tbody');
+        if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:10px;">Memuat data...</td></tr>';
         
         try {
             const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-            const tokenKey = `token_${mapel}_${kelas}`;
+            tbody.innerHTML = '';
             
-            if (tokenSnap.exists() && tokenSnap.data()[tokenKey]) {
-                displayEl.innerText = tokenSnap.data()[tokenKey];
-                displayEl.style.color = "var(--primary)";
+            if(tokenSnap.exists()) {
+                const data = tokenSnap.data();
+                
+                // Filter hanya token yang terkait dengan hak akses guru (Admin melihat semua)
+                let keys = Object.keys(data);
+                if (userRole === "guru") {
+                    keys = keys.filter(k => {
+                        const mapel = k.replace('token_', '').split('_')[0];
+                        return userMapel.includes(mapel);
+                    });
+                }
+
+                if(keys.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:10px; color:var(--text-muted);">Tidak ada token aktif.</td></tr>';
+                    return;
+                }
+                
+                keys.forEach(key => {
+                    const parts = key.replace('token_', '').split('_');
+                    const mapel = parts[0] || '-';
+                    const kelas = parts[1] || '-';
+                    const tokenVal = data[key];
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${mapel}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${kelas}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid var(--border-color); font-weight:bold; color:var(--primary); letter-spacing: 1px;">${tokenVal}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid var(--border-color); text-align:center;">
+                                <button onclick="window.hapusTokenUtama('${key}')" style="background:var(--danger); color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer;" title="Hapus Token"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
             } else {
-                displayEl.innerText = "BELUM DISET";
-                displayEl.style.color = "var(--danger)";
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:10px; color:var(--text-muted);">Tidak ada token aktif.</td></tr>';
             }
-        } catch (e) {
-            console.error(e);
-            displayEl.innerText = "Error";
+        } catch(e) {
+            console.error("Error loading tokens", e);
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:10px; color:var(--danger);">Gagal memuat data token.</td></tr>';
         }
     }
 
-    document.getElementById('set-token-mapel')?.addEventListener('change', fetchTokenAktif);
-    document.getElementById('set-token-kelas')?.addEventListener('change', fetchTokenAktif);
-    document.getElementById('btn-refresh-token')?.addEventListener('click', fetchTokenAktif);
+    document.getElementById('btn-refresh-token')?.addEventListener('click', loadActiveTokens);
 
     document.getElementById('btn-save-token')?.addEventListener('click', async () => {
         const mapel = document.getElementById('set-token-mapel').value;
@@ -519,13 +539,36 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try { 
             const tokenKey = `token_${mapel}_${kelas}`;
-            await setDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: tokenInput }, { merge: true }); 
-            alert(`Berhasil! Token mapel ${mapel.toUpperCase()} untuk kelas ${kelas} diset menjadi: ${tokenInput}`); 
+            await updateDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: tokenInput }); 
+            alert(`Berhasil! Token diset menjadi: ${tokenInput}`); 
             document.getElementById('input-token-baru').value = ''; 
-            fetchTokenAktif(); 
+            loadActiveTokens(); 
         } 
-        catch(error) { console.error(error); alert("Gagal set token!"); }
+        catch(error) { 
+            // Jika dokumen belum ada, gunakan setDoc
+            try {
+                const tokenKey = `token_${mapel}_${kelas}`;
+                await setDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: tokenInput }, { merge: true });
+                alert(`Berhasil! Token diset menjadi: ${tokenInput}`); 
+                document.getElementById('input-token-baru').value = ''; 
+                loadActiveTokens(); 
+            } catch(e) { console.error(e); alert("Gagal set token!"); }
+        }
     });
+
+    window.hapusTokenUtama = async function(tokenKey) {
+        if(!confirm("Hapus token ini? Siswa tidak akan bisa masuk ujian untuk mapel & kelas terkait.")) return;
+        try {
+            const tokenRef = doc(db, "pengaturan", "token_ujian");
+            await updateDoc(tokenRef, {
+                [tokenKey]: deleteField()
+            });
+            loadActiveTokens();
+        } catch(e) {
+            console.error("Error delete token", e);
+            alert("Gagal menghapus token.");
+        }
+    };
 
     window.hapusDokumen = async function(koleksi, id, callback) {
         if(!confirm("Hapus data ini permanen?")) return;
