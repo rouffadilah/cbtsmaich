@@ -3,21 +3,28 @@ import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://
 
 // Variabel Global
 let questions = []; let currentIdx = 0; let userAnswers = []; let doubtStatus = []; let mapelTerpilih = ""; 
-let dataKelasSiswa = "-"; // Menyimpan Kelas siswa dari database
+let dataKelasSiswa = "-"; 
 let shuffledTargetsCache = {}; 
 const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 
-// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA & JAM REALTIME
+// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA & SAPAAN DINAMIS
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     
-    // Set Nama Peserta
-    document.getElementById('student-name').innerText = user.displayName || user.email.split('@')[0];
+    // Set Nama Peserta di Header
+    const namaSiswa = user.displayName || user.email.split('@')[0];
+    document.getElementById('student-name').innerText = namaSiswa;
+    
+    // PERBAIKAN: Set Kalimat Sapaan Dinamis
+    const greetingEl = document.getElementById('greeting-peserta');
+    if (greetingEl) {
+        greetingEl.innerText = `Assalamu'alaikum ${namaSiswa}, sebelum mengerjakan soal ujian ini berdoalah terlebih dahulu agar hasilnya sesuai dengan apa yang kita inginkan`;
+    }
     
     try {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if(userDoc.exists() && userDoc.data().kelas) {
-            dataKelasSiswa = userDoc.data().kelas; // Kelas otomatis didapat dari database
+            dataKelasSiswa = userDoc.data().kelas;
         }
 
         const masterDoc = await getDoc(doc(db, "pengaturan", "data_akademik"));
@@ -49,7 +56,6 @@ btnVerifikasi.addEventListener('click', async () => {
 
     if (!selectMapel || !inputToken) return alert("Pilih mata pelajaran dan masukkan Token!");
     
-    // Cegah siswa ujian jika belum didaftarkan kelasnya oleh admin
     if (!dataKelasSiswa || dataKelasSiswa === "-") {
         alert("PERINGATAN: Akun Anda belum memiliki data Kelas. Harap hubungi Pengawas/Admin untuk mengatur profil Anda!");
         return;
@@ -61,7 +67,6 @@ btnVerifikasi.addEventListener('click', async () => {
     try {
         const pengaturanSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         
-        // Mengecek token spesifik kombinasi Mapel + Kelas
         const tokenKey = `token_${selectMapel}_${dataKelasSiswa}`;
         let tokenAktif = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
 
@@ -206,7 +211,7 @@ document.getElementById('finish-btn').onclick = async () => {
         const user = auth.currentUser;
         await addDoc(collection(db, "hasil_ujian"), {
             userId: user?.uid || "Anonymous", namaSiswa: user?.displayName || "Siswa",
-            kelas: dataKelasSiswa, // Menyertakan kelas siswa dari database
+            kelas: dataKelasSiswa,
             mataPelajaran: mapelTerpilih, jawabanSiswa: userAnswers, benar: benar,
             nilai: nilaiAkhir, totalSoal: questions.length, rincianBenar: rincianBenar,
             waktuSelesai: new Date(), status: "Selesai"
