@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const registerForm = document.getElementById("register-form");
@@ -10,38 +10,81 @@ document.addEventListener("DOMContentLoaded", () => {
     const roleInput = document.getElementById("reg-role");
     const usernameLabel = document.getElementById("username-label");
     const regTitle = document.getElementById("reg-title");
+    
+    // Status Pendaftaran Default (Dianggap buka sampai Firebase berkata lain)
+    let statusRegSiswa = true;
+    let statusRegGuru = true;
 
-    // 1. Fungsi Ganti Role (Visual & Input)
+    // A. Fungsi Mengecek Status Registrasi ke Database
+    async function fetchRegStatus() {
+        try {
+            const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
+            if(regSnap.exists()) {
+                statusRegSiswa = regSnap.data().siswa_aktif !== false; 
+                statusRegGuru = regSnap.data().guru_aktif !== false; 
+            }
+            updateRegUI(roleInput.value);
+        } catch(e) { console.error("Gagal menarik status registrasi", e); }
+    }
+
+    // B. Fungsi Merubah Tampilan Tombol Jika Ditutup
+    function updateRegUI(role) {
+        const warningBox = document.getElementById("reg-warning");
+        
+        let isAllowed = true;
+        if (role === 'siswa' && !statusRegSiswa) isAllowed = false;
+        if (role === 'guru' && !statusRegGuru) isAllowed = false;
+
+        if (!isAllowed) {
+            btnSubmit.disabled = true;
+            btnSubmit.style.opacity = '0.5';
+            btnSubmit.innerHTML = '<i class="fas fa-lock"></i> PENDAFTARAN DITUTUP';
+            warningBox.style.display = 'block';
+            warningBox.innerHTML = `<i class="fas fa-lock"></i> Pendaftaran form <b>${role.toUpperCase()}</b> saat ini ditutup oleh Admin.`;
+        } else {
+            btnSubmit.disabled = false;
+            btnSubmit.style.opacity = '1';
+            btnSubmit.innerHTML = 'DAFTAR SEKARANG';
+            warningBox.style.display = 'none';
+        }
+    }
+
+   // 1. Fungsi Ganti Role (Visual & Input)
     function setRole(role) {
         roleInput.value = role;
         if (role === 'guru') {
             regTitle.innerText = "REGISTRASI GURU";
-            usernameLabel.innerText = "Username / NIP (Tanpa Spasi)";
+            usernameLabel.innerText = "Username / NIP";
             boxGuru.classList.add('active');
             boxSiswa.classList.remove('active');
         } else {
             regTitle.innerText = "REGISTRASI SISWA";
-            usernameLabel.innerText = "Nomor Peserta / NIS (Tanpa Spasi)";
+            usernameLabel.innerText = "Nomor Peserta / NIS";
             boxSiswa.classList.add('active');
             boxGuru.classList.remove('active');
         }
+        updateRegUI(role); // Cek status izin
     }
 
     boxSiswa.addEventListener('click', () => setRole('siswa'));
     boxGuru.addEventListener('click', () => setRole('guru'));
 
+    // Panggil fungsi cek di awal
+    fetchRegStatus();
+
     // 2. Proses Pendaftaran
     registerForm?.addEventListener("submit", async (e) => {
         e.preventDefault(); 
         
-        const name = document.getElementById("reg-name").value.trim();
-        
-        // PENTING: Ambil username, hapus spasi di awal/akhir, dan hapus spasi di tengah
-        const rawUsername = document.getElementById("reg-username").value;
-        const username = rawUsername.trim().replace(/\s+/g, ''); 
-        
-        const password = document.getElementById("reg-password").value;
         const role = roleInput.value;
+        
+        // Validasi ganda jika tombol di-hack lewat inspect element
+        if (role === 'siswa' && !statusRegSiswa) return alert("Pendaftaran Siswa sedang ditutup!");
+        if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Guru sedang ditutup!");
+        
+        const name = document.getElementById("reg-name").value;
+        const username = document.getElementById("reg-username").value;
+        const password = document.getElementById("reg-password").value;
 
         if(password !== document.getElementById("reg-confirm-password").value) {
             return alert("Password tidak cocok!");
@@ -51,38 +94,28 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSubmit.innerHTML = "<i class='fas fa-spinner fa-spin'></i> MEMPROSES...";
         btnSubmit.disabled = true;
 
-        // Pembuatan email sistem otomatis
         const dummyEmail = `${username}@cbt.smaich.id`;
 
         try {
-            // A. Buat Akun di Firebase Auth
             const userCred = await createUserWithEmailAndPassword(auth, dummyEmail, password);
             const user = userCred.user;
 
-            // B. Simpan Nama ke Profil Auth
             await updateProfile(user, { displayName: name });
 
-            // C. Simpan Data Peran ke Firestore
             await setDoc(doc(db, "users", user.uid), {
                 nama: name,
-                username: username, // Tersimpan rapi tanpa spasi
+                username: username,
                 role: role,
                 createdAt: serverTimestamp()
             });
 
-            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat. Silakan masuk (login).`);
+            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat.`);
             window.location.href = "index.html";
 
         } catch (error) {
-            console.error("Error Registrasi:", error);
-            
-            let msg = "Terjadi kesalahan: " + error.message; 
-            
-            // Penanganan Error yang lebih spesifik
-            if (error.code === 'auth/email-already-in-use') msg = "Gagal: Username / NIS / NIP tersebut sudah pernah didaftarkan!";
-            if (error.code === 'auth/weak-password') msg = "Gagal: Password terlalu lemah (gunakan minimal 6 karakter)!";
-            if (error.code === 'auth/invalid-email') msg = "Gagal: Format Username tidak valid (Jangan gunakan karakter aneh).";
-            if (error.code === 'auth/operation-not-allowed') msg = "Gagal: Anda belum mengaktifkan fitur Email/Password di Firebase Console!";
+            let msg = "Terjadi kesalahan.";
+            if (error.code === 'auth/email-already-in-use') msg = "ID/Username sudah terdaftar!";
+            if (error.code === 'auth/weak-password') msg = "Password minimal 6 karakter!";
             
             alert(msg);
             btnSubmit.innerHTML = originalBtnText;
