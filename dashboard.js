@@ -1,8 +1,8 @@
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// Menggunakan Secondary App untuk Admin membuat User
+// Menggunakan Secondary App untuk Admin membuat User Massal
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
@@ -16,9 +16,10 @@ const secondaryApp = initializeApp({
 }, "SecondaryApp");
 const secondaryAuth = getAuth(secondaryApp);
 
-// VARIABEL GLOBAL DATA MASTER
+// VARIABEL GLOBAL
 let listMapel = [];
 let listKelas = [];
+let allUsersData = []; // Menyimpan state data user untuk fitur edit
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -41,9 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('menu-pengaturan').style.display = 'none';
         }
 
-        // LOAD DATA MASTER TERLEBIH DAHULU, LALU LOAD DATA LAINNYA
         await loadDataMaster();
-        
         loadDataSoal();
         loadDataHasil();
         if(userRole === "admin") loadDataPengguna();
@@ -64,6 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(option.dataset.section).classList.add('active');
         });
     });
+    
+    // Jam Berjalan (Detik berkedip opsional)
     setInterval(() => { document.getElementById('live-time').innerText = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB"; }, 1000);
 
 
@@ -84,11 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderTableMaster() {
         const tbodyMapel = document.querySelector('#table-master-mapel tbody');
-        tbodyMapel.innerHTML = listMapel.length === 0 ? `<tr><td style="text-align:center;">Belum ada Mapel</td></tr>` : 
+        if(tbodyMapel) tbodyMapel.innerHTML = listMapel.length === 0 ? `<tr><td style="text-align:center;">Belum ada Mapel</td></tr>` : 
             listMapel.map((m, i) => `<tr><td>${m}</td><td style="text-align:right;"><button onclick="window.hapusMapel(${i})" class="btn-3d" style="background:var(--danger); padding:4px 8px;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
 
         const tbodyKelas = document.querySelector('#table-master-kelas tbody');
-        tbodyKelas.innerHTML = listKelas.length === 0 ? `<tr><td style="text-align:center;">Belum ada Kelas</td></tr>` : 
+        if(tbodyKelas) tbodyKelas.innerHTML = listKelas.length === 0 ? `<tr><td style="text-align:center;">Belum ada Kelas</td></tr>` : 
             listKelas.map((k, i) => `<tr><td>${k}</td><td style="text-align:right;"><button onclick="window.hapusKelas(${i})" class="btn-3d" style="background:var(--danger); padding:4px 8px;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
 
@@ -97,18 +98,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const optionsMapelFilter = '<option value="semua">Semua Mata Pelajaran</option>' + listMapel.map(m => `<option value="${m}">${m}</option>`).join('');
         const optionsKelas = '<option value="" disabled selected>-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
-        // Terapkan ke semua select mapel
-        ['soal-mapel', 'import-mapel', 'new-mapel', 'set-token-mapel'].forEach(id => {
+        ['soal-mapel', 'import-mapel', 'new-mapel', 'set-token-mapel', 'edit-mapel'].forEach(id => {
             const el = document.getElementById(id); if(el) el.innerHTML = optionsMapel;
         });
 
         const filterHasil = document.getElementById('filter-tabel-hasil');
         if(filterHasil) filterHasil.innerHTML = optionsMapelFilter;
 
-        const newKelas = document.getElementById('new-kelas');
-        if(newKelas) newKelas.innerHTML = optionsKelas;
+        ['new-kelas', 'edit-kelas'].forEach(id => {
+            const el = document.getElementById(id); if(el) el.innerHTML = optionsKelas;
+        });
 
-        // KUNCI DROPDOWN JIKA LOGIN SEBAGAI GURU
         if (userRole === "guru") {
             ['soal-mapel', 'import-mapel'].forEach(id => {
                 const el = document.getElementById(id);
@@ -118,45 +118,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Aksi Tambah Mapel & Kelas
     document.getElementById('btn-add-mapel')?.addEventListener('click', async () => {
         const val = document.getElementById('input-new-mapel').value.trim();
-        if(!val) return;
-        if(listMapel.includes(val)) return alert("Mapel sudah ada!");
+        if(!val) return; if(listMapel.includes(val)) return alert("Mapel sudah ada!");
         listMapel.push(val);
         await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true });
-        document.getElementById('input-new-mapel').value = '';
-        loadDataMaster();
+        document.getElementById('input-new-mapel').value = ''; loadDataMaster();
     });
 
     document.getElementById('btn-add-kelas')?.addEventListener('click', async () => {
         const val = document.getElementById('input-new-kelas').value.trim();
-        if(!val) return;
-        if(listKelas.includes(val)) return alert("Kelas sudah ada!");
+        if(!val) return; if(listKelas.includes(val)) return alert("Kelas sudah ada!");
         listKelas.push(val);
         await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
-        document.getElementById('input-new-kelas').value = '';
-        loadDataMaster();
+        document.getElementById('input-new-kelas').value = ''; loadDataMaster();
     });
 
-    // Ekspos fungsi hapus ke window agar bisa dipanggil dari HTML inline
     window.hapusMapel = async (index) => {
-        if(!confirm("Hapus Mapel ini?")) return;
-        listMapel.splice(index, 1);
-        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true });
-        loadDataMaster();
+        if(!confirm("Hapus Mapel ini?")) return; listMapel.splice(index, 1);
+        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true }); loadDataMaster();
     };
 
     window.hapusKelas = async (index) => {
-        if(!confirm("Hapus Kelas ini?")) return;
-        listKelas.splice(index, 1);
-        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
-        loadDataMaster();
+        if(!confirm("Hapus Kelas ini?")) return; listKelas.splice(index, 1);
+        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true }); loadDataMaster();
     };
 
 
     // ==========================================
-    // 4. MANAJEMEN PENGGUNA (HANYA ADMIN)
+    // 4. MANAJEMEN PENGGUNA (TAMBAH, IMPORT EXCEL, EDIT)
     // ==========================================
     async function loadDataPengguna() {
         const tbody = document.querySelector('#table-siswa tbody');
@@ -165,9 +155,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const snap = await getDocs(collection(db, "users"));
             document.getElementById('stat-siswa').innerText = snap.size;
             tbody.innerHTML = '';
+            allUsersData = []; // Reset Array
             
             snap.forEach(docSnap => {
                 const data = docSnap.data();
+                data.id = docSnap.id; // Simpan Document ID
+                allUsersData.push(data);
+
                 const roleColor = data.role === 'admin' ? 'var(--danger)' : (data.role === 'guru' ? 'var(--info)' : 'var(--success)');
                 let detailText = data.role === 'guru' ? `Mapel: ${data.mapel || '-'}` : (data.role === 'siswa' ? `Kelas: ${data.kelas || '-'}` : '-');
                 
@@ -175,9 +169,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tr>
                         <td>${data.username}</td>
                         <td><strong>${data.nama}</strong></td>
-                        <td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${data.role.toUpperCase()}</span></td>
+                        <td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold; text-transform:uppercase;">${data.role}</span></td>
                         <td>${detailText}</td>
-                        <td><button onclick="hapusDokumen('users', '${docSnap.id}', window.refreshPengguna)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+                        <td style="display: flex; gap: 5px;">
+                            <button onclick="window.editPengguna('${docSnap.id}')" class="btn-3d" style="background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width:auto;"><i class="fas fa-edit"></i></button>
+                            <button onclick="hapusDokumen('users', '${docSnap.id}', window.refreshPengguna)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width:auto;"><i class="fas fa-trash"></i></button>
+                        </td>
                     </tr>
                 `;
             });
@@ -185,13 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.refreshPengguna = loadDataPengguna;
 
-    // Toggle Dropdown Mapel/Kelas berdasarkan Role saat buat User
+    // Toggle Dropdown saat tambah manual
     document.getElementById('new-role')?.addEventListener('change', (e) => {
         const role = e.target.value;
         document.getElementById('new-mapel').style.display = (role === 'guru') ? 'block' : 'none';
         document.getElementById('new-kelas').style.display = (role === 'siswa') ? 'block' : 'none';
     });
 
+    // A. Tambah Manual 1 Akun
     document.getElementById('btn-add-user')?.addEventListener('click', async () => {
         const nama = document.getElementById('new-nama').value.trim();
         const username = document.getElementById('new-username').value.trim().replace(/\s+/g, '');
@@ -227,12 +225,130 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = '<i class="fas fa-save"></i> Tambah'; btn.disabled = false;
     });
 
+    // B. Import Massal Akun via Excel
+    document.getElementById('upload-akun-excel')?.addEventListener('change', (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        
+        reader.onload = async (e) => {
+            try {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const jsonAkun = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                if(jsonAkun.length === 0) return alert("File Excel kosong!");
+                if(!confirm(`Ditemukan ${jsonAkun.length} calon akun. Lanjutkan proses Import Massal? \n(Mohon jangan tutup halaman saat proses berjalan)`)) return;
+
+                const labelUpload = document.querySelector('label[for="upload-akun-excel"]');
+                const origLabel = labelUpload.innerHTML;
+                labelUpload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sedang Membuat Akun...';
+
+                let successCount = 0;
+                let failedCount = 0;
+
+                for (let row of jsonAkun) {
+                    const nama = row['Nama Lengkap'];
+                    const username = row['Username'] ? row['Username'].toString().replace(/\s+/g, '') : null;
+                    const role = row['Role'] ? row['Role'].toString().toLowerCase() : 'siswa';
+                    const password = row['Password'] ? row['Password'].toString() : '123456';
+                    const detail = row['Detail (Kelas/Mapel)'];
+
+                    if(!nama || !username) { failedCount++; continue; } // Skip jika data utama kosong
+
+                    try {
+                        const dummyEmail = `${username}@cbt.smaich.id`;
+                        const userCred = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, password);
+                        await updateProfile(userCred.user, { displayName: nama });
+
+                        let payload = { nama: nama, username: username, role: role, createdAt: new Date() };
+                        if (role === 'guru' && detail) payload.mapel = detail;
+                        if (role === 'siswa' && detail) payload.kelas = detail;
+
+                        await setDoc(doc(db, "users", userCred.user.uid), payload);
+                        successCount++;
+                    } catch (err) {
+                        console.error(`Gagal membuat akun ${username}:`, err);
+                        failedCount++;
+                    }
+                }
+                
+                await secondaryAuth.signOut();
+                alert(`Import Selesai!\n✅ Berhasil: ${successCount} Akun\n❌ Gagal/Sudah Ada: ${failedCount} Akun`);
+                labelUpload.innerHTML = origLabel;
+                document.getElementById('upload-akun-excel').value = '';
+                loadDataPengguna();
+
+            } catch (err) { console.error(err); alert("Gagal membaca file Excel. Pastikan menggunakan format Template."); }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    // C. Edit Akun (Role, Nama, Mapel/Kelas)
+    const modalEditAkun = document.getElementById('modal-edit-akun');
+    const editRoleSelect = document.getElementById('edit-role');
+
+    window.editPengguna = (uid) => {
+        const user = allUsersData.find(u => u.id === uid);
+        if(!user) return alert("Data user tidak ditemukan.");
+
+        document.getElementById('edit-uid').value = user.id;
+        document.getElementById('edit-nama').value = user.nama;
+        editRoleSelect.value = user.role;
+
+        // Toggle UI Mapel vs Kelas
+        document.getElementById('group-edit-mapel').style.display = (user.role === 'guru') ? 'block' : 'none';
+        document.getElementById('group-edit-kelas').style.display = (user.role === 'siswa') ? 'block' : 'none';
+        
+        if(user.role === 'guru') document.getElementById('edit-mapel').value = user.mapel || "";
+        if(user.role === 'siswa') document.getElementById('edit-kelas').value = user.kelas || "";
+
+        modalEditAkun.style.display = 'flex';
+    };
+
+    document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { modalEditAkun.style.display = 'none'; });
+
+    editRoleSelect?.addEventListener('change', (e) => {
+        const role = e.target.value;
+        document.getElementById('group-edit-mapel').style.display = (role === 'guru') ? 'block' : 'none';
+        document.getElementById('group-edit-kelas').style.display = (role === 'siswa') ? 'block' : 'none';
+    });
+
+    document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
+        const uid = document.getElementById('edit-uid').value;
+        const nama = document.getElementById('edit-nama').value.trim();
+        const role = editRoleSelect.value;
+        
+        let payload = { nama: nama, role: role };
+        
+        if (role === 'guru') {
+            payload.mapel = document.getElementById('edit-mapel').value;
+            payload.kelas = null; // Bersihkan data kelas jika asalnya siswa
+        } else if (role === 'siswa') {
+            payload.kelas = document.getElementById('edit-kelas').value;
+            payload.mapel = null; // Bersihkan data mapel jika asalnya guru
+        } else {
+            payload.kelas = null; payload.mapel = null; // Untuk admin
+        }
+
+        try {
+            document.getElementById('btn-save-edit-akun').innerHTML = "Menyimpan...";
+            await updateDoc(doc(db, "users", uid), payload);
+            alert("Profil Pengguna berhasil diperbarui!");
+            modalEditAkun.style.display = 'none';
+            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN';
+            loadDataPengguna();
+        } catch (err) {
+            console.error(err); alert("Gagal mengupdate profil.");
+            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN';
+        }
+    });
+
 
     // ==========================================
     // 5. LOAD BANK SOAL & HASIL UJIAN
     // ==========================================
     async function loadDataSoal() {
         const tbodySoal = document.querySelector('#table-soal tbody');
+        if(!tbodySoal) return;
         tbodySoal.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat bank soal...</td></tr>`;
         try {
             let qSoal = collection(db, "bank_soal");
@@ -258,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let allHasilUjian = [];
     async function loadDataHasil() {
         const tbodyHasil = document.querySelector('#table-hasil tbody');
+        if(!tbodyHasil) return;
         tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align:center;">Memuat hasil...</td></tr>`;
         try {
             let qHasil = collection(db, "hasil_ujian");
@@ -314,9 +431,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ==========================================
-    // 6. SIMPAN SOAL MANUAL & IMPORT EXCEL (DIPERSINGKAT)
+    // 6. SIMPAN SOAL MANUAL & IMPORT EXCEL SOAL
     // ==========================================
-    // Logika UI Modal Soal (Sama seperti sebelumnya, disembunyikan agar kode tidak terlalu panjang)
     const modalSoal = document.getElementById('modal-tambah-soal');
     const tipeSelect = document.getElementById('soal-tipe');
     
