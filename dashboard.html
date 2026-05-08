@@ -34,9 +34,10 @@
                         <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 50px; border-radius: 6px;">
                     </div>
                     <div style="display: flex; align-items: center; gap: 20px;">
-                        <div style="text-align: right;">
-                            <span id="admin-name" style="font-weight: 700; display: block;">Memuat...</span>
-                            <small id="live-time" style="color: var(--primary); font-weight: 600;">00:00:00 WIB</small>
+                        <div style="display: flex; align-items: center; gap: 15px; text-align: right; background: #f8fafc; padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border-color);">
+                            <span id="admin-name" style="font-weight: 700; color: var(--secondary); font-size: 0.95rem;">Memuat...</span>
+                            <span style="color: #cbd5e1;">|</span>
+                            <small id="live-time" style="color: var(--primary); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px;">00:00:00 WIB</small>
                         </div>
                         <button id="btn-logout" class="btn-3d btn-secondary" style="padding: 10px 15px;"><i class="fas fa-sign-out-alt"></i> KELUAR</button>
                     </div>
@@ -129,30 +130,45 @@
                 </div>
 
                 <div id="section-pengguna" class="content-section">
+                    
+                    <div class="card" style="margin-bottom: 20px; background: #f0fdf4; border: 1px solid var(--success);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                            <div>
+                                <h4 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-users"></i> Import Massal Akun Pengguna</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-muted);">Gunakan template Excel untuk membuat ratusan akun secara otomatis.</p>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <a href="Template_Akun_SMAICH.xlsx" download class="btn-3d btn-secondary" style="width: auto; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-download"></i> Unduh Template</a>
+                                <input type="file" id="upload-akun-excel" accept=".xlsx, .xls" style="display:none;">
+                                <label for="upload-akun-excel" class="btn-3d" style="width: auto; background: var(--success); cursor: pointer; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-upload"></i> Import File Excel</label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card">
                         <h2 class="section-title" style="margin: 0 0 20px 0;">Manajemen Pengguna</h2>
                         
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-                            <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-user-plus"></i> Buat Akun Baru</h4>
+                            <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-user-plus"></i> Buat Akun Baru (Manual)</h4>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <input type="text" id="new-nama" placeholder="Nama Lengkap" class="input-text" style="flex: 1; min-width: 150px;">
-                                <input type="text" id="new-username" placeholder="Username/NIS/NIP" class="input-text" style="flex: 1; min-width: 150px;">
+                                <input type="text" id="new-username" placeholder="Username/NIS" class="input-text" style="flex: 1; min-width: 150px;">
                                 
-                                <select id="new-role" class="input-text" style="width: 130px;">
+                                <select id="new-role" class="input-text" style="width: 100px;">
                                     <option value="siswa">Siswa</option>
                                     <option value="guru">Guru</option>
                                     <option value="admin">Admin</option>
                                 </select>
                                 
                                 <select id="new-mapel" class="input-text" style="width: 150px; display: none;">
-                                    <option value="">Memuat Mapel...</option>
+                                    <option value="">Pilih Mapel...</option>
                                 </select>
                                 
                                 <select id="new-kelas" class="input-text" style="width: 150px;">
-                                    <option value="">Memuat Kelas...</option>
+                                    <option value="">Pilih Kelas...</option>
                                 </select>
 
-                                <input type="password" id="new-pass" placeholder="Password (Min. 6)" class="input-text" style="width: 150px;">
+                                <input type="password" id="new-pass" placeholder="Password" class="input-text" style="width: 130px;">
                                 <button id="btn-add-user" class="btn-3d" style="width: auto; background-color: var(--info);"><i class="fas fa-save"></i> Tambah</button>
                             </div>
                         </div>
@@ -193,7 +209,7 @@
                             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
                                 <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-book"></i> Master Mata Pelajaran</h4>
                                 <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                    <input type="text" id="input-new-mapel" class="input-text" placeholder="Mapel Baru (cth: Bahasa Inggris)">
+                                    <input type="text" id="input-new-mapel" class="input-text" placeholder="Mapel Baru (cth: B. Inggris)">
                                     <button id="btn-add-mapel" class="btn-3d" style="width: auto;"><i class="fas fa-plus"></i></button>
                                 </div>
                                 <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
@@ -216,7 +232,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
 
@@ -236,12 +251,7 @@
 
             <div id="area-manual">
                 <div class="input-group" style="display: flex; gap: 15px;">
-                    <div style="flex: 1;">
-                        <label>Mata Pelajaran</label>
-                        <select id="soal-mapel" class="input-text">
-                            <option value="">Memuat Mapel...</option>
-                        </select>
-                    </div>
+                    <div style="flex: 1;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
                     <div style="flex: 1;">
                         <label>Tipe Soal</label>
                         <select id="soal-tipe" class="input-text">
@@ -253,10 +263,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Teks Pertanyaan</label>
-                    <textarea id="soal-teks" class="input-text" rows="3" required></textarea>
-                </div>
+                <div class="input-group"><label>Teks Pertanyaan</label><textarea id="soal-teks" class="input-text" rows="3" required></textarea></div>
                 <div id="area-opsi-dinamis" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;"></div>
                 <button id="btn-simpan-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-save"></i> SIMPAN SOAL</button>
             </div>
@@ -269,12 +276,7 @@
                         <a href="Template_Soal_CBT_SMAICH.docx" download class="btn-3d" style="background: #2b579a; font-size: 0.75rem; padding: 8px 12px; width: auto;"><i class="fas fa-file-word"></i> Template Word</a>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Mata Pelajaran untuk File Import</label>
-                    <select id="import-mapel" class="input-text" style="margin-bottom: 15px;">
-                        <option value="">Memuat Mapel...</option>
-                    </select>
-                </div>
+                <div class="input-group"><label>Mata Pelajaran untuk File Import</label><select id="import-mapel" class="input-text" style="margin-bottom: 15px;"><option value="">Memuat Mapel...</option></select></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div style="border: 2px dashed var(--success); padding: 20px; border-radius: 8px; text-align: center; background: #f0fdf4;">
                         <i class="fas fa-file-excel fa-3x" style="color: var(--success); margin-bottom: 10px;"></i>
@@ -290,6 +292,40 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-edit-akun" class="modal" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 400px; max-width: 90%;">
+            <span class="close-btn" id="close-modal-edit-akun" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-bottom: 15px; color: var(--warning);"><i class="fas fa-user-edit"></i> Edit Profil Pengguna</h3>
+            
+            <input type="hidden" id="edit-uid">
+            <div class="input-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="edit-nama" class="input-text">
+            </div>
+            <div class="input-group">
+                <label>Role / Hak Akses</label>
+                <select id="edit-role" class="input-text">
+                    <option value="siswa">Siswa</option>
+                    <option value="guru">Guru</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="input-group" id="group-edit-mapel" style="display:none;">
+                <label>Mata Pelajaran (Guru)</label>
+                <select id="edit-mapel" class="input-text"><option value="">Memuat...</option></select>
+            </div>
+            <div class="input-group" id="group-edit-kelas" style="display:none;">
+                <label>Kelas (Siswa)</label>
+                <select id="edit-kelas" class="input-text"><option value="">Memuat...</option></select>
+            </div>
+
+            <button id="btn-save-edit-akun" class="btn-3d" style="background-color: var(--warning); width: 100%;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
+            <p style="font-size: 0.75rem; color: var(--danger); margin-top: 15px; text-align: center; line-height: 1.4;">
+                *Catatan: Sistem tidak mengizinkan meretas/mengubah Password user lain di halaman ini. Jika siswa lupa sandi, silakan <b>Hapus</b> lalu daftarkan ulang akunnya.
+            </p>
         </div>
     </div>
 
