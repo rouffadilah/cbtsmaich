@@ -39,14 +39,18 @@ loginForm.addEventListener("submit", async (event) => {
         if (userDoc.exists()) {
             const userData = userDoc.data();
             
-            localStorage.setItem("userRole", userData.role);
+            // PERBAIKAN: Menangkap Multi-Role dalam bentuk Array
+            let roles = [];
+            if (Array.isArray(userData.role)) roles = userData.role;
+            else if (typeof userData.role === 'string' && userData.role.trim() !== '') roles = [userData.role];
             
-            if (userData.role === 'guru') {
+            localStorage.setItem("userRole", JSON.stringify(roles));
+            
+            if (roles.includes('guru')) {
                 let mapels = [];
                 if (Array.isArray(userData.mapel)) mapels = userData.mapel;
                 else if (typeof userData.mapel === 'string' && userData.mapel.trim() !== '') mapels = [userData.mapel];
                 
-                // PERBAIKAN: Tangkap juga Kelas yang diajar Guru
                 let kelases = [];
                 if (Array.isArray(userData.kelas)) kelases = userData.kelas;
                 else if (typeof userData.kelas === 'string' && userData.kelas.trim() !== '') kelases = [userData.kelas];
@@ -55,7 +59,8 @@ loginForm.addEventListener("submit", async (event) => {
                 localStorage.setItem("userKelas", JSON.stringify(kelases));
             }
 
-            if (userData.role === "admin" || userData.role === "guru") {
+            // Arahkan ke Dashboard jika Admin ATAU Guru
+            if (roles.includes("admin") || roles.includes("guru")) {
                 window.location.href = "dashboard.html"; 
             } else {
                 window.location.href = "attempt.html"; 
