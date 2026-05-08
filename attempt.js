@@ -12,14 +12,18 @@ let cheatWarnings = 0; const MAX_CHEAT_WARNINGS = 3;
 let isExamActive = false; let isWarningShowing = false;
 
 // ==========================================
-// MENCEGAH KELUAR VIA TOMBOL BACK BROWSER/HP
+// PERBAIKAN: FUNGSI TOMBOL BACK BROWSER/HP
 // ==========================================
 window.history.pushState(null, "", window.location.href);
 window.onpopstate = function() {
-    window.history.pushState(null, "", window.location.href);
+    // Tahan history agar tidak kembali ke index (logout)
+    window.history.pushState(null, "", window.location.href); 
+    
     if (isExamActive) {
-        alert("PERINGATAN: Tombol 'Kembali/Back' dari perangkat dinonaktifkan selama ujian berlangsung. Gunakan tombol 'Sebelumnya' atau 'Selanjutnya' di layar.");
-        triggerCheatWarning(); // Opsional: Dihitung sebagai peringatan jika membandel
+        // Jadikan tombol Back sebagai navigasi "Soal Sebelumnya"
+        if (currentIdx > 0) {
+            renderSoal(currentIdx - 1);
+        }
     }
 };
 
@@ -220,7 +224,6 @@ document.getElementById('doubt-btn').onclick = () => { doubtStatus[currentIdx] =
 // ==========================================
 // 5. MESIN ANTI-CHEAT 
 // ==========================================
-
 function triggerCheatWarning() {
     if (!isExamActive || isWarningShowing) return;
     
@@ -243,7 +246,6 @@ document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', ()
 // ==========================================
 // 6. KALKULASI & SUBMIT HASIL UJIAN
 // ==========================================
-
 async function forceSubmitExam(pesanPeringatan) {
     isExamActive = false; alert(pesanPeringatan); await eksekusiKirimJawaban();
 }
