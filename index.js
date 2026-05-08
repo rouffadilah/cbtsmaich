@@ -39,18 +39,20 @@ loginForm.addEventListener("submit", async (event) => {
         if (userDoc.exists()) {
             const userData = userDoc.data();
             
-            // Simpan Hak Akses
             localStorage.setItem("userRole", userData.role);
             
-            // PERBARUAN: Simpan Mapel sebagai Array agar mendukung Multi-Mapel
             if (userData.role === 'guru') {
                 let mapels = [];
-                if (Array.isArray(userData.mapel)) {
-                    mapels = userData.mapel;
-                } else if (typeof userData.mapel === 'string' && userData.mapel.trim() !== '') {
-                    mapels = [userData.mapel]; // Konversi data lama ke bentuk Array
-                }
+                if (Array.isArray(userData.mapel)) mapels = userData.mapel;
+                else if (typeof userData.mapel === 'string' && userData.mapel.trim() !== '') mapels = [userData.mapel];
+                
+                // PERBAIKAN: Tangkap juga Kelas yang diajar Guru
+                let kelases = [];
+                if (Array.isArray(userData.kelas)) kelases = userData.kelas;
+                else if (typeof userData.kelas === 'string' && userData.kelas.trim() !== '') kelases = [userData.kelas];
+
                 localStorage.setItem("userMapel", JSON.stringify(mapels));
+                localStorage.setItem("userKelas", JSON.stringify(kelases));
             }
 
             if (userData.role === "admin" || userData.role === "guru") {
@@ -64,7 +66,6 @@ loginForm.addEventListener("submit", async (event) => {
         }
 
     } catch (error) {
-        // Error sudah di-handle
     } finally {
         btnSubmit.innerHTML = originalBtnText;
         btnSubmit.disabled = false;
