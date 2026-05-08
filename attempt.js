@@ -4,6 +4,7 @@ import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://
 // Variabel Global
 let questions = []; let currentIdx = 0; let userAnswers = []; let doubtStatus = []; let mapelTerpilih = ""; 
 let dataKelasSiswa = "-"; 
+let dataNamaSiswa = "Siswa"; // Menyimpan nama lengkap dari database
 let shuffledTargetsCache = {}; 
 const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 
@@ -13,22 +14,29 @@ const MAX_CHEAT_WARNINGS = 3;
 let isExamActive = false; 
 let isWarningShowing = false;
 
-// 1. PENGECEKAN LOGIN & MEMUAT PROFIL SISWA
+// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA & SAPAAN DINAMIS
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     
-    const namaSiswa = user.displayName || user.email.split('@')[0];
-    document.getElementById('student-name').innerText = namaSiswa;
-    
-    const greetingEl = document.getElementById('greeting-peserta');
-    if (greetingEl) {
-        greetingEl.innerText = `Assalamu'alaikum ${namaSiswa}...`;
-    }
+    // Set default nama (berjaga-jaga jika database lambat)
+    dataNamaSiswa = user.displayName || user.email.split('@')[0];
     
     try {
+        // PERBAIKAN: Mengambil Nama Lengkap langsung dari Firestore Database
         const userDoc = await getDoc(doc(db, "users", user.uid));
-        if(userDoc.exists() && userDoc.data().kelas) {
-            dataKelasSiswa = userDoc.data().kelas;
+        if(userDoc.exists()) {
+            const userData = userDoc.data();
+            if(userData.kelas) dataKelasSiswa = userData.kelas;
+            if(userData.nama) dataNamaSiswa = userData.nama; // Tumpuk dengan nama lengkap asli
+        }
+
+        // Set Nama Lengkap Peserta di Header
+        document.getElementById('student-name').innerText = dataNamaSiswa;
+        
+        // Set Nama Lengkap di Sapaan Dinamis
+        const greetingEl = document.getElementById('greeting-peserta');
+        if (greetingEl) {
+            greetingEl.innerText = `Assalamu'alaikum ${dataNamaSiswa}...`;
         }
 
         const masterDoc = await getDoc(doc(db, "pengaturan", "data_akademik"));
@@ -261,17 +269,22 @@ async function eksekusiKirimJawaban() {
     try {
         const user = auth.currentUser;
         await addDoc(collection(db, "hasil_ujian"), {
-            userId: user?.uid || "Anonymous", namaSiswa: user?.displayName || "Siswa",
+            userId: user?.uid || "Anonymous", 
+            namaSiswa: dataNamaSiswa, // MENGIRIM NAMA LENGKAP KE LAPORAN GURU
             kelas: dataKelasSiswa,
-            mataPelajaran: mapelTerpilih, jawabanSiswa: userAnswers, benar: benar,
-            nilai: nilaiAkhir, totalSoal: questions.length, rincianBenar: rincianBenar,
+            mataPelajaran: mapelTerpilih, 
+            jawabanSiswa: userAnswers, 
+            benar: benar,
+            nilai: nilaiAkhir, 
+            totalSoal: questions.length, 
+            rincianBenar: rincianBenar,
             pelanggaranKecurangan: cheatWarnings, 
-            waktuSelesai: new Date(), status: "Selesai"
+            waktuSelesai: new Date(), 
+            status: "Selesai"
         });
         
         localStorage.removeItem(KEY_ANS); localStorage.removeItem(KEY_DOUBT);
         
-        // PERBAIKAN: Tidak memberitahu nilai akhir ke siswa
         alert(`Ujian telah selesai dan jawaban Anda berhasil tersimpan. Silakan logout.`); 
         window.location.href = "index.html"; 
     } catch (error) { 
@@ -284,25 +297,23 @@ async function eksekusiKirimJawaban() {
 }
 
 // ==========================================
-// 7. MESIN ANTI-COPAS & ANTI-AI (BLOKIR KLIK KANAN & SHORTCUT)
+// 7. MESIN ANTI-COPAS & ANTI-AI
 // ==========================================
-document.addEventListener('contextmenu', event => { if(isExamActive) event.preventDefault(); }); // Blokir Klik Kanan
-document.addEventListener('copy', event => { if(isExamActive) event.preventDefault(); }); // Blokir Ctrl+C
-document.addEventListener('cut', event => { if(isExamActive) event.preventDefault(); }); // Blokir Ctrl+X
-document.addEventListener('paste', event => { if(isExamActive) event.preventDefault(); }); // Blokir Ctrl+V
-document.addEventListener('dragstart', event => { if(isExamActive) event.preventDefault(); }); // Blokir Drag Text
-document.addEventListener('drop', event => { if(isExamActive) event.preventDefault(); }); // Blokir Drop Text
+document.addEventListener('contextmenu', event => { if(isExamActive) event.preventDefault(); });
+document.addEventListener('copy', event => { if(isExamActive) event.preventDefault(); });
+document.addEventListener('cut', event => { if(isExamActive) event.preventDefault(); });
+document.addEventListener('paste', event => { if(isExamActive) event.preventDefault(); });
+document.addEventListener('dragstart', event => { if(isExamActive) event.preventDefault(); });
+document.addEventListener('drop', event => { if(isExamActive) event.preventDefault(); });
 
 document.addEventListener('keydown', (e) => {
     if (!isExamActive) return;
-    
-    // Blokir F12, Ctrl+Shift+I, Ctrl+U (Inspect Element & View Source)
     if (e.key === 'F12' || 
         (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
         (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'C' || e.key === 'c' || e.key === 'V' || e.key === 'v' || e.key === 'P' || e.key === 'p')) ||
-        (e.metaKey && (e.key === 'C' || e.key === 'c' || e.key === 'V' || e.key === 'v' || e.key === 'P' || e.key === 'p')) // Untuk Mac
+        (e.metaKey && (e.key === 'C' || e.key === 'c' || e.key === 'V' || e.key === 'v' || e.key === 'P' || e.key === 'p'))
     ) {
         e.preventDefault();
-        triggerCheatWarning(); // Catat sebagai pelanggaran
+        triggerCheatWarning();
     }
 });
