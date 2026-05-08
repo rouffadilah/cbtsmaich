@@ -11,17 +11,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const usernameLabel = document.getElementById("username-label");
     const regTitle = document.getElementById("reg-title");
 
-   // 1. Fungsi Ganti Role (Visual & Input)
+    // 1. Fungsi Ganti Role (Visual & Input)
     function setRole(role) {
         roleInput.value = role;
         if (role === 'guru') {
             regTitle.innerText = "REGISTRASI GURU";
-            usernameLabel.innerText = "Username / NIP";
+            usernameLabel.innerText = "Username / NIP (Tanpa Spasi)";
             boxGuru.classList.add('active');
             boxSiswa.classList.remove('active');
         } else {
             regTitle.innerText = "REGISTRASI SISWA";
-            usernameLabel.innerText = "Nomor Peserta / NIS";
+            usernameLabel.innerText = "Nomor Peserta / NIS (Tanpa Spasi)";
             boxSiswa.classList.add('active');
             boxGuru.classList.remove('active');
         }
@@ -34,8 +34,12 @@ document.addEventListener("DOMContentLoaded", () => {
     registerForm?.addEventListener("submit", async (e) => {
         e.preventDefault(); 
         
-        const name = document.getElementById("reg-name").value;
-        const username = document.getElementById("reg-username").value;
+        const name = document.getElementById("reg-name").value.trim();
+        
+        // PENTING: Ambil username, hapus spasi di awal/akhir, dan hapus spasi di tengah
+        const rawUsername = document.getElementById("reg-username").value;
+        const username = rawUsername.trim().replace(/\s+/g, ''); 
+        
         const password = document.getElementById("reg-password").value;
         const role = roleInput.value;
 
@@ -47,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSubmit.innerHTML = "<i class='fas fa-spinner fa-spin'></i> MEMPROSES...";
         btnSubmit.disabled = true;
 
+        // Pembuatan email sistem otomatis
         const dummyEmail = `${username}@cbt.smaich.id`;
 
         try {
@@ -60,23 +65,24 @@ document.addEventListener("DOMContentLoaded", () => {
             // C. Simpan Data Peran ke Firestore
             await setDoc(doc(db, "users", user.uid), {
                 nama: name,
-                username: username,
+                username: username, // Tersimpan rapi tanpa spasi
                 role: role,
                 createdAt: serverTimestamp()
             });
 
-            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat. Silakan login.`);
+            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat. Silakan masuk (login).`);
             window.location.href = "index.html";
 
         } catch (error) {
             console.error("Error Registrasi:", error);
             
-            // MENAMPILKAN PESAN ERROR ASLI DARI FIREBASE
             let msg = "Terjadi kesalahan: " + error.message; 
             
-            if (error.code === 'auth/email-already-in-use') msg = "Gagal: ID/Username tersebut sudah terdaftar!";
-            if (error.code === 'auth/weak-password') msg = "Gagal: Password terlalu lemah (minimal 6 karakter)!";
-            if (error.code === 'auth/operation-not-allowed') msg = "Gagal: Anda belum mengaktifkan metode 'Email/Password' di Firebase Console!";
+            // Penanganan Error yang lebih spesifik
+            if (error.code === 'auth/email-already-in-use') msg = "Gagal: Username / NIS / NIP tersebut sudah pernah didaftarkan!";
+            if (error.code === 'auth/weak-password') msg = "Gagal: Password terlalu lemah (gunakan minimal 6 karakter)!";
+            if (error.code === 'auth/invalid-email') msg = "Gagal: Format Username tidak valid (Jangan gunakan karakter aneh).";
+            if (error.code === 'auth/operation-not-allowed') msg = "Gagal: Anda belum mengaktifkan fitur Email/Password di Firebase Console!";
             
             alert(msg);
             btnSubmit.innerHTML = originalBtnText;
