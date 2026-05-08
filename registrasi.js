@@ -11,23 +11,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const usernameLabel = document.getElementById("username-label");
     const regTitle = document.getElementById("reg-title");
 
-   // 1. Fungsi Ganti Role (Visual & Input) - TEMA PROFESIONAL (TANPA BIRU)
+   // 1. Fungsi Ganti Role (Visual & Input)
     function setRole(role) {
         roleInput.value = role;
         if (role === 'guru') {
-            // Perubahan Header & Label
             regTitle.innerText = "REGISTRASI GURU";
             usernameLabel.innerText = "Username / NIP";
-            
-            // UI Feedback (Aktifkan Box Guru)
             boxGuru.classList.add('active');
             boxSiswa.classList.remove('active');
         } else {
-            // Perubahan Header & Label
             regTitle.innerText = "REGISTRASI SISWA";
             usernameLabel.innerText = "Nomor Peserta / NIS";
-            
-            // UI Feedback (Aktifkan Box Siswa)
             boxSiswa.classList.add('active');
             boxGuru.classList.remove('active');
         }
@@ -63,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // B. Simpan Nama ke Profil Auth
             await updateProfile(user, { displayName: name });
 
-            // C. Simpan Data Peran ke Firestore (PENTING)
+            // C. Simpan Data Peran ke Firestore
             await setDoc(doc(db, "users", user.uid), {
                 nama: name,
                 username: username,
@@ -71,13 +65,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 createdAt: serverTimestamp()
             });
 
-            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat.`);
+            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat. Silakan login.`);
             window.location.href = "index.html";
 
         } catch (error) {
-            let msg = "Terjadi kesalahan.";
-            if (error.code === 'auth/email-already-in-use') msg = "ID/Username sudah terdaftar!";
-            if (error.code === 'auth/weak-password') msg = "Password minimal 6 karakter!";
+            console.error("Error Registrasi:", error);
+            
+            // MENAMPILKAN PESAN ERROR ASLI DARI FIREBASE
+            let msg = "Terjadi kesalahan: " + error.message; 
+            
+            if (error.code === 'auth/email-already-in-use') msg = "Gagal: ID/Username tersebut sudah terdaftar!";
+            if (error.code === 'auth/weak-password') msg = "Gagal: Password terlalu lemah (minimal 6 karakter)!";
+            if (error.code === 'auth/operation-not-allowed') msg = "Gagal: Anda belum mengaktifkan metode 'Email/Password' di Firebase Console!";
             
             alert(msg);
             btnSubmit.innerHTML = originalBtnText;
