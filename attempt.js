@@ -14,7 +14,7 @@ const MAX_CHEAT_WARNINGS = 3;
 let isExamActive = false; 
 let isWarningShowing = false;
 
-// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA & SAPAAN DINAMIS
+// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA (KELAS DARI ADMIN)
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     
@@ -35,6 +35,18 @@ auth.onAuthStateChanged(async (user) => {
             greetingEl.innerText = `Assalamu'alaikum ${dataNamaSiswa}...`;
         }
 
+        // PERBAIKAN: Suntikkan Kelas dari Admin ke Input Readonly
+        const inputKelasEl = document.getElementById('input-kelas-siswa');
+        if (inputKelasEl) {
+            if (dataKelasSiswa && dataKelasSiswa !== "-") {
+                inputKelasEl.value = dataKelasSiswa;
+                inputKelasEl.style.color = "var(--secondary)"; // Warna hitam tegas
+            } else {
+                inputKelasEl.value = "Belum Diatur Admin";
+                inputKelasEl.style.color = "var(--danger)"; // Warna merah
+            }
+        }
+
         const masterDoc = await getDoc(doc(db, "pengaturan", "data_akademik"));
         if(masterDoc.exists()) {
             const dataAkademik = masterDoc.data();
@@ -42,20 +54,8 @@ auth.onAuthStateChanged(async (user) => {
             // Render Pilihan Mapel
             if(dataAkademik.list_mapel) {
                 const selectMapel = document.getElementById('select-mapel');
-                selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mata Pelajaran --</option>' +
+                selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mapel --</option>' +
                     dataAkademik.list_mapel.map(m => `<option value="${m}">${m}</option>`).join('');
-            }
-            
-            // PERBAIKAN: Render Pilihan Kelas
-            if(dataAkademik.list_kelas) {
-                const selectKelas = document.getElementById('select-kelas');
-                selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas --</option>' +
-                    dataAkademik.list_kelas.map(k => `<option value="${k}">${k}</option>`).join('');
-                
-                // Auto-select kelas jika dataKelasSiswa sudah ada dari database
-                if (dataKelasSiswa && dataKelasSiswa !== "-") {
-                    selectKelas.value = dataKelasSiswa;
-                }
             }
         }
     } catch(e) { console.error("Gagal load data awal", e); }
@@ -68,7 +68,7 @@ setInterval(() => {
     }
 }, 1000);
 
-// 2. VALIDASI TOKEN OTOMATIS
+// 2. VALIDASI TOKEN OTOMATIS BERDASARKAN KELAS DARI ADMIN
 const preExamSection = document.getElementById('pre-exam-section');
 const mainExamLayout = document.getElementById('main-exam-layout');
 const btnVerifikasi = document.getElementById('btn-verifikasi');
@@ -77,14 +77,15 @@ const tokenError = document.getElementById('token-error');
 btnVerifikasi.addEventListener('click', async () => {
     const inputToken = document.getElementById('input-token').value.trim().toUpperCase();
     const selectMapel = document.getElementById('select-mapel').value;
-    const selectKelas = document.getElementById('select-kelas').value; // Mengambil nilai dari dropdown kelas
 
-    if (!selectMapel || !selectKelas || !inputToken) {
-        return alert("Pilih mata pelajaran, kelas, dan masukkan Token!");
+    if (!selectMapel || !inputToken) {
+        return alert("Pilih mata pelajaran dan masukkan Token!");
     }
     
-    // Perbarui data kelas siswa berdasarkan form yang dipilih
-    dataKelasSiswa = selectKelas;
+    // Cegah siswa ujian jika Admin belum mengatur kelasnya
+    if (!dataKelasSiswa || dataKelasSiswa === "-" || dataKelasSiswa === "Belum Diatur Admin") {
+        return alert("PERINGATAN: Kelas Anda belum diatur oleh Admin. Silakan hubungi pengawas!");
+    }
 
     const originalText = btnVerifikasi.innerHTML;
     btnVerifikasi.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMVALIDASI...'; 
@@ -94,12 +95,12 @@ btnVerifikasi.addEventListener('click', async () => {
     try {
         const pengaturanSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         
-        // Cek kecocokan token berdasarkan Mapel dan Kelas yang dipilih
-        const tokenKey = `token_${selectMapel}_${selectKelas}`;
+        // Cek kecocokan token berdasarkan Mapel dan Kelas bawaan Profil (Admin)
+        const tokenKey = `token_${selectMapel}_${dataKelasSiswa}`;
         let tokenAktif = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
 
         if (!tokenAktif || inputToken !== tokenAktif) {
-            tokenError.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Token untuk <b>${selectMapel}</b> kelas <b>${selectKelas}</b> tidak aktif atau salah!`;
+            tokenError.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Token untuk <b>${selectMapel}</b> kelas <b>${dataKelasSiswa}</b> tidak aktif atau salah!`;
             tokenError.style.display = 'block'; 
             btnVerifikasi.innerHTML = originalText; 
             btnVerifikasi.disabled = false;
@@ -297,7 +298,7 @@ async function eksekusiKirimJawaban() {
         await addDoc(collection(db, "hasil_ujian"), {
             userId: user?.uid || "Anonymous", 
             namaSiswa: dataNamaSiswa, 
-            kelas: dataKelasSiswa, // Menyimpan pilihan kelas
+            kelas: dataKelasSiswa, // Merekam kelas dari Admin
             mataPelajaran: mapelTerpilih, 
             jawabanSiswa: userAnswers, 
             benar: benar,
