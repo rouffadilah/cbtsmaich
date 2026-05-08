@@ -31,12 +31,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('admin-name').innerText = user.displayName || userRole.toUpperCase();
         
+        // PERBAIKAN: Hak Akses UI (RBAC)
         if (userRole === "admin") {
             document.getElementById('panel-title-role').innerText = "PANEL ADMIN";
         } else if (userRole === "guru") {
             document.getElementById('panel-title-role').innerText = "PANEL GURU";
+            
+            // Guru dilarang melihat manajemen akun
             document.getElementById('menu-pengguna').style.display = 'none';
-            document.getElementById('menu-pengaturan').style.display = 'none';
+            
+            // Guru boleh melihat Pengaturan (untuk Token), tapi dilarang melihat Data Master
+            const adminDataMaster = document.getElementById('admin-data-master');
+            if (adminDataMaster) adminDataMaster.style.display = 'none';
+            
+            const pengaturanTitle = document.getElementById('pengaturan-title');
+            if (pengaturanTitle) pengaturanTitle.innerText = "Pengaturan Token Ujian";
+            
+            const menuPengaturan = document.getElementById('menu-pengaturan');
+            if (menuPengaturan) menuPengaturan.innerHTML = '<i class="fas fa-key"></i> Token Ujian';
         }
 
         await loadDataMaster();
@@ -96,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const editMapelContainer = document.getElementById('edit-mapel-container');
         if(editMapelContainer) editMapelContainer.innerHTML = listMapel.map(m => `<label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; margin-bottom:5px; cursor:pointer;"><input type="checkbox" class="edit-mapel-cb" value="${m}"> ${m}</label>`).join('');
 
+        // Filter Mapel khusus untuk Guru
         let allowedMapel = listMapel;
         if (userRole === "guru") allowedMapel = listMapel.filter(m => userMapel.includes(m));
 
@@ -145,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     async function loadDataPengguna() {
         const tbody = document.querySelector('#table-siswa tbody');
+        if(!tbody) return;
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>`;
         try {
             const snap = await getDocs(collection(db, "users"));
@@ -417,10 +431,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // PERBAIKAN: FITUR INDIKATOR TOKEN AKTIF
+    // INDIKATOR TOKEN AKTIF 
     // ==========================================
-    
-    // Fungsi untuk menarik dan menampilkan token yang terpasang di database
     async function fetchTokenAktif() {
         const mapel = document.getElementById('set-token-mapel').value;
         const kelas = document.getElementById('set-token-kelas').value;
@@ -452,12 +464,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Trigger untuk update tampilan token saat dropdown dipilih
     document.getElementById('set-token-mapel')?.addEventListener('change', fetchTokenAktif);
     document.getElementById('set-token-kelas')?.addEventListener('change', fetchTokenAktif);
     document.getElementById('btn-refresh-token')?.addEventListener('click', fetchTokenAktif);
 
-    // Proses menyimpan token baru
     document.getElementById('btn-save-token')?.addEventListener('click', async () => {
         const mapel = document.getElementById('set-token-mapel').value;
         const kelas = document.getElementById('set-token-kelas').value;
@@ -472,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await setDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: tokenInput }, { merge: true }); 
             alert(`Berhasil! Token mapel ${mapel.toUpperCase()} untuk kelas ${kelas} diset menjadi: ${tokenInput}`); 
             document.getElementById('input-token-baru').value = ''; 
-            fetchTokenAktif(); // Langsung perbarui indikator token setelah berhasil save
+            fetchTokenAktif(); 
         } 
         catch(error) { console.error(error); alert("Gagal set token!"); }
     });
