@@ -9,19 +9,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
-        /* CSS Khusus untuk animasi klik pada kotak statistik */
-        .stat-clickable {
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-        }
-        .stat-clickable:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-            border-color: var(--primary-light);
-        }
-        .stat-clickable:active {
-            transform: translateY(0);
-        }
+        .stat-clickable { cursor: pointer; transition: all 0.2s ease-in-out; }
+        .stat-clickable:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary-light); }
+        .checkbox-container { max-height: 80px; overflow-y: auto; padding: 5px 10px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); }
     </style>
 </head>
 <body>
@@ -71,7 +61,6 @@
                     </div>
                     <h3 class="section-title" style="margin-top: 30px;">Statistik Sistem</h3>
                     <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-                        
                         <div class="stat-card stat-clickable" data-target="section-pengguna" style="background: white; padding: 25px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border-left: 5px solid var(--info); display: flex; align-items: center; gap: 20px;">
                             <div style="background: #eff6ff; padding: 15px; border-radius: 50%; color: var(--info); font-size: 1.5rem;"><i class="fas fa-users"></i></div>
                             <div>
@@ -79,7 +68,6 @@
                                 <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Pengguna Terdaftar</p>
                             </div>
                         </div>
-
                         <div class="stat-card stat-clickable" data-target="section-soal" style="background: white; padding: 25px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border-left: 5px solid var(--warning); display: flex; align-items: center; gap: 20px;">
                             <div style="background: #fef3c7; padding: 15px; border-radius: 50%; color: var(--warning); font-size: 1.5rem;"><i class="fas fa-file-alt"></i></div>
                             <div>
@@ -87,7 +75,6 @@
                                 <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Soal Tersedia</p>
                             </div>
                         </div>
-
                         <div class="stat-card stat-clickable" data-target="section-hasil" style="background: white; padding: 25px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border-left: 5px solid var(--success); display: flex; align-items: center; gap: 20px;">
                             <div style="background: #d1fae5; padding: 15px; border-radius: 50%; color: var(--success); font-size: 1.5rem;"><i class="fas fa-check-double"></i></div>
                             <div>
@@ -95,7 +82,6 @@
                                 <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Hasil Ujian Masuk</p>
                             </div>
                         </div>
-
                     </div>
                 </div>
 
@@ -169,26 +155,32 @@
                         
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
                             <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-user-plus"></i> Buat Akun Baru (Manual)</h4>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
                                 <input type="text" id="new-nama" placeholder="Nama Lengkap" class="input-text" style="flex: 1; min-width: 150px;">
                                 <input type="text" id="new-username" placeholder="Username/NIS" class="input-text" style="flex: 1; min-width: 150px;">
-                                
                                 <select id="new-role" class="input-text" style="width: 100px;">
                                     <option value="siswa">Siswa</option>
                                     <option value="guru">Guru</option>
                                     <option value="admin">Admin</option>
                                 </select>
-                                
-                                <div id="new-mapel-container" class="input-text" style="display:none; max-height: 80px; overflow-y: auto; flex: 1; min-width: 150px; padding: 5px 10px; background: white;">
+                            </div>
+
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start;">
+                                <div id="new-mapel-container" class="checkbox-container" style="display:none; flex: 1; min-width: 150px;">
                                     <div style="font-size:0.8rem; color:#888;">Memuat Mapel...</div>
                                 </div>
                                 
-                                <select id="new-kelas" class="input-text" style="width: 150px;">
-                                    <option value="">Pilih Kelas...</option>
+                                <div id="new-kelas-guru-container" class="checkbox-container" style="display:none; flex: 1; min-width: 150px;">
+                                    <div style="font-size:0.8rem; color:#888;">Memuat Kelas...</div>
+                                </div>
+                                
+                                <select id="new-kelas-siswa" class="input-text" style="width: 150px; flex: 1; min-width: 150px;">
+                                    <option value="">Pilih Kelas Siswa...</option>
                                 </select>
 
                                 <input type="password" id="new-pass" placeholder="Password" class="input-text" style="width: 130px;">
-                                <button id="btn-add-user" class="btn-3d" style="width: auto; background-color: var(--info);"><i class="fas fa-save"></i> Tambah</button>
+                                <button id="btn-add-user" class="btn-3d" style="width: auto; background-color: var(--info); height: 45px;"><i class="fas fa-save"></i> Tambah</button>
                             </div>
                         </div>
 
@@ -199,7 +191,7 @@
                                         <th>Username / NIS</th>
                                         <th>Nama Pengguna</th>
                                         <th>Role</th>
-                                        <th>Detail (Mapel/Kelas)</th>
+                                        <th>Detail Tugas / Kelas</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -216,45 +208,26 @@
                         <div id="admin-reg-status" style="margin-bottom: 25px; background: #f0fdf4; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--success);">
                             <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-user-lock"></i> Pengaturan Buka/Tutup Form Registrasi Publik:</label>
                             <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                                <div>
-                                    <span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Siswa:</span>
-                                    <select id="status-reg-siswa" class="input-text" style="width: auto; font-weight: bold;">
-                                        <option value="buka">Buka (Aktif)</option>
-                                        <option value="tutup">Tutup (Nonaktif)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Guru:</span>
-                                    <select id="status-reg-guru" class="input-text" style="width: auto; font-weight: bold;">
-                                        <option value="buka">Buka (Aktif)</option>
-                                        <option value="tutup">Tutup (Nonaktif)</option>
-                                    </select>
-                                </div>
+                                <div><span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Siswa:</span><select id="status-reg-siswa" class="input-text" style="width: auto; font-weight: bold;"><option value="buka">Buka (Aktif)</option><option value="tutup">Tutup (Nonaktif)</option></select></div>
+                                <div><span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Guru:</span><select id="status-reg-guru" class="input-text" style="width: auto; font-weight: bold;"><option value="buka">Buka (Aktif)</option><option value="tutup">Tutup (Nonaktif)</option></select></div>
                                 <button id="btn-save-reg-status" class="btn-3d" style="width: auto; background-color: var(--success);"><i class="fas fa-save"></i> Simpan Status</button>
                             </div>
-                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">*Jika ditutup, formulir pendaftaran pada halaman registrasi.html akan otomatis terkunci untuk mencegah pendaftaran di luar jadwal.</p>
                         </div>
 
                         <div style="margin-bottom: 25px; background: #fffbeb; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--warning);">
                             <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-key"></i> Set Token Ujian Baru (Atau Edit Token Lama):</label>
                             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                <select id="set-token-mapel" class="input-text" style="width: auto;">
-                                    <option value="">Memuat Mapel...</option>
-                                </select>
-                                <select id="set-token-kelas" class="input-text" style="width: auto;">
-                                    <option value="">Memuat Kelas...</option>
-                                </select>
+                                <select id="set-token-mapel" class="input-text" style="width: auto;"><option value="">Memuat Mapel...</option></select>
+                                <select id="set-token-kelas" class="input-text" style="width: auto;"><option value="">Memuat Kelas...</option></select>
                                 <input type="text" id="input-token-baru" class="input-text" style="width: 200px;" placeholder="Ketik Token (cth: X7Y8Z)">
                                 <button id="btn-save-token" class="btn-3d" style="width: auto; background-color: var(--warning);"><i class="fas fa-check"></i> Set Token</button>
                             </div>
-                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; margin-bottom: 20px;">*Untuk mengedit token, silakan buat ulang token pada Mapel dan Kelas yang sama. Sistem akan menimpa token lamanya secara otomatis.</p>
                             
-                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-top: 15px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                     <h4 style="font-size: 0.95rem; color: var(--secondary);"><i class="fas fa-list-ul"></i> Daftar Token Ujian yang Sedang Aktif</h4>
                                     <button id="btn-refresh-token" style="background:none; border:none; color:var(--info); cursor:pointer; font-size: 1rem;" title="Muat Ulang Token"><i class="fas fa-sync-alt"></i></button>
                                 </div>
-                                
                                 <div style="max-height: 250px; overflow-y: auto;">
                                     <table id="table-active-tokens" style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
                                         <thead style="background: #f8fafc; position: sticky; top: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
@@ -262,12 +235,10 @@
                                                 <th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--secondary);">Mata Pelajaran</th>
                                                 <th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--secondary);">Kelas</th>
                                                 <th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--secondary);">Token Akses</th>
-                                                <th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--secondary);">Aksi Hapus</th>
+                                                <th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--secondary);">Hapus</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <tr><td colspan="4" style="text-align:center; padding: 15px; color: var(--text-muted);">Memuat data...</td></tr>
-                                        </tbody>
+                                        <tbody><tr><td colspan="4" style="text-align:center; padding: 15px; color: var(--text-muted);">Memuat data...</td></tr></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -281,9 +252,7 @@
                                     <button id="btn-add-mapel" class="btn-3d" style="width: auto;"><i class="fas fa-plus"></i></button>
                                 </div>
                                 <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
-                                    <table id="table-master-mapel" style="width: 100%; font-size: 0.85rem;">
-                                        <tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody>
-                                    </table>
+                                    <table id="table-master-mapel" style="width: 100%; font-size: 0.85rem;"><tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody></table>
                                 </div>
                             </div>
 
@@ -294,9 +263,7 @@
                                     <button id="btn-add-kelas" class="btn-3d" style="width: auto;"><i class="fas fa-plus"></i></button>
                                 </div>
                                 <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
-                                    <table id="table-master-kelas" style="width: 100%; font-size: 0.85rem;">
-                                        <tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody>
-                                    </table>
+                                    <table id="table-master-kelas" style="width: 100%; font-size: 0.85rem;"><tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody></table>
                                 </div>
                             </div>
                         </div>
@@ -364,7 +331,7 @@
     </div>
 
     <div id="modal-edit-akun" class="modal" style="display: none; align-items: center; justify-content: center;">
-        <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 400px; max-width: 90%;">
+        <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 450px; max-width: 90%;">
             <span class="close-btn" id="close-modal-edit-akun" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
             <h3 style="margin-bottom: 15px; color: var(--warning);"><i class="fas fa-user-edit"></i> Edit Profil Pengguna</h3>
             
@@ -382,15 +349,20 @@
                 </select>
             </div>
             
-            <div class="input-group" id="group-edit-mapel" style="display:none;">
-                <label>Mata Pelajaran (Centang yang diajarkan)</label>
-                <div id="edit-mapel-container" class="input-text" style="max-height: 100px; overflow-y: auto; padding: 10px; background: white;">
-                    </div>
+            <div id="group-edit-guru" style="display:none; gap: 10px;">
+                <div class="input-group" style="flex:1;">
+                    <label>Mata Pelajaran</label>
+                    <div id="edit-mapel-container" class="checkbox-container"></div>
+                </div>
+                <div class="input-group" style="flex:1;">
+                    <label>Kelas Ajar</label>
+                    <div id="edit-kelas-guru-container" class="checkbox-container"></div>
+                </div>
             </div>
             
-            <div class="input-group" id="group-edit-kelas" style="display:none;">
+            <div class="input-group" id="group-edit-kelas-siswa" style="display:none;">
                 <label>Kelas (Siswa)</label>
-                <select id="edit-kelas" class="input-text"><option value="">Memuat...</option></select>
+                <select id="edit-kelas-siswa" class="input-text"><option value="">Memuat...</option></select>
             </div>
 
             <button id="btn-save-edit-akun" class="btn-3d" style="background-color: var(--warning); width: 100%;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
@@ -417,8 +389,17 @@
         </div>
     </div>
 
+    <div id="modal-preview-soal" class="modal" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 700px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" id="close-modal-preview" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-eye"></i> Preview Point of View (Siswa)</h3>
+            <div style="background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 15px;" id="preview-badge">Tipe</div>
+            
+            <div id="preview-content" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; background: #fff;">
+                </div>
+        </div>
+    </div>
+
     <script type="module" src="dashboard.js"></script>
 </body>
 </html>
-
-}
