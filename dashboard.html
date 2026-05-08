@@ -160,9 +160,9 @@
                                     <option value="admin">Admin</option>
                                 </select>
                                 
-                                <select id="new-mapel" class="input-text" style="width: 150px; display: none;">
-                                    <option value="">Pilih Mapel...</option>
-                                </select>
+                                <div id="new-mapel-container" class="input-text" style="display:none; max-height: 80px; overflow-y: auto; flex: 1; min-width: 150px; padding: 5px 10px; background: white;">
+                                    <div style="font-size:0.8rem; color:#888;">Memuat Mapel...</div>
+                                </div>
                                 
                                 <select id="new-kelas" class="input-text" style="width: 150px;">
                                     <option value="">Pilih Kelas...</option>
@@ -313,10 +313,13 @@
                     <option value="admin">Admin</option>
                 </select>
             </div>
+            
             <div class="input-group" id="group-edit-mapel" style="display:none;">
-                <label>Mata Pelajaran (Guru)</label>
-                <select id="edit-mapel" class="input-text"><option value="">Memuat...</option></select>
+                <label>Mata Pelajaran (Centang yang diajarkan)</label>
+                <div id="edit-mapel-container" class="input-text" style="max-height: 100px; overflow-y: auto; padding: 10px; background: white;">
+                    </div>
             </div>
+            
             <div class="input-group" id="group-edit-kelas" style="display:none;">
                 <label>Kelas (Siswa)</label>
                 <select id="edit-kelas" class="input-text"><option value="">Memuat...</option></select>
@@ -324,7 +327,7 @@
 
             <button id="btn-save-edit-akun" class="btn-3d" style="background-color: var(--warning); width: 100%;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
             <p style="font-size: 0.75rem; color: var(--danger); margin-top: 15px; text-align: center; line-height: 1.4;">
-                *Catatan: Sistem tidak mengizinkan meretas/mengubah Password user lain di halaman ini. Jika siswa lupa sandi, silakan <b>Hapus</b> lalu daftarkan ulang akunnya.
+                *Jika siswa lupa sandi, silakan <b>Hapus</b> akunnya lalu daftarkan ulang.
             </p>
         </div>
     </div>
