@@ -110,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const filterHasil = document.getElementById('filter-tabel-hasil');
         if(filterHasil) filterHasil.innerHTML = optionsMapelFilter;
 
-        // PERBAIKAN: Masukkan opsi kelas ke set-token-kelas
         ['new-kelas', 'edit-kelas', 'set-token-kelas'].forEach(id => {
             const el = document.getElementById(id); if(el) el.innerHTML = optionsKelas;
         });
@@ -418,8 +417,47 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // PERBAIKAN: SET TOKEN DENGAN KELAS
+    // PERBAIKAN: FITUR INDIKATOR TOKEN AKTIF
     // ==========================================
+    
+    // Fungsi untuk menarik dan menampilkan token yang terpasang di database
+    async function fetchTokenAktif() {
+        const mapel = document.getElementById('set-token-mapel').value;
+        const kelas = document.getElementById('set-token-kelas').value;
+        const displayEl = document.getElementById('display-token-aktif');
+        
+        if (!mapel || !kelas) {
+            displayEl.innerText = "Pilih Mapel & Kelas";
+            displayEl.style.color = "var(--text-muted)";
+            return;
+        }
+
+        displayEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 0.9rem;"></i>';
+        displayEl.style.color = "var(--text-muted)";
+        
+        try {
+            const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            const tokenKey = `token_${mapel}_${kelas}`;
+            
+            if (tokenSnap.exists() && tokenSnap.data()[tokenKey]) {
+                displayEl.innerText = tokenSnap.data()[tokenKey];
+                displayEl.style.color = "var(--primary)";
+            } else {
+                displayEl.innerText = "BELUM DISET";
+                displayEl.style.color = "var(--danger)";
+            }
+        } catch (e) {
+            console.error(e);
+            displayEl.innerText = "Error";
+        }
+    }
+
+    // Trigger untuk update tampilan token saat dropdown dipilih
+    document.getElementById('set-token-mapel')?.addEventListener('change', fetchTokenAktif);
+    document.getElementById('set-token-kelas')?.addEventListener('change', fetchTokenAktif);
+    document.getElementById('btn-refresh-token')?.addEventListener('click', fetchTokenAktif);
+
+    // Proses menyimpan token baru
     document.getElementById('btn-save-token')?.addEventListener('click', async () => {
         const mapel = document.getElementById('set-token-mapel').value;
         const kelas = document.getElementById('set-token-kelas').value;
@@ -430,11 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!tokenInput) return alert("Token kosong!");
         
         try { 
-            // Disimpan dengan kunci spesifik Mapel & Kelas
             const tokenKey = `token_${mapel}_${kelas}`;
             await setDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: tokenInput }, { merge: true }); 
             alert(`Berhasil! Token mapel ${mapel.toUpperCase()} untuk kelas ${kelas} diset menjadi: ${tokenInput}`); 
             document.getElementById('input-token-baru').value = ''; 
+            fetchTokenAktif(); // Langsung perbarui indikator token setelah berhasil save
         } 
         catch(error) { console.error(error); alert("Gagal set token!"); }
     });
