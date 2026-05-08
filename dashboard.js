@@ -2,7 +2,6 @@ import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// Menggunakan Secondary App untuk Admin membuat User Massal
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
@@ -19,12 +18,13 @@ const secondaryAuth = getAuth(secondaryApp);
 // VARIABEL GLOBAL
 let listMapel = [];
 let listKelas = [];
-let allUsersData = []; // Menyimpan state data user untuk fitur edit
+let allUsersData = []; 
 
 document.addEventListener('DOMContentLoaded', () => {
 
     const userRole = localStorage.getItem("userRole");
-    let userMapel = localStorage.getItem("userMapel");
+    // Parse Array Mapel dari Local Storage
+    let userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]");
 
     // 1. CEK AUTENTIKASI DAN ROLE
     onAuthStateChanged(auth, async (user) => {
@@ -64,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Jam Berjalan (Detik berkedip opsional)
     setInterval(() => { document.getElementById('live-time').innerText = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB"; }, 1000);
 
 
@@ -94,11 +93,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function populateSemuaDropdown() {
-        const optionsMapel = '<option value="" disabled selected>-- Pilih Mapel --</option>' + listMapel.map(m => `<option value="${m}">${m}</option>`).join('');
-        const optionsMapelFilter = '<option value="semua">Semua Mata Pelajaran</option>' + listMapel.map(m => `<option value="${m}">${m}</option>`).join('');
+        // UI Checkboxes untuk Admin (Pilih Banyak Mapel)
+        const mapelCheckboxes = listMapel.map(m => `
+            <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; margin-bottom:5px; cursor:pointer;">
+                <input type="checkbox" class="new-mapel-cb" value="${m}"> ${m}
+            </label>
+        `).join('');
+        const newMapelContainer = document.getElementById('new-mapel-container');
+        if(newMapelContainer) newMapelContainer.innerHTML = mapelCheckboxes || '<small>Belum ada master mapel</small>';
+
+        const editMapelContainer = document.getElementById('edit-mapel-container');
+        if(editMapelContainer) editMapelContainer.innerHTML = listMapel.map(m => `
+            <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; margin-bottom:5px; cursor:pointer;">
+                <input type="checkbox" class="edit-mapel-cb" value="${m}"> ${m}
+            </label>
+        `).join('');
+
+        // UI Dropdown Guru & Hasil Ujian (Memfilter berdasarkan akses mapel array)
+        let allowedMapel = listMapel;
+        if (userRole === "guru") {
+            allowedMapel = listMapel.filter(m => userMapel.includes(m)); // Guru hanya melihat mapel miliknya
+        }
+
+        const optionsMapel = '<option value="" disabled selected>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
+        const optionsMapelFilter = '<option value="semua">Semua Mata Pelajaran</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
         const optionsKelas = '<option value="" disabled selected>-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
-        ['soal-mapel', 'import-mapel', 'new-mapel', 'set-token-mapel', 'edit-mapel'].forEach(id => {
+        ['soal-mapel', 'import-mapel', 'set-token-mapel'].forEach(id => {
             const el = document.getElementById(id); if(el) el.innerHTML = optionsMapel;
         });
 
@@ -108,14 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ['new-kelas', 'edit-kelas'].forEach(id => {
             const el = document.getElementById(id); if(el) el.innerHTML = optionsKelas;
         });
-
-        if (userRole === "guru") {
-            ['soal-mapel', 'import-mapel'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) { el.value = userMapel; el.disabled = true; }
-            });
-            if(filterHasil) { filterHasil.value = userMapel; filterHasil.disabled = true; }
-        }
     }
 
     document.getElementById('btn-add-mapel')?.addEventListener('click', async () => {
@@ -155,15 +168,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const snap = await getDocs(collection(db, "users"));
             document.getElementById('stat-siswa').innerText = snap.size;
             tbody.innerHTML = '';
-            allUsersData = []; // Reset Array
+            allUsersData = []; 
             
             snap.forEach(docSnap => {
                 const data = docSnap.data();
-                data.id = docSnap.id; // Simpan Document ID
+                data.id = docSnap.id; 
                 allUsersData.push(data);
 
                 const roleColor = data.role === 'admin' ? 'var(--danger)' : (data.role === 'guru' ? 'var(--info)' : 'var(--success)');
-                let detailText = data.role === 'guru' ? `Mapel: ${data.mapel || '-'}` : (data.role === 'siswa' ? `Kelas: ${data.kelas || '-'}` : '-');
+                
+                // Menampilkan Array Mapel dengan rapi
+                let detailText = '-';
+                if (data.role === 'guru') {
+                    const strMapel = Array.isArray(data.mapel) ? data.mapel.join(', ') : (data.mapel || '-');
+                    detailText = `Mapel: ${strMapel}`;
+                } else if (data.role === 'siswa') {
+                    detailText = `Kelas: ${data.kelas || '-'}`;
+                }
                 
                 tbody.innerHTML += `
                     <tr>
@@ -182,24 +203,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.refreshPengguna = loadDataPengguna;
 
-    // Toggle Dropdown saat tambah manual
+    // Toggle Dropdown & Checkboxes
     document.getElementById('new-role')?.addEventListener('change', (e) => {
         const role = e.target.value;
-        document.getElementById('new-mapel').style.display = (role === 'guru') ? 'block' : 'none';
+        document.getElementById('new-mapel-container').style.display = (role === 'guru') ? 'block' : 'none';
         document.getElementById('new-kelas').style.display = (role === 'siswa') ? 'block' : 'none';
     });
 
-    // A. Tambah Manual 1 Akun
+    // A. Tambah Manual 1 Akun (Dengan Multi Mapel)
     document.getElementById('btn-add-user')?.addEventListener('click', async () => {
         const nama = document.getElementById('new-nama').value.trim();
         const username = document.getElementById('new-username').value.trim().replace(/\s+/g, '');
         const role = document.getElementById('new-role').value;
         const pass = document.getElementById('new-pass').value;
-        const mapel = document.getElementById('new-mapel').value;
         const kelas = document.getElementById('new-kelas').value;
 
+        // Ambil semua mapel yang dicentang
+        const selectedMapels = Array.from(document.querySelectorAll('.new-mapel-cb:checked')).map(cb => cb.value);
+
         if(!nama || !username || !pass) return alert("Lengkapi nama, username, dan password!");
-        if(role === 'guru' && !mapel) return alert("Pilih Mapel untuk Guru!");
+        if(role === 'guru' && selectedMapels.length === 0) return alert("Centang minimal 1 Mapel untuk Guru!");
         if(role === 'siswa' && !kelas) return alert("Pilih Kelas untuk Siswa!");
         if(pass.length < 6) return alert("Password minimal 6 karakter!");
 
@@ -212,13 +235,14 @@ document.addEventListener('DOMContentLoaded', () => {
             await updateProfile(userCred.user, { displayName: nama });
 
             let payload = { nama: nama, username: username, role: role, createdAt: new Date() };
-            if (role === 'guru') payload.mapel = mapel;
+            if (role === 'guru') payload.mapel = selectedMapels; // Simpan sebagai Array
             if (role === 'siswa') payload.kelas = kelas;
 
             await setDoc(doc(db, "users", userCred.user.uid), payload);
             
             alert(`Berhasil membuat akun ${role.toUpperCase()}`);
             document.getElementById('new-nama').value = ''; document.getElementById('new-username').value = ''; document.getElementById('new-pass').value = '';
+            document.querySelectorAll('.new-mapel-cb').forEach(cb => cb.checked = false); // Reset Centang
             loadDataPengguna();
             await secondaryAuth.signOut();
         } catch (error) { console.error(error); alert("Gagal: Username sudah dipakai atau format salah."); }
@@ -252,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const password = row['Password'] ? row['Password'].toString() : '123456';
                     const detail = row['Detail (Kelas/Mapel)'];
 
-                    if(!nama || !username) { failedCount++; continue; } // Skip jika data utama kosong
+                    if(!nama || !username) { failedCount++; continue; } 
 
                     try {
                         const dummyEmail = `${username}@cbt.smaich.id`;
@@ -260,7 +284,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         await updateProfile(userCred.user, { displayName: nama });
 
                         let payload = { nama: nama, username: username, role: role, createdAt: new Date() };
-                        if (role === 'guru' && detail) payload.mapel = detail;
+                        if (role === 'guru' && detail) {
+                            // Pecah mapel berdasarkan koma agar tersimpan sebagai Array
+                            payload.mapel = detail.split(',').map(s => s.trim());
+                        }
                         if (role === 'siswa' && detail) payload.kelas = detail;
 
                         await setDoc(doc(db, "users", userCred.user.uid), payload);
@@ -282,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsArrayBuffer(file);
     });
 
-    // C. Edit Akun (Role, Nama, Mapel/Kelas)
+    // C. Edit Akun (Role, Nama, Multi-Mapel/Kelas)
     const modalEditAkun = document.getElementById('modal-edit-akun');
     const editRoleSelect = document.getElementById('edit-role');
 
@@ -294,11 +321,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-nama').value = user.nama;
         editRoleSelect.value = user.role;
 
-        // Toggle UI Mapel vs Kelas
         document.getElementById('group-edit-mapel').style.display = (user.role === 'guru') ? 'block' : 'none';
         document.getElementById('group-edit-kelas').style.display = (user.role === 'siswa') ? 'block' : 'none';
         
-        if(user.role === 'guru') document.getElementById('edit-mapel').value = user.mapel || "";
+        if(user.role === 'guru') {
+            const mapelArray = Array.isArray(user.mapel) ? user.mapel : [user.mapel];
+            document.querySelectorAll('.edit-mapel-cb').forEach(cb => {
+                cb.checked = mapelArray.includes(cb.value);
+            });
+        }
         if(user.role === 'siswa') document.getElementById('edit-kelas').value = user.kelas || "";
 
         modalEditAkun.style.display = 'flex';
@@ -320,13 +351,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let payload = { nama: nama, role: role };
         
         if (role === 'guru') {
-            payload.mapel = document.getElementById('edit-mapel').value;
-            payload.kelas = null; // Bersihkan data kelas jika asalnya siswa
+            const selectedMapels = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value);
+            payload.mapel = selectedMapels; // Simpan Mapel sebagai Array
+            payload.kelas = null; 
         } else if (role === 'siswa') {
             payload.kelas = document.getElementById('edit-kelas').value;
-            payload.mapel = null; // Bersihkan data mapel jika asalnya guru
+            payload.mapel = null; 
         } else {
-            payload.kelas = null; payload.mapel = null; // Untuk admin
+            payload.kelas = null; payload.mapel = null; 
         }
 
         try {
@@ -352,7 +384,14 @@ document.addEventListener('DOMContentLoaded', () => {
         tbodySoal.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat bank soal...</td></tr>`;
         try {
             let qSoal = collection(db, "bank_soal");
-            if (userRole === "guru") qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", userMapel));
+            if (userRole === "guru") {
+                if (userMapel.length === 0) {
+                    tbodySoal.innerHTML = `<tr><td colspan="4" style="text-align:center;">Anda belum ditugaskan ke mata pelajaran apapun.</td></tr>`;
+                    return;
+                }
+                // Filter menggunakan "in" untuk membaca array mapel
+                qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "in", userMapel));
+            }
 
             const snap = await getDocs(qSoal);
             document.getElementById('stat-soal').innerText = snap.size;
@@ -378,7 +417,13 @@ document.addEventListener('DOMContentLoaded', () => {
         tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align:center;">Memuat hasil...</td></tr>`;
         try {
             let qHasil = collection(db, "hasil_ujian");
-            if (userRole === "guru") qHasil = query(collection(db, "hasil_ujian"), where("mataPelajaran", "==", userMapel));
+            if (userRole === "guru") {
+                if (userMapel.length === 0) {
+                    tbodyHasil.innerHTML = `<tr><td colspan="6" style="text-align:center;">Tidak ada data.</td></tr>`;
+                    return;
+                }
+                qHasil = query(collection(db, "hasil_ujian"), where("mataPelajaran", "in", userMapel));
+            }
             
             const snap = await getDocs(qHasil);
             document.getElementById('stat-ujian').innerText = snap.size;
