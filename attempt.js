@@ -1,36 +1,22 @@
 import { db, auth } from './firebase-config.js';
 import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// Variabel Global
 let questions = []; let currentIdx = 0; let userAnswers = []; let doubtStatus = []; let mapelTerpilih = ""; 
 let dataKelasSiswa = "-"; let dataNamaSiswa = "Siswa"; 
 let shuffledTargetsCache = {}; 
 const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 
-// Variabel Anti-Cheat
 let cheatWarnings = 0; const MAX_CHEAT_WARNINGS = 3;
 let isExamActive = false; let isWarningShowing = false;
 
-// ==========================================
-// PERBAIKAN: FUNGSI TOMBOL BACK BROWSER/HP
-// ==========================================
 window.history.pushState(null, "", window.location.href);
 window.onpopstate = function() {
-    // Tahan history agar tidak kembali ke index (logout)
     window.history.pushState(null, "", window.location.href); 
-    
-    if (isExamActive) {
-        // Jadikan tombol Back sebagai navigasi "Soal Sebelumnya"
-        if (currentIdx > 0) {
-            renderSoal(currentIdx - 1);
-        }
-    }
+    if (isExamActive && currentIdx > 0) { renderSoal(currentIdx - 1); }
 };
 
-// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
-    
     dataNamaSiswa = user.displayName || user.email.split('@')[0];
     
     try {
@@ -42,18 +28,15 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         document.getElementById('student-name').innerText = dataNamaSiswa;
-        
         const greetingEl = document.getElementById('greeting-peserta');
         if (greetingEl) { greetingEl.innerText = `Assalamu'alaikum ${dataNamaSiswa}...`; }
 
         const inputKelasEl = document.getElementById('input-kelas-siswa');
         if (inputKelasEl) {
             if (dataKelasSiswa && dataKelasSiswa !== "-") {
-                inputKelasEl.value = dataKelasSiswa;
-                inputKelasEl.style.color = "var(--secondary)"; 
+                inputKelasEl.value = dataKelasSiswa; inputKelasEl.style.color = "var(--secondary)"; 
             } else {
-                inputKelasEl.value = "Belum Diatur Admin";
-                inputKelasEl.style.color = "var(--danger)"; 
+                inputKelasEl.value = "Belum Diatur Admin"; inputKelasEl.style.color = "var(--danger)"; 
             }
         }
 
@@ -74,18 +57,18 @@ setInterval(() => {
     if (liveTimeEl) liveTimeEl.innerText = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB"; 
 }, 1000);
 
-// 2. VALIDASI TOKEN OTOMATIS
 const preExamSection = document.getElementById('pre-exam-section');
 const mainExamLayout = document.getElementById('main-exam-layout');
 const btnVerifikasi = document.getElementById('btn-verifikasi');
 const tokenError = document.getElementById('token-error');
 
+// PERBAIKAN: Validasi Token + Cek Kedaluwarsa 15 Menit
 btnVerifikasi.addEventListener('click', async () => {
     const inputToken = document.getElementById('input-token').value.trim().toUpperCase();
     const selectMapel = document.getElementById('select-mapel').value;
 
     if (!selectMapel || !inputToken) return alert("Pilih mata pelajaran dan masukkan Token!");
-    if (!dataKelasSiswa || dataKelasSiswa === "-" || dataKelasSiswa === "Belum Diatur Admin") return alert("PERINGATAN: Kelas Anda belum diatur oleh Admin. Silakan hubungi pengawas!");
+    if (!dataKelasSiswa || dataKelasSiswa === "-" || dataKelasSiswa === "Belum Diatur Admin") return alert("PERINGATAN: Kelas Anda belum diatur oleh Admin!");
 
     const originalText = btnVerifikasi.innerHTML;
     btnVerifikasi.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMVALIDASI...'; 
@@ -94,10 +77,29 @@ btnVerifikasi.addEventListener('click', async () => {
     try {
         const pengaturanSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         const tokenKey = `token_${selectMapel}_${dataKelasSiswa}`;
-        let tokenAktif = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
+        const tokenData = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
 
-        if (!tokenAktif || inputToken !== tokenAktif) {
-            tokenError.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Token untuk <b>${selectMapel}</b> kelas <b>${dataKelasSiswa}</b> tidak aktif atau salah!`;
+        let validCode = null;
+        let isExpired = false;
+
+        // Cek jika token berbentuk object (Sistem baru 15 menit)
+        if (tokenData && typeof tokenData === 'object') {
+            validCode = tokenData.code;
+            if (Date.now() > tokenData.expiresAt) {
+                isExpired = true;
+            }
+        } else {
+            validCode = tokenData; // Fallback jika token dibuat dari versi lama
+        }
+
+        if (isExpired) {
+            tokenError.innerHTML = `<i class="fas fa-clock"></i> Token sudah kadaluarsa (Melewati batas waktu 15 Menit)! Silakan minta pengawas men-generate token baru.`;
+            tokenError.style.display = 'block'; btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false;
+            return;
+        }
+
+        if (!validCode || inputToken !== validCode) {
+            tokenError.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Token tidak valid atau salah!`;
             tokenError.style.display = 'block'; btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false;
             return;
         }
@@ -108,7 +110,6 @@ btnVerifikasi.addEventListener('click', async () => {
     } catch (error) { alert("Gagal memvalidasi token."); btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false; }
 });
 
-// 3. MEMUAT BANK SOAL
 async function initUjian() {
     const qContainer = document.getElementById('q-container');
     qContainer.innerHTML = `<div style='text-align:center; padding:50px;'><i class='fas fa-spinner fa-spin fa-2x'></i><p>Memuat Soal ${mapelTerpilih}...</p></div>`;
@@ -116,7 +117,6 @@ async function initUjian() {
     try {
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapelTerpilih), where("kelas", "==", dataKelasSiswa));
         const snapshot = await getDocs(qSoal);
-        
         if (snapshot.empty) { qContainer.innerHTML = `<p style='text-align:center; color:var(--danger);'>Belum ada soal ${mapelTerpilih} untuk kelas ${dataKelasSiswa}.</p>`; return; }
 
         snapshot.forEach(doc => { 
@@ -125,7 +125,6 @@ async function initUjian() {
         });
 
         questions.sort((a, b) => a.nomor_soal - b.nomor_soal);
-
         const savedAns = localStorage.getItem(KEY_ANS); const savedDoubt = localStorage.getItem(KEY_DOUBT);
         userAnswers = savedAns ? JSON.parse(savedAns) : new Array(questions.length).fill(null);
         doubtStatus = savedDoubt ? JSON.parse(savedDoubt) : new Array(questions.length).fill(false);
@@ -134,7 +133,6 @@ async function initUjian() {
     } catch (error) { qContainer.innerHTML = "<p style='color:red;'>Gagal memuat bank soal.</p>"; }
 }
 
-// 4. RENDER DINAMIS BERBAGAI TIPE SOAL
 function renderSoal(idx) {
     currentIdx = idx; const qContainer = document.getElementById('q-container'); const q = questions[idx];
     document.getElementById('current-q-num').innerText = q.nomor_soal === 999 ? idx + 1 : q.nomor_soal; 
@@ -222,16 +220,20 @@ document.getElementById('doubt-btn').onclick = () => { doubtStatus[currentIdx] =
 
 
 // ==========================================
-// 5. MESIN ANTI-CHEAT 
+// 5. MESIN ANTI-CHEAT (Pop-Up & Split Screen Deteksi)
 // ==========================================
-function triggerCheatWarning() {
+function triggerCheatWarning(pesanPelanggaran) {
     if (!isExamActive || isWarningShowing) return;
     
     isWarningShowing = true;
     cheatWarnings++;
 
+    // Ubah pesan secara dinamis
+    const textDesc = pesanPelanggaran || "Sistem mendeteksi Anda berusaha keluar dari halaman ujian atau menekan tombol ilegal.";
+    document.getElementById('cheat-msg-desc').innerText = textDesc;
+
     if (cheatWarnings >= MAX_CHEAT_WARNINGS) {
-        forceSubmitExam("PELANGGARAN FATAL! Anda telah meninggalkan halaman ujian 3 kali. Ujian dihentikan otomatis.");
+        forceSubmitExam("PELANGGARAN FATAL! Anda telah meninggalkan halaman ujian atau membuka notifikasi 3 kali. Ujian dihentikan otomatis.");
         return;
     }
 
@@ -239,9 +241,24 @@ function triggerCheatWarning() {
     document.getElementById('modal-pelanggaran').style.display = 'flex';
 }
 
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === 'hidden' && isExamActive) { triggerCheatWarning(); }});
-window.addEventListener("blur", () => { if (isExamActive) { triggerCheatWarning(); }});
-document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', () => { document.getElementById('modal-pelanggaran').style.display = 'none'; setTimeout(() => { isWarningShowing = false; }, 1000); });
+// 1. Mendeteksi ganti tab atau minimize browser
+document.addEventListener("visibilitychange", () => { 
+    if (document.visibilityState === 'hidden' && isExamActive) { 
+        triggerCheatWarning("Sistem mendeteksi Anda meminimalkan browser atau berpindah tab."); 
+    }
+});
+
+// 2. PERBAIKAN: Mendeteksi Pop-up WhatsApp, Notifikasi ditarik, atau Split Screen (Hilang Fokus)
+window.addEventListener("blur", () => { 
+    if (isExamActive) { 
+        triggerCheatWarning("Layar kehilangan fokus! Sistem mendeteksi Anda membuka bar notifikasi, pesan pop-up, split-screen, atau aplikasi lain."); 
+    }
+});
+
+document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', () => { 
+    document.getElementById('modal-pelanggaran').style.display = 'none'; 
+    setTimeout(() => { isWarningShowing = false; }, 1000); 
+});
 
 // ==========================================
 // 6. KALKULASI & SUBMIT HASIL UJIAN
@@ -313,6 +330,6 @@ document.addEventListener('drop', event => { if(isExamActive) event.preventDefau
 document.addEventListener('keydown', (e) => {
     if (!isExamActive) return;
     if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) || (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'C' || e.key === 'c' || e.key === 'V' || e.key === 'v' || e.key === 'P' || e.key === 'p')) || (e.metaKey && (e.key === 'C' || e.key === 'c' || e.key === 'V' || e.key === 'v' || e.key === 'P' || e.key === 'p'))) {
-        e.preventDefault(); triggerCheatWarning();
+        e.preventDefault(); triggerCheatWarning("Sistem mendeteksi penekanan tombol kombinasi yang dilarang.");
     }
 });
