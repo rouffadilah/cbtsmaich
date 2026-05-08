@@ -1,22 +1,48 @@
 import { db, auth } from './firebase-config.js';
 import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+// Variabel Global
 let questions = []; let currentIdx = 0; let userAnswers = []; let doubtStatus = []; let mapelTerpilih = ""; 
 let dataKelasSiswa = "-"; let dataNamaSiswa = "Siswa"; 
 let shuffledTargetsCache = {}; 
 const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 
+// Variabel Anti-Cheat
 let cheatWarnings = 0; const MAX_CHEAT_WARNINGS = 3;
 let isExamActive = false; let isWarningShowing = false;
 
+// ==========================================
+// MENCEGAH KELUAR VIA TOMBOL BACK BROWSER/HP
+// ==========================================
 window.history.pushState(null, "", window.location.href);
 window.onpopstate = function() {
     window.history.pushState(null, "", window.location.href); 
-    if (isExamActive && currentIdx > 0) { renderSoal(currentIdx - 1); }
+    if (isExamActive) {
+        if (currentIdx > 0) renderSoal(currentIdx - 1);
+    }
 };
 
+// ==========================================
+// KONTROL LAYAR PENUH (FULLSCREEN)
+// ==========================================
+function masukFullscreen() {
+    let elem = document.documentElement;
+    if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+    else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } // Safari
+    else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); } // IE11
+}
+
+function keluarFullscreen() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) { document.exitFullscreen(); } 
+        else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+    }
+}
+
+// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
+    
     dataNamaSiswa = user.displayName || user.email.split('@')[0];
     
     try {
@@ -28,15 +54,18 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         document.getElementById('student-name').innerText = dataNamaSiswa;
+        
         const greetingEl = document.getElementById('greeting-peserta');
         if (greetingEl) { greetingEl.innerText = `Assalamu'alaikum ${dataNamaSiswa}...`; }
 
         const inputKelasEl = document.getElementById('input-kelas-siswa');
         if (inputKelasEl) {
             if (dataKelasSiswa && dataKelasSiswa !== "-") {
-                inputKelasEl.value = dataKelasSiswa; inputKelasEl.style.color = "var(--secondary)"; 
+                inputKelasEl.value = dataKelasSiswa;
+                inputKelasEl.style.color = "var(--secondary)"; 
             } else {
-                inputKelasEl.value = "Belum Diatur Admin"; inputKelasEl.style.color = "var(--danger)"; 
+                inputKelasEl.value = "Belum Diatur Admin";
+                inputKelasEl.style.color = "var(--danger)"; 
             }
         }
 
@@ -57,18 +86,18 @@ setInterval(() => {
     if (liveTimeEl) liveTimeEl.innerText = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB"; 
 }, 1000);
 
+// 2. VALIDASI TOKEN OTOMATIS
 const preExamSection = document.getElementById('pre-exam-section');
 const mainExamLayout = document.getElementById('main-exam-layout');
 const btnVerifikasi = document.getElementById('btn-verifikasi');
 const tokenError = document.getElementById('token-error');
 
-// PERBAIKAN: Validasi Token + Cek Kedaluwarsa 15 Menit
 btnVerifikasi.addEventListener('click', async () => {
     const inputToken = document.getElementById('input-token').value.trim().toUpperCase();
     const selectMapel = document.getElementById('select-mapel').value;
 
     if (!selectMapel || !inputToken) return alert("Pilih mata pelajaran dan masukkan Token!");
-    if (!dataKelasSiswa || dataKelasSiswa === "-" || dataKelasSiswa === "Belum Diatur Admin") return alert("PERINGATAN: Kelas Anda belum diatur oleh Admin!");
+    if (!dataKelasSiswa || dataKelasSiswa === "-" || dataKelasSiswa === "Belum Diatur Admin") return alert("PERINGATAN: Kelas Anda belum diatur oleh Admin. Silakan hubungi pengawas!");
 
     const originalText = btnVerifikasi.innerHTML;
     btnVerifikasi.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMVALIDASI...'; 
@@ -79,21 +108,15 @@ btnVerifikasi.addEventListener('click', async () => {
         const tokenKey = `token_${selectMapel}_${dataKelasSiswa}`;
         const tokenData = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
 
-        let validCode = null;
-        let isExpired = false;
+        let validCode = null; let isExpired = false;
 
-        // Cek jika token berbentuk object (Sistem baru 15 menit)
         if (tokenData && typeof tokenData === 'object') {
             validCode = tokenData.code;
-            if (Date.now() > tokenData.expiresAt) {
-                isExpired = true;
-            }
-        } else {
-            validCode = tokenData; // Fallback jika token dibuat dari versi lama
-        }
+            if (Date.now() > tokenData.expiresAt) { isExpired = true; }
+        } else { validCode = tokenData; }
 
         if (isExpired) {
-            tokenError.innerHTML = `<i class="fas fa-clock"></i> Token sudah kadaluarsa (Melewati batas waktu 15 Menit)! Silakan minta pengawas men-generate token baru.`;
+            tokenError.innerHTML = `<i class="fas fa-clock"></i> Token sudah kadaluarsa (Lewat 15 Menit)! Silakan minta token baru ke pengawas.`;
             tokenError.style.display = 'block'; btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false;
             return;
         }
@@ -104,12 +127,20 @@ btnVerifikasi.addEventListener('click', async () => {
             return;
         }
 
-        mapelTerpilih = selectMapel; preExamSection.style.display = 'none'; mainExamLayout.style.display = 'grid'; 
-        setTimeout(() => { isExamActive = true; }, 1000); 
+        // Token Benar -> Mulai Fullscreen dan Ujian
+        masukFullscreen();
+        mapelTerpilih = selectMapel; 
+        preExamSection.style.display = 'none'; 
+        mainExamLayout.style.display = 'grid'; 
+        
+        // Jeda untuk menstabilkan state UI sebelum sensor nyala
+        setTimeout(() => { isExamActive = true; }, 1500); 
         initUjian(); 
+
     } catch (error) { alert("Gagal memvalidasi token."); btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false; }
 });
 
+// 3. MEMUAT BANK SOAL
 async function initUjian() {
     const qContainer = document.getElementById('q-container');
     qContainer.innerHTML = `<div style='text-align:center; padding:50px;'><i class='fas fa-spinner fa-spin fa-2x'></i><p>Memuat Soal ${mapelTerpilih}...</p></div>`;
@@ -117,6 +148,7 @@ async function initUjian() {
     try {
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapelTerpilih), where("kelas", "==", dataKelasSiswa));
         const snapshot = await getDocs(qSoal);
+        
         if (snapshot.empty) { qContainer.innerHTML = `<p style='text-align:center; color:var(--danger);'>Belum ada soal ${mapelTerpilih} untuk kelas ${dataKelasSiswa}.</p>`; return; }
 
         snapshot.forEach(doc => { 
@@ -125,6 +157,7 @@ async function initUjian() {
         });
 
         questions.sort((a, b) => a.nomor_soal - b.nomor_soal);
+
         const savedAns = localStorage.getItem(KEY_ANS); const savedDoubt = localStorage.getItem(KEY_DOUBT);
         userAnswers = savedAns ? JSON.parse(savedAns) : new Array(questions.length).fill(null);
         doubtStatus = savedDoubt ? JSON.parse(savedDoubt) : new Array(questions.length).fill(false);
@@ -133,6 +166,7 @@ async function initUjian() {
     } catch (error) { qContainer.innerHTML = "<p style='color:red;'>Gagal memuat bank soal.</p>"; }
 }
 
+// 4. RENDER DINAMIS BERBAGAI TIPE SOAL
 function renderSoal(idx) {
     currentIdx = idx; const qContainer = document.getElementById('q-container'); const q = questions[idx];
     document.getElementById('current-q-num').innerText = q.nomor_soal === 999 ? idx + 1 : q.nomor_soal; 
@@ -220,20 +254,19 @@ document.getElementById('doubt-btn').onclick = () => { doubtStatus[currentIdx] =
 
 
 // ==========================================
-// 5. MESIN ANTI-CHEAT (Pop-Up & Split Screen Deteksi)
+// 5. MESIN ANTI-CHEAT (POP-UP & FULLSCREEN LOCK)
 // ==========================================
-function triggerCheatWarning(pesanPelanggaran) {
+function triggerCheatWarning(pesan) {
     if (!isExamActive || isWarningShowing) return;
     
     isWarningShowing = true;
     cheatWarnings++;
 
-    // Ubah pesan secara dinamis
-    const textDesc = pesanPelanggaran || "Sistem mendeteksi Anda berusaha keluar dari halaman ujian atau menekan tombol ilegal.";
+    const textDesc = pesan || "Sistem mendeteksi aktivitas mencurigakan pada perangkat Anda.";
     document.getElementById('cheat-msg-desc').innerText = textDesc;
 
     if (cheatWarnings >= MAX_CHEAT_WARNINGS) {
-        forceSubmitExam("PELANGGARAN FATAL! Anda telah meninggalkan halaman ujian atau membuka notifikasi 3 kali. Ujian dihentikan otomatis.");
+        forceSubmitExam("PELANGGARAN FATAL! Anda telah melakukan aktivitas dilarang sebanyak 3 kali. Ujian dihentikan otomatis.");
         return;
     }
 
@@ -241,22 +274,29 @@ function triggerCheatWarning(pesanPelanggaran) {
     document.getElementById('modal-pelanggaran').style.display = 'flex';
 }
 
-// 1. Mendeteksi ganti tab atau minimize browser
+// Deteksi Jika Layar Penuh (Fullscreen) Dibatalkan (Notifikasi / Split Screen ditarik)
+document.addEventListener("fullscreenchange", () => {
+    if (isExamActive && !document.fullscreenElement) {
+        triggerCheatWarning("Layar Penuh Terhenti! Sistem mendeteksi Anda membuka bar notifikasi, split-screen, atau pop-up aplikasi lain.");
+    }
+});
+
+// Deteksi Ganti Tab Browser
 document.addEventListener("visibilitychange", () => { 
     if (document.visibilityState === 'hidden' && isExamActive) { 
-        triggerCheatWarning("Sistem mendeteksi Anda meminimalkan browser atau berpindah tab."); 
+        triggerCheatWarning("Peringatan Ganti Tab! Sistem mendeteksi Anda meminimalkan browser atau beralih ke tab lain."); 
     }
 });
 
-// 2. PERBAIKAN: Mendeteksi Pop-up WhatsApp, Notifikasi ditarik, atau Split Screen (Hilang Fokus)
-window.addEventListener("blur", () => { 
-    if (isExamActive) { 
-        triggerCheatWarning("Layar kehilangan fokus! Sistem mendeteksi Anda membuka bar notifikasi, pesan pop-up, split-screen, atau aplikasi lain."); 
-    }
+// Deteksi Jika Browser HP ditimpa oleh aplikasi lain (WA Call, Telepon, dll)
+window.addEventListener("pagehide", () => {
+    if (isExamActive) triggerCheatWarning("Layar terganggu! Aplikasi browser Anda ditimpa oleh proses lain di latar belakang.");
 });
 
+// Tombol Mengerti di Peringatan Pelanggaran
 document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', () => { 
     document.getElementById('modal-pelanggaran').style.display = 'none'; 
+    masukFullscreen(); // Paksa masuk layar penuh lagi
     setTimeout(() => { isWarningShowing = false; }, 1000); 
 });
 
@@ -264,7 +304,10 @@ document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', ()
 // 6. KALKULASI & SUBMIT HASIL UJIAN
 // ==========================================
 async function forceSubmitExam(pesanPeringatan) {
-    isExamActive = false; alert(pesanPeringatan); await eksekusiKirimJawaban();
+    isExamActive = false; 
+    keluarFullscreen(); // Matikan layar penuh
+    alert(pesanPeringatan); 
+    await eksekusiKirimJawaban();
 }
 
 document.getElementById('finish-btn').onclick = async () => {
@@ -275,6 +318,7 @@ document.getElementById('finish-btn').onclick = async () => {
     if (!confirm(pesan)) return;
 
     isExamActive = false; 
+    keluarFullscreen(); // Matikan layar penuh saat selesai normal
     await eksekusiKirimJawaban();
 };
 
@@ -316,10 +360,15 @@ async function eksekusiKirimJawaban() {
         localStorage.removeItem(KEY_ANS); localStorage.removeItem(KEY_DOUBT);
         alert(`Ujian selesai! Jawaban berhasil terkirim.`); 
         window.location.href = "index.html"; 
-    } catch (error) { alert("Gagal mengirim jawaban: " + error.message); isExamActive = true; btn.innerHTML = '<i class="fas fa-check-double"></i> SELESAI UJIAN'; btn.disabled = false; }
+    } catch (error) { 
+        alert("Gagal mengirim jawaban: " + error.message); 
+        isExamActive = true; 
+        btn.innerHTML = '<i class="fas fa-check-double"></i> SELESAI UJIAN'; 
+        btn.disabled = false; 
+    }
 }
 
-// 7. MESIN ANTI-COPAS & ANTI-AI
+// 7. MESIN ANTI-COPAS & ANTI-AI (Keyboard Shortcuts)
 document.addEventListener('contextmenu', event => { if(isExamActive) event.preventDefault(); });
 document.addEventListener('copy', event => { if(isExamActive) event.preventDefault(); });
 document.addEventListener('cut', event => { if(isExamActive) event.preventDefault(); });
