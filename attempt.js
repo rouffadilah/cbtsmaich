@@ -114,23 +114,28 @@ btnVerifikasi.addEventListener('click', async () => {
     }
 });
 
-// 3. MEMUAT BANK SOAL (PERBAIKAN: KHUSUS KELAS DAN MAPEL)
+// 3. MEMUAT BANK SOAL
 async function initUjian() {
     const qContainer = document.getElementById('q-container');
     qContainer.innerHTML = `<div style='text-align:center; padding:50px;'><i class='fas fa-spinner fa-spin fa-2x'></i><p>Memuat Soal ${mapelTerpilih}...</p></div>`;
 
     try {
-        // PERBAIKAN: Soal difilter berdasarkan Mapel DAN Kelas
         const qSoal = query(collection(db, "bank_soal"), 
             where("mataPelajaran", "==", mapelTerpilih),
             where("kelas", "==", dataKelasSiswa)
         );
-        
         const snapshot = await getDocs(qSoal);
         
         if (snapshot.empty) { qContainer.innerHTML = `<p style='text-align:center; color:var(--danger);'>Belum ada soal ${mapelTerpilih} untuk kelas ${dataKelasSiswa}.</p>`; return; }
 
-        snapshot.forEach(doc => { questions.push({ id: doc.id, ...doc.data() }); });
+        snapshot.forEach(doc => { 
+            const d = doc.data();
+            d.nomor_soal = parseInt(d.nomor_soal) || 999; // Fallback jika tidak ada nomor
+            questions.push({ id: doc.id, ...d }); 
+        });
+
+        // PERBAIKAN: Mengurutkan soal berdasarkan Nomor Soal
+        questions.sort((a, b) => a.nomor_soal - b.nomor_soal);
 
         const savedAns = localStorage.getItem(KEY_ANS); const savedDoubt = localStorage.getItem(KEY_DOUBT);
         userAnswers = savedAns ? JSON.parse(savedAns) : new Array(questions.length).fill(null);
