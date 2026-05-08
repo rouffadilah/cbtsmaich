@@ -127,13 +127,11 @@ btnVerifikasi.addEventListener('click', async () => {
             return;
         }
 
-        // Token Benar -> Mulai Fullscreen dan Ujian
         masukFullscreen();
         mapelTerpilih = selectMapel; 
         preExamSection.style.display = 'none'; 
         mainExamLayout.style.display = 'grid'; 
         
-        // Jeda untuk menstabilkan state UI sebelum sensor nyala
         setTimeout(() => { isExamActive = true; }, 1500); 
         initUjian(); 
 
@@ -254,7 +252,7 @@ document.getElementById('doubt-btn').onclick = () => { doubtStatus[currentIdx] =
 
 
 // ==========================================
-// 5. MESIN ANTI-CHEAT (POP-UP & FULLSCREEN LOCK)
+// 5. MESIN ANTI-CHEAT (SUPER AGRESIF UNTUK POP-UP)
 // ==========================================
 function triggerCheatWarning(pesan) {
     if (!isExamActive || isWarningShowing) return;
@@ -274,24 +272,34 @@ function triggerCheatWarning(pesan) {
     document.getElementById('modal-pelanggaran').style.display = 'flex';
 }
 
-// Deteksi Jika Layar Penuh (Fullscreen) Dibatalkan (Notifikasi / Split Screen ditarik)
+// Deteksi 1: Ganti Tab Browser
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'hidden' && isExamActive) {
+        triggerCheatWarning("Peringatan Ganti Tab! Sistem mendeteksi Anda meminimalkan browser atau beralih ke tab lain.");
+    }
+});
+
+// Deteksi 2: Kehilangan Fokus (Standar)
+window.addEventListener("blur", () => {
+    if (isExamActive) triggerCheatWarning("Layar kehilangan fokus! Jangan sentuh bar notifikasi atau layar di luar area ujian.");
+});
+
+// Deteksi 3: Fullscreen Batal (Buka Split Screen / Bar Notifikasi ditarik dalam)
 document.addEventListener("fullscreenchange", () => {
-    if (isExamActive && !document.fullscreenElement) {
-        triggerCheatWarning("Layar Penuh Terhenti! Sistem mendeteksi Anda membuka bar notifikasi, split-screen, atau pop-up aplikasi lain.");
+    if (isExamActive && !document.fullscreenElement && !document.webkitFullscreenElement) {
+        triggerCheatWarning("Layar Penuh Terhenti! Sistem mendeteksi Anda menarik panel HP atau membuka Split-Screen.");
     }
 });
 
-// Deteksi Ganti Tab Browser
-document.addEventListener("visibilitychange", () => { 
-    if (document.visibilityState === 'hidden' && isExamActive) { 
-        triggerCheatWarning("Peringatan Ganti Tab! Sistem mendeteksi Anda meminimalkan browser atau beralih ke tab lain."); 
+// Deteksi 4: RADAR FOKUS AGRESIF (Untuk menangkap Pop-Up Chat WA/Floating Apps)
+// Mengecek setiap 1.5 detik. Jika siswa mengetik di WA Pop-up, dokumen pasti kehilangan "Focus".
+setInterval(() => {
+    if (isExamActive && !isWarningShowing) {
+        if (!document.hasFocus()) {
+            triggerCheatWarning("Aplikasi Mengambang / Pop-up Terdeteksi! Layar ujian Anda sedang tertimpa oleh aplikasi lain (seperti Chat WA).");
+        }
     }
-});
-
-// Deteksi Jika Browser HP ditimpa oleh aplikasi lain (WA Call, Telepon, dll)
-window.addEventListener("pagehide", () => {
-    if (isExamActive) triggerCheatWarning("Layar terganggu! Aplikasi browser Anda ditimpa oleh proses lain di latar belakang.");
-});
+}, 1500);
 
 // Tombol Mengerti di Peringatan Pelanggaran
 document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', () => { 
@@ -305,7 +313,7 @@ document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', ()
 // ==========================================
 async function forceSubmitExam(pesanPeringatan) {
     isExamActive = false; 
-    keluarFullscreen(); // Matikan layar penuh
+    keluarFullscreen(); 
     alert(pesanPeringatan); 
     await eksekusiKirimJawaban();
 }
@@ -318,7 +326,7 @@ document.getElementById('finish-btn').onclick = async () => {
     if (!confirm(pesan)) return;
 
     isExamActive = false; 
-    keluarFullscreen(); // Matikan layar penuh saat selesai normal
+    keluarFullscreen(); 
     await eksekusiKirimJawaban();
 };
 
