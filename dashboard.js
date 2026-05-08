@@ -29,24 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = "index.html"; return;
         }
 
+        // Tampilkan Nama di Pojok Kanan Atas
         document.getElementById('admin-name').innerText = user.displayName || userRole.toUpperCase();
         
-        // PERBAIKAN: Hak Akses UI (RBAC)
+        // PERBAIKAN: Tampilkan Nama di Sapaan Banner Utama
+        const greetingText = document.getElementById('greeting-text');
+        if(greetingText) {
+            greetingText.innerHTML = `Assalamu'alaikum, ${user.displayName}! 👋`;
+        }
+        
         if (userRole === "admin") {
             document.getElementById('panel-title-role').innerText = "PANEL ADMIN";
         } else if (userRole === "guru") {
             document.getElementById('panel-title-role').innerText = "PANEL GURU";
-            
-            // Guru dilarang melihat manajemen akun
             document.getElementById('menu-pengguna').style.display = 'none';
-            
-            // Guru boleh melihat Pengaturan (untuk Token), tapi dilarang melihat Data Master
             const adminDataMaster = document.getElementById('admin-data-master');
             if (adminDataMaster) adminDataMaster.style.display = 'none';
-            
             const pengaturanTitle = document.getElementById('pengaturan-title');
             if (pengaturanTitle) pengaturanTitle.innerText = "Pengaturan Token Ujian";
-            
             const menuPengaturan = document.getElementById('menu-pengaturan');
             if (menuPengaturan) menuPengaturan.innerHTML = '<i class="fas fa-key"></i> Token Ujian';
         }
@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const editMapelContainer = document.getElementById('edit-mapel-container');
         if(editMapelContainer) editMapelContainer.innerHTML = listMapel.map(m => `<label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; margin-bottom:5px; cursor:pointer;"><input type="checkbox" class="edit-mapel-cb" value="${m}"> ${m}</label>`).join('');
 
-        // Filter Mapel khusus untuk Guru
         let allowedMapel = listMapel;
         if (userRole === "guru") allowedMapel = listMapel.filter(m => userMapel.includes(m));
 
