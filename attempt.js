@@ -14,7 +14,7 @@ const MAX_CHEAT_WARNINGS = 3;
 let isExamActive = false; 
 let isWarningShowing = false;
 
-// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA (KELAS DARI ADMIN)
+// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     
@@ -35,23 +35,20 @@ auth.onAuthStateChanged(async (user) => {
             greetingEl.innerText = `Assalamu'alaikum ${dataNamaSiswa}...`;
         }
 
-        // PERBAIKAN: Suntikkan Kelas dari Admin ke Input Readonly
         const inputKelasEl = document.getElementById('input-kelas-siswa');
         if (inputKelasEl) {
             if (dataKelasSiswa && dataKelasSiswa !== "-") {
                 inputKelasEl.value = dataKelasSiswa;
-                inputKelasEl.style.color = "var(--secondary)"; // Warna hitam tegas
+                inputKelasEl.style.color = "var(--secondary)"; 
             } else {
                 inputKelasEl.value = "Belum Diatur Admin";
-                inputKelasEl.style.color = "var(--danger)"; // Warna merah
+                inputKelasEl.style.color = "var(--danger)"; 
             }
         }
 
         const masterDoc = await getDoc(doc(db, "pengaturan", "data_akademik"));
         if(masterDoc.exists()) {
             const dataAkademik = masterDoc.data();
-            
-            // Render Pilihan Mapel
             if(dataAkademik.list_mapel) {
                 const selectMapel = document.getElementById('select-mapel');
                 selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mapel --</option>' +
@@ -68,7 +65,7 @@ setInterval(() => {
     }
 }, 1000);
 
-// 2. VALIDASI TOKEN OTOMATIS BERDASARKAN KELAS DARI ADMIN
+// 2. VALIDASI TOKEN OTOMATIS BERDASARKAN KELAS
 const preExamSection = document.getElementById('pre-exam-section');
 const mainExamLayout = document.getElementById('main-exam-layout');
 const btnVerifikasi = document.getElementById('btn-verifikasi');
@@ -82,7 +79,6 @@ btnVerifikasi.addEventListener('click', async () => {
         return alert("Pilih mata pelajaran dan masukkan Token!");
     }
     
-    // Cegah siswa ujian jika Admin belum mengatur kelasnya
     if (!dataKelasSiswa || dataKelasSiswa === "-" || dataKelasSiswa === "Belum Diatur Admin") {
         return alert("PERINGATAN: Kelas Anda belum diatur oleh Admin. Silakan hubungi pengawas!");
     }
@@ -95,7 +91,6 @@ btnVerifikasi.addEventListener('click', async () => {
     try {
         const pengaturanSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         
-        // Cek kecocokan token berdasarkan Mapel dan Kelas bawaan Profil (Admin)
         const tokenKey = `token_${selectMapel}_${dataKelasSiswa}`;
         let tokenAktif = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
 
@@ -119,16 +114,21 @@ btnVerifikasi.addEventListener('click', async () => {
     }
 });
 
-// 3. MEMUAT BANK SOAL
+// 3. MEMUAT BANK SOAL (PERBAIKAN: KHUSUS KELAS DAN MAPEL)
 async function initUjian() {
     const qContainer = document.getElementById('q-container');
     qContainer.innerHTML = `<div style='text-align:center; padding:50px;'><i class='fas fa-spinner fa-spin fa-2x'></i><p>Memuat Soal ${mapelTerpilih}...</p></div>`;
 
     try {
-        const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapelTerpilih));
+        // PERBAIKAN: Soal difilter berdasarkan Mapel DAN Kelas
+        const qSoal = query(collection(db, "bank_soal"), 
+            where("mataPelajaran", "==", mapelTerpilih),
+            where("kelas", "==", dataKelasSiswa)
+        );
+        
         const snapshot = await getDocs(qSoal);
         
-        if (snapshot.empty) { qContainer.innerHTML = "<p style='text-align:center; color:red;'>Belum ada soal untuk mapel ini.</p>"; return; }
+        if (snapshot.empty) { qContainer.innerHTML = `<p style='text-align:center; color:var(--danger);'>Belum ada soal ${mapelTerpilih} untuk kelas ${dataKelasSiswa}.</p>`; return; }
 
         snapshot.forEach(doc => { questions.push({ id: doc.id, ...doc.data() }); });
 
@@ -298,7 +298,7 @@ async function eksekusiKirimJawaban() {
         await addDoc(collection(db, "hasil_ujian"), {
             userId: user?.uid || "Anonymous", 
             namaSiswa: dataNamaSiswa, 
-            kelas: dataKelasSiswa, // Merekam kelas dari Admin
+            kelas: dataKelasSiswa,
             mataPelajaran: mapelTerpilih, 
             jawabanSiswa: userAnswers, 
             benar: benar,
