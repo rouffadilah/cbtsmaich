@@ -34,11 +34,13 @@
                         <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 50px; border-radius: 6px;">
                     </div>
                     <div style="display: flex; align-items: center; gap: 20px;">
-                        <div style="display: flex; align-items: center; gap: 15px; text-align: right; background: #f8fafc; padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border-color);">
-                            <span id="admin-name" style="font-weight: 700; color: var(--secondary); font-size: 0.95rem;">Memuat...</span>
-                            <span style="color: #cbd5e1;">|</span>
-                            <small id="live-time" style="color: var(--primary); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px;">00:00:00 WIB</small>
+                        
+                        <div style="display: flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 15px; background: #f8fafc; padding: 8px 18px; border-radius: 30px; border: 1px solid var(--border-color); white-space: nowrap; width: max-content;">
+                            <span id="admin-name" style="font-weight: 700; color: var(--secondary); font-size: 0.95rem; margin: 0;">Memuat...</span>
+                            <span style="color: #cbd5e1; font-size: 1.2rem; line-height: 1; margin: 0;">|</span>
+                            <span id="live-time" style="color: var(--primary); font-weight: 700; font-size: 0.85rem; margin: 0;">00:00:00 WIB</span>
                         </div>
+                        
                         <button id="btn-logout" class="btn-3d btn-secondary" style="padding: 10px 15px;"><i class="fas fa-sign-out-alt"></i> KELUAR</button>
                     </div>
                 </div>
@@ -140,7 +142,7 @@
                             <div style="display: flex; gap: 10px;">
                                 <a href="Template_Akun_SMAICH.xlsx" download class="btn-3d btn-secondary" style="width: auto; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-download"></i> Unduh Template</a>
                                 <input type="file" id="upload-akun-excel" accept=".xlsx, .xls" style="display:none;">
-                                <label for="upload-akun-excel" class="btn-3d" style="width: auto; background: var(--success); cursor: pointer; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-upload"></i> Import File Excel</label>
+                                <label for="upload-akun-excel" class="btn-3d" style="width: auto; background: var(--success); cursor: pointer; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-upload"></i> Import Excel</label>
                             </div>
                         </div>
                     </div>
@@ -196,13 +198,17 @@
                         
                         <div style="margin-bottom: 25px; background: #fffbeb; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--warning);">
                             <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-key"></i> Set Token Ujian Aktif:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                 <select id="set-token-mapel" class="input-text" style="width: auto;">
                                     <option value="">Memuat Mapel...</option>
+                                </select>
+                                <select id="set-token-kelas" class="input-text" style="width: auto;">
+                                    <option value="">Memuat Kelas...</option>
                                 </select>
                                 <input type="text" id="input-token-baru" class="input-text" style="width: 200px;" placeholder="Ketik Token (cth: X7Y8Z)">
                                 <button id="btn-save-token" class="btn-3d" style="width: auto; background-color: var(--warning);"><i class="fas fa-check"></i> Set Token</button>
                             </div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">*Sistem otomatis mendeteksi kelas siswa, pastikan Anda membuat token untuk setiap kelas yang ujian.</p>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -326,9 +332,6 @@
             </div>
 
             <button id="btn-save-edit-akun" class="btn-3d" style="background-color: var(--warning); width: 100%;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
-            <p style="font-size: 0.75rem; color: var(--danger); margin-top: 15px; text-align: center; line-height: 1.4;">
-                *Jika siswa lupa sandi, silakan <b>Hapus</b> akunnya lalu daftarkan ulang.
-            </p>
         </div>
     </div>
 
