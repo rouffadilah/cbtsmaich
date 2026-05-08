@@ -54,21 +54,22 @@
             <h2 id="greeting-peserta" style="margin-bottom: 8px; color: var(--secondary); font-size: 1.5rem;">Assalamu'alaikum...</h2>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px; line-height: 1.6;">Sebelum mengerjakan soal ujian ini, alangkah baiknya berdo'a terlebih dahulu agar hasilnya sesuai dengan apa yang kita harapkan.</p>
 
-            <div class="input-group" style="text-align: left;">
-                <label>Mata Pelajaran</label>
-                <select id="select-mapel" class="input-text">
-                    <option value="" disabled selected>Memuat Mata Pelajaran...</option>
-                </select>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                    <label>Kelas Anda</label>
+                    <input type="text" id="input-kelas-siswa" class="input-text" readonly value="Memuat..." style="background-color: #e2e8f0; color: var(--text-muted); font-weight: bold; cursor: not-allowed;">
+                    <small style="font-size: 0.75rem; color: var(--warning); display: block; margin-top: 5px; text-align: left;">*Diatur otomatis oleh Admin.</small>
+                </div>
+                
+                <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                    <label>Pilih Mata Pelajaran</label>
+                    <select id="select-mapel" class="input-text">
+                        <option value="" disabled selected>Memuat...</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="input-group" style="text-align: left;">
-                <label>Kelas</label>
-                <select id="select-kelas" class="input-text">
-                    <option value="" disabled selected>Memuat Kelas...</option>
-                </select>
-            </div>
-
-            <div class="input-group" style="text-align: left;">
+            <div class="input-group" style="text-align: left; margin-bottom: 25px;">
                 <label>Token Ujian</label>
                 <input type="text" id="input-token" class="input-text" placeholder="Contoh: SMAICH-XXXX" style="text-transform: uppercase;">
             </div>
@@ -136,31 +137,3 @@
             <i class="fas fa-exclamation-triangle fa-5x" style="color: var(--danger); margin-bottom: 20px; animation: pulse 1.5s infinite;"></i>
             <h2 style="color: var(--danger); margin-bottom: 10px; font-size: 1.8rem; font-weight: 800; text-transform: uppercase;">Pelanggaran Ujian!</h2>
             <p style="font-size: 1.05rem; color: var(--secondary); margin-bottom: 20px; font-weight: 500;">
-                Sistem mendeteksi Anda berusaha keluar dari halaman ujian atau menekan tombol ilegal.
-            </p>
-            
-            <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #f87171;">
-                <span style="font-size: 1rem; color: var(--danger); font-weight: 700;">PERINGATAN KE: <span id="cheat-count" style="font-size: 1.5rem; display: inline-block; margin: 0 5px;">1</span> DARI 3</span>
-            </div>
-            
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;">
-                Jika Anda melakukan pelanggaran hingga <b>3 kali</b>, sistem akan menghentikan ujian Anda secara paksa dan mengirim jawaban Anda secara otomatis.
-            </p>
-            
-            <button id="btn-mengerti-pelanggaran" class="btn-3d" style="background-color: var(--danger); width: 100%; font-size: 0.9rem;">
-                <i class="fas fa-undo-alt"></i> SAYA MENGERTI & KEMBALI UJIAN
-            </button>
-        </div>
-    </div>
-
-    <style>
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); opacity: 0.8; }
-            100% { transform: scale(1); }
-        }
-    </style>
-
-    <script type="module" src="attempt.js"></script>
-</body>
-</html>
