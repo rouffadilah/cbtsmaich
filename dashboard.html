@@ -11,7 +11,8 @@
     <style>
         .stat-clickable { cursor: pointer; transition: all 0.2s ease-in-out; }
         .stat-clickable:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary-light); }
-        .checkbox-container { max-height: 120px; overflow-y: auto; padding: 10px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+        .checkbox-container { max-height: 120px; overflow-y: auto; overflow-x: hidden; padding: 10px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); width: 100%; }
+        .checkbox-container label { word-break: break-word; white-space: normal; }
     </style>
 </head>
 <body>
@@ -167,12 +168,18 @@
                             </div>
 
                             <div class="input-group">
-                                <label>Role / Hak Akses</label>
-                                <select id="new-role" class="input-text">
-                                    <option value="siswa">Siswa</option>
-                                    <option value="guru">Guru</option>
-                                    <option value="admin">Admin</option>
-                                </select>
+                                <label>Role / Hak Akses (Bisa pilih lebih dari 1)</label>
+                                <div style="display: flex; gap: 15px; padding: 12px 16px; background: #fafafa; border: 1.5px solid var(--border-color); border-radius: var(--radius-md);">
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
+                                        <input type="checkbox" class="new-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
+                                        <input type="checkbox" class="new-role-cb" value="guru" style="transform: scale(1.2);"> Guru
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
+                                        <input type="checkbox" class="new-role-cb" value="admin" style="transform: scale(1.2);"> Admin
+                                    </label>
+                                </div>
                             </div>
 
                             <div class="input-group" id="group-new-mapel" style="display:none;">
@@ -189,7 +196,7 @@
                                 </div>
                             </div>
 
-                            <div class="input-group" id="group-new-kelas-siswa">
+                            <div class="input-group" id="group-new-kelas-siswa" style="display:none;">
                                 <label>Kelas (Khusus Siswa)</label>
                                 <select id="new-kelas-siswa" class="input-text">
                                     <option value="">Pilih Kelas...</option>
@@ -210,8 +217,8 @@
                                     <tr>
                                         <th>Username / NIS</th>
                                         <th>Nama Pengguna</th>
-                                        <th>Role</th>
-                                        <th>Detail (Mapel/Kelas)</th>
+                                        <th>Role Akses</th>
+                                        <th>Detail Tugas / Kelas</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -298,12 +305,10 @@
         <div class="modal-content" style="width: 750px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
             <span class="close-btn" id="close-modal-soal" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
             <h3 style="margin-bottom: 15px; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Manajemen Bank Soal</h3>
-            
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                 <button id="tab-manual" class="btn-3d" style="flex: 1; font-size: 0.85rem;"><i class="fas fa-edit"></i> Buat Manual</button>
                 <button id="tab-import" class="btn-3d btn-secondary" style="flex: 1; font-size: 0.85rem;"><i class="fas fa-file-upload"></i> Import File</button>
             </div>
-
             <div id="area-manual">
                 <div class="input-group" style="display: flex; gap: 15px;">
                     <div style="flex: 1;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
@@ -322,7 +327,6 @@
                 <div id="area-opsi-dinamis" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;"></div>
                 <button id="btn-simpan-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-save"></i> SIMPAN SOAL</button>
             </div>
-
             <div id="area-import" style="display: none;">
                 <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--info);">
                     <p style="font-weight: 700; color: var(--info); font-size: 0.85rem; margin-bottom: 10px;"><i class="fas fa-download"></i> UNDUH TEMPLATE SOAL:</p>
@@ -360,21 +364,28 @@
                 <label>Nama Lengkap</label>
                 <input type="text" id="edit-nama" class="input-text">
             </div>
+
             <div class="input-group">
                 <label>Role / Hak Akses</label>
-                <select id="edit-role" class="input-text">
-                    <option value="siswa">Siswa</option>
-                    <option value="guru">Guru</option>
-                    <option value="admin">Admin</option>
-                </select>
+                <div style="display: flex; gap: 15px; padding: 12px 16px; background: #fafafa; border: 1.5px solid var(--border-color); border-radius: var(--radius-md);">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
+                        <input type="checkbox" class="edit-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
+                        <input type="checkbox" class="edit-role-cb" value="guru" style="transform: scale(1.2);"> Guru
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;">
+                        <input type="checkbox" class="edit-role-cb" value="admin" style="transform: scale(1.2);"> Admin
+                    </label>
+                </div>
             </div>
             
-            <div id="group-edit-guru" style="display:none; gap: 10px;">
-                <div class="input-group" style="flex:1;">
+            <div id="group-edit-guru" style="display:none; gap: 10px; margin-bottom: 15px;">
+                <div class="input-group" style="flex:1; margin-bottom: 0;">
                     <label>Mata Pelajaran</label>
                     <div id="edit-mapel-container" class="checkbox-container"></div>
                 </div>
-                <div class="input-group" style="flex:1;">
+                <div class="input-group" style="flex:1; margin-bottom: 0;">
                     <label>Kelas Ajar</label>
                     <div id="edit-kelas-guru-container" class="checkbox-container"></div>
                 </div>
@@ -414,9 +425,7 @@
             <span class="close-btn" id="close-modal-preview" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
             <h3 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-eye"></i> Preview Point of View (Siswa)</h3>
             <div style="background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 15px;" id="preview-badge">Tipe</div>
-            
-            <div id="preview-content" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; background: #fff;">
-            </div>
+            <div id="preview-content" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; background: #fff;"></div>
         </div>
     </div>
 
