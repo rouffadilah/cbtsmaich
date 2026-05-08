@@ -15,10 +15,10 @@ auth.onAuthStateChanged(async (user) => {
     const namaSiswa = user.displayName || user.email.split('@')[0];
     document.getElementById('student-name').innerText = namaSiswa;
     
-    // PERBAIKAN: Set Kalimat Sapaan Dinamis
+    // PERBAIKAN: Hanya update sapaan utama (teks kecil berdoa ada di HTML)
     const greetingEl = document.getElementById('greeting-peserta');
     if (greetingEl) {
-        greetingEl.innerText = `Assalamu'alaikum ${namaSiswa}, sebelum mengerjakan soal ujian ini berdoalah terlebih dahulu agar hasilnya sesuai dengan apa yang kita inginkan`;
+        greetingEl.innerText = `Assalamu'alaikum ${namaSiswa}...`;
     }
     
     try {
