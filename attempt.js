@@ -7,9 +7,11 @@ let dataKelasSiswa = "-"; // Menyimpan Kelas siswa dari database
 let shuffledTargetsCache = {}; 
 const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 
-// 1. PENGECEKAN LOGIN & MEMUAT PROFIL SISWA
+// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA & JAM REALTIME
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
+    
+    // Set Nama Peserta
     document.getElementById('student-name').innerText = user.displayName || user.email.split('@')[0];
     
     try {
@@ -26,6 +28,14 @@ auth.onAuthStateChanged(async (user) => {
         }
     } catch(e) { console.error("Gagal load data awal", e); }
 });
+
+// JAM REALTIME BERJALAN DI HEADER
+setInterval(() => { 
+    const liveTimeEl = document.getElementById('live-time-student');
+    if (liveTimeEl) {
+        liveTimeEl.innerText = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB"; 
+    }
+}, 1000);
 
 // 2. VALIDASI TOKEN OTOMATIS BERDASARKAN KELAS SISWA
 const preExamSection = document.getElementById('pre-exam-section');
@@ -51,7 +61,7 @@ btnVerifikasi.addEventListener('click', async () => {
     try {
         const pengaturanSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         
-        // PERBAIKAN: Mengecek token spesifik kombinasi Mapel + Kelas
+        // Mengecek token spesifik kombinasi Mapel + Kelas
         const tokenKey = `token_${selectMapel}_${dataKelasSiswa}`;
         let tokenAktif = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
 
