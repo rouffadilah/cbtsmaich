@@ -7,13 +7,13 @@ let dataKelasSiswa = "-";
 let shuffledTargetsCache = {}; 
 const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 
-// Variabel Anti-Cheat (Baru)
+// Variabel Anti-Cheat
 let cheatWarnings = 0;
 const MAX_CHEAT_WARNINGS = 3;
 let isExamActive = false; 
 let isWarningShowing = false;
 
-// 1. PENGECEKAN LOGIN, MEMUAT PROFIL SISWA & SAPAAN DINAMIS
+// 1. PENGECEKAN LOGIN & MEMUAT PROFIL SISWA
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     
@@ -69,7 +69,6 @@ btnVerifikasi.addEventListener('click', async () => {
 
     try {
         const pengaturanSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-        
         const tokenKey = `token_${selectMapel}_${dataKelasSiswa}`;
         let tokenAktif = (pengaturanSnap.exists() && pengaturanSnap.data()[tokenKey]) ? pengaturanSnap.data()[tokenKey] : null;
 
@@ -79,14 +78,8 @@ btnVerifikasi.addEventListener('click', async () => {
             return;
         }
 
-        // Token Benar! Aktifkan Ujian dan Mesin Anti-Cheat
-        mapelTerpilih = selectMapel; 
-        preExamSection.style.display = 'none'; 
-        mainExamLayout.style.display = 'grid'; 
-        
-        // PENTING: Aktifkan status ujian untuk memantau tab
-        setTimeout(() => { isExamActive = true; }, 1000); // Jeda 1 detik agar transisi awal tidak dianggap cheat
-        
+        mapelTerpilih = selectMapel; preExamSection.style.display = 'none'; mainExamLayout.style.display = 'grid'; 
+        setTimeout(() => { isExamActive = true; }, 1000); 
         initUjian(); 
     } catch (error) { alert("Gagal memvalidasi token."); btnVerifikasi.innerHTML = originalText; btnVerifikasi.disabled = false; }
 });
@@ -209,49 +202,35 @@ function triggerCheatWarning() {
     cheatWarnings++;
 
     if (cheatWarnings >= MAX_CHEAT_WARNINGS) {
-        forceSubmitExam("PELANGGARAN FATAL! Anda telah meninggalkan ujian 3 kali. Ujian dihentikan otomatis secara paksa.");
+        forceSubmitExam("PELANGGARAN FATAL! Anda telah meninggalkan ujian atau melakukan tindakan ilegal 3 kali. Ujian dihentikan otomatis secara paksa.");
         return;
     }
 
-    // Tampilkan Peringatan Pelanggaran
     document.getElementById('cheat-count').innerText = cheatWarnings;
     document.getElementById('modal-pelanggaran').style.display = 'flex';
 }
 
-// Event 1: Mendeteksi saat pengguna meminimalkan browser atau pindah ke Tab lain
 document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === 'hidden' && isExamActive) {
-        triggerCheatWarning();
-    }
+    if (document.visibilityState === 'hidden' && isExamActive) { triggerCheatWarning(); }
 });
 
-// Event 2: Mendeteksi saat pengguna membuka aplikasi lain (Alt+Tab)
 window.addEventListener("blur", () => {
-    if (isExamActive) {
-        triggerCheatWarning();
-    }
+    if (isExamActive) { triggerCheatWarning(); }
 });
 
-// Tutup peringatan
 document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', () => {
     document.getElementById('modal-pelanggaran').style.display = 'none';
-    // Beri jeda 1 detik sebelum mesin pengawas menyala lagi (mencegah klik ganda)
     setTimeout(() => { isWarningShowing = false; }, 1000);
 });
-
 
 // ==========================================
 // 6. KALKULASI & SUBMIT HASIL UJIAN
 // ==========================================
 
-// Fungsi submit paksa (Akibat Waktu Habis / Pelanggaran)
 async function forceSubmitExam(pesanPeringatan) {
-    isExamActive = false; // Matikan anti-cheat agar tidak tumpang tindih saat loading
-    alert(pesanPeringatan);
-    await eksekusiKirimJawaban();
+    isExamActive = false; alert(pesanPeringatan); await eksekusiKirimJawaban();
 }
 
-// Fungsi submit manual oleh siswa
 document.getElementById('finish-btn').onclick = async () => {
     const belumDijawab = userAnswers.filter(ans => ans === null || (typeof ans === 'object' && Object.keys(ans).length === 0)).length;
     let pesan = "Apakah Anda yakin mengakhiri ujian?";
@@ -259,11 +238,10 @@ document.getElementById('finish-btn').onclick = async () => {
     
     if (!confirm(pesan)) return;
 
-    isExamActive = false; // Matikan anti-cheat karena siswa mensubmit secara sah
+    isExamActive = false; 
     await eksekusiKirimJawaban();
 };
 
-// Fungsi Eksekusi Utama (Menghitung & Mengirim Data ke Firebase)
 async function eksekusiKirimJawaban() {
     const btn = document.getElementById('finish-btn'); 
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGHITUNG...'; 
@@ -287,7 +265,7 @@ async function eksekusiKirimJawaban() {
             kelas: dataKelasSiswa,
             mataPelajaran: mapelTerpilih, jawabanSiswa: userAnswers, benar: benar,
             nilai: nilaiAkhir, totalSoal: questions.length, rincianBenar: rincianBenar,
-            pelanggaranKecurangan: cheatWarnings, // Simpan histori pelanggaran ke server
+            pelanggaranKecurangan: cheatWarnings, 
             waktuSelesai: new Date(), status: "Selesai"
         });
         
@@ -296,8 +274,32 @@ async function eksekusiKirimJawaban() {
     } catch (error) { 
         console.error(error); 
         alert("Gagal mengirim jawaban: " + error.message); 
-        isExamActive = true; // Nyalakan lagi pengawasan jika gagal kirim
+        isExamActive = true; 
         btn.innerHTML = '<i class="fas fa-check-double"></i> SELESAI UJIAN'; 
         btn.disabled = false; 
     }
 }
+
+// ==========================================
+// 7. MESIN ANTI-COPAS & ANTI-AI (BLOKIR KLIK KANAN & SHORTCUT)
+// ==========================================
+document.addEventListener('contextmenu', event => { if(isExamActive) event.preventDefault(); }); // Blokir Klik Kanan
+document.addEventListener('copy', event => { if(isExamActive) event.preventDefault(); }); // Blokir Ctrl+C
+document.addEventListener('cut', event => { if(isExamActive) event.preventDefault(); }); // Blokir Ctrl+X
+document.addEventListener('paste', event => { if(isExamActive) event.preventDefault(); }); // Blokir Ctrl+V
+document.addEventListener('dragstart', event => { if(isExamActive) event.preventDefault(); }); // Blokir Drag Text
+document.addEventListener('drop', event => { if(isExamActive) event.preventDefault(); }); // Blokir Drop Text
+
+document.addEventListener('keydown', (e) => {
+    if (!isExamActive) return;
+    
+    // Blokir F12, Ctrl+Shift+I, Ctrl+U (Inspect Element & View Source)
+    if (e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+        (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'C' || e.key === 'c' || e.key === 'V' || e.key === 'v' || e.key === 'P' || e.key === 'p')) ||
+        (e.metaKey && (e.key === 'C' || e.key === 'c' || e.key === 'V' || e.key === 'v' || e.key === 'P' || e.key === 'p')) // Untuk Mac
+    ) {
+        e.preventDefault();
+        triggerCheatWarning(); // Catat sebagai pelanggaran
+    }
+});
