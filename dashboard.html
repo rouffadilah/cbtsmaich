@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <style>
+        .stat-clickable { cursor: pointer; transition: all 0.2s ease-in-out; }
+        .stat-clickable:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary-light); }
+        .checkbox-container { max-height: 120px; overflow-y: auto; overflow-x: hidden; padding: 10px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); width: 100%; }
+        .checkbox-container label { word-break: break-word; white-space: normal; }
+    </style>
 </head>
 <body>
 
@@ -91,6 +97,7 @@
                                 <thead>
                                     <tr>
                                         <th>Mapel</th>
+                                        <th>Kelas</th>
                                         <th>Tipe</th>
                                         <th>Pertanyaan</th>
                                         <th>Aksi</th>
@@ -306,9 +313,10 @@
             </div>
 
             <div id="area-manual">
-                <div class="input-group" style="display: flex; gap: 15px;">
-                    <div style="flex: 1;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
-                    <div style="flex: 1;">
+                <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                    <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
+                    <div style="flex: 1; min-width: 150px;"><label>Kelas</label><select id="soal-kelas" class="input-text"><option value="">Memuat Kelas...</option></select></div>
+                    <div style="flex: 1; min-width: 150px;">
                         <label>Tipe Soal</label>
                         <select id="soal-tipe" class="input-text">
                             <option value="PG">Pilihan Ganda (PG)</option>
@@ -332,7 +340,11 @@
                         <a href="Template_Soal_CBT_SMAICH.docx" download class="btn-3d" style="background: #2b579a; font-size: 0.75rem; padding: 8px 12px; width: auto;"><i class="fas fa-file-word"></i> Template Word</a>
                     </div>
                 </div>
-                <div class="input-group"><label>Mata Pelajaran untuk File Import</label><select id="import-mapel" class="input-text" style="margin-bottom: 15px;"><option value="">Memuat Mapel...</option></select></div>
+                
+                <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran untuk File Import</label><select id="import-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
+                    <div style="flex: 1; min-width: 150px;"><label>Kelas untuk File Import</label><select id="import-kelas" class="input-text"><option value="">Memuat Kelas...</option></select></div>
+                </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                     <div style="border: 2px dashed var(--success); padding: 20px; border-radius: 8px; text-align: center; background: #f0fdf4;">
