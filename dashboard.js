@@ -151,8 +151,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById(id); if(el) el.innerHTML = optionsKelasSiswa;
         });
 
-        const tokenKelasEl = document.getElementById('set-token-kelas');
-        if(tokenKelasEl) tokenKelasEl.innerHTML = optionsKelasFilter;
+        // PERBAIKAN: Menambahkan kelas dropdown untuk Manual dan Import Soal
+        ['set-token-kelas', 'soal-kelas', 'import-kelas'].forEach(id => {
+            const el = document.getElementById(id); if(el) el.innerHTML = optionsKelasFilter;
+        });
     }
 
     document.getElementById('btn-add-mapel')?.addEventListener('click', async () => {
@@ -408,15 +410,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     async function loadDataSoal() {
         const tbodySoal = document.querySelector('#table-soal tbody'); if(!tbodySoal) return;
-        tbodySoal.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat bank soal...</td></tr>`;
+        tbodySoal.innerHTML = `<tr><td colspan="5" style="text-align:center;">Memuat bank soal...</td></tr>`;
         try {
             let qSoal = collection(db, "bank_soal");
             if (!isAdmin && isGuru) {
-                if (userMapel.length === 0) { tbodySoal.innerHTML = `<tr><td colspan="4" style="text-align:center;">Anda belum ditugaskan ke mapel apapun.</td></tr>`; return; }
+                if (userMapel.length === 0) { tbodySoal.innerHTML = `<tr><td colspan="5" style="text-align:center;">Anda belum ditugaskan ke mapel apapun.</td></tr>`; return; }
                 qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "in", userMapel));
             }
             const snap = await getDocs(qSoal); document.getElementById('stat-soal').innerText = snap.size;
-            tbodySoal.innerHTML = snap.empty ? `<tr><td colspan="4" style="text-align:center;">Bank soal kosong.</td></tr>` : '';
+            tbodySoal.innerHTML = snap.empty ? `<tr><td colspan="5" style="text-align:center;">Bank soal kosong.</td></tr>` : '';
             
             allSoalData = [];
             snap.forEach(docSnap => {
@@ -424,8 +426,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.id = docSnap.id;
                 allSoalData.push(data);
                 
+                // PERBAIKAN: Menampilkan Kelas di Tabel
                 tbodySoal.innerHTML += `<tr>
                     <td><span style="background: #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${data.mataPelajaran.toUpperCase()}</span></td>
+                    <td><span style="color: var(--secondary); font-weight: bold; font-size: 0.85rem;">${data.kelas || '-'}</span></td>
                     <td><span style="color: var(--primary); font-weight: bold;">${data.tipe}</span></td>
                     <td>${data.teks_soal.substring(0, 50)}...</td>
                     <td style="display:flex; gap:5px;">
@@ -558,10 +562,16 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (tipe === 'Uraian') areaOpsi.innerHTML = `<label>Panduan Penilaian</label><textarea id="rubrik_uraian" class="input-text" rows="2" placeholder="Poin utama penilaian..."></textarea>`;
     }
 
+    // PERBAIKAN: Input & Kirim `kelas` saat menyimpan soal manual
     document.getElementById('btn-simpan-soal')?.addEventListener('click', async () => {
-        const mapel = document.getElementById('soal-mapel').value; const tipe = tipeSelect.value; const teks = document.getElementById('soal-teks').value.trim();
-        if(!mapel || !teks) return alert("Isi Mapel & Pertanyaan!");
-        let payload = { mataPelajaran: mapel, tipe: tipe, teks_soal: teks, createdAt: new Date() };
+        const mapel = document.getElementById('soal-mapel').value; 
+        const kelas = document.getElementById('soal-kelas').value;
+        const tipe = tipeSelect.value; 
+        const teks = document.getElementById('soal-teks').value.trim();
+        
+        if(!mapel || !kelas || !teks) return alert("Pilih Mapel, Kelas & Isi Pertanyaan!");
+        
+        let payload = { mataPelajaran: mapel, kelas: kelas, tipe: tipe, teks_soal: teks, createdAt: new Date() };
 
         if (tipe === 'PG') { payload.opsi = { A: document.getElementById('opsi-A').value, B: document.getElementById('opsi-B').value, C: document.getElementById('opsi-C').value, D: document.getElementById('opsi-D').value, E: document.getElementById('opsi-E').value }; payload.kunci_jawaban = document.querySelector('input[name="kunci_pg"]:checked').value; } 
         else if (tipe === 'PGK') { payload.opsi = { A: document.getElementById('opsi-A').value, B: document.getElementById('opsi-B').value, C: document.getElementById('opsi-C').value, D: document.getElementById('opsi-D').value, E: document.getElementById('opsi-E').value }; let kunci = []; document.querySelectorAll('.kunci_pgk:checked').forEach(cb => kunci.push(cb.value)); payload.kunci_jawaban = kunci; } 
@@ -572,7 +582,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try { await addDoc(collection(db, "bank_soal"), payload); alert("Soal tersimpan!"); modalSoal.style.display = 'none'; loadDataSoal(); } catch (error) { alert("Gagal menyimpan."); }
     });
 
-    // PERBAIKAN: Tombol Upload yang Benar
     let selectedExcelSoal = null;
     
     document.getElementById('file-excel')?.addEventListener('change', (e) => {
@@ -587,10 +596,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // PERBAIKAN: Input & Kirim `kelas` saat memproses import excel
     document.getElementById('btn-proses-import-soal')?.addEventListener('click', () => {
         if (!selectedExcelSoal) return alert("Pilih file Excel terlebih dahulu!");
         const mapel = document.getElementById('import-mapel').value;
-        if(!mapel) return alert("Pilih Mapel Terlebih Dahulu!");
+        const kelas = document.getElementById('import-kelas').value;
+        if(!mapel || !kelas) return alert("Pilih Mapel dan Kelas Terlebih Dahulu!");
 
         const btn = document.getElementById('btn-proses-import-soal');
         const origText = btn.innerHTML;
@@ -602,13 +613,13 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
                 const jsonSoal = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                if(!confirm(`Import ${jsonSoal.length} soal ke mapel ${mapel}?`)) {
+                if(!confirm(`Import ${jsonSoal.length} soal ke mapel ${mapel} kelas ${kelas}?`)) {
                     btn.innerHTML = origText; btn.disabled = false; return;
                 }
 
                 for (let row of jsonSoal) {
                     const tipe = (row.Tipe || 'PG').toString().toUpperCase();
-                    let payload = { mataPelajaran: mapel, tipe: tipe, teks_soal: row.Soal, createdAt: new Date() };
+                    let payload = { mataPelajaran: mapel, kelas: kelas, tipe: tipe, teks_soal: row.Soal, createdAt: new Date() };
 
                     if(tipe === 'PG') { payload.opsi = { A: row.OpsiA||"", B: row.OpsiB||"", C: row.OpsiC||"", D: row.OpsiD||"", E: row.OpsiE||"" }; payload.kunci_jawaban = (row.Kunci||"A").toString().toUpperCase(); } 
                     else if (tipe === 'PGK') { payload.opsi = { A: row.OpsiA||"", B: row.OpsiB||"", C: row.OpsiC||"", D: row.OpsiD||"", E: row.OpsiE||"" }; payload.kunci_jawaban = row.Kunci ? row.Kunci.toString().replace(/\s/g, '').toUpperCase().split(',') : []; }
