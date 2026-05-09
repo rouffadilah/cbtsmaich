@@ -308,6 +308,27 @@ document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', ()
     setTimeout(() => { isWarningShowing = false; }, 1000); 
 });
 
+
+// Deteksi 5: Perubahan Ukuran Layar (Split-Screen)
+let initialHeight = window.innerHeight;
+
+window.addEventListener('resize', () => {
+    if (!isExamActive || isWarningShowing) return;
+    
+    let currentHeight = window.innerHeight;
+    let heightDiff = Math.abs(initialHeight - currentHeight);
+    
+    // Cek apakah siswa sedang mengetik (karena memunculkan keyboard di HP juga memicu 'resize')
+    const activeElement = document.activeElement;
+    const isInputActive = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
+
+    // Jika tinggi layar berkurang lebih dari 25% DAN siswa tidak sedang mengetik, anggap sebagai Split-Screen
+    if (heightDiff > (initialHeight * 0.25) && !isInputActive) {
+        triggerCheatWarning("Perubahan ukuran layar terdeteksi! Jangan gunakan Split-Screen atau Floating Window.");
+    }
+});
+
+
 // ==========================================
 // 6. KALKULASI & SUBMIT HASIL UJIAN
 // ==========================================
