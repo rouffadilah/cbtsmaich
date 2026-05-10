@@ -118,6 +118,81 @@
                     </div>
                 </div>
 
+<div class="menu-container">
+    <div class="option-item selected" data-section="section-beranda"><i class="fas fa-home"></i> Dashboard</div>
+    <div class="option-item" id="menu-pengguna" data-section="section-pengguna"><i class="fas fa-users-cog"></i> Manajemen Pengguna</div>
+    <div class="option-item" data-section="section-soal"><i class="fas fa-book"></i> Bank Soal</div>
+    
+    <div class="option-item" data-section="section-manajemen-ujian"><i class="fas fa-calendar-alt"></i> Manajemen Ujian</div>
+    <div class="option-item" data-section="section-monitoring"><i class="fas fa-desktop"></i> Monitoring Ujian</div>
+    
+    <div class="option-item" data-section="section-hasil"><i class="fas fa-chart-bar"></i> Laporan & Analisis</div>
+    <div class="option-item" id="menu-pengaturan" data-section="section-pengaturan"><i class="fas fa-cogs"></i> Pengaturan Sistem</div>
+</div>
+
+<div id="section-manajemen-ujian" class="content-section">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <h2 class="section-title" style="margin: 0;"><i class="fas fa-calendar-alt"></i> Manajemen Ujian & Sesi</h2>
+            <button id="btn-tambah-ujian" class="btn-3d" style="width: auto; background-color: var(--primary);"><i class="fas fa-plus"></i> Buat Ujian Baru</button>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Fitur pengaturan pembuatan sesi ujian, batas waktu (timer), pengacakan soal, dan pembuatan token khusus per sesi akan dipusatkan di sini.</p>
+        
+        <div class="table-container">
+            <table id="table-manajemen-ujian">
+                <thead>
+                    <tr>
+                        <th>Nama Ujian</th>
+                        <th>Mapel & Kelas</th>
+                        <th>Jadwal & Sesi</th>
+                        <th>Token</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Belum ada jadwal ujian yang dibuat.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="section-monitoring" class="content-section">
+    <div class="card">
+        <h2 class="section-title" style="margin: 0 0 20px 0;"><i class="fas fa-desktop"></i> Live Proctoring (Monitoring)</h2>
+        
+        <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid var(--info); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+            <div style="flex: 1; min-width: 150px;">
+                <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;">Pilih Ujian Aktif:</label>
+                <select id="filter-monitoring-ujian" class="input-text">
+                    <option value="">Pilih ujian yang sedang berjalan...</option>
+                </select>
+            </div>
+            <button id="btn-refresh-monitoring" class="btn-3d" style="width: auto; background-color: var(--info);"><i class="fas fa-sync-alt"></i> Refresh Data</button>
+        </div>
+
+        <div class="table-container">
+            <table id="table-monitoring">
+                <thead>
+                    <tr>
+                        <th>Peserta</th>
+                        <th>Status</th>
+                        <th>Progres Soal</th>
+                        <th>Sisa Waktu</th>
+                        <th>Peringatan (Pelanggaran)</th>
+                        <th>Aksi Cepat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih ujian aktif untuk memantau peserta.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
                 <div id="section-soal" class="content-section">
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 15px;">
