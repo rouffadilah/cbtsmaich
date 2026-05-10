@@ -1,6 +1,7 @@
-import { auth, db } from './firebase-config.js';
+import { auth, db, storage } from './firebase-config.js'; // PASTIKAN storage DI-IMPORT
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -17,6 +18,15 @@ const secondaryAuth = getAuth(secondaryApp);
 
 let listMapel = []; let listKelas = []; let allUsersData = []; let allSoalData = []; let filteredSoalData = [];
 let previewCurrentIdx = 0; let allHasilUjian = []; let currentMapelDetail = ""; 
+
+// Helper Render Media
+function renderMediaHTML(mediaObj) {
+    if(!mediaObj) return '';
+    if(mediaObj.type === 'image') return `<img src="${mediaObj.url}" style="max-width:100%; max-height:300px; border-radius:8px; margin-bottom:15px; display:block;">`;
+    if(mediaObj.type === 'audio') return `<audio controls src="${mediaObj.url}" style="width:100%; max-width:400px; margin-bottom:15px; display:block; outline:none;"></audio>`;
+    if(mediaObj.type === 'video') return `<video controls src="${mediaObj.url}" style="max-width:100%; max-height:300px; border-radius:8px; margin-bottom:15px; display:block;"></video>`;
+    return '';
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -315,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // BANK SOAL & PREVIEW
+    // BANK SOAL & PREVIEW DENGAN MEDIA
     // ==========================================
     document.getElementById('btn-tampil-soal')?.addEventListener('click', loadDataSoal);
 
@@ -338,7 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.getElementById('btn-preview-full').style.display = 'inline-flex'; tbodySoal.innerHTML = '';
             filteredSoalData.forEach(data => {
-                tbodySoal.innerHTML += `<tr><td style="text-align:center; font-weight:bold;">${data.nomor_soal === 999 ? '-' : data.nomor_soal}</td><td><span style="background: #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${data.mataPelajaran.toUpperCase()}</span></td><td><span style="color: var(--secondary); font-weight: bold; font-size: 0.85rem;">${data.kelas || '-'}</span></td><td><span style="color: var(--primary); font-weight: bold;">${data.tipe}</span></td><td>${data.teks_soal.substring(0, 40)}...</td><td style="display:flex; gap:5px;"><button onclick="hapusDokumen('bank_soal', '${data.id}', window.refreshSoal)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td></tr>`;
+                let statusMedia = data.media_soal ? '<i class="fas fa-paperclip" title="Ada Media" style="color:var(--success); margin-left:5px;"></i>' : '';
+                tbodySoal.innerHTML += `<tr><td style="text-align:center; font-weight:bold;">${data.nomor_soal === 999 ? '-' : data.nomor_soal}</td><td><span style="background: #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${data.mataPelajaran.toUpperCase()}</span></td><td><span style="color: var(--secondary); font-weight: bold; font-size: 0.85rem;">${data.kelas || '-'}</span></td><td><span style="color: var(--primary); font-weight: bold;">${data.tipe}</span></td><td>${data.teks_soal.substring(0, 40)}... ${statusMedia}</td><td style="display:flex; gap:5px;"><button onclick="hapusDokumen('bank_soal', '${data.id}', window.refreshSoal)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         } catch(error) { console.error(error); tbodySoal.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data.</td></tr>`; }
     }
@@ -362,13 +373,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('prev-badge-tipe').innerText = q.tipe || 'PG';
         
         let html = `<div class="q-text" style="font-size: 1.1rem; margin-bottom: 25px;">${q.teks_soal}</div>`;
+        
+        // RENDER MEDIA PERTANYAAN JIKA ADA
+        html += renderMediaHTML(q.media_soal);
+        
         if (q.tipe === 'PG' || q.tipe === 'PGK' || !q.tipe) {
             html += `<div class="options-container" style="display: flex; flex-direction: column; gap: 12px;">`;
             ['A', 'B', 'C', 'D', 'E'].forEach(lbl => {
-                if(q.opsi && q.opsi[lbl]) {
+                // Render opsi teks atau opsi media
+                if((q.opsi && q.opsi[lbl]) || (q.opsi_media && q.opsi_media[lbl])) {
                     let isKunci = false; if(q.tipe === 'PGK') isKunci = (Array.isArray(q.kunci_jawaban) && q.kunci_jawaban.includes(lbl)); else isKunci = (q.kunci_jawaban === lbl);
                     let bg = isKunci ? 'background:#d1fae5; border-color:#10b981;' : 'background:#f8fafc; border-color:#e2e8f0;'; let type = q.tipe === 'PGK' ? 'checkbox' : 'radio';
-                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg}"><input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><span>${q.opsi[lbl]}</span></label>`;
+                    let mediaOpsiHTML = q.opsi_media && q.opsi_media[lbl] ? renderMediaHTML(q.opsi_media[lbl]) : '';
+                    let teksOpsiHTML = (q.opsi && q.opsi[lbl]) ? `<span>${q.opsi[lbl]}</span>` : '';
+                    
+                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg}"><input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
                 }
             }); html += `</div>`;
         } 
@@ -397,27 +416,80 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('tab-import')?.addEventListener('click', () => { document.getElementById('area-manual').style.display = 'none'; document.getElementById('area-import').style.display = 'block'; });
     tipeSelect?.addEventListener('change', (e) => renderFormDinamis(e.target.value));
 
+    // TAMBAHAN INPUT FILE KE FORM DINAMIS (PG/PGK)
     function renderFormDinamis(tipe) {
         const areaOpsi = document.getElementById('area-opsi-dinamis'); areaOpsi.innerHTML = ''; 
-        if (tipe === 'PG') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;"><input type="radio" name="kunci_pg" value="${opt}" ${opt==='A'?'checked':''}><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" style="padding: 8px;"></div>`).join('')}`;
-        else if (tipe === 'PGK') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;"><input type="checkbox" class="kunci_pgk" value="${opt}"><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" style="padding: 8px;"></div>`).join('')}`;
+        if (tipe === 'PG') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"><input type="radio" name="kunci_pg" value="${opt}" ${opt==='A'?'checked':''}><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" style="flex: 1; min-width: 200px;"><input type="file" id="media-opsi-${opt}" class="input-text" accept="image/*, audio/*, video/*" style="flex: 1; min-width: 200px;" title="Media Opsi ${opt}"></div>`).join('')}`;
+        else if (tipe === 'PGK') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"><input type="checkbox" class="kunci_pgk" value="${opt}"><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" style="flex: 1; min-width: 200px;"><input type="file" id="media-opsi-${opt}" class="input-text" accept="image/*, audio/*, video/*" style="flex: 1; min-width: 200px;" title="Media Opsi ${opt}"></div>`).join('')}`;
         else if (tipe === 'Menjodohkan') areaOpsi.innerHTML = `<div id="container-jodoh">${[1,2,3].map(num => `<div style="display: flex; gap: 10px; margin-bottom: 8px;"><input type="text" class="jodoh-kiri input-text" placeholder="Pernyataan ${num}" style="padding: 8px;"><input type="text" class="jodoh-kanan input-text" placeholder="Jawaban ${num}" style="padding: 8px;"></div>`).join('')}</div>`;
         else if (tipe === 'Isian') areaOpsi.innerHTML = `<label>Kunci Jawaban</label><input type="text" id="kunci_isian" class="input-text" placeholder="Masukkan jawaban singkat">`;
         else if (tipe === 'Uraian') areaOpsi.innerHTML = `<label>Panduan Penilaian</label><textarea id="rubrik_uraian" class="input-text" rows="2" placeholder="Poin utama penilaian..."></textarea>`;
     }
 
+    // Fungsi Upload Helper Ke Firebase Storage
+    async function uploadFileKeStorage(file) {
+        if(!file) return null;
+        const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+        const storageRef = ref(storage, `bank_soal_media/${Date.now()}_${safeName}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        let type = 'image';
+        if(file.type.startsWith('audio')) type = 'audio';
+        if(file.type.startsWith('video')) type = 'video';
+        return { url, type };
+    }
+
     document.getElementById('btn-simpan-soal')?.addEventListener('click', async () => {
         const mapel = document.getElementById('soal-mapel').value; const kelas = document.getElementById('soal-kelas').value; const noSoal = document.getElementById('soal-nomor').value; const tipe = tipeSelect.value; const teks = document.getElementById('soal-teks').value.trim();
-        if(!mapel || !kelas || !noSoal || !teks) return alert("Pilih Mapel, Kelas, Isi Nomor Soal & Pertanyaan!");
-        let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: parseInt(noSoal), tipe: tipe, teks_soal: teks, createdAt: new Date() };
+        if(!mapel || !kelas || !noSoal) return alert("Pilih Mapel, Kelas, dan Isi Nomor Soal!");
+        
+        const btnSimpan = document.getElementById('btn-simpan-soal');
+        const origBtnText = btnSimpan.innerHTML;
+        btnSimpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGUNGGAH & MENYIMPAN...';
+        btnSimpan.disabled = true;
 
-        if (tipe === 'PG') { payload.opsi = { A: document.getElementById('opsi-A').value, B: document.getElementById('opsi-B').value, C: document.getElementById('opsi-C').value, D: document.getElementById('opsi-D').value, E: document.getElementById('opsi-E').value }; payload.kunci_jawaban = document.querySelector('input[name="kunci_pg"]:checked').value; } 
-        else if (tipe === 'PGK') { payload.opsi = { A: document.getElementById('opsi-A').value, B: document.getElementById('opsi-B').value, C: document.getElementById('opsi-C').value, D: document.getElementById('opsi-D').value, E: document.getElementById('opsi-E').value }; let kunci = []; document.querySelectorAll('.kunci_pgk:checked').forEach(cb => kunci.push(cb.value)); payload.kunci_jawaban = kunci; } 
-        else if (tipe === 'Menjodohkan') { let pasangan = []; document.querySelectorAll('.jodoh-kiri').forEach((el, idx) => { let kanan = document.querySelectorAll('.jodoh-kanan')[idx]; if(el.value) pasangan.push({ premis: el.value, target: kanan.value }); }); payload.pasangan = pasangan; } 
-        else if (tipe === 'Isian') { payload.kunci_jawaban = document.getElementById('kunci_isian').value.toLowerCase(); } 
-        else if (tipe === 'Uraian') { payload.rubrik = document.getElementById('rubrik_uraian').value; }
+        try {
+            // RUTE UNGGAH MEDIA SOAL
+            let mediaSoalObj = null;
+            const fileSoal = document.getElementById('soal-media')?.files[0];
+            if(fileSoal) mediaSoalObj = await uploadFileKeStorage(fileSoal);
 
-        try { await addDoc(collection(db, "bank_soal"), payload); alert("Soal tersimpan!"); modalSoal.style.display = 'none'; loadDataSoal(); } catch (error) { alert("Gagal menyimpan."); }
+            // RUTE UNGGAH MEDIA OPSI
+            let opsiMediaObj = {};
+            if (tipe === 'PG' || tipe === 'PGK') {
+               for(let opt of ['A','B','C','D','E']) {
+                   let fileOpsi = document.getElementById(`media-opsi-${opt}`)?.files[0];
+                   if(fileOpsi) opsiMediaObj[opt] = await uploadFileKeStorage(fileOpsi);
+               }
+            }
+
+            let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: parseInt(noSoal), tipe: tipe, teks_soal: teks, createdAt: new Date() };
+            if (mediaSoalObj) payload.media_soal = mediaSoalObj;
+            if (Object.keys(opsiMediaObj).length > 0) payload.opsi_media = opsiMediaObj;
+
+            if (tipe === 'PG') { payload.opsi = { A: document.getElementById('opsi-A').value, B: document.getElementById('opsi-B').value, C: document.getElementById('opsi-C').value, D: document.getElementById('opsi-D').value, E: document.getElementById('opsi-E').value }; payload.kunci_jawaban = document.querySelector('input[name="kunci_pg"]:checked').value; } 
+            else if (tipe === 'PGK') { payload.opsi = { A: document.getElementById('opsi-A').value, B: document.getElementById('opsi-B').value, C: document.getElementById('opsi-C').value, D: document.getElementById('opsi-D').value, E: document.getElementById('opsi-E').value }; let kunci = []; document.querySelectorAll('.kunci_pgk:checked').forEach(cb => kunci.push(cb.value)); payload.kunci_jawaban = kunci; } 
+            else if (tipe === 'Menjodohkan') { let pasangan = []; document.querySelectorAll('.jodoh-kiri').forEach((el, idx) => { let kanan = document.querySelectorAll('.jodoh-kanan')[idx]; if(el.value) pasangan.push({ premis: el.value, target: kanan.value }); }); payload.pasangan = pasangan; } 
+            else if (tipe === 'Isian') { payload.kunci_jawaban = document.getElementById('kunci_isian').value.toLowerCase(); } 
+            else if (tipe === 'Uraian') { payload.rubrik = document.getElementById('rubrik_uraian').value; }
+
+            await addDoc(collection(db, "bank_soal"), payload); 
+            
+            // RESET FILE UPLOAD INPUTS
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => input.value = '');
+            document.getElementById('soal-teks').value = '';
+
+            alert("Soal berhasil disimpan!"); 
+            modalSoal.style.display = 'none'; 
+            loadDataSoal(); 
+        } catch (error) { 
+            console.error(error);
+            alert("Gagal menyimpan. Pastikan ukuran file tidak terlalu besar dan aturan database sudah sesuai."); 
+        }
+
+        btnSimpan.innerHTML = origBtnText;
+        btnSimpan.disabled = false;
     });
 
     let selectedExcelSoal = null;
@@ -558,7 +630,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     let tokenVal = "";
                     let statusBadge = "";
                     
-                    // Mengecek apakah token memiliki timer 15 Menit
                     if (typeof data[key] === 'object' && data[key] !== null) {
                         tokenVal = data[key].code;
                         let timeLeft = Math.floor((data[key].expiresAt - Date.now()) / 60000);
@@ -583,8 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapel = document.getElementById('set-token-mapel').value; const kelas = document.getElementById('set-token-kelas').value; const tokenInput = document.getElementById('input-token-baru').value.trim().toUpperCase();
         if(!mapel || !kelas || !tokenInput) return alert("Isi form dengan lengkap!");
         
-        // Simpan token dalam bentuk Objek beserta Timernya
-        const expTime = Date.now() + (15 * 60 * 1000); // Kadaluarsa dalam 15 menit
+        const expTime = Date.now() + (15 * 60 * 1000); 
         const payload = { code: tokenInput, expiresAt: expTime };
 
         try { 
