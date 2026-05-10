@@ -55,27 +55,22 @@ document.addEventListener('DOMContentLoaded', () => {
         let hash = window.location.hash.substring(1);
         if (!hash) hash = 'section-beranda';
 
+        // Penanganan Sub-Section Detail Hasil
         if (hash === 'section-hasil-detail') {
             if (!currentMapelDetail) {
                 window.location.hash = 'section-hasil';
                 return;
             }
-            document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
-            document.querySelector('.option-item[data-section="section-hasil"]')?.classList.add('selected');
             document.getElementById('section-hasil')?.classList.add('active');
             document.getElementById('hasil-summary-view').style.display = 'none';
             document.getElementById('hasil-detail-view').style.display = 'block';
             return;
         }
 
-        document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
+        // Penanganan Section Utama
         document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
-
-        const targetMenu = document.querySelector(`.option-item[data-section="${hash}"]`);
         const targetSection = document.getElementById(hash);
-
-        if (targetMenu) targetMenu.classList.add('selected');
         if (targetSection) targetSection.classList.add('active');
 
         if (hash === 'section-hasil') {
@@ -87,15 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('hashchange', handleRouting);
 
+    // Mendaftarkan Kartu Menu Utama
     document.querySelectorAll('.stat-clickable').forEach(box => {
         box.addEventListener('click', (e) => {
             window.location.hash = e.currentTarget.dataset.target;
-        });
-    });
-
-    document.querySelectorAll('.option-item').forEach(option => {
-        option.addEventListener('click', (e) => {
-            window.location.hash = e.currentTarget.dataset.section;
         });
     });
 
@@ -115,19 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (isGuru && !isAdmin) {
             document.getElementById('panel-title-role').innerText = "PANEL GURU";
             
-            // Sembunyikan Akses Pengguna (Card & Sidebar)
-            document.getElementById('menu-pengguna').style.display = 'none';
-            const sidebarPengguna = document.getElementById('sidebar-pengguna');
-            if (sidebarPengguna) sidebarPengguna.style.display = 'none';
+            // Sembunyikan Menu Pengguna (Bagi Guru)
+            const menuPengguna = document.getElementById('menu-pengguna');
+            if(menuPengguna) menuPengguna.style.display = 'none';
 
             // Menyesuaikan Menu Pengaturan Khusus Guru
             document.getElementById('admin-reg-status').style.display = 'none';
             document.getElementById('admin-data-master').style.display = 'none';
-            document.getElementById('pengaturan-title').innerText = "Pengaturan Token Ujian";
-            document.getElementById('menu-pengaturan').innerHTML = '<i class="fas fa-key"></i> Token Ujian';
-            
-            const sidebarPengaturan = document.getElementById('sidebar-pengaturan');
-            if (sidebarPengaturan) sidebarPengaturan.innerHTML = '<i class="fas fa-key"></i> Token Ujian';
+            document.getElementById('pengaturan-title').innerHTML = '<i class="fas fa-key"></i> Pengaturan Token Ujian';
         }
 
         handleRouting();
@@ -172,14 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tbodyMapel) {
             tbodyMapel.innerHTML = listMapel.length === 0 ? 
                 `<tr><td style="text-align:center;">Belum ada Mapel</td></tr>` : 
-                listMapel.map((m, i) => `<tr><td>${m}</td><td style="text-align:right;"><button onclick="window.hapusMapel(${i})" class="btn-3d" style="background:var(--danger); padding:4px 8px;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+                listMapel.map((m, i) => `<tr><td>${m}</td><td style="text-align:right;"><button onclick="window.hapusMapel(${i})" class="btn-3d" style="background:var(--danger); padding:4px 8px; margin: 0;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
         }
         
         const tbodyKelas = document.querySelector('#table-master-kelas tbody');
         if (tbodyKelas) {
             tbodyKelas.innerHTML = listKelas.length === 0 ? 
                 `<tr><td style="text-align:center;">Belum ada Kelas</td></tr>` : 
-                listKelas.map((k, i) => `<tr><td>${k}</td><td style="text-align:right;"><button onclick="window.hapusKelas(${i})" class="btn-3d" style="background:var(--danger); padding:4px 8px;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+                listKelas.map((k, i) => `<tr><td>${k}</td><td style="text-align:right;"><button onclick="window.hapusKelas(${i})" class="btn-3d" style="background:var(--danger); padding:4px 8px; margin: 0;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
         }
     }
 
@@ -327,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${rls.join(', ').toUpperCase()}</span></td>
                         <td>${detailText}</td>
                         <td style="display: flex; gap: 5px;">
-                            <button onclick="window.editPengguna('${docSnap.id}')" class="btn-3d" style="background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;"><i class="fas fa-edit"></i></button>
+                            <button onclick="window.editPengguna('${docSnap.id}')" class="btn-3d" style="background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin: 0;"><i class="fas fa-edit"></i></button>
                             <button onclick="hapusDokumen('users', '${docSnap.id}', window.refreshPengguna)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`;
@@ -598,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><span style="color: var(--primary); font-weight: bold;">${data.tipe}</span></td>
                         <td>${data.teks_soal.substring(0, 40)}... ${statusMedia}</td>
                         <td style="display:flex; gap:5px;">
-                            <button onclick="hapusDokumen('bank_soal', '${data.id}', window.refreshSoal)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                            <button onclick="hapusDokumen('bank_soal', '${data.id}', window.refreshSoal)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin: 0;"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`;
             });
@@ -657,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let mediaOpsiHTML = q.opsi_media && q.opsi_media[lbl] ? renderMediaHTML(q.opsi_media[lbl]) : '';
                     let teksOpsiHTML = (q.opsi && q.opsi[lbl]) ? `<span>${q.opsi[lbl]}</span>` : '';
 
-                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg}">
+                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg} margin: 0;">
                                 <input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);">
                                 <span style="font-weight: bold; margin-right: 10px;">${lbl}.</span>
                                 <div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div>
@@ -1043,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${h.benar || 0} / ${h.totalSoal || 0}</td>
                     <td><strong style="color: var(--primary); font-size:1.1rem;">${h.nilai || 0}</strong></td>
                     <td>
-                        <button class="btn-detail-hasil btn-secondary btn-3d" data-id="${h.id}" style="padding: 6px 12px; width:auto; font-size:0.8rem;"><i class="fas fa-list"></i></button>
+                        <button class="btn-detail-hasil btn-secondary btn-3d" data-id="${h.id}" style="padding: 6px 12px; margin: 0; width:auto; font-size:0.8rem;"><i class="fas fa-list"></i></button>
                         <button onclick="hapusDokumen('hasil_ujian', '${h.id}', window.refreshHasilData)" style="background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: 5px;"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`;
