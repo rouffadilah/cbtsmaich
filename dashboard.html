@@ -376,7 +376,13 @@
                         </select>
                     </div>
                 </div>
+                
                 <div class="input-group"><label>Teks Pertanyaan</label><textarea id="soal-teks" class="input-text" rows="3" required></textarea></div>
+                <div class="input-group" style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px dashed var(--info);">
+                    <label style="color: var(--info);"><i class="fas fa-photo-video"></i> Media Pendukung Soal (Opsional: Gambar/Audio/Video)</label>
+                    <input type="file" id="soal-media" class="input-text" accept="image/*, audio/*, video/*" style="background: white;">
+                </div>
+
                 <div id="area-opsi-dinamis" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;"></div>
                 <button id="btn-simpan-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-save"></i> SIMPAN SOAL</button>
             </div>
