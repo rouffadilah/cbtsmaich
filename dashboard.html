@@ -427,6 +427,51 @@
         </div>
     </div>
 
+    <div id="modal-edit-soal" class="modal" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal-content" style="width: 750px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" id="close-modal-edit-soal" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-bottom: 15px; color: var(--warning); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-edit"></i> Edit Bank Soal</h3>
+            
+            <input type="hidden" id="edit-soal-id">
+            
+            <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran</label><select id="edit-soal-mapel" class="input-text"></select></div>
+                <div style="flex: 1; min-width: 150px;"><label>Kelas</label><select id="edit-soal-kelas" class="input-text"></select></div>
+            </div>
+            <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                <div style="flex: 1; min-width: 100px;">
+                    <label>Nomor Soal</label>
+                    <input type="number" id="edit-soal-nomor" class="input-text" min="1" required>
+                </div>
+                <div style="flex: 2; min-width: 150px;">
+                    <label>Tipe Soal</label>
+                    <select id="edit-soal-tipe" class="input-text">
+                        <option value="PG">Pilihan Ganda (PG)</option>
+                        <option value="PGK">Pilihan Ganda Kompleks (PGK)</option>
+                        <option value="Menjodohkan">Menjodohkan</option>
+                        <option value="Isian">Isian Singkat</option>
+                        <option value="Uraian">Uraian / Essay</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="input-group"><label>Teks Pertanyaan</label><textarea id="edit-soal-teks" class="input-text" rows="3" required></textarea></div>
+            
+            <div class="input-group" style="background: #fffbeb; padding: 15px; border-radius: 8px; border: 1px dashed var(--warning);">
+                <label style="color: var(--warning);"><i class="fas fa-photo-video"></i> Update Media Utama Soal (Opsional)</label>
+                <div id="edit-soal-media-preview" style="margin-bottom: 10px;"></div>
+                <input type="file" id="edit-soal-media" class="input-text" accept="image/*, audio/*, video/*" style="background: white;">
+                <label style="display: flex; align-items: center; gap: 5px; margin-top: 10px; cursor: pointer; color: var(--danger); font-size: 0.85rem;">
+                    <input type="checkbox" id="edit-hapus-media"> Hapus Media Saat Ini
+                </label>
+            </div>
+
+            <div id="edit-area-opsi-dinamis" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;"></div>
+            
+            <button id="btn-update-soal" class="btn-3d" style="width: 100%; background-color: var(--warning); margin: 0;"><i class="fas fa-save"></i> PERBARUI SOAL</button>
+        </div>
+    </div>
+
     <div id="modal-edit-akun" class="modal" style="display: none; align-items: center; justify-content: center;">
         <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 450px; max-width: 90%;">
             <span class="close-btn" id="close-modal-edit-akun" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
