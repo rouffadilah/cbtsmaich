@@ -1,4 +1,4 @@
-import { auth, db, storage } from './firebase-config.js'; // PASTIKAN storage DI-IMPORT
+import { auth, db, storage } from './firebase-config.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
@@ -543,12 +543,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 qHasil = query(collection(db, "hasil_ujian"), where("mataPelajaran", "in", userMapel));
             }
             const snap = await getDocs(qHasil); document.getElementById('stat-ujian').innerText = snap.size;
-            allHasilUjian = []; snap.forEach(docSnap => allHasilUjian.push({ id: docSnap.id, ...docSnap.data() })); renderSummaryHasil(); 
+            allHasilUjian = []; snap.forEach(docSnap => allHasilUjian.push({ id: docSnap.id, ...docSnap.data() })); 
+            
+            // JANGAN PAKSA ke summary di sini agar tidak memutus sesi jika refresh di halaman detail
+            renderSummaryHasil(); 
         } catch(error) { console.error(error); }
     }
 
     function renderSummaryHasil() {
-        document.getElementById('hasil-summary-view').style.display = 'block'; document.getElementById('hasil-detail-view').style.display = 'none';
         const gridMapel = document.getElementById('grid-mapel-hasil'); gridMapel.innerHTML = '';
 
         if (allHasilUjian.length === 0) { gridMapel.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--danger); padding: 30px; background: #fee2e2; border-radius: 8px; border: 1px solid #f87171;">Belum ada satupun data hasil ujian yang masuk.</div>`; return; }
@@ -606,11 +608,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('close-modal-detail')?.addEventListener('click', () => document.getElementById('modal-detail-hasil').style.display = 'none');
-    window.refreshHasilData = async () => { await loadDataHasil(); if (currentMapelDetail !== "") renderHasilTable(); };
-
+    
+    // PERBAIKAN: Fungsi Refresh Data Hasil (Agar saat menghapus, tampilan tidak kembali ke halaman awal ringkasan)
+    window.refreshHasilData = async () => { 
+        await loadDataHasil(); 
+        
+        // Memaksa sistem untuk tetap membuka detail mapel yang sedang dihapus
+        if (currentMapelDetail !== "") {
+            document.getElementById('hasil-summary-view').style.display = 'none'; 
+            document.getElementById('hasil-detail-view').style.display = 'block';
+            renderHasilTable(); 
+        }
+        
+        // Menampilkan notifikasi bahwa data sukses terhapus
+        alert("Data hasil ujian berhasil dihapus!");
+    };
 
     // ==========================================
-    // PERBAIKAN: TOKEN UJIAN AKTIF (DENGAN WAKTU 15 MENIT)
+    // TOKEN UJIAN AKTIF (DENGAN WAKTU 15 MENIT)
     // ==========================================
     async function loadActiveTokens() {
         const tbody = document.querySelector('#table-active-tokens tbody'); if(!tbody) return;
