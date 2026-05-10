@@ -49,15 +49,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (hash === 'section-hasil-detail') {
             if (!currentMapelDetail) { window.location.hash = 'section-hasil'; return; }
+            document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelector('.option-item[data-section="section-hasil"]')?.classList.add('selected');
             document.getElementById('section-hasil')?.classList.add('active');
             document.getElementById('hasil-summary-view').style.display = 'none'; document.getElementById('hasil-detail-view').style.display = 'block';
             return;
         }
 
+        document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
         document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
 
+        const targetMenu = document.querySelector(`.option-item[data-section="${hash}"]`);
         const targetSection = document.getElementById(hash);
+
+        if (targetMenu) targetMenu.classList.add('selected');
         if (targetSection) targetSection.classList.add('active');
 
         if (hash === 'section-hasil') {
@@ -69,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('hashchange', handleRouting);
     document.querySelectorAll('.stat-clickable').forEach(box => { box.addEventListener('click', (e) => { window.location.hash = e.currentTarget.dataset.target; }); });
+    document.querySelectorAll('.option-item').forEach(option => { option.addEventListener('click', (e) => { window.location.hash = e.currentTarget.dataset.section; }); });
 
     onAuthStateChanged(auth, async (user) => {
         if (!user || (!isAdmin && !isGuru)) { window.location.href = "index.html"; return; }
@@ -82,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (isGuru && !isAdmin) {
             document.getElementById('panel-title-role').innerText = "PANEL GURU";
             document.getElementById('menu-pengguna').style.display = 'none'; document.getElementById('admin-reg-status').style.display = 'none'; document.getElementById('admin-data-master').style.display = 'none';
-            document.getElementById('pengaturan-title').innerText = "Pengaturan Token Ujian"; 
+            document.getElementById('pengaturan-title').innerText = "Pengaturan Token Ujian"; document.getElementById('menu-pengaturan').innerHTML = '<i class="fas fa-key"></i> Token Ujian';
         }
 
         handleRouting(); 
@@ -127,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const optionsKelasFilter = '<option value="" disabled selected>Pilih Kelas...</option>' + allowedKelas.map(k => `<option value="${k}">${k}</option>`).join('');
         const optionsMapelFilterHasil = '<option value="semua">Semua Mata Pelajaran</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
 
-        // Ditambahkan dropdown 'edit-soal-mapel' dan 'edit-soal-kelas'
         ['soal-mapel', 'import-mapel', 'set-token-mapel', 'filter-soal-mapel', 'edit-soal-mapel'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsMapel; });
         const filterHasil = document.getElementById('filter-tabel-hasil'); if(filterHasil) filterHasil.innerHTML = optionsMapelFilterHasil;
         ['new-kelas-siswa', 'edit-kelas-siswa'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsKelasSiswa; });
@@ -318,9 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { alert("Gagal."); document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; }
     });
 
-
     // ==========================================
-    // BANK SOAL & EDIT SOAL
+    // BANK SOAL & PREVIEW DENGAN MEDIA
     // ==========================================
     document.getElementById('btn-tampil-soal')?.addEventListener('click', loadDataSoal);
 
@@ -342,20 +347,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (filteredSoalData.length === 0) { tbodySoal.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--danger);">Bank soal kosong untuk mapel dan kelas ini.</td></tr>`; document.getElementById('btn-preview-full').style.display = 'none'; return; }
 
             document.getElementById('btn-preview-full').style.display = 'inline-flex'; tbodySoal.innerHTML = '';
-            
             filteredSoalData.forEach(data => {
                 let statusMedia = data.media_soal ? '<i class="fas fa-paperclip" title="Ada Media" style="color:var(--success); margin-left:5px;"></i>' : '';
-                tbodySoal.innerHTML += `<tr><td style="text-align:center; font-weight:bold;">${data.nomor_soal === 999 ? '-' : data.nomor_soal}</td><td><span style="background: #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${data.mataPelajaran.toUpperCase()}</span></td><td><span style="color: var(--secondary); font-weight: bold; font-size: 0.85rem;">${data.kelas || '-'}</span></td><td><span style="color: var(--primary); font-weight: bold;">${data.tipe}</span></td><td>${data.teks_soal.substring(0, 40)}... ${statusMedia}</td>
-                    <td style="display:flex; gap:5px;">
-                        <button onclick="window.editSoal('${data.id}')" style="background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin: 0;"><i class="fas fa-edit"></i></button>
-                        <button onclick="hapusDokumen('bank_soal', '${data.id}', window.refreshSoal)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin: 0;"><i class="fas fa-trash"></i></button>
-                    </td></tr>`;
+                tbodySoal.innerHTML += `<tr><td style="text-align:center; font-weight:bold;">${data.nomor_soal === 999 ? '-' : data.nomor_soal}</td><td><span style="background: #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${data.mataPelajaran.toUpperCase()}</span></td><td><span style="color: var(--secondary); font-weight: bold; font-size: 0.85rem;">${data.kelas || '-'}</span></td><td><span style="color: var(--primary); font-weight: bold;">${data.tipe}</span></td><td>${data.teks_soal.substring(0, 40)}... ${statusMedia}</td><td style="display:flex; gap:5px;"><button onclick="window.editSoal('${data.id}')" style="background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin: 0;"><i class="fas fa-edit"></i></button><button onclick="hapusDokumen('bank_soal', '${data.id}', window.refreshSoal)" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin: 0;"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         } catch(error) { console.error(error); tbodySoal.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data.</td></tr>`; }
     }
     window.refreshSoal = loadDataSoal;
 
-    // --- PREVIEW SOAL ---
     document.getElementById('btn-preview-full')?.addEventListener('click', () => {
         if(filteredSoalData.length === 0) return alert("Pilih mapel dan kelas yang ada soalnya!");
         document.getElementById('modal-preview-full').style.display = 'flex'; previewCurrentIdx = 0; buildPreviewGrid(); renderPreviewSoal(0);
@@ -374,6 +373,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('prev-badge-tipe').innerText = q.tipe || 'PG';
         
         let html = `<div class="q-text" style="font-size: 1.1rem; margin-bottom: 25px;">${q.teks_soal}</div>`;
+        
+        // RENDER MEDIA PERTANYAAN JIKA ADA
         html += renderMediaHTML(q.media_soal);
         
         if (q.tipe === 'PG' || q.tipe === 'PGK' || !q.tipe) {
@@ -385,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let mediaOpsiHTML = q.opsi_media && q.opsi_media[lbl] ? renderMediaHTML(q.opsi_media[lbl]) : '';
                     let teksOpsiHTML = (q.opsi && q.opsi[lbl]) ? `<span>${q.opsi[lbl]}</span>` : '';
                     
-                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg}"><input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
+                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg} margin: 0;"><input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
                 }
             }); html += `</div>`;
         } 
@@ -403,10 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('prev-btn-prev').style.visibility = previewCurrentIdx === 0 ? 'hidden' : 'visible'; document.getElementById('prev-btn-next').style.visibility = previewCurrentIdx === filteredSoalData.length - 1 ? 'hidden' : 'visible';
         const boxes = document.querySelectorAll('#prev-q-grid .q-box'); boxes.forEach((box, i) => { box.className = 'q-box'; if (i === previewCurrentIdx) box.classList.add('active-q'); });
     }
+
     document.getElementById('prev-btn-next')?.addEventListener('click', () => { if (previewCurrentIdx < filteredSoalData.length - 1) renderPreviewSoal(previewCurrentIdx + 1); });
     document.getElementById('prev-btn-prev')?.addEventListener('click', () => { if (previewCurrentIdx > 0) renderPreviewSoal(previewCurrentIdx - 1); });
 
-    // --- TAMBAH SOAL ---
     const modalSoal = document.getElementById('modal-tambah-soal'); const tipeSelect = document.getElementById('soal-tipe');
     document.getElementById('btn-tambah-manual')?.addEventListener('click', () => { modalSoal.style.display = 'flex'; renderFormDinamis('PG'); });
     document.getElementById('close-modal-soal')?.addEventListener('click', () => modalSoal.style.display = 'none');
@@ -441,7 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const btnSimpan = document.getElementById('btn-simpan-soal');
         const origBtnText = btnSimpan.innerHTML;
-        btnSimpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGUNGGAH & MENYIMPAN...'; btnSimpan.disabled = true;
+        btnSimpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGUNGGAH & MENYIMPAN...';
+        btnSimpan.disabled = true;
 
         try {
             let mediaSoalObj = null;
@@ -468,13 +470,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await addDoc(collection(db, "bank_soal"), payload); 
             
-            const fileInputs = document.querySelectorAll('input[type="file"]'); fileInputs.forEach(input => input.value = ''); document.getElementById('soal-teks').value = '';
-            alert("Soal berhasil disimpan!"); modalSoal.style.display = 'none'; loadDataSoal(); 
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => input.value = '');
+            document.getElementById('soal-teks').value = '';
+
+            alert("Soal berhasil disimpan!"); 
+            modalSoal.style.display = 'none'; 
+            loadDataSoal(); 
         } catch (error) { 
-            console.error(error); alert("Gagal menyimpan. Pastikan ukuran file tidak terlalu besar dan aturan database sudah sesuai."); 
+            console.error(error);
+            alert("Gagal menyimpan. Pastikan ukuran file tidak terlalu besar dan aturan database sudah sesuai."); 
         }
 
-        btnSimpan.innerHTML = origBtnText; btnSimpan.disabled = false;
+        btnSimpan.innerHTML = origBtnText;
+        btnSimpan.disabled = false;
     });
 
     // --- FITUR IMPORT EXCEL ---
@@ -518,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsArrayBuffer(selectedExcelSoal);
     });
 
-    // --- EDIT SOAL (FITUR BARU) ---
+    // --- EDIT SOAL (DENGAN DUKUNGAN MEDIA OPSI) ---
     document.getElementById('close-modal-edit-soal')?.addEventListener('click', () => {
         document.getElementById('modal-edit-soal').style.display = 'none';
     });
@@ -543,8 +552,30 @@ document.addEventListener('DOMContentLoaded', () => {
             if (qData.tipe === 'Uraian') rubrikUraian = qData.rubrik || '';
         }
 
-        if (tipe === 'PG') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"><input type="radio" name="edit_kunci_pg" value="${opt}" ${kunciPG===opt?'checked':''}><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="edit-opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" value="${opsiTeks[opt]}" style="flex: 1; min-width: 200px;"></div>`).join('')}`;
-        else if (tipe === 'PGK') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"><input type="checkbox" class="edit_kunci_pgk" value="${opt}" ${kunciPGK.includes(opt)?'checked':''}><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="edit-opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" value="${opsiTeks[opt]}" style="flex: 1; min-width: 200px;"></div>`).join('')}`;
+        // PERBAIKAN: Menambahkan Field Upload Media Opsi
+        if (tipe === 'PG' || tipe === 'PGK') {
+            const isPG = tipe === 'PG';
+            areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => {
+                let mediaExisting = '';
+                if (qData && qData.opsi_media && qData.opsi_media[opt]) {
+                    mediaExisting = `<div style="flex-basis: 100%; margin-top: 5px; font-size: 0.8rem; display:flex; align-items:center; gap:10px;"><span style="color:var(--success);"><i class="fas fa-check"></i> Media Tersimpan (${qData.opsi_media[opt].type.toUpperCase()})</span> <label style="color:var(--danger); cursor:pointer;"><input type="checkbox" id="edit-hapus-media-opsi-${opt}"> Hapus Media Ini</label></div>`;
+                }
+                
+                let checkedAttr = '';
+                if(isPG && kunciPG === opt) checkedAttr = 'checked';
+                if(!isPG && kunciPGK.includes(opt)) checkedAttr = 'checked';
+                
+                let nameClassAttr = isPG ? 'name="edit_kunci_pg"' : 'class="edit_kunci_pgk"';
+                
+                return `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <input type="${isPG ? 'radio' : 'checkbox'}" ${nameClassAttr} value="${opt}" ${checkedAttr} style="transform: scale(1.2);">
+                    <label style="font-weight: bold; width: 20px;">${opt}</label>
+                    <input type="text" id="edit-opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" value="${opsiTeks[opt] || ''}" style="flex: 1; min-width: 200px;">
+                    <input type="file" id="edit-media-opsi-${opt}" class="input-text" accept="image/*, audio/*, video/*" style="flex: 1; min-width: 200px;" title="Update Media Opsi ${opt}">
+                    ${mediaExisting}
+                </div>`;
+            }).join('')}`;
+        }
         else if (tipe === 'Menjodohkan') areaOpsi.innerHTML = `<div id="edit-container-jodoh">${pasangan.map((p, idx) => `<div style="display: flex; gap: 10px; margin-bottom: 8px;"><input type="text" class="edit-jodoh-kiri input-text" placeholder="Pernyataan ${idx+1}" value="${p.premis}" style="padding: 8px;"><input type="text" class="edit-jodoh-kanan input-text" placeholder="Jawaban ${idx+1}" value="${p.target}" style="padding: 8px;"></div>`).join('')}</div>`;
         else if (tipe === 'Isian') areaOpsi.innerHTML = `<label>Kunci Jawaban</label><input type="text" id="edit_kunci_isian" class="input-text" placeholder="Masukkan jawaban singkat" value="${kunciIsian}">`;
         else if (tipe === 'Uraian') areaOpsi.innerHTML = `<label>Panduan Penilaian</label><textarea id="edit_rubrik_uraian" class="input-text" rows="2" placeholder="Poin utama penilaian...">${rubrikUraian}</textarea>`;
@@ -588,16 +619,47 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: parseInt(noSoal), tipe: tipe, teks_soal: teks };
             
+            // Handle Media Utama Soal
             const hapusMedia = document.getElementById('edit-hapus-media').checked;
-            if (hapusMedia) { payload.media_soal = null; } 
+            if (hapusMedia) { payload.media_soal = deleteField(); } 
             else {
                 const fileSoal = document.getElementById('edit-soal-media')?.files[0];
                 if(fileSoal) { payload.media_soal = await uploadFileKeStorage(fileSoal); }
             }
 
-            if (tipe === 'PG') { payload.opsi = { A: document.getElementById('edit-opsi-A').value, B: document.getElementById('edit-opsi-B').value, C: document.getElementById('edit-opsi-C').value, D: document.getElementById('edit-opsi-D').value, E: document.getElementById('edit-opsi-E').value }; payload.kunci_jawaban = document.querySelector('input[name="edit_kunci_pg"]:checked').value; } 
-            else if (tipe === 'PGK') { payload.opsi = { A: document.getElementById('edit-opsi-A').value, B: document.getElementById('edit-opsi-B').value, C: document.getElementById('edit-opsi-C').value, D: document.getElementById('edit-opsi-D').value, E: document.getElementById('edit-opsi-E').value }; let kunci = []; document.querySelectorAll('.edit_kunci_pgk:checked').forEach(cb => kunci.push(cb.value)); payload.kunci_jawaban = kunci; } 
-            else if (tipe === 'Menjodohkan') { let pasangan = []; document.querySelectorAll('.edit-jodoh-kiri').forEach((el, idx) => { let kanan = document.querySelectorAll('.edit-jodoh-kanan')[idx]; if(el.value) pasangan.push({ premis: el.value, target: kanan.value }); }); payload.pasangan = pasangan; } 
+            const qExisting = filteredSoalData.find(s => s.id === id);
+            let opsiMediaObj = qExisting && qExisting.opsi_media ? { ...qExisting.opsi_media } : {};
+
+            if (tipe === 'PG') { 
+                payload.opsi = { A: document.getElementById('edit-opsi-A').value, B: document.getElementById('edit-opsi-B').value, C: document.getElementById('edit-opsi-C').value, D: document.getElementById('edit-opsi-D').value, E: document.getElementById('edit-opsi-E').value }; 
+                payload.kunci_jawaban = document.querySelector('input[name="edit_kunci_pg"]:checked').value; 
+            } else if (tipe === 'PGK') { 
+                payload.opsi = { A: document.getElementById('edit-opsi-A').value, B: document.getElementById('edit-opsi-B').value, C: document.getElementById('edit-opsi-C').value, D: document.getElementById('edit-opsi-D').value, E: document.getElementById('edit-opsi-E').value }; 
+                let kunci = []; document.querySelectorAll('.edit_kunci_pgk:checked').forEach(cb => kunci.push(cb.value)); payload.kunci_jawaban = kunci; 
+            } 
+            
+            // PERBAIKAN: Menyimpan atau Menghapus Media pada setiap Opsi
+            if (tipe === 'PG' || tipe === 'PGK') {
+                for (let opt of ['A','B','C','D','E']) {
+                    const cbHapus = document.getElementById(`edit-hapus-media-opsi-${opt}`);
+                    if (cbHapus && cbHapus.checked) {
+                        delete opsiMediaObj[opt];
+                    }
+                    
+                    let fileOpsi = document.getElementById(`edit-media-opsi-${opt}`)?.files[0];
+                    if (fileOpsi) {
+                        opsiMediaObj[opt] = await uploadFileKeStorage(fileOpsi);
+                    }
+                }
+                
+                if (Object.keys(opsiMediaObj).length > 0) {
+                    payload.opsi_media = opsiMediaObj;
+                } else {
+                    payload.opsi_media = deleteField();
+                }
+            }
+
+            if (tipe === 'Menjodohkan') { let pasangan = []; document.querySelectorAll('.edit-jodoh-kiri').forEach((el, idx) => { let kanan = document.querySelectorAll('.edit-jodoh-kanan')[idx]; if(el.value) pasangan.push({ premis: el.value, target: kanan.value }); }); payload.pasangan = pasangan; } 
             else if (tipe === 'Isian') { payload.kunci_jawaban = document.getElementById('edit_kunci_isian').value.toLowerCase(); } 
             else if (tipe === 'Uraian') { payload.rubrik = document.getElementById('edit_rubrik_uraian').value; }
 
@@ -688,7 +750,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     window.refreshHasilData = async () => { 
         await loadDataHasil(); 
-        if (currentMapelDetail !== "") { document.getElementById('hasil-summary-view').style.display = 'none'; document.getElementById('hasil-detail-view').style.display = 'block'; renderHasilTable(); }
+        if (currentMapelDetail !== "") {
+            document.getElementById('hasil-summary-view').style.display = 'none'; 
+            document.getElementById('hasil-detail-view').style.display = 'block';
+            renderHasilTable(); 
+        }
         alert("Data hasil ujian berhasil dihapus!");
     };
 
@@ -709,12 +775,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 keys.forEach(key => {
                     const parts = key.replace('token_', '').split('_'); const mapel = parts[0] || '-'; const kelas = parts[1] || '-'; 
-                    let tokenVal = ""; let statusBadge = "";
+                    
+                    let tokenVal = "";
+                    let statusBadge = "";
                     
                     if (typeof data[key] === 'object' && data[key] !== null) {
-                        tokenVal = data[key].code; let timeLeft = Math.floor((data[key].expiresAt - Date.now()) / 60000);
-                        if (timeLeft > 0) { statusBadge = `<br><span style="font-size: 0.7rem; background: var(--success); color: white; padding: 2px 6px; border-radius: 4px;">Sisa: ${timeLeft} Menit</span>`; } else { statusBadge = `<br><span style="font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px;">Kadaluarsa</span>`; }
-                    } else { tokenVal = data[key]; }
+                        tokenVal = data[key].code;
+                        let timeLeft = Math.floor((data[key].expiresAt - Date.now()) / 60000);
+                        if (timeLeft > 0) {
+                            statusBadge = `<br><span style="font-size: 0.7rem; background: var(--success); color: white; padding: 2px 6px; border-radius: 4px;">Sisa: ${timeLeft} Menit</span>`;
+                        } else {
+                            statusBadge = `<br><span style="font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px;">Kadaluarsa</span>`;
+                        }
+                    } else {
+                        tokenVal = data[key];
+                    }
 
                     tbody.innerHTML += `<tr><td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${mapel}</td><td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${kelas}</td><td style="padding: 8px; border-bottom: 1px solid var(--border-color); font-weight:bold; color:var(--primary); letter-spacing: 1px;">${tokenVal} ${statusBadge}</td><td style="padding: 8px; border-bottom: 1px solid var(--border-color); text-align:center;"><button onclick="window.hapusTokenUtama('${key}')" style="background:var(--danger); color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer;" title="Hapus Token"><i class="fas fa-trash"></i></button></td></tr>`;
                 });
@@ -728,13 +803,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapel = document.getElementById('set-token-mapel').value; const kelas = document.getElementById('set-token-kelas').value; const tokenInput = document.getElementById('input-token-baru').value.trim().toUpperCase();
         if(!mapel || !kelas || !tokenInput) return alert("Isi form dengan lengkap!");
         
-        const expTime = Date.now() + (15 * 60 * 1000); const payload = { code: tokenInput, expiresAt: expTime };
+        const expTime = Date.now() + (15 * 60 * 1000); 
+        const payload = { code: tokenInput, expiresAt: expTime };
 
         try { 
-            const tokenKey = `token_${mapel}_${kelas}`; await updateDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: payload }); 
+            const tokenKey = `token_${mapel}_${kelas}`; 
+            await updateDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: payload }); 
             alert(`Berhasil! Token diset menjadi: ${tokenInput} (Berlaku 15 Menit)`); document.getElementById('input-token-baru').value = ''; loadActiveTokens(); 
         } catch(error) { 
-            try { const tokenKey = `token_${mapel}_${kelas}`; await setDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: payload }, { merge: true }); alert(`Berhasil! Token diset menjadi: ${tokenInput} (Berlaku 15 Menit)`); document.getElementById('input-token-baru').value = ''; loadActiveTokens(); } catch(e) { alert("Gagal set token!"); }
+            try {
+                const tokenKey = `token_${mapel}_${kelas}`; await setDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: payload }, { merge: true });
+                alert(`Berhasil! Token diset menjadi: ${tokenInput} (Berlaku 15 Menit)`); document.getElementById('input-token-baru').value = ''; loadActiveTokens(); 
+            } catch(e) { alert("Gagal set token!"); }
         }
     });
 
