@@ -52,11 +52,13 @@
     <div class="app-layout">
 
         <div class="main-wrapper">
-            <header class="app-header">
+           <header class="app-header">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 50px; border-radius: 6px;">
-                    </div>
+        
+                <div style="display: flex; align-items: center; gap: 15px; cursor: pointer;" onclick="window.location.hash='section-beranda'" title="Kembali ke Beranda">
+                <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 50px; border-radius: 6px;">
+                <h1 id="panel-title-role" style="font-size: 1.2rem; font-weight: 800; color: var(--secondary); margin: 0; letter-spacing: 1px;">PANEL SISTEM</h1>
+                </div>
                     <div style="display: flex; align-items: center; gap: 20px;">
                         <div style="display: flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 15px; background: #f8fafc; padding: 8px 18px; border-radius: 30px; border: 1px solid var(--border-color); white-space: nowrap; width: max-content;">
                             <span id="admin-name" style="font-weight: 700; color: var(--secondary); font-size: 0.95rem; margin: 0;">Memuat...</span>
