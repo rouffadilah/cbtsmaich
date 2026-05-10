@@ -380,13 +380,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (q.tipe === 'PG' || q.tipe === 'PGK' || !q.tipe) {
             html += `<div class="options-container" style="display: flex; flex-direction: column; gap: 12px;">`;
             ['A', 'B', 'C', 'D', 'E'].forEach(lbl => {
+                // Render opsi teks atau opsi media
                 if((q.opsi && q.opsi[lbl]) || (q.opsi_media && q.opsi_media[lbl])) {
                     let isKunci = false; if(q.tipe === 'PGK') isKunci = (Array.isArray(q.kunci_jawaban) && q.kunci_jawaban.includes(lbl)); else isKunci = (q.kunci_jawaban === lbl);
                     let bg = isKunci ? 'background:#d1fae5; border-color:#10b981;' : 'background:#f8fafc; border-color:#e2e8f0;'; let type = q.tipe === 'PGK' ? 'checkbox' : 'radio';
                     let mediaOpsiHTML = q.opsi_media && q.opsi_media[lbl] ? renderMediaHTML(q.opsi_media[lbl]) : '';
                     let teksOpsiHTML = (q.opsi && q.opsi[lbl]) ? `<span>${q.opsi[lbl]}</span>` : '';
                     
-                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg} margin: 0;"><input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
+                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg}"><input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
                 }
             }); html += `</div>`;
         } 
@@ -415,6 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('tab-import')?.addEventListener('click', () => { document.getElementById('area-manual').style.display = 'none'; document.getElementById('area-import').style.display = 'block'; });
     tipeSelect?.addEventListener('change', (e) => renderFormDinamis(e.target.value));
 
+    // TAMBAHAN INPUT FILE KE FORM DINAMIS (PG/PGK)
     function renderFormDinamis(tipe) {
         const areaOpsi = document.getElementById('area-opsi-dinamis'); areaOpsi.innerHTML = ''; 
         if (tipe === 'PG') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"><input type="radio" name="kunci_pg" value="${opt}" ${opt==='A'?'checked':''}><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" style="flex: 1; min-width: 200px;"><input type="file" id="media-opsi-${opt}" class="input-text" accept="image/*, audio/*, video/*" style="flex: 1; min-width: 200px;" title="Media Opsi ${opt}"></div>`).join('')}`;
@@ -424,6 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (tipe === 'Uraian') areaOpsi.innerHTML = `<label>Panduan Penilaian</label><textarea id="rubrik_uraian" class="input-text" rows="2" placeholder="Poin utama penilaian..."></textarea>`;
     }
 
+    // Fungsi Upload Helper Ke Firebase Storage
     async function uploadFileKeStorage(file) {
         if(!file) return null;
         const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
@@ -440,16 +443,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapel = document.getElementById('soal-mapel').value; const kelas = document.getElementById('soal-kelas').value; const noSoal = document.getElementById('soal-nomor').value; const tipe = tipeSelect.value; const teks = document.getElementById('soal-teks').value.trim();
         if(!mapel || !kelas || !noSoal) return alert("Pilih Mapel, Kelas, dan Isi Nomor Soal!");
         
+        // VALIDASI KUNCI JAWABAN (MENCEGAH CRASH)
+        if (tipe === 'PG') {
+            const cekKunci = document.querySelector('input[name="kunci_pg"]:checked');
+            if (!cekKunci) return alert("Pilih Kunci Jawaban terlebih dahulu!");
+        }
+
         const btnSimpan = document.getElementById('btn-simpan-soal');
         const origBtnText = btnSimpan.innerHTML;
         btnSimpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGUNGGAH & MENYIMPAN...';
         btnSimpan.disabled = true;
 
         try {
+            // RUTE UNGGAH MEDIA SOAL
             let mediaSoalObj = null;
             const fileSoal = document.getElementById('soal-media')?.files[0];
             if(fileSoal) mediaSoalObj = await uploadFileKeStorage(fileSoal);
 
+            // RUTE UNGGAH MEDIA OPSI
             let opsiMediaObj = {};
             if (tipe === 'PG' || tipe === 'PGK') {
                for(let opt of ['A','B','C','D','E']) {
@@ -470,6 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await addDoc(collection(db, "bank_soal"), payload); 
             
+            // RESET FILE UPLOAD INPUTS
             const fileInputs = document.querySelectorAll('input[type="file"]');
             fileInputs.forEach(input => input.value = '');
             document.getElementById('soal-teks').value = '';
@@ -479,14 +491,13 @@ document.addEventListener('DOMContentLoaded', () => {
             loadDataSoal(); 
         } catch (error) { 
             console.error(error);
-            alert("Gagal menyimpan. Pastikan ukuran file tidak terlalu besar dan aturan database sudah sesuai."); 
+            alert("GAGAL MENYIMPAN: " + error.message + "\n\n(Pastikan layanan Firebase Storage sudah diaktifkan di konsol dan ukurannya tidak terlalu besar)"); 
         }
 
         btnSimpan.innerHTML = origBtnText;
         btnSimpan.disabled = false;
     });
 
-    // --- FITUR IMPORT EXCEL ---
     let selectedExcelSoal = null;
     document.getElementById('file-excel')?.addEventListener('change', (e) => {
         selectedExcelSoal = e.target.files[0]; const label = document.getElementById('label-file-excel');
@@ -613,6 +624,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if(!mapel || !kelas || !noSoal) return alert("Pilih Mapel, Kelas, dan Isi Nomor Soal!");
         
+        // VALIDASI KUNCI JAWABAN
+        if (tipe === 'PG') {
+            const cekKunci = document.querySelector('input[name="edit_kunci_pg"]:checked');
+            if (!cekKunci) return alert("Pilih Kunci Jawaban terlebih dahulu!");
+        }
+
         const btnUpdate = document.getElementById('btn-update-soal'); const origBtnText = btnUpdate.innerHTML;
         btnUpdate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPERBARUI...'; btnUpdate.disabled = true;
 
@@ -666,7 +683,10 @@ document.addEventListener('DOMContentLoaded', () => {
             await updateDoc(doc(db, "bank_soal", id), payload); 
             
             alert("Soal berhasil diperbarui!"); document.getElementById('modal-edit-soal').style.display = 'none'; loadDataSoal(); 
-        } catch (error) { console.error(error); alert("Gagal memperbarui soal."); }
+        } catch (error) { 
+            console.error(error); 
+            alert("GAGAL MEMPERBARUI: " + error.message + "\n\n(Pastikan layanan Firebase Storage sudah diaktifkan dan ukurannya tidak terlalu besar)"); 
+        }
 
         btnUpdate.innerHTML = origBtnText; btnUpdate.disabled = false;
     });
@@ -685,6 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const snap = await getDocs(qHasil); document.getElementById('stat-ujian').innerText = snap.size;
             allHasilUjian = []; snap.forEach(docSnap => allHasilUjian.push({ id: docSnap.id, ...docSnap.data() })); 
             
+            // JANGAN PAKSA ke summary di sini agar tidak memutus sesi jika refresh di halaman detail
             renderSummaryHasil(); 
         } catch(error) { console.error(error); }
     }
@@ -733,7 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         filtered.forEach(h => {
             tbodyHasil.innerHTML += `<tr><td><strong>${h.namaSiswa}</strong></td><td>${h.kelas || '-'}</td><td>${h.mataPelajaran.toUpperCase()}</td><td>${h.benar || 0} / ${h.totalSoal || 0}</td><td><strong style="color: var(--primary); font-size:1.1rem;">${h.nilai || 0}</strong></td>
-                <td><button class="btn-detail-hasil btn-secondary btn-3d" data-id="${h.id}" style="padding: 6px 12px; margin: 0; width:auto; font-size:0.8rem;"><i class="fas fa-list"></i></button> <button onclick="hapusDokumen('hasil_ujian', '${h.id}', window.refreshHasilData)" style="background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: 5px;"><i class="fas fa-trash"></i></button></td></tr>`;
+                <td><button class="btn-detail-hasil btn-secondary btn-3d" data-id="${h.id}" style="padding: 6px 12px; width:auto; font-size:0.8rem;"><i class="fas fa-list"></i></button> <button onclick="hapusDokumen('hasil_ujian', '${h.id}', window.refreshHasilData)" style="background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: 5px;"><i class="fas fa-trash"></i></button></td></tr>`;
         });
 
         document.querySelectorAll('.btn-detail-hasil').forEach(btn => {
@@ -748,18 +769,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('close-modal-detail')?.addEventListener('click', () => document.getElementById('modal-detail-hasil').style.display = 'none');
     
+    // PERBAIKAN: Fungsi Refresh Data Hasil (Agar saat menghapus, tampilan tidak kembali ke halaman awal ringkasan)
     window.refreshHasilData = async () => { 
         await loadDataHasil(); 
+        
+        // Memaksa sistem untuk tetap membuka detail mapel yang sedang dihapus
         if (currentMapelDetail !== "") {
             document.getElementById('hasil-summary-view').style.display = 'none'; 
             document.getElementById('hasil-detail-view').style.display = 'block';
             renderHasilTable(); 
         }
+        
+        // Menampilkan notifikasi bahwa data sukses terhapus
         alert("Data hasil ujian berhasil dihapus!");
     };
 
     // ==========================================
-    // TOKEN UJIAN AKTIF
+    // TOKEN UJIAN AKTIF (DENGAN WAKTU 15 MENIT)
     // ==========================================
     async function loadActiveTokens() {
         const tbody = document.querySelector('#table-active-tokens tbody'); if(!tbody) return;
@@ -828,3 +854,5 @@ document.addEventListener('DOMContentLoaded', () => {
         try { await deleteDoc(doc(db, koleksi, id)); callback(); } catch(err) { alert("Gagal."); }
     };
 });
+
+}
