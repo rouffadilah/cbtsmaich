@@ -11,6 +11,15 @@ const KEY_ANS = 'cbt_jawaban_smaich'; const KEY_DOUBT = 'cbt_ragu_smaich';
 let cheatWarnings = 0; const MAX_CHEAT_WARNINGS = 3;
 let isExamActive = false; let isWarningShowing = false;
 
+// Helper Render Media
+function renderMediaHTML(mediaObj) {
+    if(!mediaObj) return '';
+    if(mediaObj.type === 'image') return `<img src="${mediaObj.url}" style="max-width:100%; max-height:400px; border-radius:8px; margin-bottom:15px; display:block;">`;
+    if(mediaObj.type === 'audio') return `<audio controls src="${mediaObj.url}" style="width:100%; max-width:400px; margin-bottom:15px; display:block; outline:none;"></audio>`;
+    if(mediaObj.type === 'video') return `<video controls src="${mediaObj.url}" style="max-width:100%; max-height:400px; border-radius:8px; margin-bottom:15px; display:block;"></video>`;
+    return '';
+}
+
 // ==========================================
 // MENCEGAH KELUAR VIA TOMBOL BACK BROWSER/HP
 // ==========================================
@@ -164,26 +173,40 @@ async function initUjian() {
     } catch (error) { qContainer.innerHTML = "<p style='color:red;'>Gagal memuat bank soal.</p>"; }
 }
 
-// 4. RENDER DINAMIS BERBAGAI TIPE SOAL
+// 4. RENDER DINAMIS BERBAGAI TIPE SOAL (TERMASUK MEDIA)
 function renderSoal(idx) {
     currentIdx = idx; const qContainer = document.getElementById('q-container'); const q = questions[idx];
     document.getElementById('current-q-num').innerText = q.nomor_soal === 999 ? idx + 1 : q.nomor_soal; 
     document.getElementById('badge-tipe-soal').innerText = q.tipe || 'PG';
+    
     let html = `<div class="q-text" style="font-size: 1.1rem; margin-bottom: 25px;">${q.teks_soal}</div>`;
     
+    // RENDER MEDIA PERTANYAAN
+    html += renderMediaHTML(q.media_soal);
+
     if (q.tipe === 'PG' || !q.tipe) {
         html += `<div class="options-container" style="display: flex; flex-direction: column; gap: 12px;">`;
         ['A', 'B', 'C', 'D', 'E'].forEach(lbl => {
-            if(!q.opsi || !q.opsi[lbl]) return; const isChecked = userAnswers[idx] === lbl ? 'checked' : '';
-            html += `<label class="option-item ${isChecked ? 'selected' : ''}" style="display: flex; padding: 15px; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer;"><input type="radio" name="soal" value="${lbl}" ${isChecked} onchange="window.saveAnswerPG(${idx}, '${lbl}')" style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><span>${q.opsi[lbl]}</span></label>`;
+            if((q.opsi && q.opsi[lbl]) || (q.opsi_media && q.opsi_media[lbl])) { 
+                const isChecked = userAnswers[idx] === lbl ? 'checked' : '';
+                let mediaOpsiHTML = q.opsi_media && q.opsi_media[lbl] ? renderMediaHTML(q.opsi_media[lbl]) : '';
+                let teksOpsiHTML = (q.opsi && q.opsi[lbl]) ? `<span>${q.opsi[lbl]}</span>` : '';
+
+                html += `<label class="option-item ${isChecked ? 'selected' : ''}" style="display: flex; padding: 15px; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer;"><input type="radio" name="soal" value="${lbl}" ${isChecked} onchange="window.saveAnswerPG(${idx}, '${lbl}')" style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width:100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
+            }
         }); html += `</div>`;
     } 
     else if (q.tipe === 'PGK') {
         html += `<div class="options-container" style="display: flex; flex-direction: column; gap: 12px;">`;
         let currentAns = userAnswers[idx] || [];
         ['A', 'B', 'C', 'D', 'E'].forEach(lbl => {
-            if(!q.opsi || !q.opsi[lbl]) return; const isChecked = currentAns.includes(lbl) ? 'checked' : '';
-            html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer;"><input type="checkbox" class="cb_pgk_${idx}" value="${lbl}" ${isChecked} onchange="window.saveAnswerPGK(${idx})" style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><span>${q.opsi[lbl]}</span></label>`;
+            if((q.opsi && q.opsi[lbl]) || (q.opsi_media && q.opsi_media[lbl])) { 
+                const isChecked = currentAns.includes(lbl) ? 'checked' : '';
+                let mediaOpsiHTML = q.opsi_media && q.opsi_media[lbl] ? renderMediaHTML(q.opsi_media[lbl]) : '';
+                let teksOpsiHTML = (q.opsi && q.opsi[lbl]) ? `<span>${q.opsi[lbl]}</span>` : '';
+
+                html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer;"><input type="checkbox" class="cb_pgk_${idx}" value="${lbl}" ${isChecked} onchange="window.saveAnswerPGK(${idx})" style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width:100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
+            }
         }); html += `</div>`;
     }
     else if (q.tipe === 'Menjodohkan') {
@@ -307,27 +330,6 @@ document.getElementById('btn-mengerti-pelanggaran').addEventListener('click', ()
     masukFullscreen(); // Paksa masuk layar penuh lagi
     setTimeout(() => { isWarningShowing = false; }, 1000); 
 });
-
-
-// Deteksi 5: Perubahan Ukuran Layar (Split-Screen)
-let initialHeight = window.innerHeight;
-
-window.addEventListener('resize', () => {
-    if (!isExamActive || isWarningShowing) return;
-    
-    let currentHeight = window.innerHeight;
-    let heightDiff = Math.abs(initialHeight - currentHeight);
-    
-    // Cek apakah siswa sedang mengetik (karena memunculkan keyboard di HP juga memicu 'resize')
-    const activeElement = document.activeElement;
-    const isInputActive = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
-
-    // Jika tinggi layar berkurang lebih dari 25% DAN siswa tidak sedang mengetik, anggap sebagai Split-Screen
-    if (heightDiff > (initialHeight * 0.25) && !isInputActive) {
-        triggerCheatWarning("Perubahan ukuran layar terdeteksi! Jangan gunakan Split-Screen atau Floating Window.");
-    }
-});
-
 
 // ==========================================
 // 6. KALKULASI & SUBMIT HASIL UJIAN
