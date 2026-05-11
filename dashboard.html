@@ -311,28 +311,40 @@
                 <button id="btn-simpan-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-save"></i> SIMPAN SOAL</button>
             </div>
 
-            <div id="area-import" style="display: none;">
-                <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--info);">
-                    <p style="font-weight: 700; color: var(--info); font-size: 0.85rem; margin-bottom: 10px;"><i class="fas fa-download"></i> UNDUH TEMPLATE SOAL:</p>
-                    <div style="display: flex; gap: 10px;"><a href="Template_Soal_CBT_SMAICH.xlsx" download class="btn-3d" style="background: #107c41; margin: 0; font-size: 0.75rem; padding: 8px 12px; width: auto;"><i class="fas fa-file-excel"></i> Template Excel</a></div>
-                </div>
-                
-                <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
-                    <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran untuk File Import</label><select id="import-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
-                    <div style="flex: 1; min-width: 150px;"><label>Kelas untuk File Import</label><select id="import-kelas" class="input-text"><option value="">Memuat Kelas...</option></select></div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                    <div style="border: 2px dashed var(--success); padding: 20px; border-radius: 8px; text-align: center; background: #f0fdf4;">
-                        <i class="fas fa-file-excel fa-3x" style="color: var(--success); margin-bottom: 10px;"></i><h4 style="color: var(--secondary);">Import Excel</h4><input type="file" id="file-excel" accept=".xlsx, .xls" style="display: none;">
-                        <label for="file-excel" id="label-file-excel" class="btn-3d" style="background: var(--success); cursor: pointer; padding: 8px; margin-top:10px; width: 100%;"><i class="fas fa-search"></i> Pilih File</label>
+            <div id="area-import" style="display: none; padding-top: 10px;">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.8rem; font-weight: bold; color: var(--secondary); margin-bottom: 5px; display: block;">Mapel Tujuan:</label>
+                        <select id="import-mapel" class="input-text" style="padding: 8px 12px; font-size: 0.9rem;"><option value="">Pilih Mapel...</option></select>
                     </div>
-                    <div style="border: 2px dashed var(--info); padding: 20px; border-radius: 8px; text-align: center; background: #eff6ff;">
-                        <i class="fas fa-file-word fa-3x" style="color: var(--info); margin-bottom: 10px;"></i><h4 style="color: var(--secondary);">Import Word</h4><input type="file" id="file-word" accept=".docx" style="display: none;">
-                        <label for="file-word" id="label-file-word" class="btn-3d" style="background: var(--info); cursor: pointer; padding: 8px; margin-top:10px; width: 100%;"><i class="fas fa-search"></i> Pilih File</label>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.8rem; font-weight: bold; color: var(--secondary); margin-bottom: 5px; display: block;">Kelas Tujuan:</label>
+                        <select id="import-kelas" class="input-text" style="padding: 8px 12px; font-size: 0.9rem;"><option value="">Pilih Kelas...</option></select>
                     </div>
                 </div>
-                <button id="btn-proses-import-soal" class="btn-3d" style="width: 100%; background-color: var(--secondary);"><i class="fas fa-cloud-upload-alt"></i> UPLOAD & PROSES</button>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <div style="flex: 1; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px 10px; text-align: center; background: #f8fafc; transition: all 0.2s ease; cursor: pointer;" onclick="document.getElementById('file-excel').click()" id="box-excel">
+                        <i class="fas fa-file-excel" style="color: var(--success); font-size: 2rem; margin-bottom: 10px;"></i>
+                        <h5 style="margin: 0; font-size: 0.9rem; color: var(--secondary);">File Excel (.xlsx)</h5>
+                        <p id="label-file-excel" style="margin: 5px 0 0; font-size: 0.75rem; color: var(--text-muted);">Klik untuk pilih file</p>
+                        <input type="file" id="file-excel" accept=".xlsx, .xls" style="display: none;">
+                    </div>
+                    <div style="flex: 1; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px 10px; text-align: center; background: #f8fafc; transition: all 0.2s ease; cursor: pointer;" onclick="document.getElementById('file-word').click()" id="box-word">
+                        <i class="fas fa-file-word" style="color: var(--info); font-size: 2rem; margin-bottom: 10px;"></i>
+                        <h5 style="margin: 0; font-size: 0.9rem; color: var(--secondary);">File Word (.docx)</h5>
+                        <p id="label-file-word" style="margin: 5px 0 0; font-size: 0.75rem; color: var(--text-muted);">Klik untuk pilih file</p>
+                        <input type="file" id="file-word" accept=".docx, .doc" style="display: none;">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button id="btn-dl-excel" title="Buat & Unduh Template Excel" style="background: #ecfdf5; color: var(--success); border: 1px solid #a7f3d0; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: 0.2s; font-weight: bold;"><i class="fas fa-download"></i> Template Excel</button>
+                        <button id="btn-dl-word" title="Buat & Unduh Template Word" style="background: #eff6ff; color: var(--info); border: 1px solid #bfdbfe; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: 0.2s; font-weight: bold;"><i class="fas fa-download"></i> Template Word</button>
+                    </div>
+                    <button id="btn-proses-import-soal" class="btn-3d" style="margin: 0; padding: 10px 20px; font-size: 0.9rem; width: auto;"><i class="fas fa-cloud-upload-alt"></i> PROSES IMPORT</button>
+                </div>
             </div>
         </div>
     </div>
