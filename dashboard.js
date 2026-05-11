@@ -51,9 +51,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!currentMapelDetail) { window.location.hash = 'section-hasil'; return; }
             document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
-            document.querySelector('.option-item[data-section="section-hasil"]')?.classList.add('selected');
-            document.getElementById('section-hasil')?.classList.add('active');
-            document.getElementById('hasil-summary-view').style.display = 'none'; document.getElementById('hasil-detail-view').style.display = 'block';
+            const optHasil = document.querySelector('.option-item[data-section="section-hasil"]');
+            if (optHasil) optHasil.classList.add('selected');
+            const secHasil = document.getElementById('section-hasil');
+            if (secHasil) secHasil.classList.add('active');
+            
+            const summaryView = document.getElementById('hasil-summary-view');
+            const detailView = document.getElementById('hasil-detail-view');
+            if(summaryView) summaryView.style.display = 'none'; 
+            if(detailView) detailView.style.display = 'block';
             return;
         }
 
@@ -67,8 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetSection) targetSection.classList.add('active');
 
         if (hash === 'section-hasil') {
-            document.getElementById('hasil-summary-view').style.display = 'block';
-            document.getElementById('hasil-detail-view').style.display = 'none';
+            const summaryView = document.getElementById('hasil-summary-view');
+            const detailView = document.getElementById('hasil-detail-view');
+            if(summaryView) summaryView.style.display = 'block';
+            if(detailView) detailView.style.display = 'none';
             currentMapelDetail = "";
         }
     }
@@ -80,25 +88,70 @@ document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, async (user) => {
         if (!user || (!isAdmin && !isGuru)) { window.location.href = "index.html"; return; }
 
-        document.getElementById('admin-name').innerText = user.displayName || userRoles.join(", ").toUpperCase();
-        const greetingText = document.getElementById('greeting-text');
-        if(greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${user.displayName}! 👋`;
+        // Mencari nama user, jika di Auth tidak ada, tarik dari Database Firestore
+        let finalDisplayName = user.displayName;
+        if (!finalDisplayName) {
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    finalDisplayName = userDoc.data().nama;
+                }
+            } catch(e) {}
+        }
+        finalDisplayName = finalDisplayName || userRoles.join(", ").toUpperCase() || "Pengguna";
+
+        // Mencegah Crash Jika Elemen Header Dihapus
+        const adminNameEl = document.getElementById('admin-name');
+        if (adminNameEl) adminNameEl.innerText = finalDisplayName;
         
+        const greetingText = document.getElementById('greeting-text');
+        if (greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${finalDisplayName}! 👋`;
+        
+        const titleRole = document.getElementById('panel-title-role');
+
         if (isAdmin) {
-            document.getElementById('panel-title-role').innerText = "PANEL ADMIN"; fetchStatusReg(); 
+            if (titleRole) titleRole.innerText = "PANEL ADMIN"; 
+            fetchStatusReg(); 
         } else if (isGuru && !isAdmin) {
-            document.getElementById('panel-title-role').innerText = "PANEL GURU";
-            document.getElementById('menu-pengguna').style.display = 'none'; document.getElementById('admin-reg-status').style.display = 'none'; document.getElementById('admin-data-master').style.display = 'none';
-            document.getElementById('pengaturan-title').innerText = "Pengaturan Token Ujian"; document.getElementById('menu-pengaturan').innerHTML = '<i class="fas fa-key"></i> Token Ujian';
+            if (titleRole) titleRole.innerText = "PANEL GURU";
+            
+            const mPengguna = document.getElementById('menu-pengguna');
+            if (mPengguna) mPengguna.style.display = 'none'; 
+            
+            const mRegStatus = document.getElementById('admin-reg-status');
+            if (mRegStatus) mRegStatus.style.display = 'none'; 
+            
+            const mDataMaster = document.getElementById('admin-data-master');
+            if (mDataMaster) mDataMaster.style.display = 'none';
+            
+            const mPengTitle = document.getElementById('pengaturan-title');
+            if (mPengTitle) mPengTitle.innerText = "Pengaturan Token Ujian"; 
+            
+            const mMenuPeng = document.getElementById('menu-pengaturan');
+            if (mMenuPeng) {
+                const pTag = mMenuPeng.querySelector('p');
+                if (pTag) pTag.innerText = 'Token Ujian';
+            }
         }
 
         handleRouting(); 
-        await loadDataMaster(); loadDataHasil(); loadActiveTokens(); 
-        if(isAdmin) loadDataPengguna();
+        await loadDataMaster(); 
+        loadDataHasil(); 
+        loadActiveTokens(); 
+        if (isAdmin) loadDataPengguna();
     });
 
-    document.getElementById('btn-logout').addEventListener('click', async () => { if(confirm('Yakin ingin keluar?')) { await signOut(auth); localStorage.clear(); window.location.href = 'index.html'; } });
-    setInterval(() => { document.getElementById('live-time').innerText = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB"; }, 1000);
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', async () => { 
+            if(confirm('Yakin ingin keluar?')) { await signOut(auth); localStorage.clear(); window.location.href = 'index.html'; } 
+        });
+    }
+
+    setInterval(() => { 
+        const liveTimeEl = document.getElementById('live-time');
+        if (liveTimeEl) liveTimeEl.innerText = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB"; 
+    }, 1000);
 
     // ==========================================
     // DATA MASTER
@@ -159,8 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
             if (regSnap.exists()) {
-                document.getElementById('status-reg-siswa').value = regSnap.data().siswa_aktif !== false ? "buka" : "tutup";
-                document.getElementById('status-reg-guru').value = regSnap.data().guru_aktif !== false ? "buka" : "tutup";
+                const sSiswa = document.getElementById('status-reg-siswa');
+                const sGuru = document.getElementById('status-reg-guru');
+                if (sSiswa) sSiswa.value = regSnap.data().siswa_aktif !== false ? "buka" : "tutup";
+                if (sGuru) sGuru.value = regSnap.data().guru_aktif !== false ? "buka" : "tutup";
             }
         } catch (e) {}
     }
@@ -179,7 +234,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDataPengguna() {
         const tbody = document.querySelector('#table-siswa tbody'); if(!tbody) return; tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>`;
         try {
-            const snap = await getDocs(collection(db, "users")); document.getElementById('stat-siswa').innerText = snap.size; tbody.innerHTML = ''; allUsersData = []; 
+            const snap = await getDocs(collection(db, "users")); 
+            const statSiswa = document.getElementById('stat-siswa');
+            if (statSiswa) statSiswa.innerText = snap.size; 
+            
+            tbody.innerHTML = ''; allUsersData = []; 
             snap.forEach(docSnap => {
                 const data = docSnap.data(); data.id = docSnap.id; allUsersData.push(data);
                 const rls = Array.isArray(data.role) ? data.role : [data.role]; const roleColor = rls.includes('admin') ? 'var(--danger)' : (rls.includes('guru') ? 'var(--info)' : 'var(--success)');
@@ -200,9 +259,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateNewFormVisibility() {
         const checkedRoles = Array.from(document.querySelectorAll('.new-role-cb:checked')).map(cb => cb.value);
-        document.getElementById('group-new-mapel').style.display = checkedRoles.includes('guru') ? 'block' : 'none';
-        document.getElementById('group-new-kelas-guru').style.display = checkedRoles.includes('guru') ? 'block' : 'none';
-        document.getElementById('group-new-kelas-siswa').style.display = checkedRoles.includes('siswa') ? 'block' : 'none';
+        const gpMapel = document.getElementById('group-new-mapel');
+        const gpKelasGuru = document.getElementById('group-new-kelas-guru');
+        const gpKelasSiswa = document.getElementById('group-new-kelas-siswa');
+        if(gpMapel) gpMapel.style.display = checkedRoles.includes('guru') ? 'block' : 'none';
+        if(gpKelasGuru) gpKelasGuru.style.display = checkedRoles.includes('guru') ? 'block' : 'none';
+        if(gpKelasSiswa) gpKelasSiswa.style.display = checkedRoles.includes('siswa') ? 'block' : 'none';
     }
     document.querySelectorAll('.new-role-cb').forEach(cb => cb.addEventListener('change', updateNewFormVisibility));
 
@@ -287,8 +349,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updateEditFormVisibility() {
         const checkedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
-        document.getElementById('group-edit-guru').style.display = checkedRoles.includes('guru') ? 'flex' : 'none';
-        document.getElementById('group-edit-kelas-siswa').style.display = checkedRoles.includes('siswa') ? 'block' : 'none';
+        const egGuru = document.getElementById('group-edit-guru');
+        const egKelasSiswa = document.getElementById('group-edit-kelas-siswa');
+        if(egGuru) egGuru.style.display = checkedRoles.includes('guru') ? 'flex' : 'none';
+        if(egKelasSiswa) egKelasSiswa.style.display = checkedRoles.includes('siswa') ? 'block' : 'none';
     }
     document.querySelectorAll('.edit-role-cb').forEach(cb => cb.addEventListener('change', updateEditFormVisibility));
 
@@ -307,10 +371,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = kelasArray.includes(cb.value); });
         }
         if(rls.includes('siswa')) { document.getElementById('edit-kelas-siswa').value = user.kelas_siswa || user.kelas || ""; }
-        modalEditAkun.style.display = 'flex';
+        if (modalEditAkun) modalEditAkun.style.display = 'flex';
     };
 
-    document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { modalEditAkun.style.display = 'none'; });
+    document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { if(modalEditAkun) modalEditAkun.style.display = 'none'; });
 
     document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
         const uid = document.getElementById('edit-uid').value; const nama = document.getElementById('edit-nama').value.trim(); const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
@@ -320,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedRoles.includes('guru')) { payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value); payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value); } 
         if (selectedRoles.includes('siswa')) { const ks = document.getElementById('edit-kelas-siswa').value; if(!selectedRoles.includes('guru')) payload.kelas = ks; else payload.kelas_siswa = ks; }
 
-        try { document.getElementById('btn-save-edit-akun').innerHTML = "Menyimpan..."; await updateDoc(doc(db, "users", uid), payload); alert("Profil diperbarui!"); modalEditAkun.style.display = 'none'; document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; loadDataPengguna();
+        try { document.getElementById('btn-save-edit-akun').innerHTML = "Menyimpan..."; await updateDoc(doc(db, "users", uid), payload); alert("Profil diperbarui!"); if(modalEditAkun) modalEditAkun.style.display = 'none'; document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; loadDataPengguna();
         } catch (err) { alert("Gagal."); document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; }
     });
 
@@ -338,7 +402,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", filterMapel), where("kelas", "==", filterKelas));
-            const snap = await getDocs(qSoal); document.getElementById('stat-soal').innerText = snap.size;
+            const snap = await getDocs(qSoal); 
+            const statSoal = document.getElementById('stat-soal');
+            if (statSoal) statSoal.innerText = snap.size;
             
             allSoalData = [];
             snap.forEach(docSnap => { const data = docSnap.data(); data.id = docSnap.id; data.nomor_soal = parseInt(data.nomor_soal) || 999; allSoalData.push(data); });
@@ -357,37 +423,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-preview-full')?.addEventListener('click', () => {
         if(filteredSoalData.length === 0) return alert("Pilih mapel dan kelas yang ada soalnya!");
-        document.getElementById('modal-preview-full').style.display = 'flex'; previewCurrentIdx = 0; buildPreviewGrid(); renderPreviewSoal(0);
+        const mdl = document.getElementById('modal-preview-full');
+        if(mdl) mdl.style.display = 'flex'; previewCurrentIdx = 0; buildPreviewGrid(); renderPreviewSoal(0);
     });
 
-    document.getElementById('close-preview-full')?.addEventListener('click', () => { document.getElementById('modal-preview-full').style.display = 'none'; });
+    document.getElementById('close-preview-full')?.addEventListener('click', () => { 
+        const mdl = document.getElementById('modal-preview-full');
+        if (mdl) mdl.style.display = 'none'; 
+    });
 
     function buildPreviewGrid() {
-        const grid = document.getElementById('prev-q-grid'); grid.innerHTML = '';
+        const grid = document.getElementById('prev-q-grid'); 
+        if(!grid) return;
+        grid.innerHTML = '';
         filteredSoalData.forEach((data, i) => { const box = document.createElement('div'); box.className = 'q-box'; box.innerText = data.nomor_soal === 999 ? i + 1 : data.nomor_soal; box.onclick = () => renderPreviewSoal(i); grid.appendChild(box); });
     }
 
     function renderPreviewSoal(idx) {
         previewCurrentIdx = idx; const qContainer = document.getElementById('prev-q-container'); const q = filteredSoalData[idx];
-        document.getElementById('prev-current-q-num').innerText = q.nomor_soal === 999 ? idx + 1 : q.nomor_soal; 
-        document.getElementById('prev-badge-tipe').innerText = q.tipe || 'PG';
+        if(!qContainer) return;
+        const cn = document.getElementById('prev-current-q-num'); if(cn) cn.innerText = q.nomor_soal === 999 ? idx + 1 : q.nomor_soal; 
+        const bt = document.getElementById('prev-badge-tipe'); if(bt) bt.innerText = q.tipe || 'PG';
         
         let html = `<div class="q-text" style="font-size: 1.1rem; margin-bottom: 25px;">${q.teks_soal}</div>`;
-        
-        // RENDER MEDIA PERTANYAAN JIKA ADA
         html += renderMediaHTML(q.media_soal);
         
         if (q.tipe === 'PG' || q.tipe === 'PGK' || !q.tipe) {
             html += `<div class="options-container" style="display: flex; flex-direction: column; gap: 12px;">`;
             ['A', 'B', 'C', 'D', 'E'].forEach(lbl => {
-                // Render opsi teks atau opsi media
                 if((q.opsi && q.opsi[lbl]) || (q.opsi_media && q.opsi_media[lbl])) {
                     let isKunci = false; if(q.tipe === 'PGK') isKunci = (Array.isArray(q.kunci_jawaban) && q.kunci_jawaban.includes(lbl)); else isKunci = (q.kunci_jawaban === lbl);
                     let bg = isKunci ? 'background:#d1fae5; border-color:#10b981;' : 'background:#f8fafc; border-color:#e2e8f0;'; let type = q.tipe === 'PGK' ? 'checkbox' : 'radio';
                     let mediaOpsiHTML = q.opsi_media && q.opsi_media[lbl] ? renderMediaHTML(q.opsi_media[lbl]) : '';
                     let teksOpsiHTML = (q.opsi && q.opsi[lbl]) ? `<span>${q.opsi[lbl]}</span>` : '';
                     
-                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg}"><input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
+                    html += `<label class="option-item" style="display: flex; padding: 15px; border: 1.5px solid; border-radius: var(--radius-md); ${bg} margin: 0;"><input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);"><span style="font-weight: bold; margin-right: 10px;">${lbl}.</span><div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div></label>`;
                 }
             }); html += `</div>`;
         } 
@@ -402,7 +472,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updatePreviewUI() {
-        document.getElementById('prev-btn-prev').style.visibility = previewCurrentIdx === 0 ? 'hidden' : 'visible'; document.getElementById('prev-btn-next').style.visibility = previewCurrentIdx === filteredSoalData.length - 1 ? 'hidden' : 'visible';
+        const bp = document.getElementById('prev-btn-prev'); if(bp) bp.style.visibility = previewCurrentIdx === 0 ? 'hidden' : 'visible'; 
+        const bn = document.getElementById('prev-btn-next'); if(bn) bn.style.visibility = previewCurrentIdx === filteredSoalData.length - 1 ? 'hidden' : 'visible';
         const boxes = document.querySelectorAll('#prev-q-grid .q-box'); boxes.forEach((box, i) => { box.className = 'q-box'; if (i === previewCurrentIdx) box.classList.add('active-q'); });
     }
 
@@ -410,15 +481,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-btn-prev')?.addEventListener('click', () => { if (previewCurrentIdx > 0) renderPreviewSoal(previewCurrentIdx - 1); });
 
     const modalSoal = document.getElementById('modal-tambah-soal'); const tipeSelect = document.getElementById('soal-tipe');
-    document.getElementById('btn-tambah-manual')?.addEventListener('click', () => { modalSoal.style.display = 'flex'; renderFormDinamis('PG'); });
-    document.getElementById('close-modal-soal')?.addEventListener('click', () => modalSoal.style.display = 'none');
-    document.getElementById('tab-manual')?.addEventListener('click', () => { document.getElementById('area-manual').style.display = 'block'; document.getElementById('area-import').style.display = 'none'; });
-    document.getElementById('tab-import')?.addEventListener('click', () => { document.getElementById('area-manual').style.display = 'none'; document.getElementById('area-import').style.display = 'block'; });
+    document.getElementById('btn-tambah-manual')?.addEventListener('click', () => { if(modalSoal) modalSoal.style.display = 'flex'; renderFormDinamis('PG'); });
+    document.getElementById('close-modal-soal')?.addEventListener('click', () => { if(modalSoal) modalSoal.style.display = 'none'; });
+    document.getElementById('tab-manual')?.addEventListener('click', () => { const am = document.getElementById('area-manual'); const ai = document.getElementById('area-import'); if(am) am.style.display = 'block'; if(ai) ai.style.display = 'none'; });
+    document.getElementById('tab-import')?.addEventListener('click', () => { const am = document.getElementById('area-manual'); const ai = document.getElementById('area-import'); if(am) am.style.display = 'none'; if(ai) ai.style.display = 'block'; });
     tipeSelect?.addEventListener('change', (e) => renderFormDinamis(e.target.value));
 
     // TAMBAHAN INPUT FILE KE FORM DINAMIS (PG/PGK)
     function renderFormDinamis(tipe) {
-        const areaOpsi = document.getElementById('area-opsi-dinamis'); areaOpsi.innerHTML = ''; 
+        const areaOpsi = document.getElementById('area-opsi-dinamis'); 
+        if(!areaOpsi) return;
+        areaOpsi.innerHTML = ''; 
         if (tipe === 'PG') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"><input type="radio" name="kunci_pg" value="${opt}" ${opt==='A'?'checked':''}><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" style="flex: 1; min-width: 200px;"><input type="file" id="media-opsi-${opt}" class="input-text" accept="image/*, audio/*, video/*" style="flex: 1; min-width: 200px;" title="Media Opsi ${opt}"></div>`).join('')}`;
         else if (tipe === 'PGK') areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);"><input type="checkbox" class="kunci_pgk" value="${opt}"><label style="font-weight: bold; width: 20px;">${opt}</label><input type="text" id="opsi-${opt}" class="input-text" placeholder="Teks opsi ${opt}" style="flex: 1; min-width: 200px;"><input type="file" id="media-opsi-${opt}" class="input-text" accept="image/*, audio/*, video/*" style="flex: 1; min-width: 200px;" title="Media Opsi ${opt}"></div>`).join('')}`;
         else if (tipe === 'Menjodohkan') areaOpsi.innerHTML = `<div id="container-jodoh">${[1,2,3].map(num => `<div style="display: flex; gap: 10px; margin-bottom: 8px;"><input type="text" class="jodoh-kiri input-text" placeholder="Pernyataan ${num}" style="padding: 8px;"><input type="text" class="jodoh-kanan input-text" placeholder="Jawaban ${num}" style="padding: 8px;"></div>`).join('')}</div>`;
@@ -443,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapel = document.getElementById('soal-mapel').value; const kelas = document.getElementById('soal-kelas').value; const noSoal = document.getElementById('soal-nomor').value; const tipe = tipeSelect.value; const teks = document.getElementById('soal-teks').value.trim();
         if(!mapel || !kelas || !noSoal) return alert("Pilih Mapel, Kelas, dan Isi Nomor Soal!");
         
-        // VALIDASI KUNCI JAWABAN (MENCEGAH CRASH)
+        // VALIDASI KUNCI JAWABAN
         if (tipe === 'PG') {
             const cekKunci = document.querySelector('input[name="kunci_pg"]:checked');
             if (!cekKunci) return alert("Pilih Kunci Jawaban terlebih dahulu!");
@@ -455,12 +528,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSimpan.disabled = true;
 
         try {
-            // RUTE UNGGAH MEDIA SOAL
             let mediaSoalObj = null;
             const fileSoal = document.getElementById('soal-media')?.files[0];
             if(fileSoal) mediaSoalObj = await uploadFileKeStorage(fileSoal);
 
-            // RUTE UNGGAH MEDIA OPSI
             let opsiMediaObj = {};
             if (tipe === 'PG' || tipe === 'PGK') {
                for(let opt of ['A','B','C','D','E']) {
@@ -481,13 +552,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await addDoc(collection(db, "bank_soal"), payload); 
             
-            // RESET FILE UPLOAD INPUTS
             const fileInputs = document.querySelectorAll('input[type="file"]');
             fileInputs.forEach(input => input.value = '');
             document.getElementById('soal-teks').value = '';
 
             alert("Soal berhasil disimpan!"); 
-            modalSoal.style.display = 'none'; 
+            if(modalSoal) modalSoal.style.display = 'none'; 
             loadDataSoal(); 
         } catch (error) { 
             console.error(error);
@@ -531,16 +601,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     await addDoc(collection(db, "bank_soal"), payload); 
                 }
-                alert(`Import Berhasil!`); modalSoal.style.display = 'none'; loadDataSoal(); selectedExcelSoal = null; document.getElementById('label-file-excel').innerHTML = `<i class="fas fa-search"></i> Pilih File`; document.getElementById('label-file-excel').style.background = "var(--success)"; document.getElementById('file-excel').value = '';
+                alert(`Import Berhasil!`); if(modalSoal) modalSoal.style.display = 'none'; loadDataSoal(); selectedExcelSoal = null; const lfe = document.getElementById('label-file-excel'); if(lfe){ lfe.innerHTML = `<i class="fas fa-search"></i> Pilih File`; lfe.style.background = "var(--success)"; } document.getElementById('file-excel').value = '';
             } catch (err) { alert("Gagal membaca file Excel."); }
             btn.innerHTML = origText; btn.disabled = false;
         };
         reader.readAsArrayBuffer(selectedExcelSoal);
     });
 
-    // --- EDIT SOAL (DENGAN DUKUNGAN MEDIA OPSI) ---
+    // --- EDIT SOAL ---
     document.getElementById('close-modal-edit-soal')?.addEventListener('click', () => {
-        document.getElementById('modal-edit-soal').style.display = 'none';
+        const md = document.getElementById('modal-edit-soal');
+        if(md) md.style.display = 'none';
     });
 
     document.getElementById('edit-soal-tipe')?.addEventListener('change', (e) => {
@@ -548,7 +619,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function renderFormEditDinamis(tipe, qData = null) {
-        const areaOpsi = document.getElementById('edit-area-opsi-dinamis'); areaOpsi.innerHTML = ''; 
+        const areaOpsi = document.getElementById('edit-area-opsi-dinamis'); 
+        if(!areaOpsi) return;
+        areaOpsi.innerHTML = ''; 
         
         let opsiTeks = { A:'', B:'', C:'', D:'', E:'' };
         let kunciPG = 'A'; let kunciPGK = []; let pasangan = [{premis:'', target:''}, {premis:'', target:''}, {premis:'', target:''}];
@@ -563,7 +636,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (qData.tipe === 'Uraian') rubrikUraian = qData.rubrik || '';
         }
 
-        // PERBAIKAN: Menambahkan Field Upload Media Opsi
         if (tipe === 'PG' || tipe === 'PGK') {
             const isPG = tipe === 'PG';
             areaOpsi.innerHTML = `${['A','B','C','D','E'].map(opt => {
@@ -575,7 +647,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 let checkedAttr = '';
                 if(isPG && kunciPG === opt) checkedAttr = 'checked';
                 if(!isPG && kunciPGK.includes(opt)) checkedAttr = 'checked';
-                
                 let nameClassAttr = isPG ? 'name="edit_kunci_pg"' : 'class="edit_kunci_pgk"';
                 
                 return `<div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -605,18 +676,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const mediaPrev = document.getElementById('edit-soal-media-preview');
         const hapusMediaCb = document.getElementById('edit-hapus-media');
         document.getElementById('edit-soal-media').value = '';
-        hapusMediaCb.checked = false;
+        if(hapusMediaCb) hapusMediaCb.checked = false;
 
-        if (qData.media_soal) {
-            mediaPrev.innerHTML = `<span style="font-size: 0.85rem; color: var(--success);"><i class="fas fa-check"></i> Media saat ini: ${qData.media_soal.type.toUpperCase()} (Tersimpan)</span>`;
-            hapusMediaCb.parentElement.style.display = 'flex';
-        } else {
-            mediaPrev.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-muted);">Tidak ada media pada soal ini.</span>`;
-            hapusMediaCb.parentElement.style.display = 'none';
+        if (mediaPrev && hapusMediaCb) {
+            if (qData.media_soal) {
+                mediaPrev.innerHTML = `<span style="font-size: 0.85rem; color: var(--success);"><i class="fas fa-check"></i> Media saat ini: ${qData.media_soal.type.toUpperCase()} (Tersimpan)</span>`;
+                hapusMediaCb.parentElement.style.display = 'flex';
+            } else {
+                mediaPrev.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-muted);">Tidak ada media pada soal ini.</span>`;
+                hapusMediaCb.parentElement.style.display = 'none';
+            }
         }
 
         renderFormEditDinamis(qData.tipe || 'PG', qData);
-        document.getElementById('modal-edit-soal').style.display = 'flex';
+        const md = document.getElementById('modal-edit-soal');
+        if(md) md.style.display = 'flex';
     };
 
     document.getElementById('btn-update-soal')?.addEventListener('click', async () => {
@@ -624,7 +698,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if(!mapel || !kelas || !noSoal) return alert("Pilih Mapel, Kelas, dan Isi Nomor Soal!");
         
-        // VALIDASI KUNCI JAWABAN
         if (tipe === 'PG') {
             const cekKunci = document.querySelector('input[name="edit_kunci_pg"]:checked');
             if (!cekKunci) return alert("Pilih Kunci Jawaban terlebih dahulu!");
@@ -636,8 +709,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: parseInt(noSoal), tipe: tipe, teks_soal: teks };
             
-            // Handle Media Utama Soal
-            const hapusMedia = document.getElementById('edit-hapus-media').checked;
+            const hapusMediaCb = document.getElementById('edit-hapus-media');
+            const hapusMedia = hapusMediaCb ? hapusMediaCb.checked : false;
             if (hapusMedia) { payload.media_soal = deleteField(); } 
             else {
                 const fileSoal = document.getElementById('edit-soal-media')?.files[0];
@@ -655,7 +728,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 let kunci = []; document.querySelectorAll('.edit_kunci_pgk:checked').forEach(cb => kunci.push(cb.value)); payload.kunci_jawaban = kunci; 
             } 
             
-            // PERBAIKAN: Menyimpan atau Menghapus Media pada setiap Opsi
             if (tipe === 'PG' || tipe === 'PGK') {
                 for (let opt of ['A','B','C','D','E']) {
                     const cbHapus = document.getElementById(`edit-hapus-media-opsi-${opt}`);
@@ -668,12 +740,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         opsiMediaObj[opt] = await uploadFileKeStorage(fileOpsi);
                     }
                 }
-                
-                if (Object.keys(opsiMediaObj).length > 0) {
-                    payload.opsi_media = opsiMediaObj;
-                } else {
-                    payload.opsi_media = deleteField();
-                }
+                if (Object.keys(opsiMediaObj).length > 0) { payload.opsi_media = opsiMediaObj; } 
+                else { payload.opsi_media = deleteField(); }
             }
 
             if (tipe === 'Menjodohkan') { let pasangan = []; document.querySelectorAll('.edit-jodoh-kiri').forEach((el, idx) => { let kanan = document.querySelectorAll('.edit-jodoh-kanan')[idx]; if(el.value) pasangan.push({ premis: el.value, target: kanan.value }); }); payload.pasangan = pasangan; } 
@@ -682,7 +750,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await updateDoc(doc(db, "bank_soal", id), payload); 
             
-            alert("Soal berhasil diperbarui!"); document.getElementById('modal-edit-soal').style.display = 'none'; loadDataSoal(); 
+            alert("Soal berhasil diperbarui!"); 
+            const md = document.getElementById('modal-edit-soal');
+            if(md) md.style.display = 'none'; 
+            loadDataSoal(); 
         } catch (error) { 
             console.error(error); 
             alert("GAGAL MEMPERBARUI: " + error.message + "\n\n(Pastikan layanan Firebase Storage sudah diaktifkan dan ukurannya tidak terlalu besar)"); 
@@ -702,16 +773,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userMapel.length === 0) return;
                 qHasil = query(collection(db, "hasil_ujian"), where("mataPelajaran", "in", userMapel));
             }
-            const snap = await getDocs(qHasil); document.getElementById('stat-ujian').innerText = snap.size;
-            allHasilUjian = []; snap.forEach(docSnap => allHasilUjian.push({ id: docSnap.id, ...docSnap.data() })); 
+            const snap = await getDocs(qHasil); 
+            const stUjian = document.getElementById('stat-ujian');
+            if (stUjian) stUjian.innerText = snap.size;
             
-            // JANGAN PAKSA ke summary di sini agar tidak memutus sesi jika refresh di halaman detail
+            allHasilUjian = []; snap.forEach(docSnap => allHasilUjian.push({ id: docSnap.id, ...docSnap.data() })); 
             renderSummaryHasil(); 
         } catch(error) { console.error(error); }
     }
 
     function renderSummaryHasil() {
-        const gridMapel = document.getElementById('grid-mapel-hasil'); gridMapel.innerHTML = '';
+        const gridMapel = document.getElementById('grid-mapel-hasil'); 
+        if(!gridMapel) return;
+        gridMapel.innerHTML = '';
 
         if (allHasilUjian.length === 0) { gridMapel.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--danger); padding: 30px; background: #fee2e2; border-radius: 8px; border: 1px solid #f87171;">Belum ada satupun data hasil ujian yang masuk.</div>`; return; }
 
@@ -734,11 +808,16 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMapelDetail = mapel;
         if (isPushState) { window.location.hash = 'section-hasil-detail'; }
         
-        document.getElementById('label-mapel-detail').innerText = mapel.toUpperCase();
-        const filterKelas = document.getElementById('filter-kelas-hasil'); const classes = new Set();
+        const lbMapel = document.getElementById('label-mapel-detail');
+        if(lbMapel) lbMapel.innerText = mapel.toUpperCase();
+        
+        const filterKelas = document.getElementById('filter-kelas-hasil'); 
+        const classes = new Set();
         allHasilUjian.forEach(h => { if(h.mataPelajaran === mapel && h.kelas) classes.add(h.kelas); });
         
-        filterKelas.innerHTML = '<option value="semua">Semua Kelas</option>' + Array.from(classes).map(c => `<option value="${c}">${c}</option>`).join('');
+        if (filterKelas) {
+            filterKelas.innerHTML = '<option value="semua">Semua Kelas</option>' + Array.from(classes).map(c => `<option value="${c}">${c}</option>`).join('');
+        }
         renderHasilTable();
     };
 
@@ -746,9 +825,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-kelas-hasil')?.addEventListener('change', renderHasilTable);
 
     function renderHasilTable() {
-        const tbodyHasil = document.querySelector('#table-hasil tbody'); const filterKelas = document.getElementById('filter-kelas-hasil').value; tbodyHasil.innerHTML = ''; 
+        const tbodyHasil = document.querySelector('#table-hasil tbody'); 
+        const filterKelas = document.getElementById('filter-kelas-hasil');
+        if(!tbodyHasil || !filterKelas) return;
+        
+        const fv = filterKelas.value;
+        tbodyHasil.innerHTML = ''; 
         let filtered = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail);
-        if (filterKelas !== 'semua') { filtered = filtered.filter(h => h.kelas === filterKelas); }
+        if (fv !== 'semua') { filtered = filtered.filter(h => h.kelas === fv); }
 
         if(filtered.length === 0) { tbodyHasil.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger); padding:20px;">Tidak ada hasil ujian untuk filter ini.</td></tr>`; return; }
 
@@ -762,25 +846,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = allHasilUjian.find(item => item.id === e.currentTarget.dataset.id);
                 document.getElementById('detail-nama').innerText = `: ${data.namaSiswa}`; document.getElementById('detail-kelas').innerText = `: ${data.kelas || '-'}`; document.getElementById('detail-mapel').innerText = `: ${data.mataPelajaran.toUpperCase()}`; document.getElementById('detail-jml-benar').innerText = data.benar; document.getElementById('detail-total-soal').innerText = data.totalSoal; document.getElementById('detail-nilai').innerText = data.nilai;
                 document.getElementById('detail-rincian-benar').innerHTML = data.rincianBenar?.length > 0 ? data.rincianBenar.map(n => `<div style="background:var(--success); color:white; font-weight:bold; width:35px; height:35px; display:flex; align-items:center; justify-content:center; border-radius:6px;">${n}</div>`).join('') : '<small>Kosong</small>';
-                document.getElementById('modal-detail-hasil').style.display = 'flex';
+                const md = document.getElementById('modal-detail-hasil');
+                if(md) md.style.display = 'flex';
             });
         });
     }
 
-    document.getElementById('close-modal-detail')?.addEventListener('click', () => document.getElementById('modal-detail-hasil').style.display = 'none');
+    document.getElementById('close-modal-detail')?.addEventListener('click', () => {
+        const md = document.getElementById('modal-detail-hasil');
+        if (md) md.style.display = 'none';
+    });
     
-    // PERBAIKAN: Fungsi Refresh Data Hasil (Agar saat menghapus, tampilan tidak kembali ke halaman awal ringkasan)
     window.refreshHasilData = async () => { 
         await loadDataHasil(); 
-        
-        // Memaksa sistem untuk tetap membuka detail mapel yang sedang dihapus
         if (currentMapelDetail !== "") {
-            document.getElementById('hasil-summary-view').style.display = 'none'; 
-            document.getElementById('hasil-detail-view').style.display = 'block';
+            const sumV = document.getElementById('hasil-summary-view');
+            const detV = document.getElementById('hasil-detail-view');
+            if (sumV) sumV.style.display = 'none'; 
+            if (detV) detV.style.display = 'block';
             renderHasilTable(); 
         }
-        
-        // Menampilkan notifikasi bahwa data sukses terhapus
         alert("Data hasil ujian berhasil dihapus!");
     };
 
@@ -801,21 +886,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 keys.forEach(key => {
                     const parts = key.replace('token_', '').split('_'); const mapel = parts[0] || '-'; const kelas = parts[1] || '-'; 
-                    
-                    let tokenVal = "";
-                    let statusBadge = "";
+                    let tokenVal = ""; let statusBadge = "";
                     
                     if (typeof data[key] === 'object' && data[key] !== null) {
                         tokenVal = data[key].code;
                         let timeLeft = Math.floor((data[key].expiresAt - Date.now()) / 60000);
-                        if (timeLeft > 0) {
-                            statusBadge = `<br><span style="font-size: 0.7rem; background: var(--success); color: white; padding: 2px 6px; border-radius: 4px;">Sisa: ${timeLeft} Menit</span>`;
-                        } else {
-                            statusBadge = `<br><span style="font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px;">Kadaluarsa</span>`;
-                        }
-                    } else {
-                        tokenVal = data[key];
-                    }
+                        if (timeLeft > 0) { statusBadge = `<br><span style="font-size: 0.7rem; background: var(--success); color: white; padding: 2px 6px; border-radius: 4px;">Sisa: ${timeLeft} Menit</span>`; } 
+                        else { statusBadge = `<br><span style="font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px;">Kadaluarsa</span>`; }
+                    } else { tokenVal = data[key]; }
 
                     tbody.innerHTML += `<tr><td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${mapel}</td><td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${kelas}</td><td style="padding: 8px; border-bottom: 1px solid var(--border-color); font-weight:bold; color:var(--primary); letter-spacing: 1px;">${tokenVal} ${statusBadge}</td><td style="padding: 8px; border-bottom: 1px solid var(--border-color); text-align:center;"><button onclick="window.hapusTokenUtama('${key}')" style="background:var(--danger); color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer;" title="Hapus Token"><i class="fas fa-trash"></i></button></td></tr>`;
                 });
@@ -854,5 +932,3 @@ document.addEventListener('DOMContentLoaded', () => {
         try { await deleteDoc(doc(db, koleksi, id)); callback(); } catch(err) { alert("Gagal."); }
     };
 });
-
-}
