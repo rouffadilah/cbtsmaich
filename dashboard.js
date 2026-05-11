@@ -30,6 +30,8 @@ window.customAlert = function(message, type = 'info', title = '') {
         const messageEl = document.getElementById('alert-message');
         const btnOk = document.getElementById('btn-alert-ok');
         
+        if (!modal) { alert(message); resolve(); return; }
+        
         let color = 'var(--info)'; let iconClass = 'fas fa-info-circle'; let defaultTitle = 'Informasi';
         if (type === 'success') { color = 'var(--success)'; iconClass = 'fas fa-check-circle'; defaultTitle = 'Berhasil'; }
         else if (type === 'error') { color = 'var(--danger)'; iconClass = 'fas fa-times-circle'; defaultTitle = 'Gagal / Error'; }
@@ -56,6 +58,8 @@ window.customConfirm = function(message, type = 'warning', title = 'Konfirmasi',
         const messageEl = document.getElementById('confirm-message');
         const btnOk = document.getElementById('btn-confirm-ok');
         const btnCancel = document.getElementById('btn-confirm-cancel');
+        
+        if (!modal) { resolve(confirm(message)); return; }
         
         let color = 'var(--warning)'; let iconClass = 'fas fa-question-circle';
         if (type === 'danger') { color = 'var(--danger)'; iconClass = 'fas fa-exclamation-triangle'; }
@@ -551,12 +555,37 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-btn-next')?.addEventListener('click', () => { if (previewCurrentIdx < filteredSoalData.length - 1) renderPreviewSoal(previewCurrentIdx + 1); });
     document.getElementById('prev-btn-prev')?.addEventListener('click', () => { if (previewCurrentIdx > 0) renderPreviewSoal(previewCurrentIdx - 1); });
 
-    const modalSoal = document.getElementById('modal-tambah-soal'); const tipeSelect = document.getElementById('soal-tipe');
-    document.getElementById('btn-tambah-manual')?.addEventListener('click', () => { if(modalSoal) modalSoal.style.display = 'flex'; renderFormDinamis('PG'); });
-    document.getElementById('close-modal-soal')?.addEventListener('click', () => { if(modalSoal) modalSoal.style.display = 'none'; });
+    // ==========================================
+    // PERBAIKAN: TOMBOL KELOLA / TAMBAH SOAL
+    // ==========================================
+    const btnTambahSoal = document.getElementById('btn-tambah-manual');
+    if (btnTambahSoal) {
+        btnTambahSoal.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            try {
+                const modalSoal = document.getElementById('modal-tambah-soal');
+                if (modalSoal) {
+                    modalSoal.style.display = 'flex';
+                    renderFormDinamis('PG'); 
+                } else {
+                    window.customAlert("Elemen form Tambah Soal (HTML) tidak ditemukan.", "error");
+                }
+            } catch (err) {
+                console.error(err);
+                window.customAlert("Gagal membuka form Tambah Soal: " + err.message, "error");
+            }
+        });
+    }
+
+    document.getElementById('close-modal-soal')?.addEventListener('click', () => { 
+        const md = document.getElementById('modal-tambah-soal');
+        if (md) md.style.display = 'none'; 
+    });
+
     document.getElementById('tab-manual')?.addEventListener('click', () => { const am = document.getElementById('area-manual'); const ai = document.getElementById('area-import'); if(am) am.style.display = 'block'; if(ai) ai.style.display = 'none'; });
     document.getElementById('tab-import')?.addEventListener('click', () => { const am = document.getElementById('area-manual'); const ai = document.getElementById('area-import'); if(am) am.style.display = 'none'; if(ai) ai.style.display = 'block'; });
-    tipeSelect?.addEventListener('change', (e) => renderFormDinamis(e.target.value));
+    
+    document.getElementById('soal-tipe')?.addEventListener('change', (e) => renderFormDinamis(e.target.value));
 
     function renderFormDinamis(tipe) {
         const areaOpsi = document.getElementById('area-opsi-dinamis'); 
@@ -582,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('btn-simpan-soal')?.addEventListener('click', async () => {
-        const mapel = document.getElementById('soal-mapel').value; const kelas = document.getElementById('soal-kelas').value; const noSoal = document.getElementById('soal-nomor').value; const tipe = tipeSelect.value; const teks = document.getElementById('soal-teks').value.trim();
+        const mapel = document.getElementById('soal-mapel').value; const kelas = document.getElementById('soal-kelas').value; const noSoal = document.getElementById('soal-nomor').value; const tipe = document.getElementById('soal-tipe').value; const teks = document.getElementById('soal-teks').value.trim();
         if(!mapel || !kelas || !noSoal) return await window.customAlert("Pilih Mapel, Kelas, dan Isi Nomor Soal!", "warning");
         
         if (tipe === 'PG') {
@@ -625,7 +654,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('soal-teks').value = '';
 
             await window.customAlert("Soal berhasil ditambahkan ke dalam Bank Soal!", "success"); 
-            if(modalSoal) modalSoal.style.display = 'none'; 
+            const md = document.getElementById('modal-tambah-soal');
+            if(md) md.style.display = 'none'; 
             loadDataSoal(); 
         } catch (error) { 
             console.error(error);
@@ -670,14 +700,64 @@ document.addEventListener('DOMContentLoaded', () => {
                     await addDoc(collection(db, "bank_soal"), payload); 
                 }
                 await window.customAlert(`Import Berhasil diselesaikan!`, "success"); 
-                if(modalSoal) modalSoal.style.display = 'none'; loadDataSoal(); selectedExcelSoal = null; const lfe = document.getElementById('label-file-excel'); if(lfe){ lfe.innerHTML = `<i class="fas fa-search"></i> Pilih File`; lfe.style.background = "var(--success)"; } document.getElementById('file-excel').value = '';
+                const md = document.getElementById('modal-tambah-soal');
+                if(md) md.style.display = 'none'; 
+                loadDataSoal(); selectedExcelSoal = null; const lfe = document.getElementById('label-file-excel'); if(lfe){ lfe.innerHTML = `<i class="fas fa-search"></i> Pilih File`; lfe.style.background = "var(--success)"; } document.getElementById('file-excel').value = '';
             } catch (err) { await window.customAlert("Gagal membaca file Excel.", "error"); }
             btn.innerHTML = origText; btn.disabled = false;
         };
         reader.readAsArrayBuffer(selectedExcelSoal);
     });
 
-    // --- EDIT SOAL ---
+    // ==========================================
+    // PERBAIKAN: TOMBOL EDIT SOAL 
+    // ==========================================
+    window.editSoal = (id) => {
+        try {
+            const qData = filteredSoalData.find(s => s.id === id); 
+            if (!qData) {
+                window.customAlert("Data soal tidak ditemukan!", "error");
+                return;
+            }
+
+            document.getElementById('edit-soal-id').value = qData.id;
+            document.getElementById('edit-soal-mapel').value = qData.mataPelajaran || '';
+            document.getElementById('edit-soal-kelas').value = qData.kelas || '';
+            document.getElementById('edit-soal-nomor').value = qData.nomor_soal === 999 ? '' : qData.nomor_soal;
+            document.getElementById('edit-soal-tipe').value = qData.tipe || 'PG';
+            document.getElementById('edit-soal-teks').value = qData.teks_soal || '';
+
+            const mediaPrev = document.getElementById('edit-soal-media-preview');
+            const hapusMediaCb = document.getElementById('edit-hapus-media');
+            const fileInput = document.getElementById('edit-soal-media');
+            
+            if (fileInput) fileInput.value = '';
+            if (hapusMediaCb) hapusMediaCb.checked = false;
+
+            if (mediaPrev && hapusMediaCb) {
+                if (qData.media_soal) {
+                    mediaPrev.innerHTML = `<span style="font-size: 0.85rem; color: var(--success);"><i class="fas fa-check"></i> Media saat ini: ${qData.media_soal.type.toUpperCase()} (Tersimpan)</span>`;
+                    hapusMediaCb.parentElement.style.display = 'flex';
+                } else {
+                    mediaPrev.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-muted);">Tidak ada media pada soal ini.</span>`;
+                    hapusMediaCb.parentElement.style.display = 'none';
+                }
+            }
+
+            renderFormEditDinamis(qData.tipe || 'PG', qData);
+            
+            const md = document.getElementById('modal-edit-soal');
+            if (md) {
+                md.style.display = 'flex';
+            } else {
+                window.customAlert("Elemen form Edit Soal tidak ditemukan di HTML.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            window.customAlert("Gagal membuka form Edit Soal: " + error.message, "error");
+        }
+    };
+
     document.getElementById('close-modal-edit-soal')?.addEventListener('click', () => {
         const md = document.getElementById('modal-edit-soal');
         if(md) md.style.display = 'none';
@@ -731,36 +811,6 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (tipe === 'Isian') areaOpsi.innerHTML = `<label>Kunci Jawaban</label><input type="text" id="edit_kunci_isian" class="input-text" placeholder="Masukkan jawaban singkat" value="${kunciIsian}">`;
         else if (tipe === 'Uraian') areaOpsi.innerHTML = `<label>Panduan Penilaian</label><textarea id="edit_rubrik_uraian" class="input-text" rows="2" placeholder="Poin utama penilaian...">${rubrikUraian}</textarea>`;
     }
-
-    window.editSoal = (id) => {
-        const qData = filteredSoalData.find(s => s.id === id); if (!qData) return;
-
-        document.getElementById('edit-soal-id').value = qData.id;
-        document.getElementById('edit-soal-mapel').value = qData.mataPelajaran;
-        document.getElementById('edit-soal-kelas').value = qData.kelas || '';
-        document.getElementById('edit-soal-nomor').value = qData.nomor_soal === 999 ? '' : qData.nomor_soal;
-        document.getElementById('edit-soal-tipe').value = qData.tipe || 'PG';
-        document.getElementById('edit-soal-teks').value = qData.teks_soal || '';
-
-        const mediaPrev = document.getElementById('edit-soal-media-preview');
-        const hapusMediaCb = document.getElementById('edit-hapus-media');
-        document.getElementById('edit-soal-media').value = '';
-        if(hapusMediaCb) hapusMediaCb.checked = false;
-
-        if (mediaPrev && hapusMediaCb) {
-            if (qData.media_soal) {
-                mediaPrev.innerHTML = `<span style="font-size: 0.85rem; color: var(--success);"><i class="fas fa-check"></i> Media saat ini: ${qData.media_soal.type.toUpperCase()} (Tersimpan)</span>`;
-                hapusMediaCb.parentElement.style.display = 'flex';
-            } else {
-                mediaPrev.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-muted);">Tidak ada media pada soal ini.</span>`;
-                hapusMediaCb.parentElement.style.display = 'none';
-            }
-        }
-
-        renderFormEditDinamis(qData.tipe || 'PG', qData);
-        const md = document.getElementById('modal-edit-soal');
-        if(md) md.style.display = 'flex';
-    };
 
     document.getElementById('btn-update-soal')?.addEventListener('click', async () => {
         const id = document.getElementById('edit-soal-id').value; const mapel = document.getElementById('edit-soal-mapel').value; const kelas = document.getElementById('edit-soal-kelas').value; const noSoal = document.getElementById('edit-soal-nomor').value; const tipe = document.getElementById('edit-soal-tipe').value; const teks = document.getElementById('edit-soal-teks').value.trim();
