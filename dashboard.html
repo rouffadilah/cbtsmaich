@@ -277,14 +277,25 @@
     <div id="modal-detail-hasil" class="modal" style="display: none; align-items: center; justify-content: center;">...</div>
     <div id="modal-preview-full" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(0,0,0,0.8);">...</div>
     
-    <div id="modal-konfirmasi-hapus" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 1005;">
-        <div class="modal-content" style="width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-top: 5px solid var(--danger);">
-            <i class="fas fa-exclamation-triangle fa-4x" style="color: var(--danger); margin-bottom: 20px;"></i>
-            <h3 style="color: var(--secondary); margin-bottom: 10px; font-size: 1.3rem;">Konfirmasi Hapus</h3>
-            <p id="teks-konfirmasi-hapus" style="color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; line-height: 1.5;">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
+    <div id="modal-custom-confirm" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10005;">
+        <div class="modal-content" style="width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-top: 5px solid var(--warning);">
+            <i id="confirm-icon" class="fas fa-question-circle fa-4x" style="color: var(--warning); margin-bottom: 20px;"></i>
+            <h3 id="confirm-title" style="color: var(--secondary); margin-bottom: 10px; font-size: 1.3rem;">Konfirmasi</h3>
+            <p id="confirm-message" style="color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; line-height: 1.5;">Apakah Anda yakin?</p>
             <div style="display: flex; gap: 15px; justify-content: center;">
-                <button id="btn-batal-hapus" class="btn-3d btn-secondary" style="flex: 1; margin: 0;">Batal</button>
-                <button id="btn-ya-hapus" class="btn-3d" style="flex: 1; margin: 0; background-color: var(--danger);">Ya, Hapus</button>
+                <button id="btn-confirm-cancel" class="btn-3d btn-secondary" style="flex: 1; margin: 0;">Batal</button>
+                <button id="btn-confirm-ok" class="btn-3d" style="flex: 1; margin: 0; background-color: var(--warning);">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-custom-alert" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10006;">
+        <div class="modal-content" style="width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-top: 5px solid var(--info);">
+            <i id="alert-icon" class="fas fa-info-circle fa-4x" style="color: var(--info); margin-bottom: 20px;"></i>
+            <h3 id="alert-title" style="color: var(--secondary); margin-bottom: 10px; font-size: 1.3rem;">Informasi</h3>
+            <p id="alert-message" style="color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; line-height: 1.5;">Pesan</p>
+            <div style="display: flex; justify-content: center;">
+                <button id="btn-alert-ok" class="btn-3d" style="width: 100%; margin: 0; background-color: var(--info);">OK, Mengerti</button>
             </div>
         </div>
     </div>
