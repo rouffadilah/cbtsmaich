@@ -7,276 +7,442 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <style>
+        .stat-clickable { cursor: pointer; transition: all 0.2s ease-in-out; }
+        .stat-clickable:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary-light); }
+        .checkbox-container { max-height: 120px; overflow-y: auto; overflow-x: hidden; padding: 10px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); width: 100%; }
+        .checkbox-container label { word-break: break-word; white-space: normal; }
+        
+        .mapel-card {
+            background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md);
+            padding: 25px; cursor: pointer; transition: var(--transition); display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden;
+        }
+        .mapel-card::before { content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 100%; background: var(--primary); }
+        .mapel-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-4px); background: white; }
+        .mapel-card-icon { font-size: 2.5rem; color: var(--primary-light); margin-bottom: 5px; position: absolute; right: 20px; top: 25px; }
+
+        .app-layout { display: flex; height: 100vh; overflow: hidden; width: 100%; }
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background-color: var(--bg-main); width: 100%; }
+    </style>
 </head>
 <body>
 
-    <div class="main-wrapper">
-        
+    <div class="app-layout">
+        <div class="main-wrapper">
+            
             <header class="app-header" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 15px 30px; background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 90;">
-                
                 <div></div>
-
                 <div style="display: flex; justify-content: center; cursor: pointer;" onclick="window.location.hash='section-beranda'" title="Kembali ke Beranda">
                     <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 50px; width: auto; object-fit: contain; border-radius: 6px;">
                 </div>
-
                 <div style="display: flex; justify-content: flex-end; align-items: center;">
-                    <button id="btn-logout" class="btn-3d btn-secondary" style="padding: 10px 15px; margin: 0; width: auto; border-radius: 8px;" title="Keluar Aplikasi">
+                    <button id="btn-logout" class="btn-3d btn-secondary" style="padding: 10px 15px; margin: 0; width: auto;" title="Keluar Aplikasi">
                         <i class="fas fa-sign-out-alt" style="margin: 0; font-size: 1.2rem;"></i>
                     </button>
                 </div>
             </header>
 
-        <main class="main-content">
-            
-            <div id="section-beranda" class="content-section active">
-                <div class="welcome-banner">
-                    <div>
-                        <h2 style="color: white; font-size: 1.4rem; margin-bottom: 5px;" id="greeting-text">Assalamu'alaikum... 🙏</h2>
-                        <p style="color: var(--primary-light); font-weight: 500;">Selamat Datang di Aplikasi CBT-SMAICH. Pantau dan kelola aktivitas ujian Anda.</p>
-                    </div>
-                    <i class="fas fa-chalkboard-teacher" style="font-size: 4.5rem; color: rgba(255,255,255,0.2);"></i>
-                </div>
-
-                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-                    <div class="stat-card stat-clickable" data-target="section-soal">
-                        <div>
-                            <p>Bank Soal</p>
-                            <h3 id="stat-soal">0</h3>
-                        </div>
-                        <div style="color: var(--warning);"><i class="fas fa-file-alt"></i></div>
-                    </div>
-                
-                    <div class="stat-card stat-clickable" id="menu-pengguna" data-target="section-pengguna">
-                        <div>
-                            <p>Pengguna</p>
-                            <h3 id="stat-siswa">0</h3>
-                        </div>
-                        <div style="color: var(--info);"><i class="fas fa-users"></i></div>
-                    </div>
-                
-                    <div class="stat-card stat-clickable" data-target="section-hasil">
-                        <div>
-                            <p>Hasil Ujian</p>
-                            <h3 id="stat-ujian">0</h3>
-                        </div>
-                        <div style="color: var(--success);"><i class="fas fa-check-double"></i></div>
-                    </div>
-                
-                    <div class="stat-card stat-clickable" id="menu-pengaturan" data-target="section-pengaturan" style="...">
-                            <div>
-                                <p style="...">Pengaturan</p>
-                                <h3 style="..."><i class="fas fa-arrow-right"></i></h3>
-                            </div>
-                            <div style="color: var(--text-muted); font-size: 2rem; opacity: 0.7;">
-                                <i class="fas fa-cogs"></i>
-                            </div>
-                        </div>
-                    
-                    </div> </div> <div id="section-soal" class="content-section">
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 10px 16px;" title="Kembali">
-                            <i class="fas fa-arrow-left" style="margin: 0; font-size: 1.1rem;"></i>
-                        </button>
-                    </div>    
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 15px;">
-                        <h2 class="section-title" style="margin: 0;"><i class="fas fa-file-alt"></i> Bank Soal Ujian</h2>
-                        <button id="btn-tambah-manual" class="btn-3d" style="width: auto; background-color: var(--success); margin: 0;"><i class="fas fa-plus"></i> Kelola Soal</button>
-                    </div>
-                    
-                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
-                        <div style="flex: 1; min-width: 150px;">
-                            <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;"><i class="fas fa-filter"></i> Mata Pelajaran:</label>
-                            <select id="filter-soal-mapel" class="input-text"><option value="">Pilih Mapel...</option></select>
-                        </div>
-                        <div style="flex: 1; min-width: 150px;">
-                            <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;">Kelas:</label>
-                            <select id="filter-soal-kelas" class="input-text"><option value="">Pilih Kelas...</option></select>
-                        </div>
-                        <button id="btn-tampil-soal" class="btn-3d" style="width: auto; margin: 0;"><i class="fas fa-search"></i> Tampilkan</button>
-                        <button id="btn-preview-full" class="btn-3d" style="width: auto; background-color: var(--info); display: none; margin: 0;"><i class="fas fa-eye"></i> Preview</button>
-                    </div>
-
-                    <div class="table-container">
-                        <table id="table-soal">
-                            <thead><tr><th style="width: 60px; text-align: center;">No</th><th>Mapel</th><th>Kelas</th><th>Tipe</th><th>Pertanyaan</th><th>Aksi</th></tr></thead>
-                            <tbody><tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b> terlebih dahulu.</td></tr></tbody>
-                        </table>
-                    </div>
-                </div>
+            <div style="display: none;">
+                <h1 id="panel-title-role"></h1>
+                <span id="admin-name"></span>
+                <span id="live-time"></span>
             </div>
 
-            <div id="section-hasil" class="content-section">
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 10px 16px;" title="Kembali">
-                            <i class="fas fa-arrow-left" style="margin: 0; font-size: 1.1rem;"></i>
-                        </button>
+            <main class="main-content">
+                
+                <div id="section-beranda" class="content-section active">
+                    <div class="welcome-banner">
+                        <div>
+                            <h2 style="color: white; font-size: 1.3rem; margin-bottom: 5px;" id="greeting-text">Assalamu'alaikum...! 🙏</h2>
+                            <p style="color: var(--primary-light); font-weight: 500;">Selamat Datang di Aplikasi CBT-SMAICH. Pantau dan kelola aktivitas ujian dari menu di bawah ini.</p>
+                        </div>
+                        <i class="fas fa-chalkboard-teacher" style="font-size: 4rem; color: rgba(255,255,255,0.2);"></i>
                     </div>
 
-                <div class="card" id="area-cetak-hasil">
-                    <div id="hasil-summary-view">
-                        <h2 class="section-title" style="margin: 0 0 20px 0;"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian (Pilih Mapel)</h2>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;" id="grid-mapel-hasil">
-                            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i><br>Memuat rekap data...</div>
+                    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                        <div class="stat-card stat-clickable" data-target="section-soal" style="background: white; padding: 20px 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">Soal Tersedia</p>
+                                <h3 id="stat-soal" style="font-size: 2rem; color: var(--secondary); margin: 0; line-height: 1;">0</h3>
+                            </div>
+                            <div style="color: var(--warning); font-size: 2rem; opacity: 0.9;"><i class="fas fa-file-alt"></i></div>
+                        </div>
+                    
+                        <div class="stat-card stat-clickable" id="menu-pengguna" data-target="section-pengguna" style="background: white; padding: 20px 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">Pengguna Terdaftar</p>
+                                <h3 id="stat-siswa" style="font-size: 2rem; color: var(--secondary); margin: 0; line-height: 1;">0</h3>
+                            </div>
+                            <div style="color: var(--info); font-size: 2rem; opacity: 0.9;"><i class="fas fa-users"></i></div>
+                        </div>
+                    
+                        <div class="stat-card stat-clickable" data-target="section-hasil" style="background: white; padding: 20px 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">Hasil Ujian Masuk</p>
+                                <h3 id="stat-ujian" style="font-size: 2rem; color: var(--secondary); margin: 0; line-height: 1;">0</h3>
+                            </div>
+                            <div style="color: var(--success); font-size: 2rem; opacity: 0.9;"><i class="fas fa-check-double"></i></div>
+                        </div>
+                    
+                        <div class="stat-card stat-clickable" id="menu-pengaturan" data-target="section-pengaturan" style="background: white; padding: 20px 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">Pengaturan</p>
+                                <h3 style="font-size: 1.5rem; color: var(--secondary); margin: 0; line-height: 1.2;"><i class="fas fa-arrow-right"></i></h3>
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 2rem; opacity: 0.7;"><i class="fas fa-cogs"></i></div>
                         </div>
                     </div>
-
-                    <div id="hasil-detail-view" style="display: none;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <button id="btn-back-hasil" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;"><i class="fas fa-arrow-left"></i></button>
-                                <h2 class="section-title" style="margin: 0; color: var(--primary);" id="label-mapel-detail">MAPEL</h2>
+                </div> <div id="section-soal" class="content-section">
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Kembali ke Halaman Sebelumnya"><i class="fas fa-arrow-left"></i></button>
+                        <button onclick="window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Ke Beranda"><i class="fas fa-home"></i></button>
+                    </div>
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 15px;">
+                            <h2 class="section-title" style="margin: 0;"><i class="fas fa-file-alt"></i> Bank Soal Ujian</h2>
+                            <button id="btn-tambah-manual" class="btn-3d" style="width: auto; background-color: var(--success); margin: 0;"><i class="fas fa-plus"></i> Kelola / Tambah Soal</button>
+                        </div>
+                        
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;"><i class="fas fa-filter"></i> Mata Pelajaran:</label>
+                                <select id="filter-soal-mapel" class="input-text"><option value="">Pilih Mapel...</option></select>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                <label style="font-weight: 600; font-size: 0.9rem; color: var(--secondary); margin: 0;"><i class="fas fa-filter"></i> Filter Kelas:</label>
-                                <select id="filter-kelas-hasil" class="input-text" style="width: auto; padding: 6px 12px; margin: 0; min-width: 150px;"><option value="semua">Semua Kelas</option></select>
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;">Kelas:</label>
+                                <select id="filter-soal-kelas" class="input-text"><option value="">Pilih Kelas...</option></select>
                             </div>
+                            <button id="btn-tampil-soal" class="btn-3d" style="width: auto; margin: 0;"><i class="fas fa-search"></i> Tampilkan</button>
+                            <button id="btn-preview-full" class="btn-3d" style="width: auto; background-color: var(--info); display: none; margin: 0;"><i class="fas fa-eye"></i> Preview</button>
                         </div>
 
                         <div class="table-container">
-                            <table id="table-hasil">
-                                <thead><tr><th>Nama Siswa</th><th>Kelas</th><th>Benar/Total</th><th>Nilai Akhir</th><th>Aksi</th></tr></thead>
+                            <table id="table-soal">
+                                <thead><tr><th style="width: 60px; text-align: center;">No</th><th>Mapel</th><th>Kelas</th><th>Tipe</th><th>Pertanyaan</th><th>Aksi</th></tr></thead>
+                                <tbody><tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b> terlebih dahulu.</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-hasil" class="content-section">
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Kembali ke Halaman Sebelumnya"><i class="fas fa-arrow-left"></i></button>
+                        <button onclick="window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Ke Beranda"><i class="fas fa-home"></i></button>
+                    </div>
+
+                    <div class="card" id="area-cetak-hasil">
+                        <div id="hasil-summary-view">
+                            <h2 class="section-title" style="margin: 0 0 20px 0;"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian (Pilih Mapel)</h2>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;" id="grid-mapel-hasil">
+                                <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 30px;">
+                                    <i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i><br>Memuat rekap data...
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="hasil-detail-view" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <button id="btn-back-hasil" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;"><i class="fas fa-arrow-left"></i></button>
+                                    <h2 class="section-title" style="margin: 0; color: var(--primary);" id="label-mapel-detail">MAPEL</h2>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <label style="font-weight: 600; font-size: 0.9rem; color: var(--secondary); margin: 0;"><i class="fas fa-filter"></i> Filter Kelas:</label>
+                                    <select id="filter-kelas-hasil" class="input-text" style="width: auto; padding: 6px 12px; margin: 0; min-width: 150px;"><option value="semua">Semua Kelas</option></select>
+                                </div>
+                            </div>
+
+                            <div class="table-container">
+                                <table id="table-hasil">
+                                    <thead><tr><th>Nama Siswa</th><th>Kelas</th><th>Benar/Total</th><th>Nilai Akhir</th><th>Aksi</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-pengguna" class="content-section">
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Kembali ke Halaman Sebelumnya"><i class="fas fa-arrow-left"></i></button>
+                        <button onclick="window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Ke Beranda"><i class="fas fa-home"></i></button>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 20px; background: #f0fdf4; border: 1px solid var(--success);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                            <div>
+                                <h4 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-users"></i> Import Massal Akun Pengguna</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-muted);">Gunakan template Excel untuk membuat ratusan akun secara otomatis.</p>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <a href="Template_Akun_SMAICH.xlsx" download class="btn-3d btn-secondary" style="width: auto; margin: 0; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-download"></i> Unduh Template</a>
+                                <input type="file" id="upload-akun-excel" accept=".xlsx, .xls" style="display:none;">
+                                <label for="upload-akun-excel" class="btn-3d" style="width: auto; margin: 0; background: var(--success); cursor: pointer; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-upload"></i> Import Excel</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="section-title" style="margin: 0 0 20px 0;"><i class="fas fa-users-cog"></i> Manajemen Pengguna</h2>
+                        <div style="background: #f8fafc; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 30px; max-width: 600px;">
+                            <h4 style="margin-bottom: 20px; color: var(--secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-user-plus"></i> Buat Akun Baru (Manual)</h4>
+                            
+                            <div class="input-group"><label>Nama Lengkap</label><input type="text" id="new-nama" placeholder="Masukkan nama lengkap pengguna" class="input-text"></div>
+                            <div class="input-group"><label>Username / NIS / NIP</label><input type="text" id="new-username" placeholder="Masukkan ID unik untuk Login" class="input-text"></div>
+                            <div class="input-group">
+                                <label>Role / Hak Akses (Bisa pilih lebih dari 1)</label>
+                                <div style="display: flex; gap: 15px; padding: 12px 16px; background: #fafafa; border: 1.5px solid var(--border-color); border-radius: var(--radius-md);">
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa</label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="guru" style="transform: scale(1.2);"> Guru</label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="admin" style="transform: scale(1.2);"> Admin</label>
+                                </div>
+                            </div>
+
+                            <div class="input-group" id="group-new-mapel" style="display:none;"><label>Mata Pelajaran (Khusus Guru)</label><div id="new-mapel-container" class="checkbox-container"><div style="font-size:0.8rem; color:#888;">Memuat Mapel...</div></div></div>
+                            <div class="input-group" id="group-new-kelas-guru" style="display:none;"><label>Kelas Ajar (Khusus Guru)</label><div id="new-kelas-guru-container" class="checkbox-container"><div style="font-size:0.8rem; color:#888;">Memuat Kelas...</div></div></div>
+                            <div class="input-group" id="group-new-kelas-siswa" style="display:none;"><label>Kelas (Khusus Siswa)</label><select id="new-kelas-siswa" class="input-text"><option value="">Pilih Kelas...</option></select></div>
+
+                            <div class="input-group"><label>Password (Kata Sandi)</label><input type="password" id="new-pass" placeholder="Minimal 6 karakter" class="input-text"></div>
+                            <button id="btn-add-user" class="btn-3d" style="width: 100%; background-color: var(--info); margin-top: 10px;"><i class="fas fa-save"></i> SIMPAN AKUN</button>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="table-siswa">
+                                <thead><tr><th>Username / NIS</th><th>Nama Pengguna</th><th>Role Akses</th><th>Detail Tugas / Kelas</th><th>Aksi</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="section-pengguna" class="content-section">
+                <div id="section-pengaturan" class="content-section">
                     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 10px 16px;" title="Kembali">
-                            <i class="fas fa-arrow-left" style="margin: 0; font-size: 1.1rem;"></i>
-                        </button>
+                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Kembali ke Halaman Sebelumnya"><i class="fas fa-arrow-left"></i></button>
+                        <button onclick="window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Ke Beranda"><i class="fas fa-home"></i></button>
                     </div>
 
-                <div class="card" style="margin-bottom: 20px; background: #f0fdf4; border: 1px solid var(--success);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                        <div>
-                            <h4 style="color: var(--success); margin-bottom: 5px;"><i class="fas fa-users"></i> Import Massal Akun Pengguna</h4>
-                            <p style="font-size: 0.85rem; color: var(--text-muted);">Gunakan template Excel untuk membuat ratusan akun secara otomatis.</p>
-                        </div>
-                        <div style="display: flex; gap: 10px;">
-                            <a href="Template_Akun_SMAICH.xlsx" download class="btn-3d btn-secondary" style="width: auto; margin: 0; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-download"></i> Unduh Template</a>
-                            <input type="file" id="upload-akun-excel" accept=".xlsx, .xls" style="display:none;">
-                            <label for="upload-akun-excel" class="btn-3d" style="width: auto; margin: 0; background: var(--success); cursor: pointer; font-size: 0.8rem; padding: 8px 15px;"><i class="fas fa-upload"></i> Import Excel</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h2 class="section-title" style="margin: 0 0 20px 0;"><i class="fas fa-users-cog"></i> Manajemen Pengguna</h2>
-                    <div style="background: #f8fafc; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 30px; max-width: 600px;">
-                        <h4 style="margin-bottom: 20px; color: var(--secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-user-plus"></i> Buat Akun Baru (Manual)</h4>
+                    <div class="card">
+                        <h2 class="section-title" id="pengaturan-title"><i class="fas fa-cogs"></i> Data Master & Pengaturan</h2>
                         
-                        <div class="input-group"><label>Nama Lengkap</label><input type="text" id="new-nama" placeholder="Masukkan nama lengkap pengguna" class="input-text"></div>
-                        <div class="input-group"><label>Username / NIS / NIP</label><input type="text" id="new-username" placeholder="Masukkan ID unik untuk Login" class="input-text"></div>
-                        <div class="input-group">
-                            <label>Role / Hak Akses (Bisa pilih lebih dari 1)</label>
-                            <div style="display: flex; gap: 15px; padding: 12px 16px; background: #fafafa; border: 1.5px solid var(--border-color); border-radius: var(--radius-md);">
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa</label>
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="guru" style="transform: scale(1.2);"> Guru</label>
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="new-role-cb" value="admin" style="transform: scale(1.2);"> Admin</label>
+                        <div id="admin-reg-status" style="margin-bottom: 25px; background: #f0fdf4; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--success);">
+                            <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-user-lock"></i> Pengaturan Buka/Tutup Form Registrasi Publik:</label>
+                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                <div><span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Siswa:</span><select id="status-reg-siswa" class="input-text" style="width: auto; font-weight: bold;"><option value="buka">Buka (Aktif)</option><option value="tutup">Tutup (Nonaktif)</option></select></div>
+                                <div><span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Guru:</span><select id="status-reg-guru" class="input-text" style="width: auto; font-weight: bold;"><option value="buka">Buka (Aktif)</option><option value="tutup">Tutup (Nonaktif)</option></select></div>
+                                <button id="btn-save-reg-status" class="btn-3d" style="width: auto; margin: 0; background-color: var(--success);"><i class="fas fa-save"></i> Simpan Status</button>
                             </div>
                         </div>
 
-                        <div class="input-group" id="group-new-mapel" style="display:none;"><label>Mata Pelajaran (Khusus Guru)</label><div id="new-mapel-container" class="checkbox-container"></div></div>
-                        <div class="input-group" id="group-new-kelas-guru" style="display:none;"><label>Kelas Ajar (Khusus Guru)</label><div id="new-kelas-guru-container" class="checkbox-container"></div></div>
-                        <div class="input-group" id="group-new-kelas-siswa" style="display:none;"><label>Kelas (Khusus Siswa)</label><select id="new-kelas-siswa" class="input-text"><option value="">Pilih Kelas...</option></select></div>
+                        <div style="margin-bottom: 25px; background: #fffbeb; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--warning);">
+                            <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-key"></i> Set Token Ujian Baru (Atau Edit Token Lama):</label>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <select id="set-token-mapel" class="input-text" style="width: auto;"><option value="">Memuat Mapel...</option></select>
+                                <select id="set-token-kelas" class="input-text" style="width: auto;"><option value="">Memuat Kelas...</option></select>
+                                <input type="text" id="input-token-baru" class="input-text" style="width: 200px;" placeholder="Ketik Token (cth: X7Y8Z)">
+                                <button id="btn-save-token" class="btn-3d" style="width: auto; margin: 0; background-color: var(--warning);"><i class="fas fa-check"></i> Set Token</button>
+                            </div>
+                            
+                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-top: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h4 style="font-size: 0.95rem; color: var(--secondary);"><i class="fas fa-list-ul"></i> Daftar Token Ujian yang Sedang Aktif</h4>
+                                    <button id="btn-refresh-token" style="background:none; border:none; color:var(--info); cursor:pointer; font-size: 1rem;" title="Muat Ulang Token"><i class="fas fa-sync-alt"></i></button>
+                                </div>
+                                <div style="max-height: 250px; overflow-y: auto;">
+                                    <table id="table-active-tokens" style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+                                        <thead style="background: #f8fafc; position: sticky; top: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                            <tr><th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--secondary);">Mata Pelajaran</th><th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--secondary);">Kelas</th><th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--secondary);">Token Akses</th><th style="padding: 10px; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--secondary);">Hapus</th></tr>
+                                        </thead>
+                                        <tbody><tr><td colspan="4" style="text-align:center; padding: 15px; color: var(--text-muted);">Memuat data...</td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
 
-                        <div class="input-group"><label>Password (Kata Sandi)</label><input type="password" id="new-pass" placeholder="Minimal 6 karakter" class="input-text"></div>
-                        <button id="btn-add-user" class="btn-3d" style="width: 100%; background-color: var(--info); margin-top: 10px;"><i class="fas fa-save"></i> SIMPAN AKUN</button>
-                    </div>
+                        <div id="admin-data-master" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-book"></i> Master Mata Pelajaran</h4>
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                    <input type="text" id="input-new-mapel" class="input-text" placeholder="Mapel Baru (cth: B. Inggris)">
+                                    <button id="btn-add-mapel" class="btn-3d" style="width: auto; margin: 0;"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;"><table id="table-master-mapel" style="width: 100%; font-size: 0.85rem;"><tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody></table></div>
+                            </div>
 
-                    <div class="table-container">
-                        <table id="table-siswa">
-                            <thead><tr><th>Username / NIS</th><th>Nama Pengguna</th><th>Role Akses</th><th>Detail Tugas / Kelas</th><th>Aksi</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
+                            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-chalkboard"></i> Master Kelas</h4>
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                    <input type="text" id="input-new-kelas" class="input-text" placeholder="Kelas Baru (cth: XII RPL)">
+                                    <button id="btn-add-kelas" class="btn-3d" style="width: auto; margin: 0;"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;"><table id="table-master-kelas" style="width: 100%; font-size: 0.85rem;"><tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody></table></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+            </main>
+        </div>
+    </div> <div id="modal-tambah-soal" class="modal" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal-content" style="width: 750px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" id="close-modal-soal" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-bottom: 15px; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Manajemen Bank Soal</h3>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button id="tab-manual" class="btn-3d" style="flex: 1; margin: 0; font-size: 0.85rem;"><i class="fas fa-edit"></i> Buat Manual</button>
+                <button id="tab-import" class="btn-3d btn-secondary" style="flex: 1; margin: 0; font-size: 0.85rem;"><i class="fas fa-file-upload"></i> Import File</button>
             </div>
 
-            <div id="section-pengaturan" class="content-section">
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 10px 16px;" title="Kembali">
-                            <i class="fas fa-arrow-left" style="margin: 0; font-size: 1.1rem;"></i>
-                        </button>
-                    </div>
-
-                <div class="card">
-                    <h2 class="section-title" id="pengaturan-title"><i class="fas fa-cogs"></i> Data Master & Pengaturan</h2>
-                    
-                    <div id="admin-reg-status" style="margin-bottom: 25px; background: #f0fdf4; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--success);">
-                        <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-user-lock"></i> Pengaturan Buka/Tutup Form Registrasi Publik:</label>
-                        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                            <div><span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Siswa:</span><select id="status-reg-siswa" class="input-text" style="width: auto; font-weight: bold;"><option value="buka">Buka (Aktif)</option><option value="tutup">Tutup (Nonaktif)</option></select></div>
-                            <div><span style="font-size: 0.9rem; font-weight: bold; margin-right: 10px;">Pendaftaran Guru:</span><select id="status-reg-guru" class="input-text" style="width: auto; font-weight: bold;"><option value="buka">Buka (Aktif)</option><option value="tutup">Tutup (Nonaktif)</option></select></div>
-                            <button id="btn-save-reg-status" class="btn-3d" style="width: auto; margin: 0; background-color: var(--success);"><i class="fas fa-save"></i> Simpan Status</button>
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 25px; background: #fffbeb; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--warning);">
-                        <label style="font-weight: 600; color: var(--secondary); display: block; margin-bottom: 10px;"><i class="fas fa-key"></i> Set Token Ujian Baru (Atau Edit Token Lama):</label>
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <select id="set-token-mapel" class="input-text" style="width: auto;"><option value="">Memuat Mapel...</option></select>
-                            <select id="set-token-kelas" class="input-text" style="width: auto;"><option value="">Memuat Kelas...</option></select>
-                            <input type="text" id="input-token-baru" class="input-text" style="width: 200px;" placeholder="Ketik Token (cth: X7Y8Z)">
-                            <button id="btn-save-token" class="btn-3d" style="width: auto; margin: 0; background-color: var(--warning);"><i class="fas fa-check"></i> Set Token</button>
-                        </div>
-                        
-                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-top: 15px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h4 style="font-size: 0.95rem; color: var(--secondary);"><i class="fas fa-list-ul"></i> Daftar Token Ujian yang Sedang Aktif</h4>
-                                <button id="btn-refresh-token" style="background:none; border:none; color:var(--info); cursor:pointer; font-size: 1rem;" title="Muat Ulang Token"><i class="fas fa-sync-alt"></i></button>
-                            </div>
-                            <div style="max-height: 250px; overflow-y: auto;">
-                                <table id="table-active-tokens" style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
-                                    <thead style="background: #f8fafc; position: sticky; top: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                                        <tr><th style="padding: 10px; text-align: left;">Mapel</th><th style="padding: 10px; text-align: left;">Kelas</th><th style="padding: 10px; text-align: left;">Token Akses</th><th style="padding: 10px; text-align: center;">Hapus</th></tr>
-                                    </thead>
-                                    <tbody><tr><td colspan="4" style="text-align:center; padding: 15px;">Memuat data...</td></tr></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="admin-data-master" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-book"></i> Master Mata Pelajaran</h4>
-                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                <input type="text" id="input-new-mapel" class="input-text" placeholder="Mapel Baru">
-                                <button id="btn-add-mapel" class="btn-3d" style="width: auto; margin: 0;"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
-                                <table id="table-master-mapel" style="width: 100%; font-size: 0.85rem;"><tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody></table>
-                            </div>
-                        </div>
-
-                        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h4 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-chalkboard"></i> Master Kelas</h4>
-                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                <input type="text" id="input-new-kelas" class="input-text" placeholder="Kelas Baru">
-                                <button id="btn-add-kelas" class="btn-3d" style="width: auto; margin: 0;"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
-                                <table id="table-master-kelas" style="width: 100%; font-size: 0.85rem;"><tbody><tr><td style="text-align:center;">Memuat...</td></tr></tbody></table>
-                            </div>
-                        </div>
-                    </div>
+            <div id="area-manual">
+                <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                    <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
+                    <div style="flex: 1; min-width: 150px;"><label>Kelas</label><select id="soal-kelas" class="input-text"><option value="">Memuat Kelas...</option></select></div>
                 </div>
+                <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                    <div style="flex: 1; min-width: 100px;"><label>Nomor Soal</label><input type="number" id="soal-nomor" class="input-text" min="1" placeholder="Contoh: 1" required></div>
+                    <div style="flex: 2; min-width: 150px;"><label>Tipe Soal</label><select id="soal-tipe" class="input-text"><option value="PG">Pilihan Ganda (PG)</option><option value="PGK">Pilihan Ganda Kompleks (PGK)</option><option value="Menjodohkan">Menjodohkan</option><option value="Isian">Isian Singkat</option><option value="Uraian">Uraian / Essay</option></select></div>
+                </div>
+                
+                <div class="input-group"><label>Teks Pertanyaan</label><textarea id="soal-teks" class="input-text" rows="3" required></textarea></div>
+                <div class="input-group" style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px dashed var(--info);"><label style="color: var(--info);"><i class="fas fa-photo-video"></i> Media Pendukung Soal (Opsional)</label><input type="file" id="soal-media" class="input-text" accept="image/*, audio/*, video/*" style="background: white;"></div>
+
+                <div id="area-opsi-dinamis" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;"></div>
+                <button id="btn-simpan-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-save"></i> SIMPAN SOAL</button>
             </div>
 
-        </main>
+            <div id="area-import" style="display: none;">
+                <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--info);">
+                    <p style="font-weight: 700; color: var(--info); font-size: 0.85rem; margin-bottom: 10px;"><i class="fas fa-download"></i> UNDUH TEMPLATE SOAL:</p>
+                    <div style="display: flex; gap: 10px;"><a href="Template_Soal_CBT_SMAICH.xlsx" download class="btn-3d" style="background: #107c41; margin: 0; font-size: 0.75rem; padding: 8px 12px; width: auto;"><i class="fas fa-file-excel"></i> Template Excel</a></div>
+                </div>
+                
+                <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran untuk File Import</label><select id="import-mapel" class="input-text"><option value="">Memuat Mapel...</option></select></div>
+                    <div style="flex: 1; min-width: 150px;"><label>Kelas untuk File Import</label><select id="import-kelas" class="input-text"><option value="">Memuat Kelas...</option></select></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="border: 2px dashed var(--success); padding: 20px; border-radius: 8px; text-align: center; background: #f0fdf4;">
+                        <i class="fas fa-file-excel fa-3x" style="color: var(--success); margin-bottom: 10px;"></i><h4 style="color: var(--secondary);">Import Excel</h4><input type="file" id="file-excel" accept=".xlsx, .xls" style="display: none;">
+                        <label for="file-excel" id="label-file-excel" class="btn-3d" style="background: var(--success); cursor: pointer; padding: 8px; margin-top:10px; width: 100%;"><i class="fas fa-search"></i> Pilih File</label>
+                    </div>
+                    <div style="border: 2px dashed var(--info); padding: 20px; border-radius: 8px; text-align: center; background: #eff6ff;">
+                        <i class="fas fa-file-word fa-3x" style="color: var(--info); margin-bottom: 10px;"></i><h4 style="color: var(--secondary);">Import Word</h4><input type="file" id="file-word" accept=".docx" style="display: none;">
+                        <label for="file-word" id="label-file-word" class="btn-3d" style="background: var(--info); cursor: pointer; padding: 8px; margin-top:10px; width: 100%;"><i class="fas fa-search"></i> Pilih File</label>
+                    </div>
+                </div>
+                <button id="btn-proses-import-soal" class="btn-3d" style="width: 100%; background-color: var(--secondary);"><i class="fas fa-cloud-upload-alt"></i> UPLOAD & PROSES</button>
+            </div>
+        </div>
     </div>
 
-    <div id="modal-tambah-soal" class="modal" style="display: none; align-items: center; justify-content: center;">...</div>
-    <div id="modal-edit-soal" class="modal" style="display: none; align-items: center; justify-content: center;">...</div>
-    <div id="modal-edit-akun" class="modal" style="display: none; align-items: center; justify-content: center;">...</div>
-    <div id="modal-detail-hasil" class="modal" style="display: none; align-items: center; justify-content: center;">...</div>
-    <div id="modal-preview-full" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(0,0,0,0.8);">...</div>
-    
+    <div id="modal-edit-soal" class="modal" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal-content" style="width: 750px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" id="close-modal-edit-soal" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-bottom: 15px; color: var(--warning); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-edit"></i> Edit Bank Soal</h3>
+            <input type="hidden" id="edit-soal-id">
+            
+            <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                <div style="flex: 1; min-width: 150px;"><label>Mata Pelajaran</label><select id="edit-soal-mapel" class="input-text"></select></div>
+                <div style="flex: 1; min-width: 150px;"><label>Kelas</label><select id="edit-soal-kelas" class="input-text"></select></div>
+            </div>
+            <div class="input-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                <div style="flex: 1; min-width: 100px;"><label>Nomor Soal</label><input type="number" id="edit-soal-nomor" class="input-text" min="1" required></div>
+                <div style="flex: 2; min-width: 150px;"><label>Tipe Soal</label><select id="edit-soal-tipe" class="input-text"><option value="PG">Pilihan Ganda (PG)</option><option value="PGK">Pilihan Ganda Kompleks (PGK)</option><option value="Menjodohkan">Menjodohkan</option><option value="Isian">Isian Singkat</option><option value="Uraian">Uraian / Essay</option></select></div>
+            </div>
+            
+            <div class="input-group"><label>Teks Pertanyaan</label><textarea id="edit-soal-teks" class="input-text" rows="3" required></textarea></div>
+            <div class="input-group" style="background: #fffbeb; padding: 15px; border-radius: 8px; border: 1px dashed var(--warning);">
+                <label style="color: var(--warning);"><i class="fas fa-photo-video"></i> Update Media Utama Soal (Opsional)</label>
+                <div id="edit-soal-media-preview" style="margin-bottom: 10px;"></div>
+                <input type="file" id="edit-soal-media" class="input-text" accept="image/*, audio/*, video/*" style="background: white;">
+                <label style="display: flex; align-items: center; gap: 5px; margin-top: 10px; cursor: pointer; color: var(--danger); font-size: 0.85rem;"><input type="checkbox" id="edit-hapus-media"> Hapus Media Saat Ini</label>
+            </div>
+
+            <div id="edit-area-opsi-dinamis" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;"></div>
+            <button id="btn-update-soal" class="btn-3d" style="width: 100%; background-color: var(--warning); margin: 0;"><i class="fas fa-save"></i> PERBARUI SOAL</button>
+        </div>
+    </div>
+
+    <div id="modal-edit-akun" class="modal" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 450px; max-width: 90%;">
+            <span class="close-btn" id="close-modal-edit-akun" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-bottom: 15px; color: var(--warning);"><i class="fas fa-user-edit"></i> Edit Profil Pengguna</h3>
+            <input type="hidden" id="edit-uid">
+            <div class="input-group"><label>Nama Lengkap</label><input type="text" id="edit-nama" class="input-text"></div>
+            <div class="input-group">
+                <label>Role / Hak Akses</label>
+                <div style="display: flex; gap: 15px; padding: 12px 16px; background: #fafafa; border: 1.5px solid var(--border-color); border-radius: var(--radius-md);">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="edit-role-cb" value="siswa" style="transform: scale(1.2);"> Siswa</label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="edit-role-cb" value="guru" style="transform: scale(1.2);"> Guru</label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500;"><input type="checkbox" class="edit-role-cb" value="admin" style="transform: scale(1.2);"> Admin</label>
+                </div>
+            </div>
+            <div id="group-edit-guru" style="display:none; gap: 10px; margin-bottom: 15px;">
+                <div class="input-group" style="flex:1; margin-bottom: 0;"><label>Mata Pelajaran</label><div id="edit-mapel-container" class="checkbox-container"></div></div>
+                <div class="input-group" style="flex:1; margin-bottom: 0;"><label>Kelas Ajar</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
+            </div>
+            <div class="input-group" id="group-edit-kelas-siswa" style="display:none;"><label>Kelas (Siswa)</label><select id="edit-kelas-siswa" class="input-text"><option value="">Memuat...</option></select></div>
+            <button id="btn-save-edit-akun" class="btn-3d" style="background-color: var(--warning); width: 100%;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
+        </div>
+    </div>
+
+    <div id="modal-detail-hasil" class="modal" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal-content" style="background: white; padding: 25px; border-radius: var(--radius-md); width: 500px; max-width: 90%;">
+            <span class="close-btn" id="close-modal-detail" style="cursor: pointer; float: right; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-bottom: 15px; color: var(--secondary);">Rincian Hasil Ujian</h3>
+            <table class="table-detail" style="width: 100%; margin-bottom: 15px; font-size: 0.9rem;">
+                <tr><td style="width: 120px; font-weight: bold;">Nama Siswa</td><td id="detail-nama">: -</td></tr>
+                <tr><td style="font-weight: bold;">Kelas</td><td id="detail-kelas">: -</td></tr>
+                <tr><td style="font-weight: bold;">Mata Pelajaran</td><td id="detail-mapel">: -</td></tr>
+            </table>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <p style="font-weight: bold; margin-bottom: 10px; color: var(--success);">Nomor Soal Dijawab Benar (<span id="detail-jml-benar">0</span> dari <span id="detail-total-soal">0</span>):</p>
+                <div id="detail-rincian-benar" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            </div>
+            <div class="nilai-akhir-box" style="margin-top: 15px; text-align: center; background: #eff6ff; padding: 15px; border-radius: 8px;">
+                <span style="font-size: 1rem; color: var(--secondary); font-weight: 600;">NILAI AKHIR</span><br><strong id="detail-nilai" style="font-size: 2.5rem; color: var(--primary);">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-preview-full" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="width: 95%; max-width: 1200px; height: 95vh; display:flex; flex-direction:column; padding:0; overflow:hidden; border-radius: var(--radius-lg);">
+            <div style="background:var(--secondary); color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-size: 1.2rem;"><i class="fas fa-laptop-code"></i> Preview Tampilan Ujian Siswa (Hanya Lihat)</h3>
+                <span class="close-btn" id="close-preview-full" style="position:static; color:white; font-size: 2rem;">&times;</span>
+            </div>
+            <div style="flex:1; overflow-y:auto; padding:20px; background:var(--bg-main);">
+                <div class="exam-layout" style="margin:0; width:100%; max-width:100%; padding:0;">
+                    <section class="question-section">
+                        <div class="card question-card">
+                            <div class="question-header">
+                                <div><span class="q-number-label">SOAL NOMOR</span><div class="q-number-badge" id="prev-current-q-num">1</div></div>
+                                <div id="prev-badge-tipe" style="background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">TIPE SOAL</div>
+                            </div>
+                            <div class="question-content" id="prev-q-container" style="min-height: 250px;"></div>
+                            <div class="nav-controls">
+                                <button class="nav-btn btn-prev" id="prev-btn-prev"><i class="fas fa-chevron-left"></i> SEBELUMNYA</button>
+                                <button class="nav-btn btn-next" id="prev-btn-next">SELANJUTNYA <i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </section>
+                    <aside class="sidebar-panel">
+                        <div class="card timer-card" style="opacity: 0.5;"><h3><i class="far fa-clock"></i> SISA WAKTU</h3><div class="time-display" style="font-size: 1.5rem;">[TIDAK AKTIF]</div></div>
+                        <div class="card navigation-card">
+                            <h3 style="font-size: 0.9rem; color: var(--text-muted); text-align: center;"><i class="fas fa-th"></i> NAVIGASI SOAL</h3>
+                            <div class="q-grid" id="prev-q-grid"></div>
+                            <div class="legend-container">
+                                <div class="leg-item"><span class="leg-box answered"></span> Terjawab</div><div class="leg-item"><span class="leg-box active-q" style="border: 2px solid var(--info); background: transparent;"></span> Sedang Dibuka</div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-custom-confirm" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10005;">
         <div class="modal-content" style="width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-top: 5px solid var(--warning);">
             <i id="confirm-icon" class="fas fa-question-circle fa-4x" style="color: var(--warning); margin-bottom: 20px;"></i>
