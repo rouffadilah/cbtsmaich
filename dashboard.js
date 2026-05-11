@@ -18,7 +18,7 @@ const secondaryAuth = getAuth(secondaryApp);
 let listMapel = []; let listKelas = []; let allUsersData = []; let allSoalData = []; let filteredSoalData = [];
 let currentMapelDetail = ""; 
 
-// --- MODAL CUSTOM ---
+// --- 1. MODAL CUSTOM & NOTIFIKASI ---
 window.customAlert = (msg, type='info') => {
     const modal = document.getElementById('modal-custom-alert');
     if(!modal) { alert(msg); return Promise.resolve(); }
@@ -39,13 +39,12 @@ window.customConfirm = (msg) => {
     });
 };
 
-// --- HELPER MEDIA ---
+// --- 2. HELPER MEDIA ---
 async function uploadFileKeStorage(file) {
     if(!file) return null;
     const storageRef = ref(storage, `bank_soal_media/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    return { url, type: file.type.split('/')[0] };
+    return { url: await getDownloadURL(storageRef), type: file.type.split('/')[0] };
 }
 
 function base64ToFile(base64Str, filename) {
@@ -57,10 +56,10 @@ function base64ToFile(base64Str, filename) {
     } catch(e) { return null; }
 }
 
-// --- LOGIKA UTAMA ---
+// --- 3. LOGIKA DASHBOARD ---
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Routing
+    // Routing Panel
     function handleRouting() {
         let hash = window.location.hash.substring(1) || 'section-beranda';
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -80,199 +79,111 @@ document.addEventListener('DOMContentLoaded', () => {
         if(await customConfirm("Yakin ingin keluar?")) { await signOut(auth); localStorage.clear(); window.location.href = "index.html"; }
     };
 
-    // --- MANAJEMEN SOAL ---
+    // --- 4. MANAJEMEN BANK SOAL (FUNGSI TAMPILKAN) ---
+    const btnTampil = document.getElementById('btn-tampil-soal');
+    if(btnTampil) btnTampil.onclick = loadDataSoal;
+
+    async function loadDataSoal() {
+        const m = document.getElementById('filter-soal-mapel').value;
+        const k = document.getElementById('filter-soal-kelas').value;
+        const tbody = document.querySelector('#table-soal tbody');
+
+        if(!m || !k) return customAlert("Pilih Mapel dan Kelas terlebih dahulu!", "warning");
+
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Memuat data soal...</td></tr>';
+
+        try {
+            const qS = query(collection(db, "bank_soal"), where("mataPelajaran", "==", m), where("kelas", "==", k));
+            const snap = await getDocs(qS);
+            
+            allSoalData = [];
+            snap.forEach(d => allSoalData.push({id: d.id, ...d.data()}));
+            allSoalData.sort((a,b) => a.nomor_soal - b.nomor_soal);
+            
+            document.getElementById('stat-soal').innerText = allSoalData.length;
+            tbody.innerHTML = '';
+
+            if(allSoalData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--danger);">Belum ada soal untuk kategori ini.</td></tr>';
+                return;
+            }
+
+            allSoalData.forEach(dat => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="text-align:center;">${dat.nomor_soal}</td>
+                        <td>${dat.mataPelajaran}</td>
+                        <td>${dat.kelas}</td>
+                        <td><span class="badge" style="background:var(--primary-light); color:var(--primary-hover); font-weight:bold; padding:4px 8px; border-radius:4px;">${dat.tipe}</span></td>
+                        <td>${dat.teks_soal.substring(0,50)}${dat.teks_soal.length > 50 ? '...' : ''}</td>
+                        <td>
+                            <button onclick="window.editSoal('${dat.id}')" style="color:var(--warning); background:none; border:none; cursor:pointer; font-size:1.1rem;" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button onclick="window.hapusDokumen('bank_soal', '${dat.id}', window.loadDataSoal)" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:1.1rem; margin-left:10px;" title="Hapus"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
+            document.getElementById('btn-preview-full').style.display = 'inline-block';
+        } catch(e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data dari database.</td></tr>';
+        }
+    }
+    window.loadDataSoal = loadDataSoal; // Ekspor ke global agar bisa dipanggil tombol hapus
+
+    // --- 5. IMPORT & MODAL MANAGEMENT ---
     document.getElementById('btn-tambah-manual').onclick = () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
         renderFormDinamis('PG');
     };
 
-    document.getElementById('close-modal-soal').onclick = () => document.getElementById('modal-tambah-soal').style.display = 'none';
-
-    function renderFormDinamis(tipe) {
-        const area = document.getElementById('area-opsi-dinamis');
-        if(tipe === 'PG' || tipe === 'PGK') {
-            area.innerHTML = ['A','B','C','D','E'].map(o => `
-                <div style="display:flex; gap:10px; margin-bottom:8px; align-items:center; background:#fff; padding:8px; border-radius:8px; border:1px solid #e2e8f0;">
-                    <input type="${tipe==='PG'?'radio':'checkbox'}" name="kunci" value="${o}">
-                    <label style="font-weight:bold;">${o}</label>
-                    <input type="text" id="opsi-${o}" class="input-text" placeholder="Teks Opsi ${o}" style="flex:1;">
-                    <input type="file" id="media-opsi-${o}" style="width:180px; font-size:0.7rem;">
-                </div>`).join('');
-        } else if(tipe === 'Menjodohkan') {
-            area.innerHTML = '<p style="font-size:0.8rem; color:#64748b;">Format: Pernyataan = Jawaban (Gunakan tombol Import Excel untuk mempermudah)</p>';
-        } else {
-            area.innerHTML = '<p>Jawaban akan diisi manual oleh siswa.</p>';
-        }
-    }
-
-    // ==========================================
-// MESIN IMPORT EXCEL & WORD CERDAS
-// ==========================================
-let selectedExcelSoal = null;
-let selectedWordSoal = null;
-
-// Logika Perpindahan Tab Modal
-document.getElementById('tab-manual')?.addEventListener('click', () => {
-    document.getElementById('area-manual').style.display = 'block';
-    document.getElementById('area-import').style.display = 'none';
-    document.getElementById('tab-manual').classList.remove('btn-secondary');
-    document.getElementById('tab-import').classList.add('btn-secondary');
-});
-
-document.getElementById('tab-import')?.addEventListener('click', () => {
-    document.getElementById('area-manual').style.display = 'none';
-    document.getElementById('area-import').style.display = 'block';
-    document.getElementById('tab-import').classList.remove('btn-secondary');
-    document.getElementById('tab-manual').classList.add('btn-secondary');
-});
-
-// Listener Deteksi File
-document.getElementById('file-excel')?.addEventListener('change', (e) => {
-    selectedExcelSoal = e.target.files[0];
-    const label = document.getElementById('label-file-excel');
-    if(selectedExcelSoal) {
-        label.innerHTML = `<b style="color:var(--success);">${selectedExcelSoal.name}</b>`;
-        selectedWordSoal = null; 
-    }
-});
-
-document.getElementById('file-word')?.addEventListener('change', (e) => {
-    selectedWordSoal = e.target.files[0];
-    const label = document.getElementById('label-file-word');
-    if(selectedWordSoal) {
-        label.innerHTML = `<b style="color:var(--info);">${selectedWordSoal.name}</b>`;
-        selectedExcelSoal = null;
-    }
-});
-
-// PROSES EKSEKUSI IMPORT DENGAN SISTEM LAPORAN PROGRES
-    document.getElementById('btn-proses-import-soal').onclick = async () => {
-        const mapel = document.getElementById('import-mapel').value;
-        const kelas = document.getElementById('import-kelas').value;
-
-        if (!selectedExcelSoal && !selectedWordSoal) return await window.customAlert("Pilih file Excel atau Word terlebih dahulu!", "warning");
-        if (!mapel || !kelas) return await window.customAlert("Pilih tujuan Mapel dan Kelas!", "warning");
-
-        const btn = document.getElementById('btn-proses-import-soal');
-        const origText = btn.innerHTML;
-        btn.disabled = true;
-
-        if (selectedWordSoal) {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const options = {
-                        convertImage: mammoth.images.imgElement(img => img.read("base64").then(b => ({src: "data:"+img.contentType+";base64,"+b})))
-                    };
-                    const result = await mammoth.convertToHtml({arrayBuffer: e.target.result}, options);
-                    const div = document.createElement('div');
-                    div.innerHTML = result.value;
-
-                    let qList = [], curr = null;
-                    // Ganti bagian ekstraksi teks di dalam reader.onload:
-                    div.childNodes.forEach(el => {
-                        // Ambil teks mentah dan bersihkan spasi berlebih
-                        let txt = (el.textContent || "").replace(/\s+/g, ' ').trim();
-                        let upper = txt.toUpperCase();
-                        let img = el.querySelector('img')?.src;
-                    
-                        // Deteksi Nomor Soal (Lebih fleksibel: bisa NO: 1 atau NO:1)
-                        if (upper.match(/^NO\s*:/)) {
-                            if (curr) qList.push(curr);
-                            let no = parseInt(upper.replace('NO', '').replace(':', '').trim()) || (qList.length + 1);
-                            curr = { 
-                                nomor_soal: no, 
-                                tipe: 'PG', 
-                                teks_soal: '', 
-                                opsi: { A: '', B: '', C: '', D: '', E: '' }, 
-                                kunci_jawaban: '', 
-                                media_soal: null, 
-                                opsi_media: {} 
-                            };
-                        } else if (curr) {
-                            // Deteksi Tipe (PG / PGK / ESSAY)
-                            if (upper.startsWith('TIPE:')) {
-                                curr.tipe = upper.split(':')[1]?.trim() || 'PG';
-                            } 
-                            // Deteksi Teks Soal
-                            else if (upper.startsWith('SOAL:')) {
-                                curr.teks_soal = txt.replace(/SOAL\s*:/i, '').trim();
-                                if (img) curr.media_soal = img;
-                            } 
-                            // Deteksi Opsi A-E (Menggunakan RegEx agar lebih akurat)
-                            else if (upper.match(/^[A-E]\s*\./)) {
-                                let label = upper[0]; // Ambil huruf A, B, C, D, atau E
-                                curr.opsi[label] = txt.substring(txt.indexOf('.') + 1).trim();
-                                if (img) curr.opsi_media[label] = img;
-                            } 
-                            // Deteksi Kunci Jawaban
-                            else if (upper.startsWith('KUNCI:')) {
-                                curr.kunci_jawaban = upper.split(':')[1]?.trim() || '';
-                            }
-                        }
-                    });
-                    if (curr) qList.push(curr);
-
-                    if(!(await window.customConfirm(`Terdeteksi ${qList.length} soal. Lanjutkan proses import?`))) {
-                        btn.innerHTML = origText; btn.disabled = false; return;
-                    }
-
-                    // --- SISTEM LAPORAN PROGRES ---
-                    for(let i = 0; i < qList.length; i++) {
-                        let q = qList[i];
-                        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Memproses ${i + 1} dari ${qList.length}...`;
-
-                        let pay = { mataPelajaran: mapel, kelas, nomor_soal: q.nomor_soal, tipe: q.tipe, teks_soal: q.teks_soal, createdAt: new Date() };
-                        
-                        // Unggah gambar soal
-                        if(q.media_soal) pay.media_soal = await uploadFileKeStorage(base64ToFile(q.media_soal, `s_${Date.now()}.jpg`));
-                        
-                        // Unggah gambar opsi
-                        if(q.tipe==='PG'||q.tipe==='PGK') {
-                            pay.opsi = q.opsi; pay.kunci_jawaban = q.kunci_jawaban;
-                            let om = {};
-                            for(let k in q.opsi_media) om[k] = await uploadFileKeStorage(base64ToFile(q.opsi_media[k], `o_${k}.jpg`));
-                            if(Object.keys(om).length > 0) pay.opsi_media = om;
-                        }
-                        
-                        await addDoc(collection(db, "bank_soal"), pay);
-                    }
-
-                    await window.customAlert(`Berhasil! ${qList.length} soal telah diunggah.`, "success");
-                    location.reload();
-                } catch(err) { 
-                    console.error(err);
-                    await window.customAlert("Gagal memproses file Word.", "error"); 
-                }
-                btn.innerHTML = origText; btn.disabled = false;
-            };
-            reader.readAsArrayBuffer(selectedWordSoal);
-        }
+    document.getElementById('tab-import').onclick = () => {
+        document.getElementById('area-manual').style.display = 'none';
+        document.getElementById('area-import').style.display = 'block';
     };
 
-    // --- TEMPLATE DOWNLOADER ---
-    document.getElementById('btn-dl-word').onclick = () => {
-        const html = `<html><body><b>NO:</b> 1<br><b>TIPE:</b> PG<br><b>SOAL:</b> Pertanyaan?<br><b>A.</b> Opsi 1<br><b>B.</b> Opsi 2<br><b>KUNCI:</b> A</body></html>`;
-        const blob = new Blob(['\ufeff', html], {type:'application/msword'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'Template_SMAICH.doc'; a.click();
+    document.getElementById('tab-manual').onclick = () => {
+        document.getElementById('area-import').style.display = 'none';
+        document.getElementById('area-manual').style.display = 'block';
     };
 
-    // --- LOAD DATA DROPDOWNS ---
+    // --- 6. DATA MASTER & PENGGUNA ---
     async function loadDataMaster() {
         const snap = await getDoc(doc(db, "pengaturan", "data_akademik"));
         if(snap.exists()) {
             listMapel = snap.data().list_mapel || [];
             listKelas = snap.data().list_kelas || [];
-            const opts = '<option value="">-- Pilih --</option>' + listMapel.map(m => `<option value="${m}">${m}</option>`).join('');
-            document.querySelectorAll('#import-mapel, #filter-soal-mapel, #soal-mapel').forEach(s => s.innerHTML = opts);
-            const optsK = '<option value="">-- Pilih --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
-            document.querySelectorAll('#import-kelas, #filter-soal-kelas, #soal-kelas').forEach(s => s.innerHTML = optsK);
+            const optsM = '<option value="">-- Pilih Mapel --</option>' + listMapel.map(m => `<option value="${m}">${m}</option>`).join('');
+            const optsK = '<option value="">-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+            document.querySelectorAll('#filter-soal-mapel, #import-mapel, #soal-mapel').forEach(s => s.innerHTML = optsM);
+            document.querySelectorAll('#filter-soal-kelas, #import-kelas, #soal-kelas').forEach(s => s.innerHTML = optsK);
         }
     }
 
-    async function loadDataSoal() { /* Fungsi Load Tabel Soal */ }
-    async function loadDataHasil() { /* Fungsi Load Tabel Hasil */ }
-    async function loadActiveTokens() { /* Fungsi Load Tabel Token */ }
-    async function loadDataPengguna() { /* Fungsi Load Tabel User */ }
+    async function loadDataHasil() {
+        const snap = await getDocs(collection(db, "hasil_ujian"));
+        document.getElementById('stat-ujian').innerText = snap.size;
+        const grid = document.getElementById('grid-mapel-hasil'); if(!grid) return; grid.innerHTML = '';
+        let maps = [...new Set(snap.docs.map(d => d.data().mataPelajaran))];
+        maps.forEach(m => {
+            grid.innerHTML += `<div class="mapel-card" onclick="window.openDetailHasil('${m}')"><h3>${m}</h3><p>Selesai</p></div>`;
+        });
+    }
+
+    async function loadActiveTokens() {
+        const snap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+        const tbody = document.querySelector('#table-active-tokens tbody'); if(!tbody) return;
+        tbody.innerHTML = '';
+        if(snap.exists()){
+            Object.entries(snap.data()).forEach(([k, d]) => {
+                tbody.innerHTML += `<tr><td>${k.replace('token_','')}</td><td>-</td><td><b>${d.code || d}</b></td><td><button onclick="window.hapusTokenUtama('${k}')" style="color:var(--danger); border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+        }
+    }
+
+    window.hapusDokumen = async (coll, id, callback) => {
+        if(await customConfirm("Data akan dihapus permanen. Lanjutkan?")) {
+            await deleteDoc(doc(db, coll, id));
+            if(callback) callback();
+        }
+    };
 });
