@@ -145,68 +145,84 @@ document.getElementById('file-word')?.addEventListener('change', (e) => {
     }
 });
 
-// Eksekusi Import
-document.getElementById('btn-proses-import-soal')?.addEventListener('click', async () => {
-    const mapel = document.getElementById('import-mapel').value;
-    const kelas = document.getElementById('import-kelas').value;
+// PROSES EKSEKUSI IMPORT DENGAN SISTEM LAPORAN PROGRES
+    document.getElementById('btn-proses-import-soal').onclick = async () => {
+        const mapel = document.getElementById('import-mapel').value;
+        const kelas = document.getElementById('import-kelas').value;
 
-    if (!selectedExcelSoal && !selectedWordSoal) return await window.customAlert("Pilih file Excel atau Word terlebih dahulu!", "warning");
-    if (!mapel || !kelas) return await window.customAlert("Pilih Mapel dan Kelas tujuan!", "warning");
+        if (!selectedExcelSoal && !selectedWordSoal) return await window.customAlert("Pilih file Excel atau Word terlebih dahulu!", "warning");
+        if (!mapel || !kelas) return await window.customAlert("Pilih tujuan Mapel dan Kelas!", "warning");
 
-    const btn = document.getElementById('btn-proses-import-soal');
-    const origText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-    btn.disabled = true;
+        const btn = document.getElementById('btn-proses-import-soal');
+        const origText = btn.innerHTML;
+        btn.disabled = true;
 
-    if (selectedWordSoal) {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const options = {
-                    convertImage: mammoth.images.imgElement(img => img.read("base64").then(b => ({src: "data:"+img.contentType+";base64,"+b})))
-                };
-                const result = await mammoth.convertToHtml({arrayBuffer: e.target.result}, options);
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = result.value;
+        if (selectedWordSoal) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const options = {
+                        convertImage: mammoth.images.imgElement(img => img.read("base64").then(b => ({src: "data:"+img.contentType+";base64,"+b})))
+                    };
+                    const result = await mammoth.convertToHtml({arrayBuffer: e.target.result}, options);
+                    const div = document.createElement('div');
+                    div.innerHTML = result.value;
 
-                let qList = [], curr = null;
-                tempDiv.childNodes.forEach(el => {
-                    let txt = (el.textContent || "").trim(), upper = txt.toUpperCase(), img = el.querySelector('img')?.src;
-                    if(upper.includes('NO:')) {
-                        if(curr) qList.push(curr);
-                        curr = { nomor_soal: parseInt(upper.split(':')[1])||1, tipe:'PG', teks_soal:'', opsi:{A:'',B:'',C:'',D:'',E:''}, kunci_jawaban:'', media_soal:null, opsi_media:{} };
-                    } else if(curr) {
-                        if(upper.includes('TIPE:')) curr.tipe = upper.split(':')[1].trim();
-                        else if(upper.includes('SOAL:')) { curr.teks_soal = txt.split(/SOAL:/i)[1] || ""; if(img) curr.media_soal = img; }
-                        else if(upper.startsWith('A.')) { curr.opsi.A = txt.substring(2); if(img) curr.opsi_media.A=img; }
-                        else if(upper.startsWith('B.')) { curr.opsi.B = txt.substring(2); if(img) curr.opsi_media.B=img; }
-                        else if(upper.startsWith('C.')) { curr.opsi.C = txt.substring(2); if(img) curr.opsi_media.C=img; }
-                        else if(upper.startsWith('D.')) { curr.opsi.D = txt.substring(2); if(img) curr.opsi_media.D=img; }
-                        else if(upper.startsWith('E.')) { curr.opsi.E = txt.substring(2); if(img) curr.opsi_media.E=img; }
-                        else if(upper.includes('KUNCI:')) curr.kunci_jawaban = upper.split(':')[1].trim();
+                    let qList = [], curr = null;
+                    div.childNodes.forEach(el => {
+                        let txt = (el.textContent || "").trim(), upper = txt.toUpperCase(), img = el.querySelector('img')?.src;
+                        if(upper.includes('NO:')) {
+                            if(curr) qList.push(curr);
+                            curr = { nomor_soal: parseInt(upper.split(':')[1])||1, tipe:'PG', teks_soal:'', opsi:{A:'',B:'',C:'',D:'',E:''}, kunci_jawaban:'', media_soal:null, opsi_media:{} };
+                        } else if(curr) {
+                            if(upper.includes('TIPE:')) curr.tipe = upper.split(':')[1].trim();
+                            else if(upper.includes('SOAL:')) { curr.teks_soal = txt.split(/SOAL:/i)[1] || ""; if(img) curr.media_soal = img; }
+                            else if(upper.startsWith('A.')) { curr.opsi.A = txt.substring(2); if(img) curr.opsi_media.A=img; }
+                            else if(upper.startsWith('B.')) { curr.opsi.B = txt.substring(2); if(img) curr.opsi_media.B=img; }
+                            else if(upper.startsWith('C.')) { curr.opsi.C = txt.substring(2); if(img) curr.opsi_media.C=img; }
+                            else if(upper.startsWith('D.')) { curr.opsi.D = txt.substring(2); if(img) curr.opsi_media.D=img; }
+                            else if(upper.startsWith('E.')) { curr.opsi.E = txt.substring(2); if(img) curr.opsi_media.E=img; }
+                            else if(upper.includes('KUNCI:')) curr.kunci_jawaban = upper.split(':')[1].trim();
+                        }
+                    });
+                    if(curr) qList.push(curr);
+
+                    if(!(await window.customConfirm(`Terdeteksi ${qList.length} soal. Lanjutkan proses import?`))) {
+                        btn.innerHTML = origText; btn.disabled = false; return;
                     }
-                });
-                if(curr) qList.push(curr);
 
-                for(let q of qList) {
-                    let pay = { mataPelajaran: mapel, kelas, nomor_soal: q.nomor_soal, tipe: q.tipe, teks_soal: q.teks_soal, createdAt: new Date() };
-                    if(q.media_soal) pay.media_soal = await uploadFileKeStorage(base64ToFile(q.media_soal, `s_${Date.now()}.jpg`));
-                    if(q.tipe==='PG'||q.tipe==='PGK') {
-                        pay.opsi = q.opsi; pay.kunci_jawaban = q.kunci_jawaban;
-                        let om = {};
-                        for(let k in q.opsi_media) om[k] = await uploadFileKeStorage(base64ToFile(q.opsi_media[k], `o_${k}.jpg`));
-                        if(Object.keys(om).length>0) pay.opsi_media = om;
+                    // --- SISTEM LAPORAN PROGRES ---
+                    for(let i = 0; i < qList.length; i++) {
+                        let q = qList[i];
+                        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Memproses ${i + 1} dari ${qList.length}...`;
+
+                        let pay = { mataPelajaran: mapel, kelas, nomor_soal: q.nomor_soal, tipe: q.tipe, teks_soal: q.teks_soal, createdAt: new Date() };
+                        
+                        // Unggah gambar soal
+                        if(q.media_soal) pay.media_soal = await uploadFileKeStorage(base64ToFile(q.media_soal, `s_${Date.now()}.jpg`));
+                        
+                        // Unggah gambar opsi
+                        if(q.tipe==='PG'||q.tipe==='PGK') {
+                            pay.opsi = q.opsi; pay.kunci_jawaban = q.kunci_jawaban;
+                            let om = {};
+                            for(let k in q.opsi_media) om[k] = await uploadFileKeStorage(base64ToFile(q.opsi_media[k], `o_${k}.jpg`));
+                            if(Object.keys(om).length > 0) pay.opsi_media = om;
+                        }
+                        
+                        await addDoc(collection(db, "bank_soal"), pay);
                     }
-                    await addDoc(collection(db, "bank_soal"), pay);
+
+                    await window.customAlert(`Berhasil! ${qList.length} soal telah diunggah.`, "success");
+                    location.reload();
+                } catch(err) { 
+                    console.error(err);
+                    await window.customAlert("Gagal memproses file Word.", "error"); 
                 }
-                await window.customAlert("Import Word Berhasil!", "success");
-                location.reload();
-            } catch(err) { await window.customAlert("Format file tidak sesuai template!", "error"); }
-            btn.innerHTML = origText; btn.disabled = false;
-        };
-        reader.readAsArrayBuffer(selectedWordSoal);
-    }
-});
+                btn.innerHTML = origText; btn.disabled = false;
+            };
+            reader.readAsArrayBuffer(selectedWordSoal);
+        }
+    };
 
     // --- TEMPLATE DOWNLOADER ---
     document.getElementById('btn-dl-word').onclick = () => {
