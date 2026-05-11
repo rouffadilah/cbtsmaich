@@ -897,13 +897,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ==========================================
+    // SISTEM NOTIFIKASI HAPUS CUSTOM (PENGGANTI CONFIRM BROWSER)
+    // ==========================================
+    function customConfirm(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('modal-konfirmasi-hapus');
+            const teks = document.getElementById('teks-konfirmasi-hapus');
+            const btnYa = document.getElementById('btn-ya-hapus');
+            const btnBatal = document.getElementById('btn-batal-hapus');
+
+            teks.innerText = message;
+            modal.style.display = 'flex';
+
+            const cleanup = () => {
+                modal.style.display = 'none';
+                btnYa.removeEventListener('click', handleYa);
+                btnBatal.removeEventListener('click', handleBatal);
+            };
+
+            const handleYa = () => { cleanup(); resolve(true); };
+            const handleBatal = () => { cleanup(); resolve(false); };
+
+            btnYa.addEventListener('click', handleYa);
+            btnBatal.addEventListener('click', handleBatal);
+        });
+    }
+
+    window.hapusMapel = async (index) => { 
+        if(!(await customConfirm("Hapus Mata Pelajaran ini?"))) return; 
+        listMapel.splice(index, 1); 
+        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true }); 
+        loadDataMaster(); 
+    };
+    
+    window.hapusKelas = async (index) => { 
+        if(!(await customConfirm("Hapus Kelas ini?"))) return; 
+        listKelas.splice(index, 1); 
+        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true }); 
+        loadDataMaster(); 
+    };
+
     window.hapusTokenUtama = async function(tokenKey) {
-        if(!confirm("Hapus token ini?")) return;
-        try { await updateDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: deleteField() }); loadActiveTokens(); } catch(e) { alert("Gagal menghapus token."); }
+        if(!(await customConfirm("Hapus Token akses ini? Siswa tidak akan bisa menggunakannya lagi."))) return;
+        try { 
+            await updateDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: deleteField() }); 
+            loadActiveTokens(); 
+        } catch(e) { alert("Gagal menghapus token."); }
     };
 
     window.hapusDokumen = async function(koleksi, id, callback) {
-        if(!confirm("Hapus data ini permanen?")) return;
-        try { await deleteDoc(doc(db, koleksi, id)); callback(); } catch(err) { alert("Gagal."); }
+        let pesan = "Hapus data ini permanen? Data yang dihapus tidak bisa dikembalikan.";
+        if (koleksi === 'users') pesan = "Yakin ingin menghapus Akun Pengguna ini secara permanen?";
+        if (koleksi === 'bank_soal') pesan = "Yakin ingin menghapus Soal ini dari Bank Soal?";
+        if (koleksi === 'hasil_ujian') pesan = "Yakin ingin menghapus Rekap Nilai siswa ini?";
+
+        if(!(await customConfirm(pesan))) return;
+        
+        try { 
+            await deleteDoc(doc(db, koleksi, id)); 
+            callback(); 
+        } catch(err) { alert("Gagal menghapus data."); }
     };
 });
