@@ -492,6 +492,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.loadDataSoal = loadDataSoal; 
 
+    // Ambil Waktu Pengerjaan dari Database
+            try {
+                const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
+                if (timeSnap.exists() && timeSnap.data()[`${m}_${k}`]) {
+                    document.getElementById('input-waktu-ujian').value = timeSnap.data()[`${m}_${k}`];
+                } else {
+                    document.getElementById('input-waktu-ujian').value = ''; // Kosongkan jika belum diset
+                }
+            } catch(e) { console.error("Gagal load waktu", e); }
+    // FUNGSI SIMPAN WAKTU UJIAN
+    const btnSimpanWaktu = document.getElementById('btn-simpan-waktu');
+    if (btnSimpanWaktu) {
+        btnSimpanWaktu.onclick = async () => {
+            const m = document.getElementById('filter-soal-mapel').value;
+            const k = document.getElementById('filter-soal-kelas').value;
+            const w = document.getElementById('input-waktu-ujian').value;
+
+            if(!m || !k) return window.customAlert("Pilih Mapel dan Kelas terlebih dahulu!", "warning");
+            if(!w || w <= 0) return window.customAlert("Masukkan waktu ujian (menit) yang valid!", "warning");
+
+            const origText = btnSimpanWaktu.innerHTML;
+            btnSimpanWaktu.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btnSimpanWaktu.disabled = true;
+
+            try {
+                await setDoc(doc(db, "pengaturan", "waktu_ujian"), {
+                    [`${m}_${k}`]: parseInt(w)
+                }, { merge: true });
+                await window.customAlert(`Waktu ujian untuk ${m} (${k}) berhasil diatur menjadi ${w} Menit!`, "success");
+            } catch(e) {
+                await window.customAlert("Gagal menyimpan waktu.", "error");
+            }
+            btnSimpanWaktu.innerHTML = origText;
+            btnSimpanWaktu.disabled = false;
+        };
+    }
+
     // --- Modal Tab Management ---
     document.getElementById('btn-tambah-manual')?.addEventListener('click', () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
