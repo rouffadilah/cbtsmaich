@@ -169,23 +169,49 @@ document.getElementById('file-word')?.addEventListener('change', (e) => {
                     div.innerHTML = result.value;
 
                     let qList = [], curr = null;
+                    // Ganti bagian ekstraksi teks di dalam reader.onload:
                     div.childNodes.forEach(el => {
-                        let txt = (el.textContent || "").trim(), upper = txt.toUpperCase(), img = el.querySelector('img')?.src;
-                        if(upper.includes('NO:')) {
-                            if(curr) qList.push(curr);
-                            curr = { nomor_soal: parseInt(upper.split(':')[1])||1, tipe:'PG', teks_soal:'', opsi:{A:'',B:'',C:'',D:'',E:''}, kunci_jawaban:'', media_soal:null, opsi_media:{} };
-                        } else if(curr) {
-                            if(upper.includes('TIPE:')) curr.tipe = upper.split(':')[1].trim();
-                            else if(upper.includes('SOAL:')) { curr.teks_soal = txt.split(/SOAL:/i)[1] || ""; if(img) curr.media_soal = img; }
-                            else if(upper.startsWith('A.')) { curr.opsi.A = txt.substring(2); if(img) curr.opsi_media.A=img; }
-                            else if(upper.startsWith('B.')) { curr.opsi.B = txt.substring(2); if(img) curr.opsi_media.B=img; }
-                            else if(upper.startsWith('C.')) { curr.opsi.C = txt.substring(2); if(img) curr.opsi_media.C=img; }
-                            else if(upper.startsWith('D.')) { curr.opsi.D = txt.substring(2); if(img) curr.opsi_media.D=img; }
-                            else if(upper.startsWith('E.')) { curr.opsi.E = txt.substring(2); if(img) curr.opsi_media.E=img; }
-                            else if(upper.includes('KUNCI:')) curr.kunci_jawaban = upper.split(':')[1].trim();
+                        // Ambil teks mentah dan bersihkan spasi berlebih
+                        let txt = (el.textContent || "").replace(/\s+/g, ' ').trim();
+                        let upper = txt.toUpperCase();
+                        let img = el.querySelector('img')?.src;
+                    
+                        // Deteksi Nomor Soal (Lebih fleksibel: bisa NO: 1 atau NO:1)
+                        if (upper.match(/^NO\s*:/)) {
+                            if (curr) qList.push(curr);
+                            let no = parseInt(upper.replace('NO', '').replace(':', '').trim()) || (qList.length + 1);
+                            curr = { 
+                                nomor_soal: no, 
+                                tipe: 'PG', 
+                                teks_soal: '', 
+                                opsi: { A: '', B: '', C: '', D: '', E: '' }, 
+                                kunci_jawaban: '', 
+                                media_soal: null, 
+                                opsi_media: {} 
+                            };
+                        } else if (curr) {
+                            // Deteksi Tipe (PG / PGK / ESSAY)
+                            if (upper.startsWith('TIPE:')) {
+                                curr.tipe = upper.split(':')[1]?.trim() || 'PG';
+                            } 
+                            // Deteksi Teks Soal
+                            else if (upper.startsWith('SOAL:')) {
+                                curr.teks_soal = txt.replace(/SOAL\s*:/i, '').trim();
+                                if (img) curr.media_soal = img;
+                            } 
+                            // Deteksi Opsi A-E (Menggunakan RegEx agar lebih akurat)
+                            else if (upper.match(/^[A-E]\s*\./)) {
+                                let label = upper[0]; // Ambil huruf A, B, C, D, atau E
+                                curr.opsi[label] = txt.substring(txt.indexOf('.') + 1).trim();
+                                if (img) curr.opsi_media[label] = img;
+                            } 
+                            // Deteksi Kunci Jawaban
+                            else if (upper.startsWith('KUNCI:')) {
+                                curr.kunci_jawaban = upper.split(':')[1]?.trim() || '';
+                            }
                         }
                     });
-                    if(curr) qList.push(curr);
+                    if (curr) qList.push(curr);
 
                     if(!(await window.customConfirm(`Terdeteksi ${qList.length} soal. Lanjutkan proses import?`))) {
                         btn.innerHTML = origText; btn.disabled = false; return;
