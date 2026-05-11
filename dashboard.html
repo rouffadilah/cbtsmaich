@@ -419,42 +419,66 @@
         </div>
     </div>
 
-    <div id="modal-preview-full" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(0,0,0,0.8);">
-        <div class="modal-content" style="width: 95%; max-width: 1200px; height: 95vh; display:flex; flex-direction:column; padding:0; overflow:hidden; border-radius: var(--radius-lg);">
-            <div style="background:var(--secondary); color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="margin:0; font-size: 1.2rem;"><i class="fas fa-laptop-code"></i> Preview Tampilan Ujian Siswa (Hanya Lihat)</h3>
-                <span class="close-btn" id="close-preview-full" style="position:static; color:white; font-size: 2rem;">&times;</span>
+    <div id="modal-preview-full" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(15, 23, 42, 0.9);">
+        <div class="modal-content" style="width: 95%; max-width: 1300px; height: 95vh; display:flex; flex-direction:column; padding:0; overflow:hidden; border-radius: var(--radius-lg); background: var(--bg-main);">
+            
+            <div style="background:var(--secondary); color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center; box-shadow: var(--shadow-sm);">
+                <h3 style="margin:0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-laptop-code"></i> Preview Tampilan Ujian Siswa (Mode Guru)
+                </h3>
+                <span class="close-btn" id="close-preview-full" style="position:static; color:white; font-size: 2rem; cursor:pointer;">&times;</span>
             </div>
-            <div style="flex:1; overflow-y:auto; padding:20px; background:var(--bg-main);">
-                <div class="exam-layout" style="margin:0; width:100%; max-width:100%; padding:0;">
+
+            <div style="flex:1; overflow-y:auto; padding: 25px 15px;">
+                <div class="exam-layout" style="margin:0 auto; width:100%; max-width:1440px; padding:0;">
+                    
                     <section class="question-section">
-                        <div class="card question-card">
+                        <div class="card question-card" style="border: 1px solid var(--border-color);">
                             <div class="question-header">
-                                <div><span class="q-number-label">SOAL NOMOR</span><div class="q-number-badge" id="prev-current-q-num">1</div></div>
-                                <div id="prev-badge-tipe" style="background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">TIPE SOAL</div>
+                                <div>
+                                    <span class="q-number-label">SOAL NOMOR</span>
+                                    <div class="q-number-badge" id="prev-current-q-num">1</div>
+                                </div>
+                                <div id="prev-badge-tipe" style="background: var(--info); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold;">TIPE SOAL</div>
                             </div>
-                            <div class="question-content" id="prev-q-container" style="min-height: 250px;"></div>
+                            
+                            <div class="question-content" id="prev-q-container" style="min-height: 300px;"></div>
+                            
                             <div class="nav-controls">
                                 <button class="nav-btn btn-prev" id="prev-btn-prev"><i class="fas fa-chevron-left"></i> SEBELUMNYA</button>
+                                <button class="nav-btn btn-doubt" style="opacity: 0.5; cursor: not-allowed;"><i class="far fa-flag"></i> RAGU-RAGU</button>
                                 <button class="nav-btn btn-next" id="prev-btn-next">SELANJUTNYA <i class="fas fa-chevron-right"></i></button>
                             </div>
                         </div>
                     </section>
+
                     <aside class="sidebar-panel">
-                        <div class="card timer-card" style="opacity: 0.5;"><h3><i class="far fa-clock"></i> SISA WAKTU</h3><div class="time-display" style="font-size: 1.5rem;">[TIDAK AKTIF]</div></div>
+                        <div class="card timer-card" style="opacity: 0.7;">
+                            <h3><i class="far fa-clock"></i> SISA WAKTU</h3>
+                            <div class="time-display" style="font-size: 1.8rem; color: var(--text-muted); background: #f1f5f9;">[TIDAK AKTIF]</div>
+                        </div>
+                        
                         <div class="card navigation-card">
-                            <h3 style="font-size: 0.9rem; color: var(--text-muted); text-align: center;"><i class="fas fa-th"></i> NAVIGASI SOAL</h3>
+                            <h3 style="font-size: 0.95rem; color: var(--text-muted); text-align: center; margin-bottom: 15px;"><i class="fas fa-th"></i> NAVIGASI SOAL</h3>
                             <div class="q-grid" id="prev-q-grid"></div>
-                            <div class="legend-container">
-                                <div class="leg-item"><span class="leg-box answered"></span> Terjawab</div><div class="leg-item"><span class="leg-box active-q" style="border: 2px solid var(--info); background: transparent;"></span> Sedang Dibuka</div>
+                            
+                            <div class="legend-container" style="margin-top: 25px;">
+                                <div class="leg-item"><span class="leg-box answered" style="background: var(--primary);"></span> Terjawab</div>
+                                <div class="leg-item"><span class="leg-box doubt" style="background: var(--warning);"></span> Ragu-Ragu</div>
+                                <div class="leg-item"><span class="leg-box active-q" style="border: 2px solid var(--info); background: transparent;"></span> Sedang Dibuka</div>
                             </div>
                         </div>
+
+                        <button class="btn-finish-exam" style="opacity: 0.5; cursor: not-allowed;">
+                            <i class="fas fa-check-double"></i> SELESAI UJIAN
+                        </button>
                     </aside>
+
                 </div>
             </div>
         </div>
     </div>
-
+    
     <div id="modal-custom-confirm" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10005;">
         <div class="modal-content" style="width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-top: 5px solid var(--warning);">
             <i id="confirm-icon" class="fas fa-question-circle fa-4x" style="color: var(--warning); margin-bottom: 20px;"></i>
