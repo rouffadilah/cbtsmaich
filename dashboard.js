@@ -105,48 +105,84 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- IMPORT WORD CERDAS ---
-    let selectedWord = null;
-    document.getElementById('file-word').onchange = (e) => {
-        selectedWord = e.target.files[0];
-        document.getElementById('label-file-word').innerHTML = `<b>${selectedWord.name}</b>`;
-        document.getElementById('box-word').style.borderColor = "var(--info)";
-    };
+    // ==========================================
+// MESIN IMPORT EXCEL & WORD CERDAS
+// ==========================================
+let selectedExcelSoal = null;
+let selectedWordSoal = null;
 
-    document.getElementById('btn-proses-import-soal').onclick = async () => {
-        const mapel = document.getElementById('import-mapel').value;
-        const kelas = document.getElementById('import-kelas').value;
-        if(!selectedWord || !mapel || !kelas) return customAlert("Lengkapi file, mapel, dan kelas!", "warning");
+// Logika Perpindahan Tab Modal
+document.getElementById('tab-manual')?.addEventListener('click', () => {
+    document.getElementById('area-manual').style.display = 'block';
+    document.getElementById('area-import').style.display = 'none';
+    document.getElementById('tab-manual').classList.remove('btn-secondary');
+    document.getElementById('tab-import').classList.add('btn-secondary');
+});
 
-        const btn = document.getElementById('btn-proses-import-soal');
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-        btn.disabled = true;
+document.getElementById('tab-import')?.addEventListener('click', () => {
+    document.getElementById('area-manual').style.display = 'none';
+    document.getElementById('area-import').style.display = 'block';
+    document.getElementById('tab-import').classList.remove('btn-secondary');
+    document.getElementById('tab-manual').classList.add('btn-secondary');
+});
 
+// Listener Deteksi File
+document.getElementById('file-excel')?.addEventListener('change', (e) => {
+    selectedExcelSoal = e.target.files[0];
+    const label = document.getElementById('label-file-excel');
+    if(selectedExcelSoal) {
+        label.innerHTML = `<b style="color:var(--success);">${selectedExcelSoal.name}</b>`;
+        selectedWordSoal = null; 
+    }
+});
+
+document.getElementById('file-word')?.addEventListener('change', (e) => {
+    selectedWordSoal = e.target.files[0];
+    const label = document.getElementById('label-file-word');
+    if(selectedWordSoal) {
+        label.innerHTML = `<b style="color:var(--info);">${selectedWordSoal.name}</b>`;
+        selectedExcelSoal = null;
+    }
+});
+
+// Eksekusi Import
+document.getElementById('btn-proses-import-soal')?.addEventListener('click', async () => {
+    const mapel = document.getElementById('import-mapel').value;
+    const kelas = document.getElementById('import-kelas').value;
+
+    if (!selectedExcelSoal && !selectedWordSoal) return await window.customAlert("Pilih file Excel atau Word terlebih dahulu!", "warning");
+    if (!mapel || !kelas) return await window.customAlert("Pilih Mapel dan Kelas tujuan!", "warning");
+
+    const btn = document.getElementById('btn-proses-import-soal');
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    btn.disabled = true;
+
+    if (selectedWordSoal) {
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
-                const result = await mammoth.convertToHtml({arrayBuffer: e.target.result}, {
+                const options = {
                     convertImage: mammoth.images.imgElement(img => img.read("base64").then(b => ({src: "data:"+img.contentType+";base64,"+b})))
-                });
-                
-                const div = document.createElement('div'); div.innerHTML = result.value;
-                let qList = [], curr = null, field = null;
+                };
+                const result = await mammoth.convertToHtml({arrayBuffer: e.target.result}, options);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = result.value;
 
-                div.childNodes.forEach(el => {
+                let qList = [], curr = null;
+                tempDiv.childNodes.forEach(el => {
                     let txt = (el.textContent || "").trim(), upper = txt.toUpperCase(), img = el.querySelector('img')?.src;
-                    
                     if(upper.includes('NO:')) {
                         if(curr) qList.push(curr);
                         curr = { nomor_soal: parseInt(upper.split(':')[1])||1, tipe:'PG', teks_soal:'', opsi:{A:'',B:'',C:'',D:'',E:''}, kunci_jawaban:'', media_soal:null, opsi_media:{} };
-                        field = null;
                     } else if(curr) {
                         if(upper.includes('TIPE:')) curr.tipe = upper.split(':')[1].trim();
-                        else if(upper.includes('SOAL:')) { curr.teks_soal = txt.split(/SOAL:/i)[1] || ""; field='SOAL'; if(img) curr.media_soal = img; }
-                        else if(upper.startsWith('A.')) { curr.opsi.A = txt.substring(2); field='A'; if(img) curr.opsi_media.A=img; }
-                        else if(upper.startsWith('B.')) { curr.opsi.B = txt.substring(2); field='B'; if(img) curr.opsi_media.B=img; }
-                        else if(upper.startsWith('C.')) { curr.opsi.C = txt.substring(2); field='C'; if(img) curr.opsi_media.C=img; }
-                        else if(upper.startsWith('D.')) { curr.opsi.D = txt.substring(2); field='D'; if(img) curr.opsi_media.D=img; }
-                        else if(upper.startsWith('E.')) { curr.opsi.E = txt.substring(2); field='E'; if(img) curr.opsi_media.E=img; }
+                        else if(upper.includes('SOAL:')) { curr.teks_soal = txt.split(/SOAL:/i)[1] || ""; if(img) curr.media_soal = img; }
+                        else if(upper.startsWith('A.')) { curr.opsi.A = txt.substring(2); if(img) curr.opsi_media.A=img; }
+                        else if(upper.startsWith('B.')) { curr.opsi.B = txt.substring(2); if(img) curr.opsi_media.B=img; }
+                        else if(upper.startsWith('C.')) { curr.opsi.C = txt.substring(2); if(img) curr.opsi_media.C=img; }
+                        else if(upper.startsWith('D.')) { curr.opsi.D = txt.substring(2); if(img) curr.opsi_media.D=img; }
+                        else if(upper.startsWith('E.')) { curr.opsi.E = txt.substring(2); if(img) curr.opsi_media.E=img; }
                         else if(upper.includes('KUNCI:')) curr.kunci_jawaban = upper.split(':')[1].trim();
                     }
                 });
@@ -163,13 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     await addDoc(collection(db, "bank_soal"), pay);
                 }
-                await customAlert("Import Berhasil!", "success");
+                await window.customAlert("Import Word Berhasil!", "success");
                 location.reload();
-            } catch(err) { customAlert("Format Word Salah!", "error"); }
-            btn.innerHTML = 'IMPORT SEKARANG'; btn.disabled = false;
+            } catch(err) { await window.customAlert("Format file tidak sesuai template!", "error"); }
+            btn.innerHTML = origText; btn.disabled = false;
         };
-        reader.readAsArrayBuffer(selectedWord);
-    };
+        reader.readAsArrayBuffer(selectedWordSoal);
+    }
+});
 
     // --- TEMPLATE DOWNLOADER ---
     document.getElementById('btn-dl-word').onclick = () => {
