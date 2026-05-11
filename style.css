@@ -281,95 +281,19 @@ img {
 }
 
 /* =========================================
-   5. DASHBOARD LAYOUT (PC & LAPTOP)
+   5. DASHBOARD LAYOUT (TANPA SIDEBAR)
 ========================================= */
-.app-layout {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-    width: 100%;
-}
-
-.sidebar-menu {
-    width: 260px;
-    background-color: var(--card-bg);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0; 
-    z-index: 100;
-}
-
-.school-info {
-    padding: 25px 20px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column; 
-    align-items: center;    
-    justify-content: center;
-    text-align: center;
-    gap: 10px;              
-    background: linear-gradient(to right, var(--card-bg), #f8fafc);
-}
-
-.school-info .main-logo {
-    width: 120px;           
-    height: auto;
-    object-fit: contain;
-    margin: 0 auto;
-}
-
-.school-info h1 {
-    font-size: 1.1rem;      
-    font-weight: 800;
-    color: var(--secondary); 
-    letter-spacing: 1px;     
-}
-
-.menu-container {
-    padding: 20px 15px;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.option-item {
-    padding: 12px 16px; 
-    margin-bottom: 8px; 
-    border-radius: var(--radius-md); 
-    color: var(--text-muted);
-    font-weight: 600; 
-    font-size: 0.95rem;
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    gap: 12px; 
-    transition: var(--transition);
-}
-
-.option-item:hover { 
-    background-color: #f1f5f9; 
-    color: var(--primary); 
-}
-
-.option-item.selected { 
-    background-color: var(--primary); 
-    color: white; 
-    box-shadow: var(--shadow-sm); 
-}
-
 .main-wrapper {
-    flex: 1;
+    width: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; 
-    overflow-x: hidden;
     background-color: var(--bg-main);
-    width: 100%;
 }
 
 .app-header {
-    display: flex; 
-    justify-content: space-between; 
+    display: grid; 
+    grid-template-columns: 1fr auto 1fr;
     align-items: center; 
     padding: 15px 30px;
     background-color: var(--card-bg); 
@@ -377,13 +301,20 @@ img {
     position: sticky; 
     top: 0; 
     z-index: 90; 
-    flex-wrap: wrap; /* Agar isi header bisa turun ke bawah jika mentok */
     gap: 15px;
+}
+
+/* Memunculkan Teks Info User di Layar Lebar */
+@media (min-width: 768px) {
+    .header-user-info { display: block !important; }
 }
 
 .main-content { 
     padding: 30px; 
-    max-width: 100%;
+    max-width: 1400px; /* Opsional: Membatasi lebar max konten di PC besar */
+    margin: 0 auto;
+    width: 100%;
+    flex: 1;
 }
 
 .content-section { 
@@ -398,26 +329,59 @@ img {
     to { opacity: 1; transform: translateY(0); } 
 }
 
+/* Styling Kartu Menu Beranda */
+.stat-card {
+    background: white; 
+    padding: 25px 30px; 
+    border-radius: var(--radius-md); 
+    box-shadow: var(--shadow-sm); 
+    border: 1px solid var(--border-color); 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+}
+
+.stat-card p {
+    color: var(--text-muted); 
+    font-size: 0.85rem; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    margin-bottom: 8px;
+}
+
+.stat-card h3 {
+    font-size: 2.2rem; 
+    color: var(--secondary); 
+    margin: 0; 
+    line-height: 1;
+}
+
+.stat-card div:last-child {
+    font-size: 2.5rem; 
+    opacity: 0.8;
+}
+
 .card {
     background: var(--card-bg);
-    padding: 25px;
+    padding: 30px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     margin-bottom: 25px;
-    max-width: 100%;
-    overflow: hidden; /* Mencegah isi meluber */
+    width: 100%;
+    overflow: hidden; 
 }
 
 .section-title {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     color: var(--secondary);
-    font-weight: 700;
+    font-weight: 800;
     margin-bottom: 20px;
 }
 
 .welcome-banner {
     background: linear-gradient(135deg, var(--primary) 0%, var(--info) 100%);
-    padding: 35px 30px; 
+    padding: 40px; 
     border-radius: var(--radius-lg);
     display: flex; 
     justify-content: space-between; 
