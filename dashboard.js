@@ -828,22 +828,117 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-back-hasil').onclick = () => window.history.back();
 
     async function loadActiveTokens() {
-        const snap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-        const tbody = document.querySelector('#table-active-tokens tbody'); if(!tbody) return; tbody.innerHTML = '';
-        if(snap.exists()){
-            Object.entries(snap.data()).forEach(([k, d]) => {
-                let timeLeft = Math.floor((d.expiresAt - Date.now())/60000);
-                tbody.innerHTML += `<tr><td>${k.replace('token_','')}</td><td>-</td><td><b>${d.code||d}</b> <span style="font-size:0.7rem; background:${timeLeft>0?'var(--success)':'var(--danger)'}; color:#fff; padding:2px 6px; border-radius:4px;">${timeLeft>0?timeLeft+' mnt':'Habis'}</span></td><td><button onclick="window.hapusTokenUtama('${k}')" style="color:var(--danger); border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`;
-            });
+        const tbody = document.querySelector('#table-active-tokens tbody'); 
+        if(!tbody) return; 
+        
+        try {
+            const snap = await getDoc(doc(db, "pengaturan", "token_ujian")); 
+            tbody.innerHTML = '';
+            
+            if(snap.exists() && Object.keys(snap.data()).length > 0) { 
+                const data = snap.data();
+                
+                Object.keys(data).forEach(k => { 
+                    let d = data[k]; 
+                    // Merapihkan nama Mapel & Kelas
+                    let mapelKelas = k.replace('token_', '').replace('_', ' - ');
+                    
+                    let tokenCode = typeof d === 'object' ? d.code : d;
+                    let expiresAt = typeof d === 'object' ? d.expiresAt : 0;
+                    
+                    let timeLeft = Math.floor((expiresAt - Date.now()) / 60000);
+                    let badge = '';
+                    
+                    // Lencana status aktif atau habis
+                    if (timeLeft > 0) {
+                        badge = `<span style="background: var(--success); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 10px; font-weight: bold;">Sisa ${timeLeft} mnt</span>`;
+                    } else {
+                        badge = `<span style="background: var(--danger); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 10px; font-weight: bold;">Habis</span>`;
+                    }
+
+                    // Render baris tabel
+                    tbody.innerHTML += `
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 12px 10px; color: var(--secondary); font-size: 0.9rem;">${mapelKelas}</td>
+                            <td style="padding: 12px 10px; font-weight: bold; color: var(--primary); font-size: 1rem;">
+                                ${tokenCode} ${badge}
+                            </td>
+                            <td style="padding: 12px 10px; text-align: right; white-space: nowrap;">
+                                <button onclick="window.perpanjangToken('${k}')" style="color: var(--success); background: #ecfdf5; border: 1px solid #a7f3d0; padding: 6px 10px; border-radius: 6px; cursor: pointer; margin-right: 5px; transition: 0.2s;" title="Perpanjang Waktu 15 Menit"><i class="fas fa-clock"></i></button>
+                                <button onclick="window.hapusTokenUtama('${k}')" style="color: var(--danger); background: #fee2e2; border: 1px solid #fecaca; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s;" title="Hapus Token"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `; 
+                }); 
+            } else {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--text-muted);">Belum ada token aktif.</td></tr>`;
+            }
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--danger);">Gagal memuat token dari database.</td></tr>`;
         }
     }
+
     document.getElementById('btn-refresh-token').onclick = loadActiveTokens;
+
+    // Fungsi Set Token Baru
     document.getElementById('btn-save-token').onclick = async () => {
-        const m = document.getElementById('set-token-mapel').value, k = document.getElementById('set-token-kelas').value, t = document.getElementById('input-token-baru').value.toUpperCase();
-        if(!m||!k||!t) return customAlert("Isi lengkap!", "warning");
-        try { await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${m}_${k}`]: { code: t, expiresAt: Date.now() + (15*60000) } }, { merge: true }); customAlert("Token tersimpan (Aktif 15mnt)!", "success"); loadActiveTokens(); } catch(e) {}
+        const m = document.getElementById('set-token-mapel').value;
+        const k = document.getElementById('set-token-kelas').value;
+        const t = document.getElementById('input-token-baru').value.toUpperCase().trim();
+        
+        if(!m || !k || !t) return window.customAlert("Pilih Mapel, Kelas, dan ketik Token terlebih dahulu!", "warning");
+        
+        const btn = document.getElementById('btn-save-token');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        try { 
+            await setDoc(doc(db, "pengaturan", "token_ujian"), { 
+                [`token_${m}_${k}`]: { code: t, expiresAt: Date.now() + (15 * 60000) } 
+            }, { merge: true }); 
+            
+            await window.customAlert("Token berhasil diaktifkan selama 15 Menit!", "success"); 
+            document.getElementById('input-token-baru').value = '';
+            loadActiveTokens(); 
+        } catch(e) {
+            await window.customAlert("Gagal menyimpan token.", "error");
+        }
+        btn.innerHTML = origText;
+        btn.disabled = false;
     };
 
-    window.hapusTokenUtama = async (k) => { if(await customConfirm("Hapus Token?")) { await updateDoc(doc(db, "pengaturan", "token_ujian"), {[k]: deleteField()}); loadActiveTokens(); } };
+    // Fungsi Hapus Token
+    window.hapusTokenUtama = async (k) => { 
+        if(await window.customConfirm("Hapus token ujian ini? Siswa tidak akan bisa login lagi ke mapel tersebut.", "danger", "Hapus Token")) { 
+            try {
+                await updateDoc(doc(db, "pengaturan", "token_ujian"), { [k]: deleteField() }); 
+                await window.customAlert("Token berhasil dihapus!", "success");
+                loadActiveTokens(); 
+            } catch (e) {
+                await window.customAlert("Gagal menghapus token.", "error");
+            }
+        } 
+    };
+
+    // Fungsi Perpanjang Waktu
+    window.perpanjangToken = async (k) => {
+        if(await window.customConfirm("Tambahkan waktu 15 menit untuk token ini dihitung dari sekarang?", "info", "Perpanjang Waktu")) {
+            try {
+                const snap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+                if (snap.exists() && snap.data()[k]) {
+                    let tokenData = snap.data()[k];
+                    tokenData.expiresAt = Date.now() + (15 * 60000); // Ditambah 15 Menit dari waktu diklik
+                    
+                    await updateDoc(doc(db, "pengaturan", "token_ujian"), { [k]: tokenData });
+                    await window.customAlert("Waktu ujian berhasil diperpanjang 15 Menit!", "success");
+                    loadActiveTokens();
+                }
+            } catch(e) {
+                await window.customAlert("Gagal memperpanjang waktu token.", "error");
+            }
+        }
+    };
     window.hapusDokumen = async (coll, id, callback) => { if(await customConfirm("Data akan dihapus permanen. Lanjutkan?", "danger")) { await deleteDoc(doc(db, coll, id)); if(callback) callback(); } };
 });
