@@ -2,7 +2,6 @@ import { auth, db, storage } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
@@ -140,10 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('hashchange', handleRouting);
-    
-    document.querySelectorAll('.stat-clickable').forEach(box => { 
-        box.addEventListener('click', (e) => { window.location.hash = e.currentTarget.dataset.target; }); 
-    });
+    document.querySelectorAll('.stat-clickable').forEach(box => { box.addEventListener('click', (e) => { window.location.hash = e.currentTarget.dataset.target; }); });
 
     onAuthStateChanged(auth, async (user) => {
         if (!user || (!isAdmin && !isGuru)) { window.location.href = "index.html"; return; }
@@ -556,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-btn-prev')?.addEventListener('click', () => { if (previewCurrentIdx > 0) renderPreviewSoal(previewCurrentIdx - 1); });
 
     // ==========================================
-    // PERBAIKAN: TOMBOL KELOLA / TAMBAH SOAL
+    // TOMBOL KELOLA / TAMBAH SOAL
     // ==========================================
     const btnTambahSoal = document.getElementById('btn-tambah-manual');
     if (btnTambahSoal) {
@@ -570,10 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     window.customAlert("Elemen form Tambah Soal (HTML) tidak ditemukan.", "error");
                 }
-            } catch (err) {
-                console.error(err);
-                window.customAlert("Gagal membuka form Tambah Soal: " + err.message, "error");
-            }
+            } catch (err) { window.customAlert("Gagal membuka form Tambah Soal: " + err.message, "error"); }
         });
     }
 
@@ -710,7 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // PERBAIKAN: TOMBOL EDIT SOAL 
+    // TOMBOL EDIT SOAL 
     // ==========================================
     window.editSoal = (id) => {
         try {
@@ -747,15 +740,9 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFormEditDinamis(qData.tipe || 'PG', qData);
             
             const md = document.getElementById('modal-edit-soal');
-            if (md) {
-                md.style.display = 'flex';
-            } else {
-                window.customAlert("Elemen form Edit Soal tidak ditemukan di HTML.", "error");
-            }
-        } catch (error) {
-            console.error(error);
-            window.customAlert("Gagal membuka form Edit Soal: " + error.message, "error");
-        }
+            if (md) { md.style.display = 'flex'; } 
+            else { window.customAlert("Elemen form Edit Soal tidak ditemukan di HTML.", "error"); }
+        } catch (error) { window.customAlert("Gagal membuka form Edit Soal: " + error.message, "error"); }
     };
 
     document.getElementById('close-modal-edit-soal')?.addEventListener('click', () => {
@@ -989,7 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ==========================================
-    // TOKEN UJIAN AKTIF (DENGAN WAKTU 15 MENIT)
+    // TOKEN UJIAN AKTIF
     // ==========================================
     async function loadActiveTokens() {
         const tbody = document.querySelector('#table-active-tokens tbody'); if(!tbody) return;
