@@ -719,26 +719,91 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderPreviewSoal(idx) {
         previewCurrentIdx = idx; const q = filteredSoalData[idx];
-        document.getElementById('prev-current-q-num').innerText = q.nomor_soal; document.getElementById('prev-badge-tipe').innerText = q.tipe;
-        let html = `<div style="font-size:1.1rem; margin-bottom:20px;">${q.teks_soal}</div>` + renderMediaHTML(q.media_soal);
-        if(q.tipe === 'PG' || q.tipe === 'PGK') {
-            html += `<div style="display:flex; flex-direction:column; gap:10px;">` + ['A','B','C','D','E'].map(o => {
-                if(!q.opsi[o] && !q.opsi_media?.[o]) return '';
-                let isK = q.tipe==='PG' ? q.kunci_jawaban===o : q.kunci_jawaban?.includes(o);
-                return `<div style="padding:15px; border:1px solid ${isK?'#10b981':'#e2e8f0'}; background:${isK?'#d1fae5':'#f8fafc'}; border-radius:8px;"><b>${o}.</b> ${renderMediaHTML(q.opsi_media?.[o])} ${q.opsi[o]}</div>`;
-            }).join('') + `</div>`;
-        } else if(q.tipe === 'Isian') html += `<div style="background:#d1fae5; padding:15px; border-radius:8px; font-weight:bold; color:#059669;">Kunci: ${q.kunci_jawaban}</div>`;
-        else if(q.tipe === 'Uraian') html += `<div style="background:#fffbeb; padding:15px; border-radius:8px; color:var(--warning);"><b>Rubrik:</b><br>${q.rubrik}</div>`;
+        document.getElementById('prev-current-q-num').innerText = q.nomor_soal === 999 ? idx + 1 : q.nomor_soal; 
+        document.getElementById('prev-badge-tipe').innerText = q.tipe || 'PG';
         
+        let html = `<div class="q-text" style="font-size: 1.15rem; margin-bottom: 25px; line-height: 1.6;">${q.teks_soal}</div>`;
+        html += renderMediaHTML(q.media_soal);
+        
+        if (q.tipe === 'PG' || q.tipe === 'PGK' || !q.tipe) {
+            html += `<div class="options-container" style="display: flex; flex-direction: column; gap: 12px;">`;
+            ['A', 'B', 'C', 'D', 'E'].forEach(lbl => {
+                if((q.opsi && q.opsi[lbl]) || (q.opsi_media && q.opsi_media[lbl])) {
+                    let isKunci = false; 
+                    if(q.tipe === 'PGK') isKunci = (Array.isArray(q.kunci_jawaban) && q.kunci_jawaban.includes(lbl)); 
+                    else isKunci = (q.kunci_jawaban === lbl);
+                    
+                    let bg = isKunci ? 'background:#d1fae5; border-color:#10b981;' : 'background:#f8fafc; border-color:var(--border-color);'; 
+                    let type = q.tipe === 'PGK' ? 'checkbox' : 'radio';
+                    let mediaOpsiHTML = q.opsi_media && q.opsi_media[lbl] ? renderMediaHTML(q.opsi_media[lbl]) : '';
+                    let teksOpsiHTML = (q.opsi && q.opsi[lbl]) ? `<span style="font-size: 1.05rem;">${q.opsi[lbl]}</span>` : '';
+                    
+                    html += `<label class="option-item" style="display: flex; padding: 15px 20px; border: 1.5px solid; border-radius: var(--radius-md); ${bg} margin: 0; cursor: default;">
+                        <input type="${type}" disabled ${isKunci ? 'checked' : ''} style="margin-right: 15px; transform: scale(1.2);">
+                        <span style="font-weight: bold; margin-right: 15px; font-size: 1.05rem;">${lbl}.</span>
+                        <div style="display:flex; flex-direction:column; width: 100%;">${mediaOpsiHTML}${teksOpsiHTML}</div>
+                    </label>`;
+                }
+            }); html += `</div>`;
+        } 
+        else if (q.tipe === 'Menjodohkan') {
+            html += `<div style="display: flex; flex-direction: column; gap: 10px;">`;
+            if(q.pasangan) { 
+                q.pasangan.forEach(p => { 
+                    html += `<div style="display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="flex: 1; font-weight: 500; font-size: 1.05rem;">${p.premis}</div>
+                        <i class="fas fa-arrow-right" style="color: var(--text-muted);"></i>
+                        <div style="flex: 1; font-weight:bold; color:var(--primary); padding: 10px; background: #d1fae5; border-radius: 6px; border: 1px solid #10b981; font-size: 1.05rem;">${p.target}</div>
+                    </div>`; 
+                }); 
+            } 
+            html += `</div>`;
+        }
+        else if (q.tipe === 'Isian') { 
+            html += `<div style="margin-top: 10px;"><input type="text" class="input-text" value="${q.kunci_jawaban || ''}" disabled style="background:#d1fae5; color:#059669; font-weight:bold; padding:15px; font-size: 1.1rem;"><p style="font-size:0.85rem; color:var(--text-muted); margin-top:8px;"><i class="fas fa-info-circle"></i> Warna hijau adalah kunci jawaban akurat.</p></div>`; 
+        }
+        else if (q.tipe === 'Uraian') { 
+            html += `<div style="margin-top: 10px;"><textarea class="input-text" rows="6" disabled placeholder="(Siswa akan mengisi jawaban uraian di sini)" style="font-size: 1.05rem; padding: 15px;"></textarea><div style="margin-top:15px; padding:15px; background:#fffbeb; border:1px solid var(--warning); border-radius:8px;"><strong style="color:var(--warning);"><i class="fas fa-info-circle"></i> Rubrik / Panduan Penilaian Guru:</strong> <br><span style="color: var(--secondary); margin-top: 5px; display: inline-block;">${q.rubrik || '-'}</span></div></div>`; 
+        }
+
         document.getElementById('prev-q-container').innerHTML = html;
-        document.getElementById('prev-btn-prev').style.visibility = idx === 0 ? 'hidden' : 'visible';
-        document.getElementById('prev-btn-next').style.visibility = idx === filteredSoalData.length - 1 ? 'hidden' : 'visible';
         
+        // Update Logika Tombol
+        document.getElementById('prev-btn-prev').style.visibility = idx === 0 ? 'hidden' : 'visible'; 
+        const nextBtn = document.getElementById('prev-btn-next');
+        if (idx === filteredSoalData.length - 1) { 
+            nextBtn.innerHTML = `SELESAI <i class="fas fa-flag-checkered"></i>`; 
+            nextBtn.classList.add('btn-finish-exam'); // Supaya style-nya merah seperti "Selesai Ujian"
+            nextBtn.style.background = 'var(--danger)';
+            nextBtn.style.color = 'white';
+        } else { 
+            nextBtn.innerHTML = `SELANJUTNYA <i class="fas fa-chevron-right"></i>`; 
+            nextBtn.classList.remove('btn-finish-exam'); 
+            nextBtn.style.background = 'var(--primary)';
+            nextBtn.style.color = 'white';
+        }
+
+        // Update Navigasi Grid (Kotak Angka)
         const grid = document.getElementById('prev-q-grid'); grid.innerHTML = '';
-        filteredSoalData.forEach((_, i) => { const b = document.createElement('div'); b.className = 'q-box'; if(i===idx) b.classList.add('active-q'); b.innerText = i+1; b.onclick = ()=>renderPreviewSoal(i); grid.appendChild(b); });
+        filteredSoalData.forEach((dat, i) => { 
+            const b = document.createElement('div'); 
+            b.className = 'q-box'; 
+            if(i === idx) b.classList.add('active-q'); 
+            else b.classList.add('answered'); // Beri warna terisi agar guru tahu ada kuncinya
+            b.innerText = dat.nomor_soal === 999 ? i + 1 : dat.nomor_soal; 
+            b.onclick = () => renderPreviewSoal(i); 
+            grid.appendChild(b); 
+        });
     }
+    
     document.getElementById('prev-btn-prev').onclick = () => renderPreviewSoal(previewCurrentIdx - 1);
-    document.getElementById('prev-btn-next').onclick = () => renderPreviewSoal(previewCurrentIdx + 1);
+    document.getElementById('prev-btn-next').onclick = () => {
+        if (previewCurrentIdx < filteredSoalData.length - 1) {
+            renderPreviewSoal(previewCurrentIdx + 1);
+        } else {
+            customAlert("Ini adalah soal terakhir. Di halaman siswa, tombol ini akan menyelesaikan ujian.", "info");
+        }
+    };
 
     // ==========================================
     // 7. HASIL UJIAN & TOKEN
