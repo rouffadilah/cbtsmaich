@@ -581,26 +581,101 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedExcelSoal = null;
     let selectedWordSoal = null;
 
+    // Animasi Klik & Ganti Label Kotak Import
     document.getElementById('file-excel')?.addEventListener('change', (e) => {
-        selectedExcelSoal = e.target.files[0]; const label = document.getElementById('label-file-excel');
+        selectedExcelSoal = e.target.files[0]; 
+        const label = document.getElementById('label-file-excel'); const box = document.getElementById('box-excel');
         if(selectedExcelSoal) { 
-            label.innerHTML = `<i class="fas fa-check"></i> ${selectedExcelSoal.name}`; label.style.background = "var(--secondary)"; 
+            label.innerHTML = `<b style="color:var(--success);">${selectedExcelSoal.name}</b>`; 
+            box.style.borderColor = "var(--success)"; box.style.background = "#f0fdf4";
             selectedWordSoal = null; document.getElementById('file-word').value = ''; 
-            const lw = document.getElementById('label-file-word'); if(lw) { lw.innerHTML = `<i class="fas fa-search"></i> Pilih File`; lw.style.background = "var(--info)"; }
-        } else { label.innerHTML = `<i class="fas fa-search"></i> Pilih File`; label.style.background = "var(--success)"; }
+            const lw = document.getElementById('label-file-word'); const bw = document.getElementById('box-word');
+            if(lw) { lw.innerHTML = `Klik untuk pilih file`; bw.style.borderColor = "#cbd5e1"; bw.style.background = "#f8fafc"; }
+        }
     });
 
     document.getElementById('file-word')?.addEventListener('change', (e) => {
-        selectedWordSoal = e.target.files[0]; const label = document.getElementById('label-file-word');
+        selectedWordSoal = e.target.files[0]; 
+        const label = document.getElementById('label-file-word'); const box = document.getElementById('box-word');
         if(selectedWordSoal) { 
-            label.innerHTML = `<i class="fas fa-check"></i> ${selectedWordSoal.name}`; label.style.background = "var(--secondary)"; 
+            label.innerHTML = `<b style="color:var(--info);">${selectedWordSoal.name}</b>`; 
+            box.style.borderColor = "var(--info)"; box.style.background = "#eff6ff";
             selectedExcelSoal = null; document.getElementById('file-excel').value = ''; 
-            const le = document.getElementById('label-file-excel'); if(le) { le.innerHTML = `<i class="fas fa-search"></i> Pilih File`; le.style.background = "var(--success)"; }
-        } else { label.innerHTML = `<i class="fas fa-search"></i> Pilih File`; label.style.background = "var(--info)"; }
+            const le = document.getElementById('label-file-excel'); const be = document.getElementById('box-excel');
+            if(le) { le.innerHTML = `Klik untuk pilih file`; be.style.borderColor = "#cbd5e1"; be.style.background = "#f8fafc"; }
+        }
     });
 
+    // MESIN PEMBUAT TEMPLATE OTOMATIS (EXCEL & WORD)
+    document.getElementById('btn-dl-excel')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const ws_data = [
+            ["No", "Tipe", "Soal", "Media Soal", "OpsiA", "Media A", "OpsiB", "Media B", "OpsiC", "Media C", "OpsiD", "Media D", "OpsiE", "Media E", "Kunci", "Rubrik"],
+            [1, "PG", "Perhatikan gambar di samping. Apa nama perangkat jaringan ini?", "router.jpg", "Router", "", "Switch", "switch.jpg", "Hub", "", "Access Point", "", "Modem", "", "A", ""],
+            [2, "PGK", "Mana sajakah yang termasuk IP Private? (Pilih 2)", "", "192.168.1.1", "", "8.8.8.8", "", "10.0.0.5", "", "1.1.1.1", "", "11.11.11.11", "", "A,C", ""],
+            [3, "MENJODOHKAN", "Pasangkan port dengan protokolnya secara tepat!", "", "80=HTTP", "", "443=HTTPS", "", "22=SSH", "", "21=FTP", "", "25=SMTP", "", "", ""],
+            [4, "ISIAN", "Perintah pada CMD Windows untuk melihat konfigurasi IP adalah...", "", "", "", "", "", "", "", "", "", "", "", "ipconfig", ""],
+            [5, "URAIAN", "Jelaskan langkah-langkah melakukan subnetting!", "", "", "", "", "", "", "", "", "", "", "", "", "Siswa menjelaskan cara mencari jumlah subnet, host, dan blok subnet."]
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Template Soal CBT");
+        XLSX.writeFile(wb, "Template_Soal_SMAICH.xlsx");
+    });
+
+    document.getElementById('btn-dl-word')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const content = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Template Soal</title></head>
+        <body style="font-family: Arial, sans-serif;">
+            <h2 style="color: #2b579a;">Template Import Soal CBT via Word</h2>
+            <p><i>PENTING: Jangan mengubah kata kunci yang dicetak tebal kapital (seperti <b>NO:</b>, <b>TIPE:</b>, <b>SOAL:</b>, dsb).</i></p>
+            <p><i>Untuk menyisipkan gambar/media, Anda cukup <b>copy-paste (tempel) gambar secara langsung</b> tepat di bawah baris soal atau baris opsi jawaban.</i></p>
+            <hr>
+            <p><b>NO:</b> 1<br>
+            <b>TIPE:</b> PG<br>
+            <b>SOAL:</b> Perhatikan topologi jaringan berikut ini. Perangkat apa yang ditandai huruf X?<br>
+            <i>[TEMPEL GAMBAR UNTUK SOAL DI SINI JIKA ADA]</i><br>
+            <b>A.</b> Router<br>
+            <i>[TEMPEL GAMBAR UNTUK OPSI A DI SINI JIKA ADA]</i><br>
+            <b>B.</b> Switch<br>
+            <b>C.</b> Access Point<br>
+            <b>D.</b> Hub<br>
+            <b>E.</b> Modem<br>
+            <b>KUNCI:</b> A</p>
+            <hr>
+            <p><b>NO:</b> 2<br>
+            <b>TIPE:</b> PGK<br>
+            <b>SOAL:</b> Pilihlah 2 perangkat yang beroperasi di Layer 2 OSI Model.<br>
+            <b>A.</b> Switch<br>
+            <b>B.</b> Router<br>
+            <b>C.</b> Bridge<br>
+            <b>D.</b> Hub<br>
+            <b>E.</b> Repeater<br>
+            <b>KUNCI:</b> A, C</p>
+            <hr>
+            <p><b>NO:</b> 3<br>
+            <b>TIPE:</b> ISIAN<br>
+            <b>SOAL:</b> Singkatan dari LAN adalah...<br>
+            <b>KUNCI:</b> local area network</p>
+            <hr>
+            <p><b>NO:</b> 4<br>
+            <b>TIPE:</b> URAIAN<br>
+            <b>SOAL:</b> Jelaskan apa yang dimaksud dengan Subnetting!<br>
+            <b>RUBRIK:</b> Siswa harus menjelaskan tentang pembagian IP address menjadi jaringan yang lebih kecil.</p>
+        </body></html>`;
+        
+        const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'Template_Soal_SMAICH.doc';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
+    // PROSES EKSEKUSI IMPORT
     document.getElementById('btn-proses-import-soal')?.addEventListener('click', async () => {
-        if (!selectedExcelSoal && !selectedWordSoal) return await window.customAlert("Silakan pilih file Excel atau Word terlebih dahulu!", "warning");
+        if (!selectedExcelSoal && !selectedWordSoal) return await window.customAlert("Silakan klik kotak Excel atau Word untuk memilih file terlebih dahulu!", "warning");
         const mapel = document.getElementById('import-mapel').value; const kelas = document.getElementById('import-kelas').value;
         if(!mapel || !kelas) return await window.customAlert("Pilih Mapel dan Kelas untuk soal ini Terlebih Dahulu!", "warning");
 
@@ -627,98 +702,61 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     await window.customAlert(`Import Excel Berhasil diselesaikan!`, "success"); 
                     const md = document.getElementById('modal-tambah-soal'); if(md) md.style.display = 'none'; loadDataSoal(); 
+                    
+                    // Reset UI
                     selectedExcelSoal = null; document.getElementById('file-excel').value = '';
-                    const lfe = document.getElementById('label-file-excel'); if(lfe){ lfe.innerHTML = `<i class="fas fa-search"></i> Pilih File`; lfe.style.background = "var(--success)"; } 
+                    const lfe = document.getElementById('label-file-excel'); const be = document.getElementById('box-excel');
+                    if(lfe){ lfe.innerHTML = `Klik untuk pilih file`; be.style.borderColor = "#cbd5e1"; be.style.background = "#f8fafc"; } 
                 } catch (err) { await window.customAlert("Gagal membaca file Excel.", "error"); }
                 btn.innerHTML = origText; btn.disabled = false;
             };
             reader.readAsArrayBuffer(selectedExcelSoal);
 
         } else if (selectedWordSoal) {
-            // PROSES IMPORT WORD (MAMMOTH)
+            // PROSES IMPORT WORD
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
                     const options = {
                         convertImage: mammoth.images.imgElement(function(image) {
-                            return image.read("base64").then(function(imageBuffer) {
-                                return { src: "data:" + image.contentType + ";base64," + imageBuffer };
-                            });
+                            return image.read("base64").then(function(imageBuffer) { return { src: "data:" + image.contentType + ";base64," + imageBuffer }; });
                         })
                     };
-                    
                     const result = await mammoth.convertToHtml({arrayBuffer: e.target.result}, options);
-                    let tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = result.value; 
+                    let tempDiv = document.createElement('div'); tempDiv.innerHTML = result.value; 
 
-                    let questionsToImport = [];
-                    let currentQ = null;
-                    let currentField = null; 
-
+                    let questionsToImport = []; let currentQ = null; let currentField = null; 
                     function getImgSrc(el) { let img = el.querySelector('img'); return img ? img.src : null; }
 
                     tempDiv.childNodes.forEach(el => {
                         if(el.nodeName !== 'P') return; 
-                        let rawText = el.textContent || el.innerText || "";
-                        let textTrimmed = rawText.trim();
-                        let upperText = textTrimmed.toUpperCase();
-                        let imgSrc = getImgSrc(el);
+                        let rawText = el.textContent || el.innerText || ""; let textTrimmed = rawText.trim(); let upperText = textTrimmed.toUpperCase(); let imgSrc = getImgSrc(el);
 
                         if(upperText.startsWith('NO:')) {
                             if(currentQ) questionsToImport.push(currentQ);
-                            currentQ = {
-                                nomor_soal: parseInt(upperText.replace('NO:', '').trim()) || 999,
-                                tipe: 'PG', teks_soal: '',
-                                opsi: {A:'', B:'', C:'', D:'', E:''}, kunci_jawaban: '',
-                                media_soal_base64: null, opsi_media_base64: {}
-                            };
-                            currentField = null; return;
+                            currentQ = { nomor_soal: parseInt(upperText.replace('NO:', '').trim()) || 999, tipe: 'PG', teks_soal: '', opsi: {A:'', B:'', C:'', D:'', E:''}, kunci_jawaban: '', media_soal_base64: null, opsi_media_base64: {} }; currentField = null; return;
                         }
                         if(!currentQ) return; 
 
-                        if(upperText.startsWith('TIPE:')) {
-                            currentQ.tipe = upperText.replace('TIPE:', '').trim(); currentField = null;
-                        } else if (upperText.startsWith('SOAL:')) {
-                            currentQ.teks_soal += textTrimmed.replace(/SOAL:/i, '').trim(); currentField = 'SOAL';
-                            if(imgSrc) currentQ.media_soal_base64 = imgSrc;
-                        } else if (upperText.startsWith('A.') && currentQ.opsi.A === '') {
-                            currentQ.opsi.A += textTrimmed.replace(/^A\./i, '').trim(); currentField = 'A';
-                            if(imgSrc) currentQ.opsi_media_base64.A = imgSrc;
-                        } else if (upperText.startsWith('B.') && currentQ.opsi.B === '') {
-                            currentQ.opsi.B += textTrimmed.replace(/^B\./i, '').trim(); currentField = 'B';
-                            if(imgSrc) currentQ.opsi_media_base64.B = imgSrc;
-                        } else if (upperText.startsWith('C.') && currentQ.opsi.C === '') {
-                            currentQ.opsi.C += textTrimmed.replace(/^C\./i, '').trim(); currentField = 'C';
-                            if(imgSrc) currentQ.opsi_media_base64.C = imgSrc;
-                        } else if (upperText.startsWith('D.') && currentQ.opsi.D === '') {
-                            currentQ.opsi.D += textTrimmed.replace(/^D\./i, '').trim(); currentField = 'D';
-                            if(imgSrc) currentQ.opsi_media_base64.D = imgSrc;
-                        } else if (upperText.startsWith('E.') && currentQ.opsi.E === '') {
-                            currentQ.opsi.E += textTrimmed.replace(/^E\./i, '').trim(); currentField = 'E';
-                            if(imgSrc) currentQ.opsi_media_base64.E = imgSrc;
-                        } else if (upperText.startsWith('KUNCI:')) {
-                            currentQ.kunci_jawaban = upperText.replace('KUNCI:', '').trim(); currentField = null;
-                        } else if (upperText.startsWith('RUBRIK:')) {
-                            currentQ.rubrik = textTrimmed.replace(/RUBRIK:/i, '').trim(); currentField = 'RUBRIK';
-                        } else {
-                            if(currentField === 'SOAL') {
-                                if(textTrimmed) currentQ.teks_soal += "\n" + textTrimmed;
-                                if(imgSrc && !currentQ.media_soal_base64) currentQ.media_soal_base64 = imgSrc;
-                            } else if (['A','B','C','D','E'].includes(currentField)) {
-                                if(textTrimmed) currentQ.opsi[currentField] += " " + textTrimmed;
-                                if(imgSrc && !currentQ.opsi_media_base64[currentField]) currentQ.opsi_media_base64[currentField] = imgSrc;
-                            } else if (currentField === 'RUBRIK') {
-                                if(textTrimmed) currentQ.rubrik += "\n" + textTrimmed;
-                            }
+                        if(upperText.startsWith('TIPE:')) { currentQ.tipe = upperText.replace('TIPE:', '').trim(); currentField = null; } 
+                        else if (upperText.startsWith('SOAL:')) { currentQ.teks_soal += textTrimmed.replace(/SOAL:/i, '').trim(); currentField = 'SOAL'; if(imgSrc) currentQ.media_soal_base64 = imgSrc; } 
+                        else if (upperText.startsWith('A.') && currentQ.opsi.A === '') { currentQ.opsi.A += textTrimmed.replace(/^A\./i, '').trim(); currentField = 'A'; if(imgSrc) currentQ.opsi_media_base64.A = imgSrc; } 
+                        else if (upperText.startsWith('B.') && currentQ.opsi.B === '') { currentQ.opsi.B += textTrimmed.replace(/^B\./i, '').trim(); currentField = 'B'; if(imgSrc) currentQ.opsi_media_base64.B = imgSrc; } 
+                        else if (upperText.startsWith('C.') && currentQ.opsi.C === '') { currentQ.opsi.C += textTrimmed.replace(/^C\./i, '').trim(); currentField = 'C'; if(imgSrc) currentQ.opsi_media_base64.C = imgSrc; } 
+                        else if (upperText.startsWith('D.') && currentQ.opsi.D === '') { currentQ.opsi.D += textTrimmed.replace(/^D\./i, '').trim(); currentField = 'D'; if(imgSrc) currentQ.opsi_media_base64.D = imgSrc; } 
+                        else if (upperText.startsWith('E.') && currentQ.opsi.E === '') { currentQ.opsi.E += textTrimmed.replace(/^E\./i, '').trim(); currentField = 'E'; if(imgSrc) currentQ.opsi_media_base64.E = imgSrc; } 
+                        else if (upperText.startsWith('KUNCI:')) { currentQ.kunci_jawaban = upperText.replace('KUNCI:', '').trim(); currentField = null; } 
+                        else if (upperText.startsWith('RUBRIK:')) { currentQ.rubrik = textTrimmed.replace(/RUBRIK:/i, '').trim(); currentField = 'RUBRIK'; } 
+                        else {
+                            if(currentField === 'SOAL') { if(textTrimmed) currentQ.teks_soal += "\n" + textTrimmed; if(imgSrc && !currentQ.media_soal_base64) currentQ.media_soal_base64 = imgSrc; } 
+                            else if (['A','B','C','D','E'].includes(currentField)) { if(textTrimmed) currentQ.opsi[currentField] += " " + textTrimmed; if(imgSrc && !currentQ.opsi_media_base64[currentField]) currentQ.opsi_media_base64[currentField] = imgSrc; } 
+                            else if (currentField === 'RUBRIK') { if(textTrimmed) currentQ.rubrik += "\n" + textTrimmed; }
                         }
                     });
                     if(currentQ) questionsToImport.push(currentQ);
 
-                    if(questionsToImport.length === 0) {
-                        btn.innerHTML = origText; btn.disabled = false; return await window.customAlert("Format Word tidak terbaca. Pastikan memakai kata kunci NO:, TIPE:, SOAL: dst.", "error");
-                    }
-
-                    if(!(await window.customConfirm(`Terbaca ${questionsToImport.length} soal (berikut gambar) dari Word. Lanjutkan import ke mapel ${mapel} kelas ${kelas}?`, 'info', 'Konfirmasi Import Word', 'Ya, Import Soal'))) { btn.innerHTML = origText; btn.disabled = false; return; }
+                    if(questionsToImport.length === 0) { btn.innerHTML = origText; btn.disabled = false; return await window.customAlert("Format Word tidak terbaca. Pastikan memakai kata kunci NO:, TIPE:, SOAL: dst.", "error"); }
+                    if(!(await window.customConfirm(`Terbaca ${questionsToImport.length} soal (beserta gambar) dari file Word. Lanjutkan import ke mapel ${mapel} kelas ${kelas}?`, 'info', 'Konfirmasi Import Word', 'Ya, Import Soal'))) { btn.innerHTML = origText; btn.disabled = false; return; }
 
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengunggah Media & Soal...';
 
@@ -726,10 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: q.nomor_soal, tipe: q.tipe, teks_soal: q.teks_soal, createdAt: new Date() };
                         if (q.rubrik) payload.rubrik = q.rubrik;
                         
-                        if(q.media_soal_base64) {
-                            let fileMedia = base64ToFile(q.media_soal_base64, `soal_${Date.now()}.jpg`);
-                            if(fileMedia) payload.media_soal = await uploadFileKeStorage(fileMedia);
-                        }
+                        if(q.media_soal_base64) { let fileMedia = base64ToFile(q.media_soal_base64, `soal_${Date.now()}.jpg`); if(fileMedia) payload.media_soal = await uploadFileKeStorage(fileMedia); }
 
                         if(q.tipe === 'PG' || q.tipe === 'PGK') {
                             payload.opsi = q.opsi;
@@ -738,31 +773,27 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             let opsiMediaObj = {};
                             for(let opt of ['A','B','C','D','E']) {
-                                if(q.opsi_media_base64[opt]) {
-                                    let fileMediaOpt = base64ToFile(q.opsi_media_base64[opt], `opsi_${opt}_${Date.now()}.jpg`);
-                                    if(fileMediaOpt) opsiMediaObj[opt] = await uploadFileKeStorage(fileMediaOpt);
-                                }
+                                if(q.opsi_media_base64[opt]) { let fileMediaOpt = base64ToFile(q.opsi_media_base64[opt], `opsi_${opt}_${Date.now()}.jpg`); if(fileMediaOpt) opsiMediaObj[opt] = await uploadFileKeStorage(fileMediaOpt); }
                             }
                             if(Object.keys(opsiMediaObj).length > 0) payload.opsi_media = opsiMediaObj;
                         }
-                        
                         await addDoc(collection(db, "bank_soal"), payload); 
                     }
 
                     await window.customAlert(`Import Word Berhasil! Media gambar sudah tersimpan otomatis.`, "success"); 
                     const md = document.getElementById('modal-tambah-soal'); if(md) md.style.display = 'none'; loadDataSoal(); 
+                    
+                    // Reset UI
                     selectedWordSoal = null; document.getElementById('file-word').value = '';
-                    const lw = document.getElementById('label-file-word'); if(lw){ lw.innerHTML = `<i class="fas fa-search"></i> Pilih File`; lw.style.background = "var(--info)"; } 
+                    const lw = document.getElementById('label-file-word'); const bw = document.getElementById('box-word');
+                    if(lw){ lw.innerHTML = `Klik untuk pilih file`; bw.style.borderColor = "#cbd5e1"; bw.style.background = "#f8fafc"; } 
 
-                } catch(err) {
-                    console.error(err); await window.customAlert("Gagal memproses file Word. Pastikan format sesuai template.", "error");
-                }
+                } catch(err) { console.error(err); await window.customAlert("Gagal memproses file Word. Pastikan format sesuai template.", "error"); }
                 btn.innerHTML = origText; btn.disabled = false;
             };
             reader.readAsArrayBuffer(selectedWordSoal);
         }
     });
-
     // ==========================================
     // TOMBOL EDIT SOAL 
     // ==========================================
