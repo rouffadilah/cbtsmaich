@@ -87,40 +87,49 @@
                     </div>
 
                     <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-                        <div class="stat-card stat-clickable" data-target="section-soal" style="background: white; padding: 25px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border-left: 5px solid var(--warning); display: flex; align-items: center; gap: 20px;">
-                            <div style="background: #fef3c7; padding: 15px; border-radius: 50%; color: var(--warning); font-size: 1.5rem;"><i class="fas fa-file-alt"></i></div>
+    
+                        <div class="stat-card stat-clickable" data-target="section-soal" style="background: white; padding: 20px 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
                             <div>
-                                <h3 id="stat-soal" style="font-size: 1.8rem; color: var(--secondary);">0</h3>
-                                <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Soal Tersedia</p>
+                                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">Soal Tersedia</p>
+                                <h3 id="stat-soal" style="font-size: 2rem; color: var(--secondary); margin: 0; line-height: 1;">0</h3>
+                            </div>
+                            <div style="color: var(--warning); font-size: 2rem; opacity: 0.9;">
+                                <i class="fas fa-file-alt"></i>
                             </div>
                         </div>
-
-                        <div class="stat-card stat-clickable" id="menu-pengguna" data-target="section-pengguna" style="background: white; padding: 25px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border-left: 5px solid var(--info); display: flex; align-items: center; gap: 20px;">
-                            <div style="background: #eff6ff; padding: 15px; border-radius: 50%; color: var(--info); font-size: 1.5rem;"><i class="fas fa-users"></i></div>
+                    
+                        <div class="stat-card stat-clickable" id="menu-pengguna" data-target="section-pengguna" style="background: white; padding: 20px 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
                             <div>
-                                <h3 id="stat-siswa" style="font-size: 1.8rem; color: var(--secondary);">0</h3>
-                                <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Pengguna Terdaftar</p>
+                                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">Pengguna Terdaftar</p>
+                                <h3 id="stat-siswa" style="font-size: 2rem; color: var(--secondary); margin: 0; line-height: 1;">0</h3>
+                            </div>
+                            <div style="color: var(--info); font-size: 2rem; opacity: 0.9;">
+                                <i class="fas fa-users"></i>
                             </div>
                         </div>
-
-                        <div class="stat-card stat-clickable" data-target="section-hasil" style="background: white; padding: 25px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border-left: 5px solid var(--success); display: flex; align-items: center; gap: 20px;">
-                            <div style="background: #d1fae5; padding: 15px; border-radius: 50%; color: var(--success); font-size: 1.5rem;"><i class="fas fa-check-double"></i></div>
+                    
+                        <div class="stat-card stat-clickable" data-target="section-hasil" style="background: white; padding: 20px 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
                             <div>
-                                <h3 id="stat-ujian" style="font-size: 1.8rem; color: var(--secondary);">0</h3>
-                                <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Hasil Ujian Masuk</p>
+                                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">Hasil Ujian Masuk</p>
+                                <h3 id="stat-ujian" style="font-size: 2rem; color: var(--secondary); margin: 0; line-height: 1;">0</h3>
+                            </div>
+                            <div style="color: var(--success); font-size: 2rem; opacity: 0.9;">
+                                <i class="fas fa-check-double"></i>
                             </div>
                         </div>
-
-                        <div class="stat-card stat-clickable" id="menu-pengaturan" data-target="section-pengaturan" style="background: white; padding: 25px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border-left: 5px solid var(--secondary); display: flex; align-items: center; gap: 20px;">
-                            <div style="background: #e2e8f0; padding: 15px; border-radius: 50%; color: var(--secondary); font-size: 1.5rem;"><i class="fas fa-cogs"></i></div>
+                    
+                        <div class="stat-card stat-clickable" id="menu-pengaturan" data-target="section-pengaturan" style="background: white; padding: 20px 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
                             <div>
-                                <h3 style="font-size: 1.8rem; color: var(--secondary);"><i class="fas fa-arrow-right" style="font-size: 1.3rem;"></i></h3>
-                                <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Pengaturan</p>
+                                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">Pengaturan</p>
+                                <h3 style="font-size: 1.5rem; color: var(--secondary); margin: 0; line-height: 1.2;"><i class="fas fa-arrow-right"></i></h3>
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 2rem; opacity: 0.7;">
+                                <i class="fas fa-cogs"></i>
                             </div>
                         </div>
+                    
                     </div>
-                </div>
-
+                    
                 <div id="section-soal" class="content-section">
                     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                         <button onclick="window.history.back()" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Kembali ke Halaman Sebelumnya">
