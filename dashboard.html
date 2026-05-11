@@ -267,76 +267,103 @@
                 </div>
 
                 <div id="section-pengaturan" class="content-section">
-                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                        <button onclick="window.history.back()" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-arrow-left"></i></button>
-                        <button onclick="window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-home"></i></button>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button onclick="window.history.back()" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;"><i class="fas fa-arrow-left"></i></button>
+                        <button onclick="window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;"><i class="fas fa-home"></i></button>
                     </div>
 
-                    <div class="card" style="padding: 20px;">
-                        <h2 class="section-title" id="pengaturan-title" style="font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-                            <i class="fas fa-cog"></i> Pengaturan Sistem
-                        </h2>
+                    <div style="padding: 10px 0;">
                         
-                        <div id="admin-reg-status" style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                <div style="font-size: 0.85rem;"><b>Siswa:</b> <select id="status-reg-siswa" style="border:none; background:transparent; font-weight:bold; color:var(--primary); cursor:pointer;"><option value="buka">BUKA</option><option value="tutup">TUTUP</option></select></div>
-                                <div style="font-size: 0.85rem;"><b>Guru:</b> <select id="status-reg-guru" style="border:none; background:transparent; font-weight:bold; color:var(--primary); cursor:pointer;"><option value="buka">BUKA</option><option value="tutup">TUTUP</option></select></div>
-                            </div>
-                            <button id="btn-save-reg-status" class="btn-3d" style="width: auto; margin: 0; padding: 5px 12px; font-size: 0.75rem; background: var(--success);">SIMPAN STATUS</button>
+                        <div style="margin-bottom: 25px; padding-left: 5px;">
+                            <h2 id="pengaturan-title" style="font-size: 1.5rem; color: var(--secondary); margin: 0; font-weight: 800;"><i class="fas fa-cogs"></i> Pengaturan Sistem</h2>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 5px;">Kelola status pendaftaran, token akses ujian, dan data master sekolah.</p>
                         </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                            <div style="background: #fffbeb; padding: 12px 15px; border-radius: 8px; border: 1px solid #fef3c7;">
-                                <h4 style="font-size: 1rem; margin-bottom: 10px; color: #92400e;"><i class="fas fa-key"></i> Buat Token Ujian</h4>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <select id="set-token-mapel" class="input-text" style="padding: 6px 10px; font-size: 0.9rem;"></select>
-                                    <select id="set-token-kelas" class="input-text" style="padding: 6px 10px; font-size: 0.9rem;"></select>
-                                    <div style="display: flex; gap: 8px;">
-                                        <input type="text" id="input-token-baru" class="input-text" style="padding: 6px 10px; font-size: 0.9rem; flex:1;" placeholder="Token (cth: X8Z)">
-                                        <button id="btn-save-token" class="btn-3d" style="margin:0; padding: 6px 15px; font-size: 0.9rem; background: var(--warning);"><i class="fas fa-check"></i> Simpan</button>
+                        
+                        <div id="admin-reg-status" style="background: white; padding: 20px 25px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                                <div style="background: #ecfdf5; padding: 15px; border-radius: 50%; color: var(--success);"><i class="fas fa-user-shield fa-lg"></i></div>
+                                <div>
+                                    <h4 style="margin: 0 0 8px 0; font-size: 1.05rem; color: var(--secondary);">Status Form Pendaftaran</h4>
+                                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                        <div style="font-size: 0.9rem; display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                            <span style="color: var(--text-muted); font-weight: 600;">Akses Siswa:</span>
+                                            <select id="status-reg-siswa" style="border: none; background: transparent; font-weight: bold; color: var(--success); cursor: pointer; outline: none; font-size: 0.95rem;"><option value="buka">BUKA</option><option value="tutup">TUTUP</option></select>
+                                        </div>
+                                        <div style="font-size: 0.9rem; display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                            <span style="color: var(--text-muted); font-weight: 600;">Akses Guru:</span>
+                                            <select id="status-reg-guru" style="border: none; background: transparent; font-weight: bold; color: var(--success); cursor: pointer; outline: none; font-size: 0.95rem;"><option value="buka">BUKA</option><option value="tutup">TUTUP</option></select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <h4 style="font-size: 1rem; color: var(--secondary); margin: 0;"><i class="fas fa-list-ul"></i> Token Aktif</h4>
-                                    <button id="btn-refresh-token" style="background:none; border:none; color:var(--info); cursor:pointer; font-size: 1rem;"><i class="fas fa-sync-alt"></i></button>
+                            <button id="btn-save-reg-status" class="btn-3d" style="width: auto; margin: 0; padding: 12px 20px; font-size: 0.95rem; background: var(--success);"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                            <div style="background: white; padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #fef3c7; padding-bottom: 12px;">
+                                    <i class="fas fa-key" style="color: var(--warning); font-size: 1.2rem;"></i>
+                                    <h4 style="font-size: 1.1rem; color: var(--secondary); margin: 0;">Buat Token Ujian</h4>
                                 </div>
-                                <div class="flexible-scroll">
-                                    <table id="table-active-tokens" style="width: 100%;">
-                                        <tbody><tr><td style="text-align: center; color: var(--text-muted);">Memuat...</td></tr></tbody>
+                                <div style="display: flex; flex-direction: column; gap: 15px; flex: 1; justify-content: space-between;">
+                                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                                        <select id="set-token-mapel" class="input-text" style="padding: 12px 15px; font-size: 0.95rem; background: #f8fafc; border-color: #e2e8f0;"></select>
+                                        <select id="set-token-kelas" class="input-text" style="padding: 12px 15px; font-size: 0.95rem; background: #f8fafc; border-color: #e2e8f0;"></select>
+                                        <input type="text" id="input-token-baru" class="input-text" style="padding: 12px 15px; font-size: 0.95rem; border-color: #e2e8f0; text-transform: uppercase;" placeholder="Ketik Token Akses (cth: X8Z)">
+                                    </div>
+                                    <button id="btn-save-token" class="btn-3d" style="width: 100%; margin: 0; padding: 12px; font-size: 0.95rem; background: var(--warning); color: #fff;"><i class="fas fa-check-circle"></i> AKTIFKAN TOKEN</button>
+                                </div>
+                            </div>
+                            
+                            <div style="background: white; padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #e0e7ff; padding-bottom: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <i class="fas fa-list-ul" style="color: var(--info); font-size: 1.2rem;"></i>
+                                        <h4 style="font-size: 1.1rem; color: var(--secondary); margin: 0;">Daftar Token Aktif</h4>
+                                    </div>
+                                    <button id="btn-refresh-token" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 12px; color:var(--info); cursor:pointer; font-size: 0.95rem; transition: 0.2s;"><i class="fas fa-sync-alt"></i></button>
+                                </div>
+                                <div style="flex: 1; overflow-y: auto; max-height: 250px; border: 1px solid var(--border-color); border-radius: 8px; background: #f8fafc;">
+                                    <table id="table-active-tokens" style="width: 100%; border-collapse: collapse;">
+                                        <tbody><tr><td style="text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 0.95rem;">Memuat data token...</td></tr></tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="admin-data-master" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
-                            <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px;">
-                                <h4 style="font-size: 1rem; margin-bottom: 10px; color: var(--secondary);"><i class="fas fa-book"></i> Master Mapel</h4>
-                                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                                    <input type="text" id="input-new-mapel" class="input-text" style="padding: 6px 10px; font-size: 0.9rem;" placeholder="Nama Mapel">
-                                    <button id="btn-add-mapel" class="btn-3d" style="margin:0; padding: 6px 15px; font-size: 0.9rem;"><i class="fas fa-plus"></i></button>
+                        <div id="admin-data-master" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; box-shadow: var(--shadow-sm);">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                                    <i class="fas fa-book" style="color: var(--primary); font-size: 1.2rem;"></i>
+                                    <h4 style="font-size: 1.1rem; color: var(--secondary); margin: 0;">Master Mata Pelajaran</h4>
                                 </div>
-                                <div class="flexible-scroll" style="border: 1px solid var(--border-color); border-radius: 6px;">
-                                    <table id="table-master-mapel" style="width: 100%;"><tbody></tbody></table>
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                    <input type="text" id="input-new-mapel" class="input-text" style="padding: 12px 15px; font-size: 0.95rem; border-color: #e2e8f0; flex: 1;" placeholder="Tambah mapel baru...">
+                                    <button id="btn-add-mapel" class="btn-3d" style="margin:0; padding: 12px 20px; font-size: 1rem; background: var(--primary);"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: #f8fafc;">
+                                    <table id="table-master-mapel" style="width: 100%; border-collapse: collapse;"><tbody></tbody></table>
                                 </div>
                             </div>
                             
-                            <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px;">
-                                <h4 style="font-size: 1rem; margin-bottom: 10px; color: var(--secondary);"><i class="fas fa-chalkboard"></i> Master Kelas</h4>
-                                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                                    <input type="text" id="input-new-kelas" class="input-text" style="padding: 6px 10px; font-size: 0.9rem;" placeholder="Nama Kelas">
-                                    <button id="btn-add-kelas" class="btn-3d" style="margin:0; padding: 6px 15px; font-size: 0.9rem;"><i class="fas fa-plus"></i></button>
+                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; box-shadow: var(--shadow-sm);">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                                    <i class="fas fa-chalkboard" style="color: #8b5cf6; font-size: 1.2rem;"></i>
+                                    <h4 style="font-size: 1.1rem; color: var(--secondary); margin: 0;">Master Kelas</h4>
                                 </div>
-                                <div class="flexible-scroll" style="border: 1px solid var(--border-color); border-radius: 6px;">
-                                    <table id="table-master-kelas" style="width: 100%;"><tbody></tbody></table>
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                    <input type="text" id="input-new-kelas" class="input-text" style="padding: 12px 15px; font-size: 0.95rem; border-color: #e2e8f0; flex: 1;" placeholder="Tambah kelas baru...">
+                                    <button id="btn-add-kelas" class="btn-3d" style="margin:0; padding: 12px 20px; font-size: 1rem; background: #8b5cf6;"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: #f8fafc;">
+                                    <table id="table-master-kelas" style="width: 100%; border-collapse: collapse;"><tbody></tbody></table>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
-
+                
             </main>
         </div>
     </div> 
