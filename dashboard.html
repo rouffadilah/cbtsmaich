@@ -12,23 +12,20 @@
 
     <div class="main-wrapper">
         
-        <header class="app-header" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 15px 30px; background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 90; box-shadow: var(--shadow-sm);">
-            
-            <div></div>
+            <header class="app-header" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 15px 30px; background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 90;">
+                
+                <div></div>
 
-            <div style="display: flex; justify-content: center; cursor: pointer;" onclick="window.location.hash='section-beranda'" title="Kembali ke Beranda">
-                <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 50px; width: auto; object-fit: contain;">
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
-                <div style="text-align: right; display: none; /* Disembunyikan di HP, tampil via CSS di PC */" class="header-user-info">
-                    <p id="admin-name" style="font-weight: 700; color: var(--secondary); margin: 0; font-size: 0.95rem;">Memuat Nama...</p>
+                <div style="display: flex; justify-content: center; cursor: pointer;" onclick="window.location.hash='section-beranda'" title="Kembali ke Beranda">
+                    <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 50px; width: auto; object-fit: contain; border-radius: 6px;">
                 </div>
-                <button id="btn-logout" class="btn-3d btn-secondary" style="padding: 10px 15px; margin: 0; width: auto; border-radius: 8px;" title="Keluar Aplikasi">
-                    <i class="fas fa-sign-out-alt" style="margin: 0; font-size: 1.2rem;"></i>
-                </button>
-            </div>
-        </header>
+
+                <div style="display: flex; justify-content: flex-end; align-items: center;">
+                    <button id="btn-logout" class="btn-3d btn-secondary" style="padding: 10px 15px; margin: 0; width: auto; border-radius: 8px;" title="Keluar Aplikasi">
+                        <i class="fas fa-sign-out-alt" style="margin: 0; font-size: 1.2rem;"></i>
+                    </button>
+                </div>
+            </header>
 
         <main class="main-content">
             
