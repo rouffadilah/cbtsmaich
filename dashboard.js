@@ -894,9 +894,21 @@ document.addEventListener('DOMContentLoaded', () => {
     window.hapusTokenUtama = async (k) => { 
         if(await window.customConfirm("Hapus token ujian ini?", "danger", "Hapus Token")) { 
             try { 
-                await updateDoc(doc(db, "pengaturan", "token_ujian"), { [k]: deleteField() }); 
-                loadActiveTokens(); 
-            } catch (e) { window.customAlert("Gagal menghapus token.", "error"); }
+                // Cara paling aman: Tarik data saat ini, hapus kuncinya, lalu timpa balik.
+                // Ini mencegah error pada Firebase jika nama kelas mengandung titik (seperti XI.1)
+                const snap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+                if(snap.exists()) {
+                    let dataTokens = snap.data();
+                    delete dataTokens[k]; // Hapus token spesifik dari daftar
+                    
+                    // Simpan ulang secara utuh
+                    await setDoc(doc(db, "pengaturan", "token_ujian"), dataTokens); 
+                    loadActiveTokens(); 
+                }
+            } catch (e) { 
+                console.error("Detail Error Hapus Token:", e);
+                window.customAlert("Gagal menghapus token.", "error"); 
+            }
         } 
     };
 
