@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (adminNameEl) adminNameEl.innerText = finalDisplayName;
         
         const greetingText = document.getElementById('greeting-text');
-        if (greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${finalDisplayName}! 👋`;
+        if (greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${finalDisplayName}! 🙏`;
         
         const titleRole = document.getElementById('panel-title-role');
 
