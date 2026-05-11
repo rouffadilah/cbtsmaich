@@ -322,28 +322,28 @@
                         <select id="import-kelas" class="input-text" style="padding: 8px 12px; font-size: 0.9rem;"><option value="">Pilih Kelas...</option></select>
                     </div>
                 </div>
-
+            
                 <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-                    <div style="flex: 1; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px 10px; text-align: center; background: #f8fafc; transition: all 0.2s ease; cursor: pointer;" onclick="document.getElementById('file-excel').click()" id="box-excel">
+                    <div style="flex: 1; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px 10px; text-align: center; background: #f8fafc; cursor: pointer;" onclick="document.getElementById('file-excel').click()" id="box-excel">
                         <i class="fas fa-file-excel" style="color: var(--success); font-size: 2rem; margin-bottom: 10px;"></i>
-                        <h5 style="margin: 0; font-size: 0.9rem; color: var(--secondary);">File Excel (.xlsx)</h5>
-                        <p id="label-file-excel" style="margin: 5px 0 0; font-size: 0.75rem; color: var(--text-muted);">Klik untuk pilih file</p>
+                        <h5 style="margin: 0; font-size: 0.9rem; color: var(--secondary);">File Excel</h5>
+                        <p id="label-file-excel" style="margin: 5px 0 0; font-size: 0.7rem; color: var(--text-muted);">Klik untuk pilih file</p>
                         <input type="file" id="file-excel" accept=".xlsx, .xls" style="display: none;">
                     </div>
-                    <div style="flex: 1; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px 10px; text-align: center; background: #f8fafc; transition: all 0.2s ease; cursor: pointer;" onclick="document.getElementById('file-word').click()" id="box-word">
+                    <div style="flex: 1; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px 10px; text-align: center; background: #f8fafc; cursor: pointer;" onclick="document.getElementById('file-word').click()" id="box-word">
                         <i class="fas fa-file-word" style="color: var(--info); font-size: 2rem; margin-bottom: 10px;"></i>
-                        <h5 style="margin: 0; font-size: 0.9rem; color: var(--secondary);">File Word (.docx)</h5>
-                        <p id="label-file-word" style="margin: 5px 0 0; font-size: 0.75rem; color: var(--text-muted);">Klik untuk pilih file</p>
+                        <h5 style="margin: 0; font-size: 0.9rem; color: var(--secondary);">File Word</h5>
+                        <p id="label-file-word" style="margin: 5px 0 0; font-size: 0.7rem; color: var(--text-muted);">Klik untuk pilih file</p>
                         <input type="file" id="file-word" accept=".docx, .doc" style="display: none;">
                     </div>
                 </div>
-
+            
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 15px;">
                     <div style="display: flex; gap: 8px;">
-                        <button id="btn-dl-excel" title="Buat & Unduh Template Excel" style="background: #ecfdf5; color: var(--success); border: 1px solid #a7f3d0; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: 0.2s; font-weight: bold;"><i class="fas fa-download"></i> Template Excel</button>
-                        <button id="btn-dl-word" title="Buat & Unduh Template Word" style="background: #eff6ff; color: var(--info); border: 1px solid #bfdbfe; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: 0.2s; font-weight: bold;"><i class="fas fa-download"></i> Template Word</button>
+                        <button id="btn-dl-excel" class="btn-3d" style="background: #ecfdf5; color: var(--success); border: 1px solid #a7f3d0; padding: 8px 12px; font-size: 0.8rem; margin:0;"><i class="fas fa-download"></i> Excel</button>
+                        <button id="btn-dl-word" class="btn-3d" style="background: #eff6ff; color: var(--info); border: 1px solid #bfdbfe; padding: 8px 12px; font-size: 0.8rem; margin:0;"><i class="fas fa-download"></i> Word</button>
                     </div>
-                    <button id="btn-proses-import-soal" class="btn-3d" style="margin: 0; padding: 10px 20px; font-size: 0.9rem; width: auto;"><i class="fas fa-cloud-upload-alt"></i> PROSES IMPORT</button>
+                    <button id="btn-proses-import-soal" class="btn-3d" style="margin: 0; padding: 10px 20px; font-size: 0.9rem; width: auto;"><i class="fas fa-cloud-upload-alt"></i> IMPORT SEKARANG</button>
                 </div>
             </div>
         </div>
