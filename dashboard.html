@@ -37,8 +37,8 @@
                     <img src="logo-smaich.png" alt="Logo SMAICH" style="height: 50px; width: auto; object-fit: contain; border-radius: 6px;">
                 </div>
                 <div style="display: flex; justify-content: flex-end; align-items: center;">
-                    <button id="btn-logout" class="btn-3d btn-secondary" style="padding: 10px 15px; margin: 0; width: auto;" title="Keluar Aplikasi">
-                        <i class="fas fa-sign-out-alt" style="margin: 0; font-size: 1.2rem;"></i>
+                    <button id="btn-logout" class="btn-3d btn-secondary" style="padding: 6px 12px; margin: 0; width: auto; border-radius: 6px;" title="Keluar Aplikasi">
+                        <i class="fas fa-sign-out-alt" style="margin: 0; font-size: 1rem;"></i>
                     </button>
                 </div>
             </header>
@@ -95,39 +95,54 @@
                             <div style="color: var(--text-muted); font-size: 2rem; opacity: 0.7;"><i class="fas fa-cogs"></i></div>
                         </div>
                     </div>
-                </div> <div id="section-soal" class="content-section">
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Kembali ke Halaman Sebelumnya"><i class="fas fa-arrow-left"></i></button>
-                        <button onclick="window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Ke Beranda"><i class="fas fa-home"></i></button>
+                </div> 
+                
+                <div id="section-soal" class="content-section">
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.85rem;" title="Kembali ke Halaman Sebelumnya"><i class="fas fa-arrow-left"></i></button>
+                        <button onclick="window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.85rem;" title="Ke Beranda"><i class="fas fa-home"></i></button>
                     </div>
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 15px;">
-                            <h2 class="section-title" style="margin: 0;"><i class="fas fa-file-alt"></i> Bank Soal Ujian</h2>
-                            <button id="btn-tambah-manual" class="btn-3d" style="width: auto; background-color: var(--success); margin: 0;"><i class="fas fa-plus"></i> Kelola / Tambah Soal</button>
+
+                    <div class="card" style="padding: 20px;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                            <h2 class="section-title" style="margin: 0; font-size: 1.3rem;"><i class="fas fa-file-alt"></i> Bank Soal Ujian</h2>
+                            <button id="btn-tambah-manual" class="btn-3d" style="width: auto; background-color: var(--success); margin: 0; padding: 8px 15px; font-size: 0.85rem;"><i class="fas fa-plus"></i> Kelola Soal</button>
                         </div>
                         
-                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 15px;">
                             <div style="flex: 1; min-width: 150px;">
-                                <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;"><i class="fas fa-filter"></i> Mata Pelajaran:</label>
-                                <select id="filter-soal-mapel" class="input-text"><option value="">Pilih Mapel...</option></select>
+                                <label style="font-weight: 600; font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px;"><i class="fas fa-filter"></i> MATA PELAJARAN</label>
+                                <select id="filter-soal-mapel" class="input-text" style="padding: 8px 12px; font-size: 0.85rem;"><option value="">Pilih Mapel...</option></select>
                             </div>
                             <div style="flex: 1; min-width: 150px;">
-                                <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary); display: block; margin-bottom: 5px;">Kelas:</label>
-                                <select id="filter-soal-kelas" class="input-text"><option value="">Pilih Kelas...</option></select>
+                                <label style="font-weight: 600; font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px;">KELAS</label>
+                                <select id="filter-soal-kelas" class="input-text" style="padding: 8px 12px; font-size: 0.85rem;"><option value="">Pilih Kelas...</option></select>
                             </div>
-                            <button id="btn-tampil-soal" class="btn-3d" style="width: auto; margin: 0;"><i class="fas fa-search"></i> Tampilkan</button>
-                            <button id="btn-preview-full" class="btn-3d" style="width: auto; background-color: var(--info); display: none; margin: 0;"><i class="fas fa-eye"></i> Preview</button>
+                            <button id="btn-tampil-soal" class="btn-3d" style="width: auto; margin: 0; padding: 8px 15px; font-size: 0.85rem;"><i class="fas fa-search"></i> Tampilkan</button>
+                            <button id="btn-preview-full" class="btn-3d" style="width: auto; background-color: var(--info); display: none; margin: 0; padding: 8px 15px; font-size: 0.85rem;"><i class="fas fa-eye"></i> Preview</button>
                         </div>
 
-                        <div class="table-container">
-                            <table id="table-soal">
-                                <thead><tr><th style="width: 60px; text-align: center;">No</th><th>Mapel</th><th>Kelas</th><th>Tipe</th><th>Pertanyaan</th><th>Aksi</th></tr></thead>
-                                <tbody><tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b> terlebih dahulu.</td></tr></tbody>
+                        <div class="table-container" style="margin-top: 0; border: none; box-shadow: 0 0 0 1px var(--border-color);">
+                            <table id="table-soal" style="font-size: 0.85rem;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px; text-align: center;">No</th>
+                                        <th>Mapel</th>
+                                        <th>Kelas</th>
+                                        <th>Tipe</th>
+                                        <th>Pertanyaan</th>
+                                        <th style="text-align: center;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b> terlebih dahulu.</td></tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-
+                
                 <div id="section-hasil" class="content-section">
                     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                         <button onclick="window.history.length > 1 ? window.history.back() : window.location.hash='section-beranda'" class="btn-3d btn-secondary" style="width: auto; margin: 0; padding: 8px 15px;" title="Kembali ke Halaman Sebelumnya"><i class="fas fa-arrow-left"></i></button>
