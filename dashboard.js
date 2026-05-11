@@ -19,6 +19,65 @@ const secondaryAuth = getAuth(secondaryApp);
 let listMapel = []; let listKelas = []; let allUsersData = []; let allSoalData = []; let filteredSoalData = [];
 let previewCurrentIdx = 0; let allHasilUjian = []; let currentMapelDetail = ""; 
 
+// ==========================================
+// MESIN POP-UP CUSTOM ALERT & CONFIRM
+// ==========================================
+window.customAlert = function(message, type = 'info', title = '') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modal-custom-alert');
+        const icon = document.getElementById('alert-icon');
+        const titleEl = document.getElementById('alert-title');
+        const messageEl = document.getElementById('alert-message');
+        const btnOk = document.getElementById('btn-alert-ok');
+        
+        let color = 'var(--info)'; let iconClass = 'fas fa-info-circle'; let defaultTitle = 'Informasi';
+        if (type === 'success') { color = 'var(--success)'; iconClass = 'fas fa-check-circle'; defaultTitle = 'Berhasil'; }
+        else if (type === 'error') { color = 'var(--danger)'; iconClass = 'fas fa-times-circle'; defaultTitle = 'Gagal / Error'; }
+        else if (type === 'warning') { color = 'var(--warning)'; iconClass = 'fas fa-exclamation-triangle'; defaultTitle = 'Peringatan'; }
+        
+        modal.querySelector('.modal-content').style.borderTop = `5px solid ${color}`;
+        icon.className = `${iconClass} fa-4x`; icon.style.color = color;
+        btnOk.style.backgroundColor = color;
+        titleEl.innerText = title || defaultTitle;
+        messageEl.innerText = message;
+        
+        modal.style.display = 'flex';
+        
+        const handleOk = () => { modal.style.display = 'none'; btnOk.removeEventListener('click', handleOk); resolve(); };
+        btnOk.addEventListener('click', handleOk);
+    });
+};
+
+window.customConfirm = function(message, type = 'warning', title = 'Konfirmasi', okText = 'Ya, Lanjutkan') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modal-custom-confirm');
+        const icon = document.getElementById('confirm-icon');
+        const titleEl = document.getElementById('confirm-title');
+        const messageEl = document.getElementById('confirm-message');
+        const btnOk = document.getElementById('btn-confirm-ok');
+        const btnCancel = document.getElementById('btn-confirm-cancel');
+        
+        let color = 'var(--warning)'; let iconClass = 'fas fa-question-circle';
+        if (type === 'danger') { color = 'var(--danger)'; iconClass = 'fas fa-exclamation-triangle'; }
+        else if (type === 'info') { color = 'var(--info)'; iconClass = 'fas fa-info-circle'; }
+        
+        modal.querySelector('.modal-content').style.borderTop = `5px solid ${color}`;
+        icon.className = `${iconClass} fa-4x`; icon.style.color = color;
+        btnOk.style.backgroundColor = color; btnOk.innerText = okText;
+        titleEl.innerText = title;
+        messageEl.innerText = message;
+        
+        modal.style.display = 'flex';
+        
+        const cleanup = () => { modal.style.display = 'none'; btnOk.removeEventListener('click', handleOk); btnCancel.removeEventListener('click', handleCancel); };
+        const handleOk = () => { cleanup(); resolve(true); };
+        const handleCancel = () => { cleanup(); resolve(false); };
+        
+        btnOk.addEventListener('click', handleOk);
+        btnCancel.addEventListener('click', handleCancel);
+    });
+};
+
 // Helper Render Media
 function renderMediaHTML(mediaObj) {
     if(!mediaObj) return '';
@@ -129,7 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
         btnLogout.addEventListener('click', async () => { 
-            if(confirm('Yakin ingin keluar?')) { await signOut(auth); localStorage.clear(); window.location.href = 'index.html'; } 
+            if(await window.customConfirm('Apakah Anda yakin ingin keluar dari aplikasi?', 'warning', 'Konfirmasi Keluar', 'Ya, Keluar')) { 
+                await signOut(auth); localStorage.clear(); window.location.href = 'index.html'; 
+            } 
         });
     }
 
@@ -174,19 +235,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('btn-add-mapel')?.addEventListener('click', async () => {
-        const val = document.getElementById('input-new-mapel').value.trim(); if(!val) return; if(listMapel.includes(val)) return alert("Mapel sudah ada!");
+        const val = document.getElementById('input-new-mapel').value.trim(); 
+        if(!val) return; 
+        if(listMapel.includes(val)) return await window.customAlert("Mata Pelajaran sudah ada!", "warning");
         listMapel.push(val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true });
         document.getElementById('input-new-mapel').value = ''; loadDataMaster();
     });
 
     document.getElementById('btn-add-kelas')?.addEventListener('click', async () => {
-        const val = document.getElementById('input-new-kelas').value.trim(); if(!val) return; if(listKelas.includes(val)) return alert("Kelas sudah ada!");
+        const val = document.getElementById('input-new-kelas').value.trim(); 
+        if(!val) return; 
+        if(listKelas.includes(val)) return await window.customAlert("Kelas sudah ada!", "warning");
         listKelas.push(val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
         document.getElementById('input-new-kelas').value = ''; loadDataMaster();
     });
 
-    window.hapusMapel = async (index) => { if(!confirm("Hapus Mapel ini?")) return; listMapel.splice(index, 1); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true }); loadDataMaster(); };
-    window.hapusKelas = async (index) => { if(!confirm("Hapus Kelas ini?")) return; listKelas.splice(index, 1); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true }); loadDataMaster(); };
+    window.hapusMapel = async (index) => { 
+        if(!(await window.customConfirm("Hapus Mata Pelajaran ini secara permanen?", "danger", "Hapus Mapel", "Ya, Hapus"))) return; 
+        listMapel.splice(index, 1); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true }); loadDataMaster(); 
+    };
+    
+    window.hapusKelas = async (index) => { 
+        if(!(await window.customConfirm("Hapus Kelas ini secara permanen?", "danger", "Hapus Kelas", "Ya, Hapus"))) return; 
+        listKelas.splice(index, 1); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true }); loadDataMaster(); 
+    };
 
     async function fetchStatusReg() {
         try {
@@ -203,7 +275,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-save-reg-status')?.addEventListener('click', async () => {
         const statusSiswa = document.getElementById('status-reg-siswa').value === "buka"; const statusGuru = document.getElementById('status-reg-guru').value === "buka";
         const btn = document.getElementById('btn-save-reg-status'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-        try { await setDoc(doc(db, "pengaturan", "status_registrasi"), { siswa_aktif: statusSiswa, guru_aktif: statusGuru }, { merge: true }); alert("Status pendaftaran berhasil diperbarui!"); } catch (error) { alert("Gagal memperbarui."); }
+        try { 
+            await setDoc(doc(db, "pengaturan", "status_registrasi"), { siswa_aktif: statusSiswa, guru_aktif: statusGuru }, { merge: true }); 
+            await window.customAlert("Status pendaftaran berhasil diperbarui!", "success"); 
+        } catch (error) { 
+            await window.customAlert("Gagal memperbarui status.", "error"); 
+        }
         btn.innerHTML = '<i class="fas fa-save"></i> Simpan Status';
     });
 
@@ -255,11 +332,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedKelasGuru = Array.from(document.querySelectorAll('.new-kelas-guru-cb:checked')).map(cb => cb.value);
         const kelasSiswa = document.getElementById('new-kelas-siswa').value;
 
-        if(!nama || !username || !pass) return alert("Lengkapi form nama, username, dan password!");
-        if(selectedRoles.length === 0) return alert("Pilih minimal 1 Role/Hak Akses!");
-        if(selectedRoles.includes('guru') && (selectedMapels.length === 0 || selectedKelasGuru.length === 0)) return alert("Centang minimal 1 Mapel & 1 Kelas untuk Guru!");
-        if(selectedRoles.includes('siswa') && !kelasSiswa) return alert("Pilih Kelas untuk Siswa!");
-        if(pass.length < 6) return alert("Password minimal 6 karakter!");
+        if(!nama || !username || !pass) return await window.customAlert("Lengkapi form nama, username, dan password!", "warning");
+        if(selectedRoles.length === 0) return await window.customAlert("Pilih minimal 1 Role/Hak Akses!", "warning");
+        if(selectedRoles.includes('guru') && (selectedMapels.length === 0 || selectedKelasGuru.length === 0)) return await window.customAlert("Centang minimal 1 Mapel & 1 Kelas untuk Guru!", "warning");
+        if(selectedRoles.includes('siswa') && !kelasSiswa) return await window.customAlert("Pilih Kelas untuk Siswa!", "warning");
+        if(pass.length < 6) return await window.customAlert("Password minimal 6 karakter!", "warning");
 
         const btn = document.getElementById('btn-add-user'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses'; btn.disabled = true;
 
@@ -272,23 +349,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedRoles.includes('guru')) { payload.mapel = selectedMapels; payload.kelas = selectedKelasGuru; }
             if (selectedRoles.includes('siswa')) { if(!selectedRoles.includes('guru')) payload.kelas = kelasSiswa; else payload.kelas_siswa = kelasSiswa; }
 
-            await setDoc(doc(db, "users", userCred.user.uid), payload); alert(`Berhasil membuat akun!`);
+            await setDoc(doc(db, "users", userCred.user.uid), payload); 
+            await window.customAlert(`Berhasil membuat akun!`, "success");
+            
             document.getElementById('new-nama').value = ''; document.getElementById('new-username').value = ''; document.getElementById('new-pass').value = '';
             document.querySelectorAll('.new-role-cb, .new-mapel-cb, .new-kelas-guru-cb').forEach(cb => cb.checked = false); document.getElementById('new-kelas-siswa').value = ''; updateNewFormVisibility();
             loadDataPengguna(); await secondaryAuth.signOut();
-        } catch (error) { alert("Gagal: Username sudah dipakai atau format salah."); }
+        } catch (error) { 
+            await window.customAlert("Gagal: Username mungkin sudah dipakai atau format salah.", "error"); 
+        }
         btn.innerHTML = '<i class="fas fa-save"></i> SIMPAN AKUN'; btn.disabled = false;
     });
 
-    document.getElementById('upload-akun-excel')?.addEventListener('change', (e) => {
+    document.getElementById('upload-akun-excel')?.addEventListener('change', async (e) => {
         const file = e.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
                 const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
                 const jsonAkun = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                if(jsonAkun.length === 0) return alert("Excel kosong!");
-                if(!confirm(`Import Massal ${jsonAkun.length} akun? \n(Jangan tutup halaman ini)`)) return;
+                if(jsonAkun.length === 0) return await window.customAlert("File Excel kosong atau format tidak sesuai!", "warning");
+                if(!(await window.customConfirm(`Import Massal ${jsonAkun.length} akun?\n(Mohon jangan tutup halaman ini selama proses berjalan)`, "info", "Konfirmasi Import", "Ya, Import Akun"))) return;
 
                 const labelUpload = document.querySelector('label[for="upload-akun-excel"]'); const origLabel = labelUpload.innerHTML; labelUpload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat...';
                 let successCount = 0; let failedCount = 0;
@@ -319,8 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         await setDoc(doc(db, "users", userCred.user.uid), payload); successCount++;
                     } catch (err) { failedCount++; }
                 }
-                await secondaryAuth.signOut(); alert(`Selesai!\n✅ Sukses: ${successCount}\n❌ Gagal: ${failedCount}`); labelUpload.innerHTML = origLabel; document.getElementById('upload-akun-excel').value = ''; loadDataPengguna();
-            } catch (err) { alert("Gagal membaca file Excel."); }
+                await secondaryAuth.signOut(); 
+                await window.customAlert(`Proses Selesai!\n✅ Sukses: ${successCount} Akun\n❌ Gagal: ${failedCount} Akun`, "info", "Hasil Import Massal"); 
+                labelUpload.innerHTML = origLabel; document.getElementById('upload-akun-excel').value = ''; loadDataPengguna();
+            } catch (err) { await window.customAlert("Gagal membaca file Excel. Pastikan format sudah benar.", "error"); }
         };
         reader.readAsArrayBuffer(file);
     });
@@ -358,14 +441,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
         const uid = document.getElementById('edit-uid').value; const nama = document.getElementById('edit-nama').value.trim(); const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
-        if(selectedRoles.length === 0) return alert("Pilih minimal 1 Role!");
+        if(selectedRoles.length === 0) return await window.customAlert("Pilih minimal 1 Role Akses!", "warning");
         let payload = { nama: nama, role: selectedRoles };
         
         if (selectedRoles.includes('guru')) { payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value); payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value); } 
         if (selectedRoles.includes('siswa')) { const ks = document.getElementById('edit-kelas-siswa').value; if(!selectedRoles.includes('guru')) payload.kelas = ks; else payload.kelas_siswa = ks; }
 
-        try { document.getElementById('btn-save-edit-akun').innerHTML = "Menyimpan..."; await updateDoc(doc(db, "users", uid), payload); alert("Profil diperbarui!"); if(modalEditAkun) modalEditAkun.style.display = 'none'; document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; loadDataPengguna();
-        } catch (err) { alert("Gagal."); document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; }
+        try { 
+            document.getElementById('btn-save-edit-akun').innerHTML = "Menyimpan..."; 
+            await updateDoc(doc(db, "users", uid), payload); 
+            await window.customAlert("Profil pengguna berhasil diperbarui!", "success"); 
+            if(modalEditAkun) modalEditAkun.style.display = 'none'; 
+            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; loadDataPengguna();
+        } catch (err) { 
+            await window.customAlert("Gagal menyimpan perubahan.", "error"); 
+            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; 
+        }
     });
 
     // ==========================================
@@ -401,8 +492,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.refreshSoal = loadDataSoal;
 
-    document.getElementById('btn-preview-full')?.addEventListener('click', () => {
-        if(filteredSoalData.length === 0) return alert("Pilih mapel dan kelas yang ada soalnya!");
+    document.getElementById('btn-preview-full')?.addEventListener('click', async () => {
+        if(filteredSoalData.length === 0) return await window.customAlert("Pilih mapel dan kelas yang ada soalnya terlebih dahulu!", "warning");
         const mdl = document.getElementById('modal-preview-full');
         if(mdl) mdl.style.display = 'flex'; previewCurrentIdx = 0; buildPreviewGrid(); renderPreviewSoal(0);
     });
@@ -492,11 +583,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-simpan-soal')?.addEventListener('click', async () => {
         const mapel = document.getElementById('soal-mapel').value; const kelas = document.getElementById('soal-kelas').value; const noSoal = document.getElementById('soal-nomor').value; const tipe = tipeSelect.value; const teks = document.getElementById('soal-teks').value.trim();
-        if(!mapel || !kelas || !noSoal) return alert("Pilih Mapel, Kelas, dan Isi Nomor Soal!");
+        if(!mapel || !kelas || !noSoal) return await window.customAlert("Pilih Mapel, Kelas, dan Isi Nomor Soal!", "warning");
         
         if (tipe === 'PG') {
             const cekKunci = document.querySelector('input[name="kunci_pg"]:checked');
-            if (!cekKunci) return alert("Pilih Kunci Jawaban terlebih dahulu!");
+            if (!cekKunci) return await window.customAlert("Pilih Kunci Jawaban terlebih dahulu!", "warning");
         }
 
         const btnSimpan = document.getElementById('btn-simpan-soal');
@@ -533,12 +624,12 @@ document.addEventListener('DOMContentLoaded', () => {
             fileInputs.forEach(input => input.value = '');
             document.getElementById('soal-teks').value = '';
 
-            alert("Soal berhasil disimpan!"); 
+            await window.customAlert("Soal berhasil ditambahkan ke dalam Bank Soal!", "success"); 
             if(modalSoal) modalSoal.style.display = 'none'; 
             loadDataSoal(); 
         } catch (error) { 
             console.error(error);
-            alert("GAGAL MENYIMPAN: " + error.message); 
+            await window.customAlert("GAGAL MENYIMPAN: Pastikan koneksi internet stabil.", "error"); 
         }
 
         btnSimpan.innerHTML = origBtnText;
@@ -552,10 +643,10 @@ document.addEventListener('DOMContentLoaded', () => {
         else { label.innerHTML = `<i class="fas fa-search"></i> Pilih File`; label.style.background = "var(--success)"; }
     });
 
-    document.getElementById('btn-proses-import-soal')?.addEventListener('click', () => {
-        if (!selectedExcelSoal) return alert("Pilih file Excel terlebih dahulu!");
+    document.getElementById('btn-proses-import-soal')?.addEventListener('click', async () => {
+        if (!selectedExcelSoal) return await window.customAlert("Silakan pilih file Excel terlebih dahulu!", "warning");
         const mapel = document.getElementById('import-mapel').value; const kelas = document.getElementById('import-kelas').value;
-        if(!mapel || !kelas) return alert("Pilih Mapel dan Kelas Terlebih Dahulu!");
+        if(!mapel || !kelas) return await window.customAlert("Pilih Mapel dan Kelas untuk soal ini Terlebih Dahulu!", "warning");
 
         const btn = document.getElementById('btn-proses-import-soal'); const origText = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...'; btn.disabled = true;
@@ -564,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = async (e) => {
             try {
                 const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); const jsonSoal = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                if(!confirm(`Import ${jsonSoal.length} soal ke mapel ${mapel} kelas ${kelas}?`)) { btn.innerHTML = origText; btn.disabled = false; return; }
+                if(!(await window.customConfirm(`Import ${jsonSoal.length} soal ke mapel ${mapel} kelas ${kelas}?`, 'info', 'Konfirmasi Import Soal', 'Ya, Import Soal'))) { btn.innerHTML = origText; btn.disabled = false; return; }
 
                 for (let [index, row] of jsonSoal.entries()) {
                     const tipe = (row.Tipe || 'PG').toString().toUpperCase(); const nomorSoal = parseInt(row['Nomor Soal'] || row['No'] || (index + 1));
@@ -578,13 +669,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     await addDoc(collection(db, "bank_soal"), payload); 
                 }
-                alert(`Import Berhasil!`); if(modalSoal) modalSoal.style.display = 'none'; loadDataSoal(); selectedExcelSoal = null; const lfe = document.getElementById('label-file-excel'); if(lfe){ lfe.innerHTML = `<i class="fas fa-search"></i> Pilih File`; lfe.style.background = "var(--success)"; } document.getElementById('file-excel').value = '';
-            } catch (err) { alert("Gagal membaca file Excel."); }
+                await window.customAlert(`Import Berhasil diselesaikan!`, "success"); 
+                if(modalSoal) modalSoal.style.display = 'none'; loadDataSoal(); selectedExcelSoal = null; const lfe = document.getElementById('label-file-excel'); if(lfe){ lfe.innerHTML = `<i class="fas fa-search"></i> Pilih File`; lfe.style.background = "var(--success)"; } document.getElementById('file-excel').value = '';
+            } catch (err) { await window.customAlert("Gagal membaca file Excel.", "error"); }
             btn.innerHTML = origText; btn.disabled = false;
         };
         reader.readAsArrayBuffer(selectedExcelSoal);
     });
 
+    // --- EDIT SOAL ---
     document.getElementById('close-modal-edit-soal')?.addEventListener('click', () => {
         const md = document.getElementById('modal-edit-soal');
         if(md) md.style.display = 'none';
@@ -672,11 +765,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-update-soal')?.addEventListener('click', async () => {
         const id = document.getElementById('edit-soal-id').value; const mapel = document.getElementById('edit-soal-mapel').value; const kelas = document.getElementById('edit-soal-kelas').value; const noSoal = document.getElementById('edit-soal-nomor').value; const tipe = document.getElementById('edit-soal-tipe').value; const teks = document.getElementById('edit-soal-teks').value.trim();
         
-        if(!mapel || !kelas || !noSoal) return alert("Pilih Mapel, Kelas, dan Isi Nomor Soal!");
+        if(!mapel || !kelas || !noSoal) return await window.customAlert("Pilih Mapel, Kelas, dan Isi Nomor Soal!", "warning");
         
         if (tipe === 'PG') {
             const cekKunci = document.querySelector('input[name="edit_kunci_pg"]:checked');
-            if (!cekKunci) return alert("Pilih Kunci Jawaban terlebih dahulu!");
+            if (!cekKunci) return await window.customAlert("Pilih Kunci Jawaban terlebih dahulu!", "warning");
         }
 
         const btnUpdate = document.getElementById('btn-update-soal'); const origBtnText = btnUpdate.innerHTML;
@@ -726,20 +819,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await updateDoc(doc(db, "bank_soal", id), payload); 
             
-            alert("Soal berhasil diperbarui!"); 
+            await window.customAlert("Soal berhasil diperbarui!", "success"); 
             const md = document.getElementById('modal-edit-soal');
             if(md) md.style.display = 'none'; 
             loadDataSoal(); 
         } catch (error) { 
             console.error(error); 
-            alert("GAGAL MEMPERBARUI: " + error.message); 
+            await window.customAlert("GAGAL MEMPERBARUI: Pastikan koneksi aman.", "error"); 
         }
 
         btnUpdate.innerHTML = origBtnText; btnUpdate.disabled = false;
     });
 
+
     // ==========================================
-    // HASIL UJIAN (HIERARKI & NAVIGASI BACK BROWSER)
+    // HASIL UJIAN
     // ==========================================
     async function loadDataHasil() {
         try {
@@ -841,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (detV) detV.style.display = 'block';
             renderHasilTable(); 
         }
-        alert("Data hasil ujian berhasil dihapus!");
+        await window.customAlert("Data hasil ujian berhasil dihapus!", "success");
     };
 
     // ==========================================
@@ -880,7 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-save-token')?.addEventListener('click', async () => {
         const mapel = document.getElementById('set-token-mapel').value; const kelas = document.getElementById('set-token-kelas').value; const tokenInput = document.getElementById('input-token-baru').value.trim().toUpperCase();
-        if(!mapel || !kelas || !tokenInput) return alert("Isi form dengan lengkap!");
+        if(!mapel || !kelas || !tokenInput) return await window.customAlert("Isi form mapel, kelas, dan token dengan lengkap!", "warning");
         
         const expTime = Date.now() + (15 * 60 * 1000); 
         const payload = { code: tokenInput, expiresAt: expTime };
@@ -888,62 +982,23 @@ document.addEventListener('DOMContentLoaded', () => {
         try { 
             const tokenKey = `token_${mapel}_${kelas}`; 
             await updateDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: payload }); 
-            alert(`Berhasil! Token diset menjadi: ${tokenInput} (Berlaku 15 Menit)`); document.getElementById('input-token-baru').value = ''; loadActiveTokens(); 
+            await window.customAlert(`Berhasil! Token diset menjadi: ${tokenInput} (Berlaku 15 Menit)`, 'success'); 
+            document.getElementById('input-token-baru').value = ''; loadActiveTokens(); 
         } catch(error) { 
             try {
                 const tokenKey = `token_${mapel}_${kelas}`; await setDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: payload }, { merge: true });
-                alert(`Berhasil! Token diset menjadi: ${tokenInput} (Berlaku 15 Menit)`); document.getElementById('input-token-baru').value = ''; loadActiveTokens(); 
-            } catch(e) { alert("Gagal set token!"); }
+                await window.customAlert(`Berhasil! Token diset menjadi: ${tokenInput} (Berlaku 15 Menit)`, 'success'); 
+                document.getElementById('input-token-baru').value = ''; loadActiveTokens(); 
+            } catch(e) { await window.customAlert("Gagal men-set token!", "error"); }
         }
     });
 
     // ==========================================
-    // SISTEM NOTIFIKASI HAPUS CUSTOM (PENGGANTI CONFIRM BROWSER)
+    // PENGHAPUSAN GENERIC MENGGUNAKAN CUSTOM CONFIRM
     // ==========================================
-    function customConfirm(message) {
-        return new Promise((resolve) => {
-            const modal = document.getElementById('modal-konfirmasi-hapus');
-            const teks = document.getElementById('teks-konfirmasi-hapus');
-            const btnYa = document.getElementById('btn-ya-hapus');
-            const btnBatal = document.getElementById('btn-batal-hapus');
-
-            teks.innerText = message;
-            modal.style.display = 'flex';
-
-            const cleanup = () => {
-                modal.style.display = 'none';
-                btnYa.removeEventListener('click', handleYa);
-                btnBatal.removeEventListener('click', handleBatal);
-            };
-
-            const handleYa = () => { cleanup(); resolve(true); };
-            const handleBatal = () => { cleanup(); resolve(false); };
-
-            btnYa.addEventListener('click', handleYa);
-            btnBatal.addEventListener('click', handleBatal);
-        });
-    }
-
-    window.hapusMapel = async (index) => { 
-        if(!(await customConfirm("Hapus Mata Pelajaran ini?"))) return; 
-        listMapel.splice(index, 1); 
-        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true }); 
-        loadDataMaster(); 
-    };
-    
-    window.hapusKelas = async (index) => { 
-        if(!(await customConfirm("Hapus Kelas ini?"))) return; 
-        listKelas.splice(index, 1); 
-        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true }); 
-        loadDataMaster(); 
-    };
-
     window.hapusTokenUtama = async function(tokenKey) {
-        if(!(await customConfirm("Hapus Token akses ini? Siswa tidak akan bisa menggunakannya lagi."))) return;
-        try { 
-            await updateDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: deleteField() }); 
-            loadActiveTokens(); 
-        } catch(e) { alert("Gagal menghapus token."); }
+        if(!(await window.customConfirm("Hapus Token akses ini? Siswa tidak akan bisa menggunakannya lagi.", "danger", "Hapus Token", "Ya, Hapus"))) return;
+        try { await updateDoc(doc(db, "pengaturan", "token_ujian"), { [tokenKey]: deleteField() }); loadActiveTokens(); } catch(e) { await window.customAlert("Gagal menghapus token.", "error"); }
     };
 
     window.hapusDokumen = async function(koleksi, id, callback) {
@@ -952,11 +1007,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (koleksi === 'bank_soal') pesan = "Yakin ingin menghapus Soal ini dari Bank Soal?";
         if (koleksi === 'hasil_ujian') pesan = "Yakin ingin menghapus Rekap Nilai siswa ini?";
 
-        if(!(await customConfirm(pesan))) return;
+        if(!(await window.customConfirm(pesan, 'danger', 'Konfirmasi Hapus Data', 'Ya, Hapus'))) return;
         
         try { 
             await deleteDoc(doc(db, koleksi, id)); 
             callback(); 
-        } catch(err) { alert("Gagal menghapus data."); }
+        } catch(err) { await window.customAlert("Gagal menghapus data.", "error"); }
     };
 });
