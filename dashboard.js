@@ -922,23 +922,36 @@ document.addEventListener('DOMContentLoaded', () => {
         } 
     };
 
-    // Fungsi Perpanjang Waktu
+   // Fungsi Perpanjang Waktu (Diperbarui Anti-Error)
     window.perpanjangToken = async (k) => {
         if(await window.customConfirm("Tambahkan waktu 15 menit untuk token ini dihitung dari sekarang?", "info", "Perpanjang Waktu")) {
             try {
                 const snap = await getDoc(doc(db, "pengaturan", "token_ujian"));
                 if (snap.exists() && snap.data()[k]) {
-                    let tokenData = snap.data()[k];
-                    tokenData.expiresAt = Date.now() + (15 * 60000); // Ditambah 15 Menit dari waktu diklik
+                    let currentData = snap.data()[k];
+                    let newExpires = Date.now() + (15 * 60000); // Waktu sekarang + 15 Menit
+                    let payload = {};
                     
-                    await updateDoc(doc(db, "pengaturan", "token_ujian"), { [k]: tokenData });
+                    // Pengecekan cerdas: Jika token lama masih berupa teks biasa, ubah jadi objek
+                    if (typeof currentData === 'object' && currentData !== null) {
+                        payload = { code: currentData.code, expiresAt: newExpires };
+                    } else {
+                        payload = { code: currentData, expiresAt: newExpires };
+                    }
+                    
+                    // Menggunakan setDoc dengan merge agar aman jika field bermasalah
+                    await setDoc(doc(db, "pengaturan", "token_ujian"), { 
+                        [k]: payload 
+                    }, { merge: true });
+
                     await window.customAlert("Waktu ujian berhasil diperpanjang 15 Menit!", "success");
                     loadActiveTokens();
+                } else {
+                    await window.customAlert("Data token tidak ditemukan di sistem.", "error");
                 }
             } catch(e) {
-                await window.customAlert("Gagal memperpanjang waktu token.", "error");
+                console.error("Detail error perpanjangan:", e);
+                await window.customAlert("Gagal memperpanjang waktu token. Coba buat ulang token baru.", "error");
             }
         }
     };
-    window.hapusDokumen = async (coll, id, callback) => { if(await customConfirm("Data akan dihapus permanen. Lanjutkan?", "danger")) { await deleteDoc(doc(db, coll, id)); if(callback) callback(); } };
-});
