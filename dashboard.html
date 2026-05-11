@@ -25,7 +25,11 @@
         .app-layout { display: flex; height: 100vh; overflow: hidden; width: 100%; }
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background-color: var(--bg-main); width: 100%; }
         #section-pengaturan table th, 
-        #section-pengaturan table td { padding: 6px 8px !important; /* Memperkecil tinggi baris tabel */}
+        #section-pengaturan table td { padding: 8px 10px !important; } /* Kelas khusus agar kotak bisa memanjang dan scrollbar sembunyi jika ruang masih ada */
+        .flexible-scroll { max-height: 45vh; /* Akan memanjang otomatis hingga hampir setengah layar */
+                            min-height: 150px; /* Tinggi minimal agar tidak terlalu gepeng saat kosong */
+                            overflow-y: auto;
+                            overflow-x: hidden; }
     </style>
 </head>
 <body>
@@ -279,52 +283,52 @@
                             <button id="btn-save-reg-status" class="btn-3d" style="width: auto; margin: 0; padding: 5px 12px; font-size: 0.75rem; background: var(--success);">SIMPAN STATUS</button>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 15px;">
-                            <div style="background: #fffbeb; padding: 12px; border-radius: 6px; border: 1px solid #fef3c7;">
-                                <h4 style="font-size: 0.85rem; margin-bottom: 10px; color: #92400e;"><i class="fas fa-key"></i> Buat Token Ujian</h4>
-                                <div style="display: flex; flex-direction: column; gap: 6px;">
-                                    <select id="set-token-mapel" class="input-text" style="padding: 6px 10px; font-size: 0.8rem;"></select>
-                                    <select id="set-token-kelas" class="input-text" style="padding: 6px 10px; font-size: 0.8rem;"></select>
-                                    <div style="display: flex; gap: 5px;">
-                                        <input type="text" id="input-token-baru" class="input-text" style="padding: 6px 10px; font-size: 0.8rem; flex:1;" placeholder="Token (cth: X8Z)">
-                                        <button id="btn-save-token" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background: var(--warning);"><i class="fas fa-check"></i></button>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div style="background: #fffbeb; padding: 15px; border-radius: 8px; border: 1px solid #fef3c7;">
+                                <h4 style="font-size: 0.9rem; margin-bottom: 12px; color: #92400e;"><i class="fas fa-key"></i> Buat Token Ujian</h4>
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <select id="set-token-mapel" class="input-text" style="padding: 8px 12px; font-size: 0.85rem;"></select>
+                                    <select id="set-token-kelas" class="input-text" style="padding: 8px 12px; font-size: 0.85rem;"></select>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="text" id="input-token-baru" class="input-text" style="padding: 8px 12px; font-size: 0.85rem; flex:1;" placeholder="Token (cth: X8Z)">
+                                        <button id="btn-save-token" class="btn-3d" style="margin:0; padding: 8px 15px; font-size: 0.85rem; background: var(--warning);"><i class="fas fa-check"></i> Simpan</button>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <h4 style="font-size: 0.85rem; color: var(--secondary); margin: 0;"><i class="fas fa-list-ul"></i> Token Aktif</h4>
-                                    <i class="fas fa-sync-alt" id="btn-refresh-token" style="cursor:pointer; font-size: 0.8rem; color: var(--info);"></i>
+                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h4 style="font-size: 0.9rem; color: var(--secondary); margin: 0;"><i class="fas fa-list-ul"></i> Token Aktif</h4>
+                                    <button id="btn-refresh-token" style="background:none; border:none; color:var(--info); cursor:pointer; font-size: 0.9rem;"><i class="fas fa-sync-alt"></i></button>
                                 </div>
-                                <div style="max-height: 110px; overflow-y: auto;">
-                                    <table id="table-active-tokens" style="width: 100%; font-size: 0.75rem;">
+                                <div class="flexible-scroll">
+                                    <table id="table-active-tokens" style="width: 100%; font-size: 0.8rem;">
                                         <tbody><tr><td style="text-align: center; color: var(--text-muted);">Memuat...</td></tr></tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="admin-data-master" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
-                            <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
-                                <h4 style="font-size: 0.85rem; margin-bottom: 8px; color: var(--secondary);"><i class="fas fa-book"></i> Master Mapel</h4>
-                                <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                                    <input type="text" id="input-new-mapel" class="input-text" style="padding: 6px 10px; font-size: 0.8rem;" placeholder="Nama Mapel">
-                                    <button id="btn-add-mapel" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-plus"></i></button>
+                        <div id="admin-data-master" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                            <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                                <h4 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--secondary);"><i class="fas fa-book"></i> Master Mapel</h4>
+                                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                    <input type="text" id="input-new-mapel" class="input-text" style="padding: 8px 12px; font-size: 0.85rem;" placeholder="Nama Mapel">
+                                    <button id="btn-add-mapel" class="btn-3d" style="margin:0; padding: 8px 15px; font-size: 0.85rem;"><i class="fas fa-plus"></i></button>
                                 </div>
-                                <div style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px;">
-                                    <table id="table-master-mapel" style="width: 100%; font-size: 0.8rem;"><tbody></tbody></table>
+                                <div class="flexible-scroll" style="border: 1px solid var(--border-color); border-radius: 6px;">
+                                    <table id="table-master-mapel" style="width: 100%; font-size: 0.85rem;"><tbody></tbody></table>
                                 </div>
                             </div>
                             
-                            <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
-                                <h4 style="font-size: 0.85rem; margin-bottom: 8px; color: var(--secondary);"><i class="fas fa-chalkboard"></i> Master Kelas</h4>
-                                <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                                    <input type="text" id="input-new-kelas" class="input-text" style="padding: 6px 10px; font-size: 0.8rem;" placeholder="Nama Kelas">
-                                    <button id="btn-add-kelas" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-plus"></i></button>
+                            <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                                <h4 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--secondary);"><i class="fas fa-chalkboard"></i> Master Kelas</h4>
+                                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                    <input type="text" id="input-new-kelas" class="input-text" style="padding: 8px 12px; font-size: 0.85rem;" placeholder="Nama Kelas">
+                                    <button id="btn-add-kelas" class="btn-3d" style="margin:0; padding: 8px 15px; font-size: 0.85rem;"><i class="fas fa-plus"></i></button>
                                 </div>
-                                <div style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px;">
-                                    <table id="table-master-kelas" style="width: 100%; font-size: 0.8rem;"><tbody></tbody></table>
+                                <div class="flexible-scroll" style="border: 1px solid var(--border-color); border-radius: 6px;">
+                                    <table id="table-master-kelas" style="width: 100%; font-size: 0.85rem;"><tbody></tbody></table>
                                 </div>
                             </div>
                         </div>
