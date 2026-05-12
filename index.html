@@ -6,7 +6,7 @@
     <title>Portal CBT SMA ICH - Login</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
 </head>
 <body class="login-page-bg">
 
@@ -50,7 +50,7 @@
       // Mengecek apakah browser mendukung fitur Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('./sw.js')
             .then(registration => {
               console.log('Service Worker berhasil didaftarkan! Scope: ', registration.scope);
             })
