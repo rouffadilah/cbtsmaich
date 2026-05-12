@@ -3,19 +3,19 @@ const CACHE_NAME = 'cbt-smaich';
 
 // Daftar file yang ingin disimpan agar bisa diakses offline
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/attempt.html',
-  '/attempt.js',
-  '/dashboard.html',
-  '/dashboard.js',
-  '/firebase-config.js',
-  '/index.js',
-  '/logo-smaich.png',
-  '/registrasi.html',
-  '/registrasi.js',
-  '/style.css',
+  './',
+  './index.html',
+  './manifest.json',
+  './attempt.html',
+  './attempt.js',
+  './dashboard.html',
+  './dashboard.js',
+  './firebase-config.js',
+  './index.js',
+  './logo-smaich.png',
+  './registrasi.html',
+  './registrasi.js',
+  './style.css',
   // Tambahkan file CSS, JS, atau gambar lain yang diperlukan di sini
   // contoh: '/style.css', '/logo.png'
 ];
