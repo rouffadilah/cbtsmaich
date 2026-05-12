@@ -45,5 +45,20 @@
     </div>
 
     <script type="module" src="index.js"></script>
+    <!-- Pendaftaran Service Worker -->
+    <script>
+      // Mengecek apakah browser mendukung fitur Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('Service Worker berhasil didaftarkan! Scope: ', registration.scope);
+            })
+            .catch(err => {
+              console.log('Pendaftaran Service Worker gagal: ', err);
+            });
+        });
+      }
+    </script>
 </body>
 </html>
