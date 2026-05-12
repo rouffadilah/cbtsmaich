@@ -33,11 +33,23 @@ self.addEventListener('install', event => {
 
 // 2. Tahap Fetch: Mengatur bagaimana aplikasi memuat data
 self.addEventListener('fetch', event => {
+  // ATURAN 1: Biarkan request POST, PUT, DELETE lewat begitu saja
+  // (Service Worker hanya bagus untuk menyimpan request GET)
+  if (event.request.method !== 'GET') {
+    return; 
+  }
+
+  // ATURAN 2: Biarkan request ke server luar (Firebase, Google Fonts) lewat begitu saja
+  const url = new URL(event.request.url);
+  if (url.origin !== location.origin) {
+    return; 
+  }
+
+  // ATURAN 3: Jika request GET dan dari domain sendiri, gunakan Cache
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Jika file ditemukan di cache, tampilkan dari cache (Offline/Cepat)
-        // Jika tidak ada, ambil dari internet (Network)
+        // Tampilkan dari cache jika ada, jika tidak, ambil dari internet
         return response || fetch(event.request);
       })
   );
