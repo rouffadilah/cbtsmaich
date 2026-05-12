@@ -29,6 +29,42 @@
         .option-label:hover { border-color: #cbd5e1; background: #f8fafc; }
         .option-label input:checked + span { font-weight: bold; }
         .option-label.selected { border-color: var(--primary); background: #f0fdf4; }
+        /* --- TAMBAHAN UNTUK TAMPILAN MOBILE --- */
+        @media (max-width: 768px) {
+            /* Membuat header agar teksnya rapi di tengah */
+            .exam-header { flex-direction: column; gap: 10px; text-align: center; padding: 15px; }
+            
+            /* Mengubah layout utama dari menyamping jadi atas-bawah */
+            .exam-body { flex-direction: column; overflow-y: auto; }
+            
+            /* Menyesuaikan area soal agar tidak memaksakan tinggi layar */
+            .question-area { flex: none; padding: 15px; overflow-y: visible; }
+            
+            /* Membuat sidebar (Navigasi Nomor & Timer) menjadi full width di bawah soal */
+            .sidebar-area { 
+                width: 100%; 
+                border-left: none; 
+                border-top: 4px solid var(--border-color); 
+                padding: 20px 15px; 
+                flex: none; 
+                overflow-y: visible; 
+            }
+            
+            /* Mengatur ulang posisi tombol Sebelumnya, Ragu, dan Selanjutnya */
+            .question-area > div:last-child {
+                flex-direction: column !important;
+                gap: 12px !important;
+            }
+            .question-area > div:last-child button,
+            .question-area > div:last-child label {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+            
+            /* Menyesuaikan kotak nomor agar tidak terlalu kecil di HP */
+            .q-grid { grid-template-columns: repeat(6, 1fr); gap: 8px; }
+        }
+
     </style>
 </head>
 <body>
