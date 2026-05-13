@@ -434,8 +434,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.querySelector('#table-soal tbody');
 
         if(!m || !k) return customAlert("Pilih Mapel dan Kelas terlebih dahulu!", "warning");
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Memuat data soal...</td></tr>';
-
+       tbody.innerHTML = `
+    <tr>
+        <td colspan="6" style="padding: 20px;">
+            <div class="skeleton-box" style="width: 100%;"></div>
+            <div class="skeleton-box" style="width: 80%; height: 14px;"></div>
+            <div class="skeleton-box" style="width: 90%; height: 14px;"></div>
+        </td>
+    </tr>`;
         try {
             const qS = query(collection(db, "bank_soal"), where("mataPelajaran", "==", m), where("kelas", "==", k));
             const snap = await getDocs(qS);
