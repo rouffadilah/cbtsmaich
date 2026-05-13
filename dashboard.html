@@ -55,9 +55,55 @@
                 <div id="section-soal" class="content-section">
                     <button onclick="window.history.back()" class="btn-3d btn-secondary" style="padding: 8px 15px; margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Kembali</button>
                     
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 25px;">
-                        <div class="card" style="margin-bottom: 0;">
-                            <h3 style="margin-bottom: 20px; font-size: 1.15rem; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-key"></i> Manajemen Token Ujian</h3>
+                    <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
+                        <div class="toggle-accordion" data-target="container-bank-soal" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-file-alt"></i> Bank Soal Ujian</h3>
+                            <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
+                        </div>
+                        <div id="container-bank-soal" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Kelola pertanyaan ujian yang akan disajikan ke siswa.</p>
+                                <button id="btn-tambah-manual" class="btn-3d" style="margin: 0;"><i class="fas fa-plus"></i> Kelola Soal</button>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
+                                <div style="flex: 1; min-width: 150px;">
+                                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">MATA PELAJARAN</label>
+                                    <select id="filter-soal-mapel" class="input-text"><option value="">Pilih Mapel...</option></select>
+                                </div>
+                                <div style="flex: 1; min-width: 150px;">
+                                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">KELAS</label>
+                                    <select id="filter-soal-kelas" class="input-text"><option value="">Pilih Kelas...</option></select>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button id="btn-tampil-soal" class="btn-3d"><i class="fas fa-search"></i> Tampilkan</button>
+                                    <button id="btn-preview-full" class="btn-3d" style="background-color: var(--info); display: none;"><i class="fas fa-eye"></i> Preview</button>
+                                </div>
+                                <div style="border-left: 2px solid #cbd5e1; padding-left: 15px; display: flex; gap: 10px; align-items: flex-end;">
+                                    <div style="width: 130px;">
+                                        <label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> WAKTU (MNT)</label>
+                                        <input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);">
+                                    </div>
+                                    <button id="btn-simpan-waktu" class="btn-3d" style="background: var(--warning);"><i class="fas fa-save"></i> Set Waktu</button>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table id="table-soal">
+                                    <thead><tr><th style="width: 50px; text-align: center;">No</th><th>Mapel</th><th>Kelas</th><th>Tipe</th><th>Pertanyaan</th><th style="text-align: center;">Aksi</th></tr></thead>
+                                    <tbody><tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b>.</td></tr></tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
+                        <div class="toggle-accordion" data-target="container-token" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
+                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-key"></i> Token Ujian</h3>
+                            <i class="fas fa-chevron-down toggle-icon" style="color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
+                        </div>
+                        <div id="container-token" style="display: none; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
+                            
                             <div class="input-group"><label>Pilih Mapel</label><select id="set-token-mapel" class="input-text"></select></div>
                             <div class="input-group"><label>Pilih Kelas</label><select id="set-token-kelas" class="input-text"></select></div>
                             <div class="input-group"><label>Buat Kode Token Baru</label><input type="text" id="input-token-baru" class="input-text" placeholder="Ketik Kode Token (Misal: UJIAN123)" style="text-transform: uppercase;"></div>
@@ -73,62 +119,41 @@
                                     <tbody></tbody>
                                 </table>
                             </div>
-                        </div>
 
-                        <div class="card" id="admin-data-master" style="margin-bottom: 0;">
-                            <h3 style="margin-bottom: 15px; font-size: 1.15rem; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-database"></i> Data Master Akademik</h3>
+                        </div>
+                    </div>
+
+                    <div class="card" id="admin-data-master" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
+                        <div class="toggle-accordion" data-target="container-data-master" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
+                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-database"></i> Data Master</h3>
+                            <i class="fas fa-chevron-down toggle-icon" style="color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
+                        </div>
+                        <div id="container-data-master" style="display: none; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                             
-                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                                <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
-                                <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div class="table-container" style="max-height: 150px; overflow-y: auto; margin-bottom: 25px;">
-                                <table id="table-master-mapel"><tbody></tbody></table>
-                            </div>
-
-                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                                <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
-                                <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div class="table-container" style="max-height: 150px; overflow-y: auto;">
-                                <table id="table-master-kelas"><tbody></tbody></table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                            <h2 class="section-title" style="margin: 0;"><i class="fas fa-file-alt"></i> Bank Soal Ujian</h2>
-                            <button id="btn-tambah-manual" class="btn-3d"><i class="fas fa-plus"></i> Kelola Soal</button>
-                        </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
-                            <div style="flex: 1; min-width: 150px;">
-                                <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">MATA PELAJARAN</label>
-                                <select id="filter-soal-mapel" class="input-text"><option value="">Pilih Mapel...</option></select>
-                            </div>
-                            <div style="flex: 1; min-width: 150px;">
-                                <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">KELAS</label>
-                                <select id="filter-soal-kelas" class="input-text"><option value="">Pilih Kelas...</option></select>
-                            </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button id="btn-tampil-soal" class="btn-3d"><i class="fas fa-search"></i> Tampilkan</button>
-                                <button id="btn-preview-full" class="btn-3d" style="background-color: var(--info); display: none;"><i class="fas fa-eye"></i> Preview</button>
-                            </div>
-                            <div style="border-left: 2px solid #cbd5e1; padding-left: 15px; display: flex; gap: 10px; align-items: flex-end;">
-                                <div style="width: 130px;">
-                                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> WAKTU (MNT)</label>
-                                    <input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                                <div>
+                                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                        <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
+                                        <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div class="table-container" style="max-height: 150px; overflow-y: auto;">
+                                        <table id="table-master-mapel"><tbody></tbody></table>
+                                    </div>
                                 </div>
-                                <button id="btn-simpan-waktu" class="btn-3d" style="background: var(--warning);"><i class="fas fa-save"></i> Set Waktu</button>
+                                <div>
+                                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                        <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
+                                        <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div class="table-container" style="max-height: 150px; overflow-y: auto;">
+                                        <table id="table-master-kelas"><tbody></tbody></table>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="table-container">
-                            <table id="table-soal">
-                                <thead><tr><th style="width: 50px; text-align: center;">No</th><th>Mapel</th><th>Kelas</th><th>Tipe</th><th>Pertanyaan</th><th style="text-align: center;">Aksi</th></tr></thead>
-                                <tbody><tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b>.</td></tr></tbody>
-                            </table>
+
                         </div>
                     </div>
+
                 </div>
 
                 <div id="section-pengguna" class="content-section">
