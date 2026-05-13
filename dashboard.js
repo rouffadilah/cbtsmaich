@@ -259,8 +259,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     async function loadDataPengguna() {
         const tbody = document.querySelector('#table-siswa tbody'); if (!tbody) return;
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>`;
-        try {
+        
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="padding: 20px;">
+                        <div class="skeleton-box" style="width: 100%;"></div>
+                        <div class="skeleton-box" style="width: 80%; height: 14px;"></div>
+                        <div class="skeleton-box" style="width: 90%; height: 14px;"></div>
+                    </td>
+                </tr>`;
+            try {
             const snap = await getDocs(collection(db, "users")); 
             const statSiswa = document.getElementById('stat-siswa'); if (statSiswa) statSiswa.innerText = snap.size; 
             
