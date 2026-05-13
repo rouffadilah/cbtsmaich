@@ -258,3 +258,47 @@ table tbody tr:hover { background-color: #f8fafc !important; }
         padding: 15px !important;
     }
 }
+
+/* =========================================
+   11. RESPONSIVE PREVIEW GURU
+========================================= */
+.preview-body-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    background: var(--bg-main);
+}
+.preview-q-area {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    background: white;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+.preview-nav-area {
+    width: 300px;
+    background: #f8fafc;
+    padding: 25px;
+    overflow-y: auto;
+}
+
+/* Aturan Khusus Layar HP / Tablet */
+@media screen and (max-width: 1024px) {
+    .preview-body-container {
+        flex-direction: column;
+        overflow-y: auto; /* Mengaktifkan scroll pada seluruh body */
+    }
+    .preview-q-area {
+        overflow-y: visible; /* Teks dibiarkan memanjang ke bawah */
+        border-right: none;
+        border-bottom: 3px solid var(--border-color);
+        padding: 20px;
+    }
+    .preview-nav-area {
+        width: 100%;
+        overflow-y: visible;
+        padding: 20px;
+    }
+}
