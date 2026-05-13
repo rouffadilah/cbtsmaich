@@ -655,7 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Edit & Preview Soal ---
     window.editSoal = (id) => {
         const qData = filteredSoalData.find(s => s.id === id); if (!qData) return;
         document.getElementById('edit-soal-id').value = qData.id; document.getElementById('edit-soal-mapel').value = qData.mataPelajaran || ''; document.getElementById('edit-soal-kelas').value = qData.kelas || ''; document.getElementById('edit-soal-nomor').value = qData.nomor_soal === 999 ? '' : qData.nomor_soal; document.getElementById('edit-soal-tipe').value = qData.tipe || 'PG'; document.getElementById('edit-soal-teks').value = qData.teks_soal || '';
@@ -736,22 +735,72 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-btn-next').onclick = () => { if (previewCurrentIdx < filteredSoalData.length - 1) { renderPreviewSoal(previewCurrentIdx + 1); } else { customAlert("Ini adalah soal terakhir. Di halaman siswa, tombol ini akan menyelesaikan ujian.", "info"); } };
 
     // ==========================================
-    // 7. HASIL UJIAN
+    // 7. HASIL UJIAN (Dengan Fitur Hapus Massal & Hapus Cepat)
     // ==========================================
     async function loadDataHasil() {
         const snap = await getDocs(collection(db, "hasil_ujian")); document.getElementById('stat-ujian').innerText = snap.size;
         allHasilUjian = []; snap.forEach(d => allHasilUjian.push({id: d.id, ...d.data()}));
         const grid = document.getElementById('grid-mapel-hasil'); if(!grid) return; grid.innerHTML = '';
-        let maps = [...new Set(allHasilUjian.map(h => h.mataPelajaran))]; maps.forEach(m => { grid.innerHTML += `<div class="mapel-card" onclick="window.openDetailHasil('${m}')"><h3>${m}</h3><p>${allHasilUjian.filter(h=>h.mataPelajaran===m).length} Selesai</p></div>`; });
+        let maps = [...new Set(allHasilUjian.map(h => h.mataPelajaran))]; maps.forEach(m => { grid.innerHTML += `<div class="mapel-card" onclick="window.openDetailHasil('${m}')" style="background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow-sm); cursor: pointer; border: 1px solid var(--border-color);"><h3 style="margin: 0 0 5px 0; color: var(--secondary);">${m}</h3><p style="margin: 0; color: var(--success); font-weight: bold;"><i class="fas fa-check-circle"></i> ${allHasilUjian.filter(h=>h.mataPelajaran===m).length} Selesai</p></div>`; });
     }
+
+    // Fungsi Hapus Langsung 1 Siswa (Bypass Confirm Alert)
+    window.hapusLangsung = async (coll, id, rowElement) => {
+        rowElement.innerHTML = '<td colspan="5" style="text-align:center; color: var(--danger);"><i class="fas fa-spinner fa-spin"></i> Menghapus...</td>';
+        try {
+            await deleteDoc(doc(db, coll, id));
+            window.refreshHasil();
+        } catch (e) {
+            window.customAlert("Gagal menghapus data", "error");
+        }
+    };
+
     window.openDetailHasil = (mapel) => {
         currentMapelDetail = mapel; window.location.hash = 'section-hasil-detail'; document.getElementById('label-mapel-detail').innerText = mapel;
         const tbody = document.querySelector('#table-hasil tbody'); tbody.innerHTML = '';
         const filtered = allHasilUjian.filter(h => h.mataPelajaran === mapel);
-        filtered.forEach(h => { tbody.innerHTML += `<tr><td><b>${h.namaSiswa}</b></td><td>${h.kelas}</td><td>${h.benar}/${h.totalSoal}</td><td><b>${h.nilai}</b></td><td><button onclick="window.hapusDokumen('hasil_ujian', '${h.id}', window.refreshHasil)" style="color:red; border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`; });
+        
+        filtered.forEach(h => { 
+            tbody.innerHTML += `<tr>
+                <td><b>${h.namaSiswa}</b></td>
+                <td>${h.kelas}</td>
+                <td>${h.benar}/${h.totalSoal}</td>
+                <td><b style="color: var(--primary); font-size: 1.1rem;">${h.nilai}</b></td>
+                <td style="text-align: center;">
+                    <button onclick="window.hapusLangsung('hasil_ujian', '${h.id}', this.parentElement.parentElement)" style="color: var(--danger); border: none; background: none; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" title="Hapus Data Ini Langsung">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`; 
+        });
     };
+
     window.refreshHasil = () => { loadDataHasil(); if(currentMapelDetail) window.openDetailHasil(currentMapelDetail); };
     if(document.getElementById('btn-back-hasil')) document.getElementById('btn-back-hasil').onclick = () => window.history.back();
+
+    // Hapus Semua Data Sekaligus (Mass Delete)
+    document.getElementById('btn-hapus-semua-hasil')?.addEventListener('click', async () => {
+        if (!currentMapelDetail) return;
+        if (await window.customConfirm(`Hapus SEMUA data hasil ujian untuk mapel ${currentMapelDetail}? Tindakan ini tidak bisa dibatalkan.`, "danger", "Kosongkan Data")) {
+            
+            const btnHapusAll = document.getElementById('btn-hapus-semua-hasil');
+            const origText = btnHapusAll.innerHTML;
+            btnHapusAll.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghapus Massal...';
+            btnHapusAll.disabled = true;
+            
+            try {
+                const dataAkanDihapus = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail);
+                await Promise.all(dataAkanDihapus.map(h => deleteDoc(doc(db, "hasil_ujian", h.id))));
+                
+                await window.customAlert(`${dataAkanDihapus.length} data berhasil dikosongkan!`, "success");
+                window.refreshHasil(); 
+                document.getElementById('btn-back-hasil').click(); 
+            } catch (e) {
+                await window.customAlert("Terjadi kesalahan saat menghapus data massal.", "error");
+            }
+            btnHapusAll.innerHTML = origText; btnHapusAll.disabled = false;
+        }
+    });
 
     // ==========================================
     // 8. MANAJEMEN TOKEN UJIAN (HAPUS & PERPANJANG AMAN)
@@ -808,8 +857,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try { 
                 const snap = await getDoc(doc(db, "pengaturan", "token_ujian"));
                 if(snap.exists()) {
-                    let dataTokens = snap.data(); delete dataTokens[k]; // Hapus Kunci Lokal
-                    await setDoc(doc(db, "pengaturan", "token_ujian"), dataTokens); // Replace (Aman dr string titik)
+                    let dataTokens = snap.data(); delete dataTokens[k]; 
+                    await setDoc(doc(db, "pengaturan", "token_ujian"), dataTokens); 
                     await window.customAlert("Token berhasil dihapus!", "success"); loadActiveTokens(); 
                 }
             } catch (e) { window.customAlert("Gagal menghapus token.", "error"); }
