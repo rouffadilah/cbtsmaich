@@ -180,15 +180,14 @@ function tampilkanSoal(idx) {
 
     document.getElementById('question-content').innerHTML = html;
     
+    // Konfigurasi Tombol Ikon
     document.getElementById('btn-prev').style.visibility = idx === 0 ? 'hidden' : 'visible';
     const btnNext = document.getElementById('btn-next');
     
     if (idx === arraySoal.length - 1) {
-        // Jika soal terakhir, ganti ikon jadi centang
         btnNext.innerHTML = `<i class="fas fa-check"></i>`;
         btnNext.style.background = 'var(--danger)';
     } else {
-        // Jika bukan soal terakhir, pakai ikon panah kanan
         btnNext.innerHTML = `<i class="fas fa-chevron-right"></i>`;
         btnNext.style.background = 'var(--primary)';
     }
@@ -199,6 +198,7 @@ function tampilkanSoal(idx) {
 window.pilihJawabanPG = (soalId, opsi) => { jawabanSiswa[soalId] = opsi; tampilkanSoal(currentIndex); };
 window.simpanJawabanTeks = (soalId, teks) => { jawabanSiswa[soalId] = teks; updateWarnaGrid(); };
 document.getElementById('cb-ragu').onchange = (e) => { raguRagu[currentIndex] = e.target.checked; updateWarnaGrid(); };
+
 document.getElementById('btn-prev').onclick = () => { if(currentIndex > 0) tampilkanSoal(currentIndex - 1); };
 document.getElementById('btn-next').onclick = () => { if(currentIndex < arraySoal.length - 1) tampilkanSoal(currentIndex + 1); else selesaiUjian(); };
 
@@ -287,7 +287,7 @@ async function selesaiUjian(isTimeOut = false, isPelanggaran = false) {
         await addDoc(collection(db, "hasil_ujian"), payload);
         document.exitFullscreen().catch(e=>{});
         
-        // HAPUS NILAI DARI PESAN POP-UP
+        // Nilai disembunyikan
         alert(`Ujian Selesai!\nJawaban Anda telah berhasil disimpan di server.`);
         window.location.href = "index.html";
     } catch(e) {
