@@ -21,13 +21,19 @@ window.customAlert = (msg, title = 'Informasi') => {
         document.getElementById('alert-title').innerText = title;
         document.getElementById('alert-message').innerText = msg;
         modal.style.display = 'flex';
-        document.getElementById('btn-alert-ok').onclick = () => { modal.style.display = 'none'; res(); };
+        document.getElementById('btn-alert-ok').onclick = () => { 
+            modal.style.display = 'none'; 
+            res(); 
+        };
     });
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, async (user) => {
-        if (!user) { window.location.href = "index.html"; return; }
+        if (!user) { 
+            window.location.href = "index.html"; 
+            return; 
+        }
         
         try {
             const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -39,9 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadMapelOptions();
             } else {
                 await customAlert("Data siswa tidak ditemukan.");
-                auth.signOut(); window.location.href = "index.html";
+                auth.signOut(); 
+                window.location.href = "index.html";
             }
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+            console.error(e); 
+        }
     });
 });
 
@@ -64,18 +73,21 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     const tokenInput = document.getElementById('input-token').value.toUpperCase().trim();
     const kelasSiswa = document.getElementById('student-class').value;
 
-    if(!mapelTerpilih || !tokenInput) return customAlert("Pilih mata pelajaran dan masukkan token!", "Peringatan");
+    if(!mapelTerpilih || !tokenInput) {
+        return customAlert("Pilih mata pelajaran dan masukkan token!", "Peringatan");
+    }
 
     const btn = document.getElementById('btn-verifikasi');
-    btn.innerHTML = "Memeriksa..."; btn.disabled = true;
+    btn.innerHTML = "Memeriksa..."; 
+    btn.disabled = true;
 
     try {
-        // 1. Cek Token
         const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         const tokenKey = `token_${mapelTerpilih}_${kelasSiswa}`;
         
         if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) {
-            btn.innerHTML = "VERIFIKASI & MULAI"; btn.disabled = false;
+            btn.innerHTML = "VERIFIKASI & MULAI"; 
+            btn.disabled = false;
             return customAlert("Token tidak valid atau belum diaktifkan oleh Admin.", "Akses Ditolak");
         }
 
@@ -84,28 +96,31 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         const expiresAt = typeof tokenData === 'object' ? tokenData.expiresAt : 0;
 
         if (tokenInput !== tokenCode) {
-            btn.innerHTML = "VERIFIKASI & MULAI"; btn.disabled = false;
+            btn.innerHTML = "VERIFIKASI & MULAI"; 
+            btn.disabled = false;
             return customAlert("Kode Token Salah!", "Akses Ditolak");
         }
+        
         if (Date.now() > expiresAt) {
-            btn.innerHTML = "VERIFIKASI & MULAI"; btn.disabled = false;
+            btn.innerHTML = "VERIFIKASI & MULAI"; 
+            btn.disabled = false;
             return customAlert("Waktu Token sudah habis! Silakan minta token baru ke Pengawas.", "Token Expired");
         }
 
-        // 2. Cek apakah sudah pernah mengerjakan
         const qHasil = query(collection(db, "hasil_ujian"), where("uid", "==", studentData.uid), where("mataPelajaran", "==", mapelTerpilih));
         const cekHasil = await getDocs(qHasil);
         if(!cekHasil.empty) {
-            btn.innerHTML = "VERIFIKASI & MULAI"; btn.disabled = false;
+            btn.innerHTML = "VERIFIKASI & MULAI"; 
+            btn.disabled = false;
             return customAlert("Anda sudah menyelesaikan ujian mata pelajaran ini.", "Ditolak");
         }
 
-        // 3. Tarik Soal
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapelTerpilih), where("kelas", "==", kelasSiswa));
         const soalSnap = await getDocs(qSoal);
         
         if (soalSnap.empty) {
-            btn.innerHTML = "VERIFIKASI & MULAI"; btn.disabled = false;
+            btn.innerHTML = "VERIFIKASI & MULAI"; 
+            btn.disabled = false;
             return customAlert("Belum ada soal untuk mata pelajaran ini.", "Kosong");
         }
 
@@ -113,7 +128,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         soalSnap.forEach(d => arraySoal.push({id: d.id, ...d.data()}));
         arraySoal.sort((a, b) => a.nomor_soal - b.nomor_soal);
 
-        // 4. Tarik Waktu Pengerjaan (Default 90 mnt)
         let durasiMenit = 90; 
         try {
             const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
@@ -124,7 +138,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
         durasiDetik = durasiMenit * 60;
         
-        // 5. Mulai Ujian (Masuk Fullscreen)
         document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen diblokir"));
         mulaiKeamananUjian();
         
@@ -139,9 +152,11 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     } catch(e) {
         console.error(e);
         customAlert("Terjadi kesalahan jaringan.");
-        btn.innerHTML = "VERIFIKASI & MULAI"; btn.disabled = false;
+        btn.innerHTML = "VERIFIKASI & MULAI"; 
+        btn.disabled = false;
     }
 };
+
 
 // ==========================================
 // 3. RENDER SOAL & JAWABAN
