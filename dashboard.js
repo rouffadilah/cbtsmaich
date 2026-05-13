@@ -107,6 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleRouting() {
         let hash = window.location.hash.substring(1) || 'section-beranda';
         
+        // Fallback jika tidak sengaja mengakses section pengaturan yang sudah dihapus
+        if (hash === 'section-pengaturan') hash = 'section-beranda';
+        
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
 
@@ -157,17 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isAdmin) { 
             fetchStatusReg(); 
         } else if (isGuru && !isAdmin) {
+            // Sembunyikan semua akses admin dari view Guru
             if(document.getElementById('menu-pengguna')) document.getElementById('menu-pengguna').style.display = 'none'; 
             if(document.getElementById('admin-reg-status')) document.getElementById('admin-reg-status').style.display = 'none'; 
             if(document.getElementById('admin-data-master')) document.getElementById('admin-data-master').style.display = 'none';
-            // Menyembunyikan menu manajemen pengguna terintegrasi agar guru tidak bisa melihatnya
             if(document.getElementById('admin-manajemen-pengguna')) document.getElementById('admin-manajemen-pengguna').style.display = 'none';
-            
-            const mMenuPeng = document.getElementById('menu-pengaturan'); 
-            if (mMenuPeng) { 
-                const pTag = mMenuPeng.querySelector('p'); 
-                if (pTag) pTag.innerText = 'Token Ujian'; 
-            }
         }
 
         handleRouting(); 
