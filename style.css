@@ -409,31 +409,37 @@ img {
     margin-top: 15px; 
 }
 
-table { 
-    width: 100%; 
-    min-width: 600px; /* Batas minimum tabel sebelum jadi scrollable */
-    border-collapse: collapse; 
-    font-size: 0.9rem; 
+/* Styling Tabel Modern */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
-th, td { 
-    padding: 14px 16px; 
-    text-align: left; 
-    border-bottom: 1px solid var(--border-color); 
+table th {
+    background-color: transparent !important;
+    border-bottom: 2px solid #e2e8f0 !important; /* Garis bawah header sedikit lebih tebal */
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 16px 20px !important;
 }
 
-th { 
-    background: #f8fafc; 
-    font-weight: 700; 
-    color: var(--text-muted); 
-    text-transform: uppercase; 
-    font-size: 0.75rem; 
-    letter-spacing: 0.5px; 
-    white-space: nowrap;
+table td {
+    padding: 16px 20px !important;
+    border-bottom: 1px solid #f1f5f9 !important; /* Garis antar baris sangat tipis/samar */
+    color: #334155;
+    vertical-align: middle;
 }
 
-tbody tr { transition: var(--transition); }
-tbody tr:hover { background-color: #f1f5f9; }
+/* Efek hover baris tabel yang elegan */
+table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+table tbody tr:hover {
+    background-color: #f8fafc !important;
+}
 
 /* =========================================
    7. EXAM LAYOUT (ATTEMPT.HTML)
@@ -654,4 +660,40 @@ tbody tr:hover { background-color: #f1f5f9; }
     .stats-grid { grid-template-columns: 1fr; }
     .q-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; } 
     .modal-content { padding: 20px 15px; }
+}
+/* --- OVERRIDE DASHBOARD TEMA MODERN --- */
+
+/* Mengubah Card dan Stat Card menjadi bergaya Soft Shadow */
+.card, .stat-card, .table-container {
+    background: #ffffff;
+    border: none !important; /* Menghilangkan garis pinggir kaku */
+    box-shadow: 0 10px 30px rgba(226, 232, 240, 0.6) !important; /* Bayangan sangat lembut */
+    border-radius: 16px !important; /* Sudut lebih membulat (modern) */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Efek melayang saat stat-card disorot mouse */
+.stat-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(226, 232, 240, 0.9) !important;
+}
+
+/* Membersihkan tampilan Header */
+.app-header {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    border-bottom: none !important;
+}
+
+/* Animasi Skeleton Loader */
+@keyframes pulse-skeleton {
+    0% { background-color: #f1f5f9; }
+    50% { background-color: #e2e8f0; }
+    100% { background-color: #f1f5f9; }
+}
+
+.skeleton-box {
+    height: 18px;
+    border-radius: 6px;
+    animation: pulse-skeleton 1.5s infinite;
+    margin-bottom: 8px;
 }
