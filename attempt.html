@@ -33,52 +33,113 @@
         .option-label input:checked + span { font-weight: bold; }
         .option-label.selected { border-color: var(--primary); background: #f0fdf4; }
 
-        /* --- PERBAIKAN TAMPILAN MOBILE --- */
+        /* --- PERBAIKAN FINAL TAMPILAN 1 LAYAR PENUH (TANPA SCROLL HALAMAN) --- */
         @media screen and (max-width: 1024px) {
+            /* Kunci layar agar web tidak bisa ditarik/scroll ke bawah */
+            body, html { 
+                overflow: hidden !important; 
+                height: 100% !important; 
+            }
+            
             #exam-workspace { 
-                height: auto !important; 
-                min-height: 100vh !important; 
-                overflow: visible !important; 
-            }
-            .exam-header {
+                height: 100dvh !important; /* Gunakan dvh agar presisi di layar HP modern */
+                min-height: 100dvh !important; 
+                overflow: hidden !important; 
+                display: flex !important;
                 flex-direction: column !important;
-                gap: 15px !important;
-                text-align: center !important;
             }
+            
+            /* Header lebih padat */
+            .exam-header {
+                flex: none !important;
+                flex-direction: row !important;
+                justify-content: space-between !important;
+                padding: 10px !important;
+                gap: 5px !important;
+            }
+            .exam-header h3 { font-size: 0.95rem !important; }
+            .exam-header p { display: none !important; } /* Sembunyikan nama siswa untuk hemat tempat */
+            .exam-header > div:last-child { gap: 8px !important; }
+            .exam-header > div:last-child > div { padding: 4px 8px !important; font-size: 0.8rem !important; }
+            
             .exam-body { 
+                flex: 1 !important; 
                 flex-direction: column !important; 
-                overflow: visible !important; 
+                overflow: hidden !important; 
                 display: flex !important;
             }
+            
+            /* Area Soal Fleksibel (Jika soal super panjang, hanya area ini yg bisa di-scroll) */
             .question-area { 
                 width: 100% !important; 
-                flex: none !important; 
-                padding: 20px 15px !important; 
-                overflow: visible !important; 
+                flex: 1 !important; 
+                padding: 12px 12px 0 12px !important; 
+                overflow-y: auto !important; 
+                display: flex !important;
+                flex-direction: column !important;
             }
+            
+            /* Perkecil margin opsi agar 5 opsi (A-E) muat di layar */
+            .option-label { 
+                padding: 8px 12px !important; 
+                margin-bottom: 6px !important; 
+                font-size: 0.95rem !important;
+            }
+            #question-content { margin-bottom: 10px !important; min-height: auto !important; }
+            
+            /* Tombol Navigasi Bawah Soal (Dibuat Sejajar Ke Samping) */
+            .question-area > div:last-child {
+                flex: none !important;
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 6px !important;
+                margin-top: auto !important; 
+                padding-top: 10px !important;
+                padding-bottom: 10px !important;
+            }
+            .question-area > div:last-child button,
+            .question-area > div:last-child label {
+                flex: 1 !important;
+                width: auto !important;
+                padding: 10px 5px !important;
+                font-size: 0.75rem !important;
+                justify-content: center !important;
+                margin: 0 !important;
+                white-space: nowrap !important;
+            }
+            
+            /* Sidebar disulap menjadi Panel Horizontal di paling bawah Layar */
             .sidebar-area { 
                 width: 100% !important; 
                 max-width: 100% !important;
                 flex: none !important; 
                 border-left: none !important; 
-                border-top: 4px solid #cbd5e1 !important; 
-                padding: 20px 15px !important; 
-                overflow: visible !important; 
-                margin-bottom: 30px !important;
+                border-top: 2px solid #cbd5e1 !important; 
+                padding: 10px !important; 
+                height: auto !important;
+                background: #f8fafc !important;
             }
-            .question-area > div:last-child {
-                flex-direction: column !important;
-                gap: 12px !important;
-            }
-            .question-area > div:last-child button,
-            .question-area > div:last-child label {
-                width: 100% !important;
-                justify-content: center !important;
-                margin: 0 !important;
-            }
+            .sidebar-area h4 { display: none !important; } /* Sembunyikan tulisan "NAVIGASI SOAL" */
+            
+            /* KOTAK NOMOR SOAL BISA DIGESER KE KANAN-KIRI (Horizontal Scroll) */
             .q-grid { 
-                grid-template-columns: repeat(6, 1fr) !important; 
+                display: flex !important;
+                overflow-x: auto !important;
+                gap: 8px !important;
+                padding-bottom: 5px !important;
             }
+            .q-box { 
+                flex: 0 0 35px !important; /* Paksa kotak jadi persegi kecil */
+                height: 35px !important;
+                font-size: 0.85rem !important;
+            }
+            
+            /* Tombol Selesai Ujian */
+            .sidebar-area > div:last-child {
+                padding-top: 5px !important;
+                margin-top: 0 !important;
+            }
+            #btn-finish { padding: 10px !important; font-size: 0.9rem !important; margin: 0 !important; }
         }
     </style>
 </head>
