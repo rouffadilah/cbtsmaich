@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ujian CBT - SMA Islam Cikal Harapan 1</title>
-    <link rel="stylesheet" href="style.css?v=7">
+    <title>CBT-SMAICH</title>
+    <link rel="stylesheet" href="style.css?v=8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -39,6 +39,19 @@
                 overflow: hidden !important; 
                 height: 100% !important; 
             }
+            
+            /* --- PERBAIKAN HALAMAN AWAL (PRE-EXAM) AGAR BISA DI-SCROLL --- */
+            .pre-exam-container {
+                height: 100dvh !important;
+                overflow-y: auto !important; /* Memberikan izin scroll di container ini */
+                align-items: flex-start !important; /* Mulai dari atas, bukan dari tengah */
+                padding: 15px !important;
+            }
+            .pre-exam-card {
+                margin: 20px auto !important; /* Memberikan jarak agar tidak nempel di ujung layar */
+                padding: 25px 20px !important; /* Memperkecil ruang kosong di dalam kartu */
+            }
+            /* ------------------------------------------------------------- */
             
             #exam-workspace { 
                 height: 100dvh !important; 
