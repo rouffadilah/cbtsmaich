@@ -104,27 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const isAdmin = userRoles.includes("admin"); 
     const isGuru = userRoles.includes("guru");
 
-    // --- FITUR ACCORDION UNTUK FORM TAMBAH AKUN ---
-    const toggleFormAkun = document.getElementById('toggle-form-akun');
-    const containerFormAkun = document.getElementById('container-form-akun');
-    const iconToggleAkun = document.getElementById('icon-toggle-akun');
-
-    if (toggleFormAkun && containerFormAkun && iconToggleAkun) {
-        toggleFormAkun.addEventListener('click', () => {
-            if (containerFormAkun.style.display === 'none') {
-                // Buka Form
-                containerFormAkun.style.display = 'block';
-                iconToggleAkun.style.transform = 'rotate(180deg)';
-                toggleFormAkun.style.background = '#f8fafc';
-            } else {
-                // Tutup Form
-                containerFormAkun.style.display = 'none';
-                iconToggleAkun.style.transform = 'rotate(0deg)';
-                toggleFormAkun.style.background = '#ffffff';
-            }
-        });
-    }
-
     function handleRouting() {
         let hash = window.location.hash.substring(1) || 'section-beranda';
         
@@ -137,8 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return; 
             }
             document.getElementById('section-hasil').classList.add('active');
-            document.getElementById('hasil-summary-view').style.display = 'none'; 
-            document.getElementById('hasil-detail-view').style.display = 'block';
+            if(document.getElementById('hasil-summary-view')) document.getElementById('hasil-summary-view').style.display = 'none'; 
+            if(document.getElementById('hasil-detail-view')) document.getElementById('hasil-detail-view').style.display = 'block';
             return;
         }
 
@@ -146,16 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target) target.classList.add('active');
         
         if (hash === 'section-hasil') { 
-            document.getElementById('hasil-summary-view').style.display = 'block'; 
-            document.getElementById('hasil-detail-view').style.display = 'none'; 
+            if(document.getElementById('hasil-summary-view')) document.getElementById('hasil-summary-view').style.display = 'block'; 
+            if(document.getElementById('hasil-detail-view')) document.getElementById('hasil-detail-view').style.display = 'none'; 
             currentMapelDetail = ""; 
         }
     }
 
     window.addEventListener('hashchange', handleRouting);
-    document.querySelectorAll('.stat-clickable').forEach(b => {
-        b.onclick = (e) => window.location.hash = e.currentTarget.dataset.target
-    });
 
     onAuthStateChanged(auth, async (user) => {
         if (!user || (!isAdmin && !isGuru)) { 
@@ -181,9 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isAdmin) { 
             fetchStatusReg(); 
         } else if (isGuru && !isAdmin) {
-            document.getElementById('menu-pengguna').style.display = 'none'; 
-            document.getElementById('admin-reg-status').style.display = 'none'; 
-            document.getElementById('admin-data-master').style.display = 'none';
+            if(document.getElementById('menu-pengguna')) document.getElementById('menu-pengguna').style.display = 'none'; 
+            if(document.getElementById('admin-reg-status')) document.getElementById('admin-reg-status').style.display = 'none'; 
+            if(document.getElementById('admin-data-master')) document.getElementById('admin-data-master').style.display = 'none';
             const mMenuPeng = document.getElementById('menu-pengaturan'); 
             if (mMenuPeng) { 
                 const pTag = mMenuPeng.querySelector('p'); 
@@ -197,7 +173,14 @@ document.addEventListener('DOMContentLoaded', () => {
         loadActiveTokens(); 
         if (isAdmin) loadDataPengguna();
     });
-    document.getElementById('btn-logout').onclick = async () => { if (await customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { await signOut(auth); localStorage.clear(); window.location.href = "index.html"; } };
+
+    document.getElementById('btn-logout').onclick = async () => { 
+        if (await customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { 
+            await signOut(auth); 
+            localStorage.clear(); 
+            window.location.href = "index.html"; 
+        } 
+    };
 
     // ==========================================
     // 4. DATA MASTER (MAPEL & KELAS)
@@ -281,19 +264,27 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDataPengguna() {
         const tbody = document.querySelector('#table-siswa tbody'); if (!tbody) return;
         
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" style="padding: 20px;">
-                        <div class="skeleton-box" style="width: 100%;"></div>
-                        <div class="skeleton-box" style="width: 80%; height: 14px;"></div>
-                        <div class="skeleton-box" style="width: 90%; height: 14px;"></div>
-                    </td>
-                </tr>`;
-            try {
+        // SKELETON LOADER
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="padding: 20px;">
+                    <div class="skeleton-box" style="width: 100%;"></div>
+                    <div class="skeleton-box" style="width: 60%;"></div>
+                    <div class="skeleton-box" style="width: 90%;"></div>
+                    <div class="skeleton-box" style="width: 75%;"></div>
+                </td>
+            </tr>`;
+            
+        try {
             const snap = await getDocs(collection(db, "users")); 
             const statSiswa = document.getElementById('stat-siswa'); if (statSiswa) statSiswa.innerText = snap.size; 
             
             tbody.innerHTML = ''; allUsersData = []; 
+            if(snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data pengguna.</td></tr>';
+                return;
+            }
+
             snap.forEach(docSnap => {
                 const data = docSnap.data(); data.id = docSnap.id; allUsersData.push(data);
                 const rls = Array.isArray(data.role) ? data.role : [data.role]; 
@@ -309,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button onclick="window.hapusDokumen('users', '${docSnap.id}', window.loadDataPengguna)" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:1.1rem;" title="Hapus"><i class="fas fa-trash"></i></button>
                     </td></tr>`;
             });
-        } catch (error) { console.error(error); }
+        } catch (error) { console.error(error); tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data.</td></tr>'; }
     }
     window.loadDataPengguna = loadDataPengguna;
 
@@ -455,14 +446,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.querySelector('#table-soal tbody');
 
         if(!m || !k) return customAlert("Pilih Mapel dan Kelas terlebih dahulu!", "warning");
-       tbody.innerHTML = `
-    <tr>
-        <td colspan="6" style="padding: 20px;">
-            <div class="skeleton-box" style="width: 100%;"></div>
-            <div class="skeleton-box" style="width: 80%; height: 14px;"></div>
-            <div class="skeleton-box" style="width: 90%; height: 14px;"></div>
-        </td>
-    </tr>`;
+        
+        // SKELETON LOADER
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="padding: 20px;">
+                    <div class="skeleton-box" style="width: 100%;"></div>
+                    <div class="skeleton-box" style="width: 70%;"></div>
+                    <div class="skeleton-box" style="width: 85%;"></div>
+                </td>
+            </tr>`;
+
         try {
             const qS = query(collection(db, "bank_soal"), where("mataPelajaran", "==", m), where("kelas", "==", k));
             const snap = await getDocs(qS);
@@ -757,7 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filtered.forEach(h => { tbody.innerHTML += `<tr><td><b>${h.namaSiswa}</b></td><td>${h.kelas}</td><td>${h.benar}/${h.totalSoal}</td><td><b>${h.nilai}</b></td><td><button onclick="window.hapusDokumen('hasil_ujian', '${h.id}', window.refreshHasil)" style="color:red; border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`; });
     };
     window.refreshHasil = () => { loadDataHasil(); if(currentMapelDetail) window.openDetailHasil(currentMapelDetail); };
-    document.getElementById('btn-back-hasil').onclick = () => window.history.back();
+    if(document.getElementById('btn-back-hasil')) document.getElementById('btn-back-hasil').onclick = () => window.history.back();
 
     // ==========================================
     // 8. MANAJEMEN TOKEN UJIAN (HAPUS & PERPANJANG AMAN)
@@ -837,4 +831,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.hapusDokumen = async (coll, id, callback) => { if(await customConfirm("Data akan dihapus permanen. Lanjutkan?", "danger")) { await deleteDoc(doc(db, coll, id)); if(callback) callback(); } };
+
+    // ==========================================
+    // INTERAKSI ACCORDION FORM AKUN BARU
+    // ==========================================
+    const toggleFormAkun = document.getElementById('toggle-form-akun');
+    const containerFormAkun = document.getElementById('container-form-akun');
+    const iconToggleAkun = document.getElementById('icon-toggle-akun');
+
+    if (toggleFormAkun && containerFormAkun && iconToggleAkun) {
+        toggleFormAkun.addEventListener('click', () => {
+            if (containerFormAkun.style.display === 'none') {
+                containerFormAkun.style.display = 'block';
+                iconToggleAkun.style.transform = 'rotate(180deg)';
+                toggleFormAkun.style.background = '#f8fafc';
+            } else {
+                containerFormAkun.style.display = 'none';
+                iconToggleAkun.style.transform = 'rotate(0deg)';
+                toggleFormAkun.style.background = '#ffffff';
+            }
+        });
+    }
+
 });
