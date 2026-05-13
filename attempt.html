@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBT-SMAICH</title>
-    <link rel="stylesheet" href="style.css?v=8">
+    <title>Ujian CBT - SMA Islam Cikal Harapan 1</title>
+    <link rel="stylesheet" href="style.css?v=9">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -43,13 +43,13 @@
             /* --- PERBAIKAN HALAMAN AWAL (PRE-EXAM) AGAR BISA DI-SCROLL --- */
             .pre-exam-container {
                 height: 100dvh !important;
-                overflow-y: auto !important; /* Memberikan izin scroll di container ini */
-                align-items: flex-start !important; /* Mulai dari atas, bukan dari tengah */
+                overflow-y: auto !important; 
+                align-items: flex-start !important; 
                 padding: 15px !important;
             }
             .pre-exam-card {
-                margin: 20px auto !important; /* Memberikan jarak agar tidak nempel di ujung layar */
-                padding: 25px 20px !important; /* Memperkecil ruang kosong di dalam kartu */
+                margin: 20px auto !important; 
+                padding: 25px 20px !important; 
             }
             /* ------------------------------------------------------------- */
             
@@ -177,7 +177,7 @@
                     <small style="color: var(--warning); font-size: 0.7rem;">*Diatur oleh Admin</small>
                 </div>
                 <div style="flex: 1;">
-                    <label style="font-weight: bold; font-size: 0.85rem;">Pilih Mata Pelajaran</label>
+                    <label style="font-weight: bold; font-size: 0.85rem;">Pilih Mapel</label>
                     <select id="select-mapel" class="input-text"></select>
                 </div>
             </div>
@@ -191,8 +191,15 @@
                 <i class="fas fa-shield-alt"></i> <b>PERHATIAN:</b> Ujian menggunakan Kunci Layar. <b>AKTIFKAN MODE JANGAN GANGGU (DND) SEKARANG!</b> Membuka notifikasi, berpindah tab, atau aplikasi pop-up akan terhitung sebagai pelanggaran (Maksimal 3x).
             </div>
 
-            <button id="btn-verifikasi" class="btn-3d" style="width: 100%; font-size: 1.1rem; padding: 15px; background: var(--success);"><i class="fas fa-key"></i> VERIFIKASI & MULAI</button>
-            <button onclick="window.location.href='index.html'" class="btn-3d btn-secondary" style="width: 100%; margin-top: 10px; font-size: 0.9rem;">Kembali</button>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="window.location.href='index.html'" class="btn-3d btn-secondary" style="width: 60px; margin: 0; padding: 15px; font-size: 1.2rem; display: flex; justify-content: center; align-items: center;" title="Kembali">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button id="btn-verifikasi" class="btn-3d" style="flex: 1; margin: 0; font-size: 1.1rem; padding: 15px; background: var(--success);">
+                    <i class="fas fa-play"></i> MULAI
+                </button>
+            </div>
+
         </div>
     </div>
 
