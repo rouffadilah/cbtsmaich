@@ -124,40 +124,53 @@
         .option-label input:checked + span { font-weight: bold; }
         .option-label.selected { border-color: var(--primary); background: #f0fdf4; }
         
-        /* --- PERBAIKAN TAMPILAN MOBILE --- */
+        /* --- PERBAIKAN FINAL TAMPILAN MOBILE --- */
         @media (max-width: 768px) {
-            /* Bebaskan tinggi workspace agar bisa scroll ke bawah */
+            /* Matikan fungsi layar penuh yang dikunci */
             #exam-workspace { 
-                height: auto; 
-                min-height: 100vh; 
-                overflow: visible; 
+                height: auto !important; 
+                min-height: 100vh !important; 
+                overflow: visible !important;
+                display: block !important; 
             }
+            
             .exam-header { 
-                flex-direction: column; 
-                gap: 10px; 
-                text-align: center; 
-                padding: 15px; 
-                position: sticky;
-                top: 0;
+                flex-direction: column !important; 
+                gap: 10px !important; 
+                text-align: center !important; 
+                padding: 15px !important; 
             }
+            
+            /* Matikan Flexbox, paksa jadi blok atas-bawah */
             .exam-body { 
-                flex-direction: column; 
-                overflow: visible; 
+                display: block !important; 
+                overflow: visible !important; 
+                height: auto !important;
             }
+            
+            /* Area Soal di atas */
             .question-area { 
-                flex: none; 
-                padding: 15px; 
-                overflow-y: visible; 
+                display: block !important;
+                width: 100% !important; 
+                padding: 20px 15px !important; 
+                overflow: visible !important; 
             }
+            
+            /* Sidebar Navigasi di bawah area soal */
             .sidebar-area { 
-                width: 100%; 
-                border-left: none; 
-                border-top: 4px solid var(--border-color); 
-                padding: 20px 15px; 
-                flex: none; 
-                overflow-y: visible; 
+                display: block !important;
+                width: 100% !important; 
+                border-left: none !important; 
+                border-top: 4px solid var(--border-color) !important; 
+                padding: 20px 15px !important; 
+                height: auto !important;
+                overflow: visible !important; 
+                margin-bottom: 30px !important;
             }
+            
+            /* Tombol Navigasi Bawah Soal */
             .question-area > div:last-child {
+                display: flex !important;
                 flex-direction: column !important;
                 gap: 12px !important;
             }
@@ -165,10 +178,13 @@
             .question-area > div:last-child label {
                 width: 100% !important;
                 justify-content: center !important;
+                margin: 0 !important;
             }
+            
+            /* Navigasi Kotak Angka */
             .q-grid { 
-                grid-template-columns: repeat(6, 1fr); 
-                gap: 8px; 
+                grid-template-columns: repeat(6, 1fr) !important; 
+                gap: 8px !important; 
             }
         }
     </style>
