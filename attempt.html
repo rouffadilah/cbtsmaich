@@ -1,21 +1,37 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" translate="no">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian CBT - SMA Islam Cikal Harapan 1</title>
-    <link rel="stylesheet" href="style.css?v=9">
+    
+    <meta name="google" content="notranslate">
+    
+    <link rel="stylesheet" href="style.css?v=10">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        body { background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        /* --- ANTI COPAS & ANTI AI (Mencegah teks diblok/highlight) --- */
+        body { 
+            background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; 
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10 and IE 11 */
+            user-select: none; /* Standard syntax */
+        }
+        /* Berikan izin agar siswa tetap bisa mengetik di form token dan essay */
+        input, textarea {
+            -webkit-user-select: auto !important;
+            -ms-user-select: auto !important;
+            user-select: auto !important;
+        }
+        /* ------------------------------------------------------------- */
+
         .pre-exam-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .pre-exam-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 500px; text-align: center; }
         .warning-box { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: left; }
         
         #exam-workspace { display: none; height: 100vh; flex-direction: column; overflow: hidden; background: white; }
         
-        /* Exam Header */
         .exam-header { background: var(--secondary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; flex-wrap: wrap; gap: 15px; }
         
         .exam-body { display: flex; flex: 1; overflow: hidden; }
@@ -35,127 +51,37 @@
 
         /* --- TAMPILAN 1 LAYAR PENUH (FULL SCREEN MOBILE) --- */
         @media screen and (max-width: 1024px) {
-            body, html { 
-                overflow: hidden !important; 
-                height: 100% !important; 
-            }
+            body, html { overflow: hidden !important; height: 100% !important; }
             
-            /* --- PERBAIKAN HALAMAN AWAL (PRE-EXAM) AGAR BISA DI-SCROLL --- */
-            .pre-exam-container {
-                height: 100dvh !important;
-                overflow-y: auto !important; 
-                align-items: flex-start !important; 
-                padding: 15px !important;
-            }
-            .pre-exam-card {
-                margin: 20px auto !important; 
-                padding: 25px 20px !important; 
-            }
-            /* ------------------------------------------------------------- */
+            .pre-exam-container { height: 100dvh !important; overflow-y: auto !important; align-items: flex-start !important; padding: 15px !important; }
+            .pre-exam-card { margin: 20px auto !important; padding: 25px 20px !important; }
             
-            #exam-workspace { 
-                height: 100dvh !important; 
-                min-height: 100dvh !important; 
-                overflow: hidden !important; 
-                display: flex !important;
-                flex-direction: column !important;
-            }
+            #exam-workspace { height: 100dvh !important; min-height: 100dvh !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }
             
-            /* Header Padat */
-            .exam-header {
-                flex: none !important;
-                flex-direction: row !important;
-                justify-content: space-between !important;
-                padding: 10px !important;
-                gap: 5px !important;
-            }
+            .exam-header { flex: none !important; flex-direction: row !important; justify-content: space-between !important; padding: 10px !important; gap: 5px !important; }
             .exam-header h3 { font-size: 0.95rem !important; }
             .exam-header p { display: none !important; }
             .exam-header > div:last-child { gap: 8px !important; }
             .exam-header > div:last-child > div { padding: 4px 8px !important; font-size: 0.8rem !important; }
             
-            .exam-body { 
-                flex: 1 !important; 
-                flex-direction: column !important; 
-                overflow: hidden !important; 
-                display: flex !important;
-            }
+            .exam-body { flex: 1 !important; flex-direction: column !important; overflow: hidden !important; display: flex !important; }
             
-            /* Area Soal (Bisa di-scroll hanya jika panjang) */
-            .question-area { 
-                width: 100% !important; 
-                flex: 1 !important; 
-                padding: 12px 12px 0 12px !important; 
-                overflow-y: auto !important; 
-                display: flex !important;
-                flex-direction: column !important;
-            }
+            .question-area { width: 100% !important; flex: 1 !important; padding: 12px 12px 0 12px !important; overflow-y: auto !important; display: flex !important; flex-direction: column !important; }
             
-            .option-label { 
-                padding: 8px 12px !important; 
-                margin-bottom: 6px !important; 
-                font-size: 0.95rem !important;
-            }
+            .option-label { padding: 8px 12px !important; margin-bottom: 6px !important; font-size: 0.95rem !important; }
             #question-content { margin-bottom: 10px !important; min-height: auto !important; }
             
-            /* Susunan Tombol Bawah (1 Baris) */
-            .nav-bottom-container {
-                flex: none !important;
-                display: flex !important;
-                flex-direction: row !important;
-                gap: 10px !important;
-                margin-top: auto !important; 
-                padding-top: 15px !important;
-                padding-bottom: 5px !important;
-            }
-            .nav-bottom-container button {
-                flex: none !important;
-                width: 60px !important; 
-                padding: 10px !important;
-                font-size: 1.3rem !important; 
-                justify-content: center !important;
-                align-items: center !important;
-                margin: 0 !important;
-            }
-            .nav-bottom-container label {
-                flex: 1 !important; 
-                width: auto !important;
-                padding: 10px !important;
-                font-size: 0.95rem !important;
-                justify-content: center !important;
-                margin: 0 !important;
-                white-space: nowrap !important;
-            }
+            .nav-bottom-container { flex: none !important; display: flex !important; flex-direction: row !important; gap: 10px !important; margin-top: auto !important; padding-top: 15px !important; padding-bottom: 5px !important; }
+            .nav-bottom-container button { flex: none !important; width: 60px !important; padding: 10px !important; font-size: 1.3rem !important; justify-content: center !important; align-items: center !important; margin: 0 !important; }
+            .nav-bottom-container label { flex: 1 !important; width: auto !important; padding: 10px !important; font-size: 0.95rem !important; justify-content: center !important; margin: 0 !important; white-space: nowrap !important; }
             
-            /* Sidebar disulap jadi baris nomor (Horizontal Scroll) */
-            .sidebar-area { 
-                width: 100% !important; 
-                max-width: 100% !important;
-                flex: none !important; 
-                border-left: none !important; 
-                border-top: 2px solid #cbd5e1 !important; 
-                padding: 10px !important; 
-                height: auto !important;
-                background: #f8fafc !important;
-            }
+            .sidebar-area { width: 100% !important; max-width: 100% !important; flex: none !important; border-left: none !important; border-top: 2px solid #cbd5e1 !important; padding: 10px !important; height: auto !important; background: #f8fafc !important; }
             .sidebar-area h4 { display: none !important; } 
             
-            .q-grid { 
-                display: flex !important;
-                overflow-x: auto !important;
-                gap: 8px !important;
-                padding-bottom: 5px !important;
-            }
-            .q-box { 
-                flex: 0 0 35px !important; 
-                height: 35px !important;
-                font-size: 0.85rem !important;
-            }
+            .q-grid { display: flex !important; overflow-x: auto !important; gap: 8px !important; padding-bottom: 5px !important; }
+            .q-box { flex: 0 0 35px !important; height: 35px !important; font-size: 0.85rem !important; }
             
-            .sidebar-area > div:last-child {
-                padding-top: 5px !important;
-                margin-top: 0 !important;
-            }
+            .sidebar-area > div:last-child { padding-top: 5px !important; margin-top: 0 !important; }
             #btn-finish { padding: 10px !important; font-size: 0.9rem !important; margin: 0 !important; }
         }
     </style>
@@ -199,7 +125,6 @@
                     <i class="fas fa-play"></i> MULAI
                 </button>
             </div>
-
         </div>
     </div>
 
