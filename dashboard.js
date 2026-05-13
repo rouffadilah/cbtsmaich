@@ -91,50 +91,91 @@ function renderMediaHTML(mediaObj) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
 
-    let userRoles = []; let userMapel = []; let userKelas = [];
-    try { userRoles = JSON.parse(localStorage.getItem("userRole") || "[]"); userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]"); userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]"); } catch (e) {}
-    const isAdmin = userRoles.includes("admin"); const isGuru = userRoles.includes("guru");
+    let userRoles = []; 
+    let userMapel = []; 
+    let userKelas = [];
+    
+    try { 
+        userRoles = JSON.parse(localStorage.getItem("userRole") || "[]"); 
+        userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]"); 
+        userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]"); 
+    } catch (e) {}
+    
+    const isAdmin = userRoles.includes("admin"); 
+    const isGuru = userRoles.includes("guru");
 
     function handleRouting() {
         let hash = window.location.hash.substring(1) || 'section-beranda';
+        
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
 
         if (hash === 'section-hasil-detail') {
-            if (!currentMapelDetail) { window.location.hash = 'section-hasil'; return; }
+            if (!currentMapelDetail) { 
+                window.location.hash = 'section-hasil'; 
+                return; 
+            }
             document.getElementById('section-hasil').classList.add('active');
             document.getElementById('hasil-summary-view').style.display = 'none'; 
             document.getElementById('hasil-detail-view').style.display = 'block';
             return;
         }
 
-        const target = document.getElementById(hash); if (target) target.classList.add('active');
-        if (hash === 'section-hasil') { document.getElementById('hasil-summary-view').style.display = 'block'; document.getElementById('hasil-detail-view').style.display = 'none'; currentMapelDetail = ""; }
+        const target = document.getElementById(hash); 
+        if (target) target.classList.add('active');
+        
+        if (hash === 'section-hasil') { 
+            document.getElementById('hasil-summary-view').style.display = 'block'; 
+            document.getElementById('hasil-detail-view').style.display = 'none'; 
+            currentMapelDetail = ""; 
+        }
     }
 
     window.addEventListener('hashchange', handleRouting);
-    document.querySelectorAll('.stat-clickable').forEach(b => b.onclick = (e) => window.location.hash = e.currentTarget.dataset.target);
+    document.querySelectorAll('.stat-clickable').forEach(b => {
+        b.onclick = (e) => window.location.hash = e.currentTarget.dataset.target
+    });
 
     onAuthStateChanged(auth, async (user) => {
-        if (!user || (!isAdmin && !isGuru)) { window.location.href = "index.html"; return; }
+        if (!user || (!isAdmin && !isGuru)) { 
+            window.location.href = "index.html"; 
+            return; 
+        }
+        
         let finalDisplayName = user.displayName;
-        if (!finalDisplayName) { try { const userDoc = await getDoc(doc(db, "users", user.uid)); if (userDoc.exists()) finalDisplayName = userDoc.data().nama; } catch(e) {} }
+        if (!finalDisplayName) { 
+            try { 
+                const userDoc = await getDoc(doc(db, "users", user.uid)); 
+                if (userDoc.exists()) finalDisplayName = userDoc.data().nama; 
+            } catch(e) {} 
+        }
         finalDisplayName = finalDisplayName || "Pengguna";
 
-        const adminNameEl = document.getElementById('admin-name'); if (adminNameEl) adminNameEl.innerText = finalDisplayName;
-        const greetingText = document.getElementById('greeting-text'); if (greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${finalDisplayName}! 🙏`;
+        const adminNameEl = document.getElementById('admin-name'); 
+        if (adminNameEl) adminNameEl.innerText = finalDisplayName;
+        
+        const greetingText = document.getElementById('greeting-text'); 
+        if (greetingText) greetingText.innerHTML = `Assalamu'alaikum, ${finalDisplayName}! 🙏`;
 
-        if (isAdmin) { fetchStatusReg(); } 
-        else if (isGuru && !isAdmin) {
+        if (isAdmin) { 
+            fetchStatusReg(); 
+        } else if (isGuru && !isAdmin) {
             document.getElementById('menu-pengguna').style.display = 'none'; 
             document.getElementById('admin-reg-status').style.display = 'none'; 
             document.getElementById('admin-data-master').style.display = 'none';
-            const mMenuPeng = document.getElementById('menu-pengaturan'); if (mMenuPeng) { const pTag = mMenuPeng.querySelector('p'); if (pTag) pTag.innerText = 'Token Ujian'; }
+            const mMenuPeng = document.getElementById('menu-pengaturan'); 
+            if (mMenuPeng) { 
+                const pTag = mMenuPeng.querySelector('p'); 
+                if (pTag) pTag.innerText = 'Token Ujian'; 
+            }
         }
 
-        handleRouting(); loadDataMaster(); loadDataHasil(); loadActiveTokens(); if (isAdmin) loadDataPengguna();
+        handleRouting(); 
+        loadDataMaster(); 
+        loadDataHasil(); 
+        loadActiveTokens(); 
+        if (isAdmin) loadDataPengguna();
     });
-
     document.getElementById('btn-logout').onclick = async () => { if (await customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { await signOut(auth); localStorage.clear(); window.location.href = "index.html"; } };
 
     // ==========================================
