@@ -142,3 +142,119 @@ table tbody tr:hover { background-color: #f8fafc !important; }
     .stats-grid { grid-template-columns: 1fr; }
     .card { padding: 20px; }
 }
+
+/* =========================================
+   10. EXAM FOCUS MODE (ATTEMPT.HTML)
+========================================= */
+/* Mempercantik Tampilan Pilihan Ganda */
+.option-label {
+    display: flex; 
+    padding: 15px 20px; 
+    border: 1.5px solid var(--border-color); 
+    border-radius: var(--radius-md); 
+    margin-bottom: 12px; 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+    align-items: center;
+    background: #ffffff;
+}
+
+.option-label:hover { 
+    border-color: #cbd5e1; 
+    background: #f8fafc; 
+}
+
+.option-label.selected { 
+    border-color: var(--primary); 
+    background: #ecfdf5; /* Hijau sangat muda */
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);
+}
+
+.option-label input:checked + span { 
+    color: var(--primary); 
+    font-weight: 800; 
+}
+
+/* Tampilan Header Ujian yang Sticky & Bersih */
+.exam-header { 
+    background: #ffffff; 
+    padding: 15px 25px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    box-shadow: 0 2px 15px rgba(0,0,0,0.05); 
+    z-index: 900; 
+    position: sticky; 
+    top: 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Navigasi Drawer untuk Mobile (Menyembunyikan Grid Soal) */
+.overlay-drawer {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.overlay-drawer.active {
+    display: block;
+    opacity: 1;
+}
+
+.btn-toggle-nav {
+    display: none; /* Disembunyikan di PC */
+}
+
+@media screen and (max-width: 1024px) {
+    .exam-header { padding: 12px 15px; }
+    
+    .btn-toggle-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        color: var(--secondary);
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .sidebar-area {
+        position: fixed;
+        right: -100%; /* Sembunyi di luar layar kanan */
+        top: 0;
+        width: 85%;
+        max-width: 320px;
+        height: 100dvh !important;
+        background: #ffffff !important;
+        z-index: 999;
+        box-shadow: -5px 0 25px rgba(0,0,0,0.1);
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 20px !important;
+        border: none !important;
+    }
+
+    .sidebar-area.open {
+        right: 0; /* Muncul ke layar */
+    }
+
+    .q-grid {
+        display: grid !important;
+        grid-template-columns: repeat(5, 1fr) !important;
+        overflow: visible !important;
+    }
+
+    #btn-finish {
+        margin-top: 20px !important;
+        padding: 15px !important;
+    }
+}
