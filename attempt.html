@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian CBT - SMA Islam Cikal Harapan 1</title>
-    
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -15,12 +14,14 @@
         .warning-box { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: left; }
         
         #exam-workspace { display: none; height: 100vh; flex-direction: column; overflow: hidden; background: white; }
-        .exam-header { background: var(--secondary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; }
+        
+        /* Modifikasi Exam Header untuk menampung Timer */
+        .exam-header { background: var(--secondary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; flex-wrap: wrap; gap: 15px; }
+        
         .exam-body { display: flex; flex: 1; overflow: hidden; }
         .question-area { flex: 1; padding: 30px; overflow-y: auto; }
         .sidebar-area { width: 300px; background: #f8fafc; border-left: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
         
-        .timer-box { background: #fee2e2; border: 2px solid #fca5a5; color: #b91c1c; padding: 15px; border-radius: 8px; text-align: center; font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; }
         .q-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .q-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .q-box.active { border-color: var(--info); box-shadow: 0 0 0 3px #dbeafe; }
@@ -41,7 +42,7 @@
             }
             .exam-header {
                 flex-direction: column !important;
-                gap: 10px !important;
+                gap: 15px !important;
                 text-align: center !important;
             }
             .exam-body { 
@@ -109,7 +110,7 @@
             </div>
 
             <div class="warning-box">
-                <i class="fas fa-shield-alt"></i> Ujian menggunakan sistem Kunci Layar Penuh. Membuka notifikasi, berpindah tab, atau aplikasi pop-up akan terhitung sebagai pelanggaran.
+                <i class="fas fa-shield-alt"></i> Ujian menggunakan sistem Kunci Layar Penuh. Membuka notifikasi, berpindah tab, atau aplikasi pop-up akan terhitung sebagai pelanggaran. (Maksimal 3x Pelanggaran)
             </div>
 
             <button id="btn-verifikasi" class="btn-3d" style="width: 100%; font-size: 1.1rem; padding: 15px; background: var(--success);"><i class="fas fa-key"></i> VERIFIKASI & MULAI</button>
@@ -123,8 +124,14 @@
                 <h3 style="margin: 0; font-size: 1.2rem;" id="exam-mapel-title">MATA PELAJARAN</h3>
                 <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #cbd5e1;" id="exam-student-name">Nama Siswa</p>
             </div>
-            <div style="background: rgba(0,0,0,0.2); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem;">
-                <i class="fas fa-exclamation-triangle" style="color: #fca5a5;"></i> Pelanggaran: <span id="violation-count" style="font-weight: bold;">0</span>
+            
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center;">
+                <div style="background: white; color: #b91c1c; padding: 5px 15px; border-radius: 8px; font-weight: bold; font-size: 1.2rem; border: 2px solid #fca5a5; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-clock"></i> <span id="exam-timer">00:00:00</span>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem;">
+                    <i class="fas fa-exclamation-triangle" style="color: #fca5a5;"></i> Pelanggaran: <span id="violation-count" style="font-weight: bold;">0</span> / 3
+                </div>
             </div>
         </div>
 
@@ -148,9 +155,6 @@
             </div>
 
             <div class="sidebar-area">
-                <h4 style="margin: 0 0 10px 0; text-align: center; color: var(--text-muted);">SISA WAKTU</h4>
-                <div class="timer-box" id="exam-timer">00:00:00</div>
-                
                 <h4 style="margin: 0 0 15px 0; text-align: center; color: var(--text-muted);"><i class="fas fa-th"></i> NAVIGASI SOAL</h4>
                 <div class="q-grid" id="nav-grid"></div>
                 
