@@ -182,11 +182,14 @@ function tampilkanSoal(idx) {
     
     document.getElementById('btn-prev').style.visibility = idx === 0 ? 'hidden' : 'visible';
     const btnNext = document.getElementById('btn-next');
+    
     if (idx === arraySoal.length - 1) {
-        btnNext.innerHTML = `SELESAI <i class="fas fa-check"></i>`;
+        // Jika soal terakhir, ganti ikon jadi centang
+        btnNext.innerHTML = `<i class="fas fa-check"></i>`;
         btnNext.style.background = 'var(--danger)';
     } else {
-        btnNext.innerHTML = `SELANJUTNYA <i class="fas fa-chevron-right"></i>`;
+        // Jika bukan soal terakhir, pakai ikon panah kanan
+        btnNext.innerHTML = `<i class="fas fa-chevron-right"></i>`;
         btnNext.style.background = 'var(--primary)';
     }
     
