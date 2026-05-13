@@ -104,6 +104,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const isAdmin = userRoles.includes("admin"); 
     const isGuru = userRoles.includes("guru");
 
+    // --- FITUR ACCORDION UNTUK FORM TAMBAH AKUN ---
+    const toggleFormAkun = document.getElementById('toggle-form-akun');
+    const containerFormAkun = document.getElementById('container-form-akun');
+    const iconToggleAkun = document.getElementById('icon-toggle-akun');
+
+    if (toggleFormAkun && containerFormAkun && iconToggleAkun) {
+        toggleFormAkun.addEventListener('click', () => {
+            if (containerFormAkun.style.display === 'none') {
+                // Buka Form
+                containerFormAkun.style.display = 'block';
+                iconToggleAkun.style.transform = 'rotate(180deg)';
+                toggleFormAkun.style.background = '#f8fafc';
+            } else {
+                // Tutup Form
+                containerFormAkun.style.display = 'none';
+                iconToggleAkun.style.transform = 'rotate(0deg)';
+                toggleFormAkun.style.background = '#ffffff';
+            }
+        });
+    }
+
     function handleRouting() {
         let hash = window.location.hash.substring(1) || 'section-beranda';
         
