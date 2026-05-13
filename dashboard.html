@@ -356,6 +356,7 @@
 
     <div id="modal-preview-full" class="modal" style="background: var(--bg-main);">
         <div class="modal-content" style="width: 100%; height: 100%; max-width: 100%; border-radius: 0; padding: 0; display: flex; flex-direction: column;">
+            
             <div style="background: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-bottom: 1px solid var(--border-color);">
                 <div>
                     <h3 style="margin: 0; color: var(--secondary);"><i class="fas fa-eye"></i> Mode Preview Guru</h3>
@@ -363,23 +364,28 @@
                 </div>
                 <button class="btn-3d btn-secondary" id="close-preview-full" style="margin: 0; padding: 8px 15px;"><i class="fas fa-times"></i> Tutup Preview</button>
             </div>
-            <div style="display: flex; flex: 1; overflow: hidden; background: var(--bg-main);">
-                <div style="flex: 1; padding: 30px; overflow-y: auto; background: white; border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+
+            <div class="preview-body-container">
+                <div class="preview-q-area">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
                         <h2 style="margin: 0; color: var(--secondary);">Soal No. <span id="prev-current-q-num">1</span></h2>
                         <span id="prev-badge-tipe" style="background: var(--info); color: white; padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem;">PG</span>
                     </div>
+                    
                     <div id="prev-q-container" style="flex: 1;"></div>
+                    
                     <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
                         <button id="prev-btn-prev" class="btn-3d btn-secondary" style="margin: 0;"><i class="fas fa-chevron-left"></i> SEBELUMNYA</button>
                         <button id="prev-btn-next" class="btn-3d" style="margin: 0;">SELANJUTNYA <i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
-                <div style="width: 300px; background: #f8fafc; padding: 25px; overflow-y: auto;">
+                
+                <div class="preview-nav-area">
                     <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-th"></i> Navigasi Soal</h4>
                     <div class="q-grid" id="prev-q-grid"></div>
                 </div>
             </div>
+
         </div>
     </div>
 
