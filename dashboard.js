@@ -150,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isAdmin) { 
             fetchStatusReg(); 
         } else if (isGuru && !isAdmin) {
-            // Sembunyikan menu & akses admin
             if(document.getElementById('menu-pengguna')) document.getElementById('menu-pengguna').style.display = 'none'; 
             if(document.getElementById('admin-reg-status')) document.getElementById('admin-reg-status').style.display = 'none'; 
             if(document.getElementById('admin-data-master')) document.getElementById('admin-data-master').style.display = 'none';
