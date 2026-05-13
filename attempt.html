@@ -7,40 +7,148 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-        .pre-exam-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .pre-exam-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 500px; text-align: center; }
-        .warning-box { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: left; }
+        body { 
+            background-color: #f1f5f9; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+        }
+        .pre-exam-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+        .pre-exam-card { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            width: 100%; 
+            max-width: 500px; 
+            text-align: center; 
+        }
+        .warning-box { 
+            background: #eff6ff; 
+            color: #1e40af; 
+            border: 1px solid #bfdbfe; 
+            padding: 15px; 
+            border-radius: 8px; 
+            font-size: 0.85rem; 
+            margin-bottom: 20px; 
+            text-align: left; 
+        }
         
-        #exam-workspace { display: none; height: 100vh; flex-direction: column; overflow: hidden; background: white; }
-        .exam-header { background: var(--secondary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; }
-        .exam-body { display: flex; flex: 1; overflow: hidden; }
-        .question-area { flex: 1; padding: 30px; overflow-y: auto; }
-        .sidebar-area { width: 300px; background: #f8fafc; border-left: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+        #exam-workspace { 
+            display: none; 
+            height: 100vh; 
+            flex-direction: column; 
+            overflow: hidden; 
+            background: white; 
+        }
+        .exam-header { 
+            background: var(--secondary); 
+            color: white; 
+            padding: 15px 25px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            z-index: 10; 
+        }
+        .exam-body { 
+            display: flex; 
+            flex: 1; 
+            overflow: hidden; 
+        }
+        .question-area { 
+            flex: 1; 
+            padding: 30px; 
+            overflow-y: auto; 
+        }
+        .sidebar-area { 
+            width: 300px; 
+            background: #f8fafc; 
+            border-left: 1px solid var(--border-color); 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            overflow-y: auto; 
+        }
         
-        .timer-box { background: #fee2e2; border: 2px solid #fca5a5; color: #b91c1c; padding: 15px; border-radius: 8px; text-align: center; font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; }
-        .q-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-        .q-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .timer-box { 
+            background: #fee2e2; 
+            border: 2px solid #fca5a5; 
+            color: #b91c1c; 
+            padding: 15px; 
+            border-radius: 8px; 
+            text-align: center; 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            margin-bottom: 20px; 
+        }
+        .q-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 10px; 
+        }
+        .q-box { 
+            width: 100%; 
+            aspect-ratio: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: white; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s; 
+        }
         .q-box.active { border-color: var(--info); box-shadow: 0 0 0 3px #dbeafe; }
         .q-box.answered { background: var(--primary); color: white; border-color: var(--primary); }
         .q-box.doubt { background: var(--warning); color: white; border-color: var(--warning); }
         
-        .option-label { display: flex; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; align-items: center; }
+        .option-label { 
+            display: flex; 
+            padding: 15px; 
+            border: 2px solid var(--border-color); 
+            border-radius: 8px; 
+            margin-bottom: 12px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            align-items: center; 
+        }
         .option-label:hover { border-color: #cbd5e1; background: #f8fafc; }
         .option-label input:checked + span { font-weight: bold; }
         .option-label.selected { border-color: var(--primary); background: #f0fdf4; }
-        /* --- TAMBAHAN UNTUK TAMPILAN MOBILE --- */
+        
+        /* --- PERBAIKAN TAMPILAN MOBILE --- */
         @media (max-width: 768px) {
-            /* Membuat header agar teksnya rapi di tengah */
-            .exam-header { flex-direction: column; gap: 10px; text-align: center; padding: 15px; }
-            
-            /* Mengubah layout utama dari menyamping jadi atas-bawah */
-            .exam-body { flex-direction: column; overflow-y: auto; }
-            
-            /* Menyesuaikan area soal agar tidak memaksakan tinggi layar */
-            .question-area { flex: none; padding: 15px; overflow-y: visible; }
-            
-            /* Membuat sidebar (Navigasi Nomor & Timer) menjadi full width di bawah soal */
+            /* Bebaskan tinggi workspace agar bisa scroll ke bawah */
+            #exam-workspace { 
+                height: auto; 
+                min-height: 100vh; 
+                overflow: visible; 
+            }
+            .exam-header { 
+                flex-direction: column; 
+                gap: 10px; 
+                text-align: center; 
+                padding: 15px; 
+                position: sticky;
+                top: 0;
+            }
+            .exam-body { 
+                flex-direction: column; 
+                overflow: visible; 
+            }
+            .question-area { 
+                flex: none; 
+                padding: 15px; 
+                overflow-y: visible; 
+            }
             .sidebar-area { 
                 width: 100%; 
                 border-left: none; 
@@ -49,8 +157,6 @@
                 flex: none; 
                 overflow-y: visible; 
             }
-            
-            /* Mengatur ulang posisi tombol Sebelumnya, Ragu, dan Selanjutnya */
             .question-area > div:last-child {
                 flex-direction: column !important;
                 gap: 12px !important;
@@ -60,100 +166,17 @@
                 width: 100% !important;
                 justify-content: center !important;
             }
-            
-            /* Menyesuaikan kotak nomor agar tidak terlalu kecil di HP */
-            .q-grid { grid-template-columns: repeat(6, 1fr); gap: 8px; }
+            .q-grid { 
+                grid-template-columns: repeat(6, 1fr); 
+                gap: 8px; 
+            }
         }
-
     </style>
 </head>
 <body>
-
-    <div id="pre-exam-screen" class="pre-exam-container">
-        <div class="pre-exam-card">
-            <div style="background: #10b981; color: white; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 20px;">
-                <i class="fas fa-laptop-code"></i>
-            </div>
-            <h2 style="color: var(--secondary); margin-bottom: 10px;" id="welcome-student">Assalamu'alaikum...</h2>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px;">Sebelum mengerjakan soal ujian ini, alangkah baiknya berdo'a terlebih dahulu agar hasilnya sesuai dengan yang kita harapkan.</p>
-            
-            <div style="display: flex; gap: 15px; margin-bottom: 15px; text-align: left;">
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; font-size: 0.85rem;">Kelas Anda</label>
-                    <input type="text" id="student-class" class="input-text" disabled style="background: #e2e8f0; font-weight: bold;">
-                    <small style="color: var(--warning); font-size: 0.7rem;">*Diatur oleh Admin</small>
-                </div>
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; font-size: 0.85rem;">Pilih Mata Pelajaran</label>
-                    <select id="select-mapel" class="input-text"></select>
-                </div>
-            </div>
-            
-            <div style="text-align: left; margin-bottom: 20px;">
-                <label style="font-weight: bold; font-size: 0.85rem;">Token Ujian</label>
-                <input type="text" id="input-token" class="input-text" placeholder="Masukkan Token Akses" style="text-transform: uppercase; text-align: center; font-size: 1.2rem; letter-spacing: 2px;">
-            </div>
-
-            <div class="warning-box">
-                <i class="fas fa-shield-alt"></i> Ujian menggunakan sistem Kunci Layar Penuh. Membuka notifikasi, berpindah tab, atau aplikasi pop-up akan terhitung sebagai pelanggaran.
-            </div>
-
-            <button id="btn-verifikasi" class="btn-3d" style="width: 100%; font-size: 1.1rem; padding: 15px; background: var(--success);"><i class="fas fa-key"></i> VERIFIKASI & MULAI</button>
-            <button onclick="window.location.href='index.html'" class="btn-3d btn-secondary" style="width: 100%; margin-top: 10px; font-size: 0.9rem;">Kembali</button>
-        </div>
-    </div>
-
-    <div id="exam-workspace">
-        <div class="exam-header">
-            <div>
-                <h3 style="margin: 0; font-size: 1.2rem;" id="exam-mapel-title">MATA PELAJARAN</h3>
-                <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #cbd5e1;" id="exam-student-name">Nama Siswa</p>
-            </div>
-            <div style="background: rgba(0,0,0,0.2); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem;">
-                <i class="fas fa-exclamation-triangle" style="color: #fca5a5;"></i> Pelanggaran: <span id="violation-count" style="font-weight: bold;">0</span>
-            </div>
-        </div>
-
-        <div class="exam-body">
-            <div class="question-area">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px;">
-                    <h2 style="margin: 0; color: var(--secondary);">Soal No. <span id="current-q-num">1</span></h2>
-                    <span id="badge-tipe-soal" style="background: var(--info); color: white; padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem;">PG</span>
-                </div>
-                
-                <div id="question-content" style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px; min-height: 200px;">
-                    </div>
-
-                <div style="display: flex; justify-content: space-between; border-top: 2px solid var(--border-color); padding-top: 20px;">
-                    <button id="btn-prev" class="btn-3d btn-secondary" style="width: auto; margin: 0;"><i class="fas fa-chevron-left"></i> SEBELUMNYA</button>
-                    <label style="display: flex; align-items: center; gap: 10px; background: #fffbeb; border: 1px solid #fde68a; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #b45309; font-weight: bold;">
-                        <input type="checkbox" id="cb-ragu" style="transform: scale(1.3);"> Ragu-ragu
-                    </label>
-                    <button id="btn-next" class="btn-3d" style="width: auto; margin: 0; background: var(--primary);">SELANJUTNYA <i class="fas fa-chevron-right"></i></button>
-                </div>
-            </div>
-
-            <div class="sidebar-area">
-                <h4 style="margin: 0 0 10px 0; text-align: center; color: var(--text-muted);">SISA WAKTU</h4>
-                <div class="timer-box" id="exam-timer">00:00:00</div>
-                
-                <h4 style="margin: 0 0 15px 0; text-align: center; color: var(--text-muted);"><i class="fas fa-th"></i> NAVIGASI SOAL</h4>
-                <div class="q-grid" id="nav-grid"></div>
-                
-                <div style="margin-top: auto; padding-top: 20px;">
-                    <button id="btn-finish" class="btn-3d" style="width: 100%; background: var(--danger); margin: 0;"><i class="fas fa-flag-checkered"></i> SELESAI UJIAN</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-custom-alert" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background: rgba(0,0,0,0.8);">
-        <div class="modal-content" style="width: 400px; max-width: 90%; text-align: center; padding: 35px 25px;">
-            <h3 id="alert-title" style="color: var(--secondary); margin-bottom: 10px;">Pesan</h3>
-            <p id="alert-message" style="color: var(--text-muted); margin-bottom: 25px;">-</p>
-            <button id="btn-alert-ok" class="btn-3d" style="width: 100%; margin: 0; background-color: var(--info);">OK</button>
-        </div>
-    </div>
+    <div id="pre-exam-screen" class="pre-exam-container">...</div>
+    <div id="exam-workspace">...</div>
+    <div id="modal-custom-alert" class="modal">...</div>
 
     <script type="module" src="attempt.js"></script>
 </body>
