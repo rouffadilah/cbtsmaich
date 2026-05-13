@@ -4,173 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian CBT - SMA Islam Cikal Harapan 1</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { 
-            background-color: #f1f5f9; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-        }
-        .pre-exam-container { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            padding: 20px; 
-        }
-        .pre-exam-card { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
-            width: 100%; 
-            max-width: 500px; 
-            text-align: center; 
-        }
-        .warning-box { 
-            background: #eff6ff; 
-            color: #1e40af; 
-            border: 1px solid #bfdbfe; 
-            padding: 15px; 
-            border-radius: 8px; 
-            font-size: 0.85rem; 
-            margin-bottom: 20px; 
-            text-align: left; 
-        }
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        .pre-exam-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .pre-exam-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 500px; text-align: center; }
+        .warning-box { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: left; }
         
-        #exam-workspace { 
-            display: none; 
-            height: 100vh; 
-            flex-direction: column; 
-            overflow: hidden; 
-            background: white; 
-        }
-        .exam-header { 
-            background: var(--secondary); 
-            color: white; 
-            padding: 15px 25px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-            z-index: 10; 
-        }
-        .exam-body { 
-            display: flex; 
-            flex: 1; 
-            overflow: hidden; 
-        }
-        .question-area { 
-            flex: 1; 
-            padding: 30px; 
-            overflow-y: auto; 
-        }
-        .sidebar-area { 
-            width: 300px; 
-            background: #f8fafc; 
-            border-left: 1px solid var(--border-color); 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            overflow-y: auto; 
-        }
+        #exam-workspace { display: none; height: 100vh; flex-direction: column; overflow: hidden; background: white; }
+        .exam-header { background: var(--secondary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; }
+        .exam-body { display: flex; flex: 1; overflow: hidden; flex-direction: row; }
+        .question-area { flex: 1; padding: 30px; overflow-y: auto; }
+        .sidebar-area { width: 300px; background: #f8fafc; border-left: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
         
-        .timer-box { 
-            background: #fee2e2; 
-            border: 2px solid #fca5a5; 
-            color: #b91c1c; 
-            padding: 15px; 
-            border-radius: 8px; 
-            text-align: center; 
-            font-size: 1.5rem; 
-            font-weight: bold; 
-            margin-bottom: 20px; 
-        }
-        .q-grid { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 10px; 
-        }
-        .q-box { 
-            width: 100%; 
-            aspect-ratio: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: white; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: 0.2s; 
-        }
+        .timer-box { background: #fee2e2; border: 2px solid #fca5a5; color: #b91c1c; padding: 15px; border-radius: 8px; text-align: center; font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; }
+        .q-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .q-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .q-box.active { border-color: var(--info); box-shadow: 0 0 0 3px #dbeafe; }
         .q-box.answered { background: var(--primary); color: white; border-color: var(--primary); }
         .q-box.doubt { background: var(--warning); color: white; border-color: var(--warning); }
         
-        .option-label { 
-            display: flex; 
-            padding: 15px; 
-            border: 2px solid var(--border-color); 
-            border-radius: 8px; 
-            margin-bottom: 12px; 
-            cursor: pointer; 
-            transition: 0.2s; 
-            align-items: center; 
-        }
+        .option-label { display: flex; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; align-items: center; }
         .option-label:hover { border-color: #cbd5e1; background: #f8fafc; }
         .option-label input:checked + span { font-weight: bold; }
         .option-label.selected { border-color: var(--primary); background: #f0fdf4; }
-        
-        /* --- PERBAIKAN FINAL TAMPILAN MOBILE --- */
-        @media (max-width: 768px) {
-            /* Matikan fungsi layar penuh yang dikunci */
-            #exam-workspace { 
-                height: auto !important; 
-                min-height: 100vh !important; 
-                overflow: visible !important;
-                display: block !important; 
-            }
-            
-            .exam-header { 
-                flex-direction: column !important; 
-                gap: 10px !important; 
-                text-align: center !important; 
-                padding: 15px !important; 
-            }
-            
-            /* Matikan Flexbox, paksa jadi blok atas-bawah */
+
+        /* --- JURUS PAMUNGKAS UNTUK MOBILE & TABLET --- */
+        @media screen and (max-width: 1024px) {
             .exam-body { 
-                display: block !important; 
-                overflow: visible !important; 
-                height: auto !important;
-            }
-            
-            /* Area Soal di atas */
-            .question-area { 
-                display: block !important;
-                width: 100% !important; 
-                padding: 20px 15px !important; 
-                overflow: visible !important; 
-            }
-            
-            /* Sidebar Navigasi di bawah area soal */
-            .sidebar-area { 
-                display: block !important;
-                width: 100% !important; 
-                border-left: none !important; 
-                border-top: 4px solid var(--border-color) !important; 
-                padding: 20px 15px !important; 
-                height: auto !important;
-                overflow: visible !important; 
-                margin-bottom: 30px !important;
-            }
-            
-            /* Tombol Navigasi Bawah Soal */
-            .question-area > div:last-child {
+                flex-direction: column !important; 
+                overflow-y: auto !important; 
                 display: flex !important;
+            }
+            .question-area { 
+                width: 100% !important; 
+                flex: none !important; 
+                padding: 15px !important; 
+                overflow: visible !important; 
+            }
+            .sidebar-area { 
+                width: 100% !important; 
+                max-width: 100% !important;
+                flex: none !important; 
+                border-left: none !important; 
+                border-top: 4px solid #cbd5e1 !important; 
+                padding: 20px 15px !important; 
+                overflow: visible !important; 
+            }
+            .question-area > div:last-child {
                 flex-direction: column !important;
                 gap: 12px !important;
             }
@@ -180,11 +62,8 @@
                 justify-content: center !important;
                 margin: 0 !important;
             }
-            
-            /* Navigasi Kotak Angka */
             .q-grid { 
                 grid-template-columns: repeat(6, 1fr) !important; 
-                gap: 8px !important; 
             }
         }
     </style>
