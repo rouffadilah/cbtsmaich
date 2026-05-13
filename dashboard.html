@@ -41,22 +41,61 @@
 
                     <div class="stats-grid">
                         <div class="stat-card" onclick="window.location.hash='section-soal'">
-                            <div><p>Bank Soal</p><h3 id="stat-soal">0</h3></div><div style="color: var(--warning);"><i class="fas fa-file-alt"></i></div>
+                            <div><p>Bank Soal & Token</p><h3 id="stat-soal">0</h3></div><div style="color: var(--warning);"><i class="fas fa-file-alt"></i></div>
                         </div>
-                        <div class="stat-card" id="menu-pengguna" onclick="window.location.hash='section-pengaturan'">
-                            <div><p>Pengguna</p><h3 id="stat-siswa">0</h3></div><div style="color: var(--info);"><i class="fas fa-users"></i></div>
+                        <div class="stat-card" id="menu-pengguna" onclick="window.location.hash='section-pengguna'">
+                            <div><p>Pengguna & Akses</p><h3 id="stat-siswa">0</h3></div><div style="color: var(--info);"><i class="fas fa-users"></i></div>
                         </div>
                         <div class="stat-card" onclick="window.location.hash='section-hasil'">
                             <div><p>Hasil Ujian</p><h3 id="stat-ujian">0</h3></div><div style="color: var(--success);"><i class="fas fa-chart-bar"></i></div>
-                        </div>
-                        <div class="stat-card" id="menu-pengaturan" onclick="window.location.hash='section-pengaturan'">
-                            <div><p>Pengaturan</p><h3><i class="fas fa-arrow-right"></i></h3></div><div style="color: var(--text-muted); opacity: 0.5;"><i class="fas fa-cogs"></i></div>
                         </div>
                     </div>
                 </div> 
                 
                 <div id="section-soal" class="content-section">
                     <button onclick="window.history.back()" class="btn-3d btn-secondary" style="padding: 8px 15px; margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Kembali</button>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 25px;">
+                        <div class="card" style="margin-bottom: 0;">
+                            <h3 style="margin-bottom: 20px; font-size: 1.15rem; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-key"></i> Manajemen Token Ujian</h3>
+                            <div class="input-group"><label>Pilih Mapel</label><select id="set-token-mapel" class="input-text"></select></div>
+                            <div class="input-group"><label>Pilih Kelas</label><select id="set-token-kelas" class="input-text"></select></div>
+                            <div class="input-group"><label>Buat Kode Token Baru</label><input type="text" id="input-token-baru" class="input-text" placeholder="Ketik Kode Token (Misal: UJIAN123)" style="text-transform: uppercase;"></div>
+                            <button id="btn-save-token" class="btn-3d" style="width: 100%;"><i class="fas fa-stopwatch"></i> Aktifkan (Durasi 15 Menit)</button>
+                            
+                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">Daftar Token Aktif:</label>
+                                <button id="btn-refresh-token" class="btn-3d btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; margin: 0;"><i class="fas fa-sync-alt"></i></button>
+                            </div>
+                            <div class="table-container" style="max-height: 250px; overflow-y: auto; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                                <table id="table-active-tokens">
+                                    <thead><tr><th>Akses (Mapel & Kelas)</th><th>Token</th><th style="text-align: right;">Opsi</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card" id="admin-data-master" style="margin-bottom: 0;">
+                            <h3 style="margin-bottom: 15px; font-size: 1.15rem; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-database"></i> Data Master Akademik</h3>
+                            
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
+                                <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div class="table-container" style="max-height: 150px; overflow-y: auto; margin-bottom: 25px;">
+                                <table id="table-master-mapel"><tbody></tbody></table>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
+                                <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div class="table-container" style="max-height: 150px; overflow-y: auto;">
+                                <table id="table-master-kelas"><tbody></tbody></table>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                             <h2 class="section-title" style="margin: 0;"><i class="fas fa-file-alt"></i> Bank Soal Ujian</h2>
@@ -92,101 +131,27 @@
                     </div>
                 </div>
 
-                <div id="section-hasil" class="content-section">
+                <div id="section-pengguna" class="content-section">
                     <button onclick="window.history.back()" class="btn-3d btn-secondary" style="padding: 8px 15px; margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Kembali</button>
-                    
-                    <div id="hasil-summary-view">
-                        <h2 class="section-title"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian</h2>
-                        <div class="stats-grid" id="grid-mapel-hasil">
+
+                    <div class="card" id="admin-reg-status" style="margin-bottom: 25px;">
+                        <h3 style="margin-bottom: 15px; font-size: 1.15rem; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-user-lock"></i> Portal Registrasi</h3>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <div class="input-group" style="flex: 1; min-width: 200px;">
+                                <label>Akun Siswa Baru</label>
+                                <select id="status-reg-siswa" class="input-text"><option value="buka">Diizinkan</option><option value="tutup">Ditutup</option></select>
                             </div>
-                    </div>
-                    
-                    <div id="hasil-detail-view" style="display: none;">
-                        <div class="card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <button id="btn-back-hasil" class="btn-3d btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-arrow-left"></i> Kembali</button>
-                                    <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.1rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
-                                </div>
-                                <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;">
-                                    <i class="fas fa-trash-alt"></i> KOSONGKAN DATA MAPEL INI
-                                </button>
+                            <div class="input-group" style="flex: 1; min-width: 200px;">
+                                <label>Akun Guru</label>
+                                <select id="status-reg-guru" class="input-text"><option value="buka">Diizinkan</option><option value="tutup">Ditutup</option></select>
                             </div>
-                            <div class="table-container">
-                                <table id="table-hasil">
-                                    <thead><tr><th>Nama Siswa</th><th>Kelas</th><th>Benar/Total</th><th>Nilai Akhir</th><th style="text-align: center;">Aksi</th></tr></thead>
-                                    <tbody></tbody>
-                                </table>
+                            <div style="flex: 1; min-width: 200px; display: flex; align-items: flex-end;">
+                                <button id="btn-save-reg-status" class="btn-3d btn-secondary" style="width: 100%; margin-bottom: 20px;"><i class="fas fa-save"></i> SIMPAN STATUS</button>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="section-pengaturan" class="content-section">
-                    <button onclick="window.history.back()" class="btn-3d btn-secondary" style="padding: 8px 15px; margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Kembali</button>
-                    <h2 class="section-title"><i class="fas fa-cogs"></i> Pengaturan Sistem</h2>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
-                        
-                        <div class="card" style="margin-bottom: 0;">
-                            <h3 style="margin-bottom: 20px; font-size: 1.15rem; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-key"></i> Manajemen Token Ujian</h3>
-                            <div class="input-group"><label>Pilih Mapel</label><select id="set-token-mapel" class="input-text"></select></div>
-                            <div class="input-group"><label>Pilih Kelas</label><select id="set-token-kelas" class="input-text"></select></div>
-                            <div class="input-group"><label>Buat Kode Token Baru</label><input type="text" id="input-token-baru" class="input-text" placeholder="Ketik Kode Token (Misal: UJIAN123)" style="text-transform: uppercase;"></div>
-                            <button id="btn-save-token" class="btn-3d" style="width: 100%;"><i class="fas fa-stopwatch"></i> Aktifkan (Durasi 15 Menit)</button>
-                            
-                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">Daftar Token Aktif:</label>
-                                <button id="btn-refresh-token" class="btn-3d btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; margin: 0;"><i class="fas fa-sync-alt"></i></button>
-                            </div>
-                            <div class="table-container" style="max-height: 250px; overflow-y: auto; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                                <table id="table-active-tokens">
-                                    <thead><tr><th>Akses (Mapel & Kelas)</th><th>Token</th><th style="text-align: right;">Opsi</th></tr></thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 25px;">
-                            <div class="card" id="admin-reg-status" style="margin-bottom: 0;">
-                                <h3 style="margin-bottom: 15px; font-size: 1.15rem; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-user-lock"></i> Portal Registrasi</h3>
-                                <div style="display: flex; gap: 15px;">
-                                    <div class="input-group">
-                                        <label>Akun Siswa Baru</label>
-                                        <select id="status-reg-siswa" class="input-text"><option value="buka">Diizinkan</option><option value="tutup">Ditutup</option></select>
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Akun Guru</label>
-                                        <select id="status-reg-guru" class="input-text"><option value="buka">Diizinkan</option><option value="tutup">Ditutup</option></select>
-                                    </div>
-                                </div>
-                                <button id="btn-save-reg-status" class="btn-3d btn-secondary" style="width: 100%;"><i class="fas fa-save"></i> SIMPAN STATUS</button>
-                            </div>
-
-                            <div class="card" id="admin-data-master" style="margin-bottom: 0;">
-                                <h3 style="margin-bottom: 15px; font-size: 1.15rem; color: var(--secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-database"></i> Data Master Akademik</h3>
-                                
-                                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                                    <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
-                                    <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
-                                </div>
-                                <div class="table-container" style="max-height: 150px; overflow-y: auto; margin-bottom: 25px;">
-                                    <table id="table-master-mapel"><tbody></tbody></table>
-                                </div>
-
-                                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                                    <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
-                                    <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
-                                </div>
-                                <div class="table-container" style="max-height: 150px; overflow-y: auto;">
-                                    <table id="table-master-kelas"><tbody></tbody></table>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div id="admin-manajemen-pengguna" style="margin-top: 40px;">
+                    <div id="admin-manajemen-pengguna">
                         <h2 class="section-title" style="margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-users-cog"></i> Manajemen Pengguna</h2>
                         
                         <div class="card" style="margin-bottom: 20px; padding: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-left: 5px solid var(--success) !important;">
@@ -247,7 +212,38 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div id="section-hasil" class="content-section">
+                    <button onclick="window.history.back()" class="btn-3d btn-secondary" style="padding: 8px 15px; margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Kembali</button>
+                    
+                    <div id="hasil-summary-view">
+                        <h2 class="section-title"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian</h2>
+                        <div class="stats-grid" id="grid-mapel-hasil">
+                            </div>
                     </div>
+                    
+                    <div id="hasil-detail-view" style="display: none;">
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <button id="btn-back-hasil" class="btn-3d btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-arrow-left"></i> Kembali</button>
+                                    <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.1rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
+                                </div>
+                                <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;">
+                                    <i class="fas fa-trash-alt"></i> KOSONGKAN DATA MAPEL INI
+                                </button>
+                            </div>
+                            <div class="table-container">
+                                <table id="table-hasil">
+                                    <thead><tr><th>Nama Siswa</th><th>Kelas</th><th>Benar/Total</th><th>Nilai Akhir</th><th style="text-align: center;">Aksi</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div> 
