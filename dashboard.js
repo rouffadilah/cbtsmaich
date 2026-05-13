@@ -107,17 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleRouting() {
         let hash = window.location.hash.substring(1) || 'section-beranda';
         
-        // Fallback jika tidak sengaja mengakses section pengaturan yang sudah dihapus
         if (hash === 'section-pengaturan') hash = 'section-beranda';
         
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
 
         if (hash === 'section-hasil-detail') {
-            if (!currentMapelDetail) { 
-                window.location.hash = 'section-hasil'; 
-                return; 
-            }
+            if (!currentMapelDetail) { window.location.hash = 'section-hasil'; return; }
             document.getElementById('section-hasil').classList.add('active');
             if(document.getElementById('hasil-summary-view')) document.getElementById('hasil-summary-view').style.display = 'none'; 
             if(document.getElementById('hasil-detail-view')) document.getElementById('hasil-detail-view').style.display = 'block';
@@ -137,17 +133,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('hashchange', handleRouting);
 
     onAuthStateChanged(auth, async (user) => {
-        if (!user || (!isAdmin && !isGuru)) { 
-            window.location.href = "index.html"; 
-            return; 
-        }
+        if (!user || (!isAdmin && !isGuru)) { window.location.href = "index.html"; return; }
         
         let finalDisplayName = user.displayName;
         if (!finalDisplayName) { 
-            try { 
-                const userDoc = await getDoc(doc(db, "users", user.uid)); 
-                if (userDoc.exists()) finalDisplayName = userDoc.data().nama; 
-            } catch(e) {} 
+            try { const userDoc = await getDoc(doc(db, "users", user.uid)); if (userDoc.exists()) finalDisplayName = userDoc.data().nama; } catch(e) {} 
         }
         finalDisplayName = finalDisplayName || "Pengguna";
 
@@ -160,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isAdmin) { 
             fetchStatusReg(); 
         } else if (isGuru && !isAdmin) {
-            // Sembunyikan semua akses admin dari view Guru
+            // Sembunyikan menu & akses admin
             if(document.getElementById('menu-pengguna')) document.getElementById('menu-pengguna').style.display = 'none'; 
             if(document.getElementById('admin-reg-status')) document.getElementById('admin-reg-status').style.display = 'none'; 
             if(document.getElementById('admin-data-master')) document.getElementById('admin-data-master').style.display = 'none';
@@ -175,12 +165,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-logout').onclick = async () => { 
-        if (await customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { 
-            await signOut(auth); 
-            localStorage.clear(); 
-            window.location.href = "index.html"; 
-        } 
+        if (await customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { await signOut(auth); localStorage.clear(); window.location.href = "index.html"; } 
     };
+
+    // ==========================================
+    // LOGIKA ACCORDION UMUM
+    // ==========================================
+    document.querySelectorAll('.toggle-accordion').forEach(header => {
+        header.addEventListener('click', () => {
+            const targetId = header.getAttribute('data-target');
+            const target = document.getElementById(targetId);
+            const icon = header.querySelector('.toggle-icon');
+            
+            if (target.style.display === 'none') {
+                target.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+                header.style.background = '#f8fafc';
+            } else {
+                target.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+                header.style.background = '#ffffff';
+            }
+        });
+    });
 
     // ==========================================
     // 4. DATA MASTER (MAPEL & KELAS)
@@ -264,26 +271,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDataPengguna() {
         const tbody = document.querySelector('#table-siswa tbody'); if (!tbody) return;
         
-        // SKELETON LOADER
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" style="padding: 20px;">
-                    <div class="skeleton-box" style="width: 100%;"></div>
-                    <div class="skeleton-box" style="width: 60%;"></div>
-                    <div class="skeleton-box" style="width: 90%;"></div>
-                    <div class="skeleton-box" style="width: 75%;"></div>
-                </td>
-            </tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px;"><div class="skeleton-box" style="width: 100%;"></div><div class="skeleton-box" style="width: 60%;"></div></td></tr>`;
             
         try {
             const snap = await getDocs(collection(db, "users")); 
             const statSiswa = document.getElementById('stat-siswa'); if (statSiswa) statSiswa.innerText = snap.size; 
             
             tbody.innerHTML = ''; allUsersData = []; 
-            if(snap.empty) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data pengguna.</td></tr>';
-                return;
-            }
+            if(snap.empty) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data pengguna.</td></tr>'; return; }
 
             snap.forEach(docSnap => {
                 const data = docSnap.data(); data.id = docSnap.id; allUsersData.push(data);
@@ -447,15 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if(!m || !k) return customAlert("Pilih Mapel dan Kelas terlebih dahulu!", "warning");
         
-        // SKELETON LOADER
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" style="padding: 20px;">
-                    <div class="skeleton-box" style="width: 100%;"></div>
-                    <div class="skeleton-box" style="width: 70%;"></div>
-                    <div class="skeleton-box" style="width: 85%;"></div>
-                </td>
-            </tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px;"><div class="skeleton-box" style="width: 100%;"></div><div class="skeleton-box" style="width: 70%;"></div><div class="skeleton-box" style="width: 85%;"></div></td></tr>`;
 
         try {
             const qS = query(collection(db, "bank_soal"), where("mataPelajaran", "==", m), where("kelas", "==", k));
@@ -467,14 +454,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             document.getElementById('stat-soal').innerText = allSoalData.length;
 
-            // Load Waktu Ujian Terkini
             try {
                 const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
                 if (timeSnap.exists() && timeSnap.data()[`${m}_${k}`]) {
                     document.getElementById('input-waktu-ujian').value = timeSnap.data()[`${m}_${k}`];
-                } else {
-                    document.getElementById('input-waktu-ujian').value = ''; 
-                }
+                } else { document.getElementById('input-waktu-ujian').value = ''; }
             } catch(e) { console.error("Gagal load waktu", e); }
 
             tbody.innerHTML = '';
