@@ -330,3 +330,32 @@ function catatPelanggaran() {
         alert(`PERINGATAN KE-${pelanggaran}!\nAnda terdeteksi keluar dari halaman ujian / membuka tab lain. Pada pelanggaran ke-3, ujian akan dihentikan.`);
     }
 }
+
+// ==========================================
+// 6. LOGIKA DRAWER NAVIGASI (MOBILE)
+// ==========================================
+const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
+const btnCloseDrawer = document.getElementById('btn-close-drawer');
+const sidebarNav = document.getElementById('sidebar-nav');
+const drawerOverlay = document.getElementById('drawer-overlay');
+
+function openDrawer() {
+    sidebarNav.classList.add('open');
+    drawerOverlay.classList.add('active');
+}
+
+function closeDrawer() {
+    sidebarNav.classList.remove('open');
+    drawerOverlay.classList.remove('active');
+}
+
+if(btnToggleDrawer) btnToggleDrawer.addEventListener('click', openDrawer);
+if(btnCloseDrawer) btnCloseDrawer.addEventListener('click', closeDrawer);
+if(drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
+
+// Otomatis menutup drawer di HP saat siswa mengklik salah satu nomor soal
+document.getElementById('nav-grid').addEventListener('click', (e) => {
+    if (e.target.classList.contains('q-box') && window.innerWidth <= 1024) {
+        closeDrawer();
+    }
+});
