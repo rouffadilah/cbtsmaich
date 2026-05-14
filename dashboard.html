@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBT-SMAICH</title>
+    <title>CBT-SMAICH Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -90,11 +90,9 @@
                                     <button id="btn-simpan-waktu" class="btn-3d" style="background: var(--warning);"><i class="fas fa-save"></i> Set Waktu</button>
                                 </div>
                             </div>
-                            <div class="table-container">
-                                <table id="table-soal">
-                                    <thead><tr><th style="width: 50px; text-align: center;">No</th><th>Mapel</th><th>Kelas</th><th>Tipe</th><th>Pertanyaan</th><th style="text-align: center;">Aksi</th></tr></thead>
-                                    <tbody><tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b>.</td></tr></tbody>
-                                </table>
+                            
+                            <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                                <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b>.</div>
                             </div>
 
                         </div>
@@ -116,11 +114,9 @@
                                 <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">Daftar Token Aktif:</label>
                                 <button id="btn-refresh-token" class="btn-3d btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; margin: 0;"><i class="fas fa-sync-alt"></i></button>
                             </div>
-                            <div class="table-container" style="max-height: 250px; overflow-y: auto; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                                <table id="table-active-tokens">
-                                    <thead><tr><th>Akses (Mapel & Kelas)</th><th>Token</th><th style="text-align: right;">Opsi</th></tr></thead>
-                                    <tbody></tbody>
-                                </table>
+                            
+                            <div id="list-active-tokens" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color); padding: 15px;">
+                                <div style="text-align:center; color: var(--text-muted);">Memuat data...</div>
                             </div>
 
                         </div>
@@ -139,18 +135,14 @@
                                         <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
                                         <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
                                     </div>
-                                    <div class="table-container" style="max-height: 150px; overflow-y: auto;">
-                                        <table id="table-master-mapel"><tbody></tbody></table>
-                                    </div>
+                                    <div id="list-master-mapel" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; padding-right: 5px;"></div>
                                 </div>
                                 <div>
                                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                                         <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
                                         <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
                                     </div>
-                                    <div class="table-container" style="max-height: 150px; overflow-y: auto;">
-                                        <table id="table-master-kelas"><tbody></tbody></table>
-                                    </div>
+                                    <div id="list-master-kelas" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; padding-right: 5px;"></div>
                                 </div>
                             </div>
 
