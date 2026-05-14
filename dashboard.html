@@ -305,24 +305,44 @@
     </div>
 
     <div id="modal-data-master" class="modal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 800px;">
             <span class="close-btn" id="close-modal-data-master">&times;</span>
-            <h2 style="margin-bottom: 20px;"><i class="fas fa-database"></i> Data Master (Mapel & Kelas)</h2>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-database"></i> Data Master</h2>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                 <div>
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
                         <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
                     </div>
-                    <div id="list-master-mapel" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                    <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+                        <table id="table-master-mapel" style="margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th>Mata Pelajaran</th>
+                                    <th style="text-align: center; width: 80px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-master-mapel"></tbody>
+                        </table>
+                    </div>
                 </div>
                 <div>
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
                         <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
                     </div>
-                    <div id="list-master-kelas" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                    <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+                        <table id="table-master-kelas" style="margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th>Daftar Kelas</th>
+                                    <th style="text-align: center; width: 80px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-master-kelas"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
