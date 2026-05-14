@@ -10,12 +10,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
         /* CSS Tambahan untuk Toggle Switch (On/Off) Registrasi */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; margin: 0; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; margin: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(24px); }
+        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body>
@@ -139,7 +139,16 @@
                             </div>
                             <div id="container-daftar-pengguna" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                                 
-                                <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--info); font-size: 1.05rem;"><i class="fas fa-chalkboard-teacher"></i> Akun Guru & Admin</h4>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <h4 style="margin: 0; color: var(--info); font-size: 1.05rem;"><i class="fas fa-chalkboard-teacher"></i> Akun Guru</h4>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">Izin Registrasi Guru:</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="status-reg-guru">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="table-container" style="margin-bottom: 30px;">
                                     <table id="table-guru">
                                         <thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Detail Data</th><th style="text-align: center;">Aksi</th></tr></thead>
@@ -147,7 +156,16 @@
                                     </table>
                                 </div>
 
-                                <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--success); font-size: 1.05rem;"><i class="fas fa-user-graduate"></i> Akun Siswa</h4>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <h4 style="margin: 0; color: var(--success); font-size: 1.05rem;"><i class="fas fa-user-graduate"></i> Akun Siswa</h4>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">Izin Registrasi Siswa:</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="status-reg-siswa">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="table-container">
                                     <table id="table-siswa">
                                         <thead><tr><th>NIS/Username</th><th>Nama</th><th>Role</th><th>Kelas</th><th style="text-align: center;">Aksi</th></tr></thead>
@@ -158,43 +176,6 @@
                             </div>
                         </div>
 
-                    </div>
-
-                    <div class="card" id="admin-reg-status" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                        <div class="toggle-accordion" data-target="container-portal-reg" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
-                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-user-lock"></i> Portal Registrasi</h3>
-                            <i class="fas fa-chevron-down toggle-icon" style="color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
-                        </div>
-                        <div id="container-portal-reg" style="display: none; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
-                            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                                
-                                <div style="flex: 1; min-width: 250px; background: #f8fafc; padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <h4 style="margin: 0 0 5px 0; color: var(--secondary); font-size: 1rem;"><i class="fas fa-user-graduate"></i> Registrasi Siswa</h4>
-                                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Izinkan siswa baru mendaftar</p>
-                                    </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="status-reg-siswa">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-
-                                <div style="flex: 1; min-width: 250px; background: #f8fafc; padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <h4 style="margin: 0 0 5px 0; color: var(--secondary); font-size: 1rem;"><i class="fas fa-chalkboard-teacher"></i> Registrasi Guru</h4>
-                                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Izinkan guru baru mendaftar</p>
-                                    </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="status-reg-guru">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-
-                                <div style="width: 100%; display: flex; justify-content: flex-end; margin-top: 10px;">
-                                    <button id="btn-save-reg-status" class="btn-3d" style="margin: 0;"><i class="fas fa-save"></i> SIMPAN STATUS REGISTRASI</button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                 </div>
@@ -304,12 +285,19 @@
             </div>
         </div>
     </div>
+
     <div id="modal-edit-akun" class="modal">
         <div class="modal-content" style="max-width: 600px;">
             <span class="close-btn" id="close-modal-edit-akun">&times;</span>
             <h2 style="margin-bottom: 20px;"><i class="fas fa-user-edit"></i> Edit Profil Pengguna</h2>
             <input type="hidden" id="edit-uid">
             <div class="input-group"><label>Nama Lengkap</label><input type="text" id="edit-nama" class="input-text"></div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div class="input-group" style="margin: 0;"><label>Username / NIS</label><input type="text" id="edit-username" class="input-text"></div>
+                <div class="input-group" style="margin: 0;"><label>Password Baru (Opsional)</label><input type="password" id="edit-pass" class="input-text" placeholder="Kosongkan jika tidak diubah"></div>
+            </div>
+
             <div class="input-group">
                 <label>Role Akses</label>
                 <div style="display: flex; gap: 20px; padding: 15px; background: white; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm);">
