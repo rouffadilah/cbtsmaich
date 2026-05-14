@@ -242,10 +242,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let html = '';
             for(let key in summary) {
                 let d = summary[key];
-                let durasi = waktuData[key] ? `${waktuData[key]} Menit` : '<span style="color:var(--danger); font-size:0.85rem;"><i class="fas fa-exclamation-triangle"></i> Belum Seting</span>';
+                let durasi = waktuData[key] ? `${waktuData[key]} Menit` : '<span style="color:var(--danger); font-size:0.85rem;"><i class="fas fa-exclamation-triangle"></i> Belum Ada</span>';
                 
                 let jadwalRaw = jadwalData[key];
-                let jadwalFormat = '<span style="color:var(--danger); font-size:0.85rem;"><i class="fas fa-exclamation-triangle"></i> Belum Seting</span>';
+                let jadwalFormat = '<span style="color:var(--danger); font-size:0.85rem;"><i class="fas fa-exclamation-triangle"></i> Belum Ada</span>';
                 if (jadwalRaw) {
                     let dObj = new Date(jadwalRaw);
                     jadwalFormat = dObj.toLocaleString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
@@ -273,13 +273,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${tokenDisplay}</td>
                     <td><span style="background:var(--primary-light); color:var(--primary-hover); padding:3px 8px; border-radius:12px; font-weight:bold; font-size:0.85rem;">${d.count} Soal</span></td>
                     <td style="text-align:center;">
-                        <button onclick="window.bukaEditSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--warning); margin:0; padding:6px 12px; font-size:0.85rem;"><i class="fas fa-cog"></i> Edit / Seting</button>
+                        <button onclick="window.bukaEditSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--warning); margin:0; padding:6px 12px; font-size:0.85rem;"><i class="fas fa-edit"></i> Edit</button>
                     </td>
                 </tr>`;
             }
 
             if(html === '') {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada bank soal terdaftar. Silakan klik <b>Input Soal Baru</b>.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada bank soal terdaftar. Silakan klik <b>Input Soal</b>.</td></tr>';
             } else {
                 tbody.innerHTML = html;
             }
