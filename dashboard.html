@@ -66,9 +66,8 @@
                         <div id="container-bank-soal" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                             
                             <div id="view-summary-bank-soal">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                                    <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">Daftar bank soal yang telah dibuat di database.</p>
-                                    <button id="btn-tambah-langsung" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Input Soal Baru</button>
+                                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                    <button id="btn-tambah-langsung" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Input Soal</button>
                                 </div>
                                 <div class="table-container">
                                     <table id="table-bank-soal-summary">
@@ -334,10 +333,10 @@
     <div id="modal-tambah-soal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
             <span class="close-btn" id="close-modal-soal">&times;</span>
-            <h2 style="margin-bottom: 20px;"><i class="fas fa-plus-circle"></i> Manajemen Soal Baru</h2>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-plus-circle"></i> Manajemen Soal</h2>
             
             <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;">
-                <button id="tab-manual" class="btn-3d" style="margin: 0;"><i class="fas fa-keyboard"></i> Buat Manual</button>
+                <button id="tab-manual" class="btn-3d" style="margin: 0;"><i class="fas fa-keyboard"></i> Input Manual</button>
                 <button id="tab-import" class="btn-3d btn-secondary" style="margin: 0;"><i class="fas fa-file-excel"></i> Import Dokumen</button>
             </div>
 
@@ -366,11 +365,11 @@
             </div>
 
             <div id="area-manual">
-                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <div class="input-group" style="flex: 1;"><label>Mapel</label><input type="text" id="soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
-                    <div class="input-group" style="flex: 1;"><label>Kelas</label><select id="soal-kelas" class="input-text"></select></div>
-                    <div class="input-group" style="flex: 1;"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text"></div>
-                    <div class="input-group" style="flex: 1;"><label>Tipe Soal</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div class="input-group" style="margin: 0;"><label>Mapel</label><input type="text" id="soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
+                    <div class="input-group" style="margin: 0;"><label>Kelas</label><select id="soal-kelas" class="input-text"></select></div>
+                    <div class="input-group" style="margin: 0;"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text"></div>
+                    <div class="input-group" style="margin: 0;"><label>Tipe Soal</label>
                         <select id="soal-tipe" class="input-text">
                             <option value="PG">Pilihan Ganda (PG)</option>
                             <option value="PGK">PG Kompleks (Banyak Jawaban)</option>
@@ -399,11 +398,11 @@
             <span class="close-btn" id="close-modal-edit-soal">&times;</span>
             <h2 style="margin-bottom: 20px;"><i class="fas fa-edit"></i> Edit Soal</h2>
             <input type="hidden" id="edit-soal-id">
-            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                <div class="input-group" style="flex: 1;"><label>Mapel</label><input type="text" id="edit-soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
-                <div class="input-group" style="flex: 1;"><label>Kelas</label><select id="edit-soal-kelas" class="input-text"></select></div>
-                <div class="input-group" style="flex: 1;"><label>No. Soal</label><input type="number" id="edit-soal-nomor" class="input-text"></div>
-                <div class="input-group" style="flex: 1;"><label>Tipe</label><input type="text" id="edit-soal-tipe" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div class="input-group" style="margin: 0;"><label>Mapel</label><input type="text" id="edit-soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
+                <div class="input-group" style="margin: 0;"><label>Kelas</label><select id="edit-soal-kelas" class="input-text"></select></div>
+                <div class="input-group" style="margin: 0;"><label>No. Soal</label><input type="number" id="edit-soal-nomor" class="input-text"></div>
+                <div class="input-group" style="margin: 0;"><label>Tipe</label><input type="text" id="edit-soal-tipe" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
             </div>
             <div class="input-group"><label>Teks Pertanyaan</label><textarea id="edit-soal-teks" class="input-text" rows="4"></textarea></div>
             <div id="edit-area-opsi-dinamis" style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;"></div>
