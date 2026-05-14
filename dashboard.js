@@ -166,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
         handleRouting(); 
         loadDataMaster(); 
         loadDataHasil(); 
-        loadActiveTokens(); 
         if (isAdmin) loadDataPengguna();
     });
 
@@ -174,9 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (await customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { await signOut(auth); localStorage.clear(); window.location.href = "index.html"; } 
     };
 
-    // ==========================================
-    // LOGIKA ACCORDION AMAN
-    // ==========================================
     document.addEventListener('click', (e) => {
         const header = e.target.closest('.toggle-accordion');
         if (!header) return;
@@ -214,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.querySelector('#table-bank-soal-summary tbody');
         if(!tbody) return;
         
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Memuat data bank soal...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Memuat data bank soal...</td></tr>';
         
         try {
             const snap = await getDocs(collection(db, "bank_soal"));
@@ -238,6 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
             const jadwalData = jadwalSnap.exists() ? jadwalSnap.data() : {};
+            
+            // Ambil data token
+            const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            const tokenData = tokenSnap.exists() ? tokenSnap.data() : {};
 
             let html = '';
             for(let key in summary) {
@@ -251,26 +251,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     jadwalFormat = dObj.toLocaleString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
                 }
 
+                // Format tampilan Token
+                let tokenRaw = tokenData[`token_${key}`];
+                let tokenDisplay = '<span style="color:var(--text-muted); font-size:0.85rem;">-</span>';
+                if(tokenRaw) {
+                    let code = typeof tokenRaw === 'object' ? tokenRaw.code : tokenRaw;
+                    let exp = typeof tokenRaw === 'object' ? tokenRaw.expiresAt : 0;
+                    let sisa = Math.floor((exp - Date.now()) / 60000);
+                    if(sisa > 0) {
+                        tokenDisplay = `<span style="font-weight:bold; color:var(--danger);">${code}</span> <br><span style="font-size:0.75rem; color:var(--success);">Aktif (${sisa}m)</span>`;
+                    } else {
+                        tokenDisplay = `<span style="font-weight:bold; color:var(--text-muted); text-decoration:line-through;">${code}</span> <br><span style="font-size:0.75rem; color:var(--danger);">Habis</span>`;
+                    }
+                }
+
                 html += `<tr>
                     <td><strong>${d.mapel}</strong></td>
                     <td>${d.kelas}</td>
                     <td>${jadwalFormat}</td>
                     <td>${durasi}</td>
+                    <td>${tokenDisplay}</td>
                     <td><span style="background:var(--primary-light); color:var(--primary-hover); padding:3px 8px; border-radius:12px; font-weight:bold; font-size:0.85rem;">${d.count} Soal</span></td>
                     <td style="text-align:center;">
-                        <button onclick="window.bukaEditSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--warning); margin:0; padding:6px 12px; font-size:0.85rem;"><i class="fas fa-edit"></i> Edit / Seting</button>
+                        <button onclick="window.bukaEditSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--warning); margin:0; padding:6px 12px; font-size:0.85rem;"><i class="fas fa-cog"></i> Edit / Seting</button>
                     </td>
                 </tr>`;
             }
 
             if(html === '') {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada bank soal terdaftar. Silakan klik <b>Input Soal Baru</b>.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada bank soal terdaftar. Silakan klik <b>Input Soal Baru</b>.</td></tr>';
             } else {
                 tbody.innerHTML = html;
             }
         } catch(e) {
             console.error(e);
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red; padding: 20px;">Gagal memuat bank soal dari database.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red; padding: 20px;">Gagal memuat bank soal dari database.</td></tr>';
         }
     }
     window.loadBankSoalSummary = loadBankSoalSummary;
@@ -293,6 +308,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
             document.getElementById('input-jadwal-ujian').value = (jSnap.exists() && jSnap.data()[key]) ? jSnap.data()[key] : '';
+            
+            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            if(tSnap.exists() && tSnap.data()[`token_${key}`]) {
+                let tData = tSnap.data()[`token_${key}`];
+                document.getElementById('input-token-ujian').value = typeof tData === 'object' ? tData.code : tData;
+            } else {
+                document.getElementById('input-token-ujian').value = '';
+            }
+
         } catch(e) {}
 
         loadDataSoal(); 
@@ -314,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const kelas = document.getElementById('filter-soal-kelas').value;
         const waktu = document.getElementById('input-waktu-ujian').value;
         const jadwal = document.getElementById('input-jadwal-ujian').value;
+        const token = document.getElementById('input-token-ujian').value.toUpperCase().trim();
 
         if(!mapel || !kelas) return;
         const btn = document.getElementById('btn-simpan-pengaturan-ujian');
@@ -325,7 +350,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const key = `${mapel}_${kelas}`;
             if(waktu) { await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: parseInt(waktu) }, { merge: true }); }
             if(jadwal) { await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true }); }
-            await window.customAlert("Pengaturan Jadwal dan Waktu berhasil disimpan!", "success");
+            
+            // Simpan Token & set aktif 15 menit
+            if(token) {
+                await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: { code: token, expiresAt: Date.now() + (15 * 60000) } }, { merge: true });
+            }
+
+            await window.customAlert("Jadwal, Waktu, dan Token (Aktif 15 Menit) berhasil disimpan!", "success");
         } catch(e) {
             await window.customAlert("Gagal menyimpan pengaturan.", "error");
         }
@@ -355,11 +386,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const optionsKelasSiswa = '<option value="" disabled selected>Pilih Kelas...</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
         const optionsKelasFilter = '<option value="" disabled selected>Pilih Kelas...</option>' + allowedKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
-        ['set-token-kelas', 'soal-kelas', 'import-kelas', 'edit-soal-kelas'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsKelasFilter; });
+        ['soal-kelas', 'import-kelas', 'edit-soal-kelas'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsKelasFilter; });
         ['new-kelas-siswa', 'edit-kelas-siswa'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsKelasSiswa; });
 
         const optionsMapel = '<option value="" disabled selected>Pilih Mapel...</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
-        ['set-token-mapel', 'soal-mapel', 'import-mapel', 'edit-soal-mapel'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsMapel; }); 
+        ['soal-mapel', 'import-mapel', 'edit-soal-mapel'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsMapel; }); 
 
         const mapelCheckboxes = listMapel.map(m => `<label><input type="checkbox" class="new-mapel-cb" value="${m}"> ${m}</label>`).join('');
         const kelasCheckboxes = listKelas.map(k => `<label><input type="checkbox" class="new-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
@@ -648,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     window.loadDataSoalRefresh = () => {
         loadDataSoal();
-        loadBankSoalSummary(); // Update count
+        loadBankSoalSummary(); 
     };
 
     document.getElementById('close-modal-soal')?.addEventListener('click', () => { document.getElementById('modal-tambah-soal').style.display = 'none'; });
@@ -700,7 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('modal-tambah-soal').style.display = 'none'; 
             
             if(document.getElementById('view-soal-list').style.display === 'block') {
-                loadDataSoal(); 
+                loadDataSoalRefresh(); 
             } else {
                 loadBankSoalSummary();
             }
@@ -740,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         await addDoc(collection(db, "bank_soal"), payload); 
                     }
                     await window.customAlert(`Import Berhasil!`, "success"); document.getElementById('modal-tambah-soal').style.display = 'none'; 
-                    if(document.getElementById('view-soal-list').style.display === 'block') { loadDataSoal(); } else { loadBankSoalSummary(); }
+                    if(document.getElementById('view-soal-list').style.display === 'block') { loadDataSoalRefresh(); } else { loadBankSoalSummary(); }
                 } catch (err) { await window.customAlert("Gagal membaca Excel.", "error"); }
                 btn.innerHTML = origText; btn.disabled = false;
             };
@@ -782,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         await addDoc(collection(db, "bank_soal"), pay); 
                     }
                     await window.customAlert(`Import Word Berhasil!`, "success"); document.getElementById('modal-tambah-soal').style.display = 'none'; 
-                    if(document.getElementById('view-soal-list').style.display === 'block') { loadDataSoal(); } else { loadBankSoalSummary(); }
+                    if(document.getElementById('view-soal-list').style.display === 'block') { loadDataSoalRefresh(); } else { loadBankSoalSummary(); }
                 } catch (err) { console.error(err); await window.customAlert("Format Word tidak sesuai template.", "error"); }
                 btn.innerHTML = origText; btn.disabled = false;
             };
@@ -933,57 +964,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnHapusAll.innerHTML = origText; btnHapusAll.disabled = false;
         }
     });
-
-    // ==========================================
-    // 8. MANAJEMEN TOKEN UJIAN
-    // ==========================================
-    async function loadActiveTokens() {
-        const listContainer = document.getElementById('list-active-tokens'); if(!listContainer) return; 
-        try {
-            const snap = await getDoc(doc(db, "pengaturan", "token_ujian")); listContainer.innerHTML = '';
-            if(snap.exists() && Object.keys(snap.data()).length > 0) { 
-                const data = snap.data();
-                Object.keys(data).forEach(k => { 
-                    let d = data[k]; let mapelKelas = k.replace('token_', '').replace('_', ' - ');
-                    let tokenCode = typeof d === 'object' ? d.code : d; let expiresAt = typeof d === 'object' ? d.expiresAt : 0;
-                    let timeLeft = Math.floor((expiresAt - Date.now()) / 60000);
-                    let badge = timeLeft > 0 ? `<span style="background: var(--success); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 10px; font-weight: bold;">Sisa ${timeLeft} mnt</span>` : `<span style="background: var(--danger); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 10px; font-weight: bold;">Habis</span>`;
-
-                    listContainer.innerHTML += `
-                        <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:15px; border:1px solid var(--border-color); border-radius:8px;">
-                            <div>
-                                <div style="color: var(--secondary); font-size: 0.85rem; margin-bottom: 4px; font-weight:600;">${mapelKelas}</div>
-                                <div style="font-weight: bold; color: var(--primary); font-size: 1.1rem;">${tokenCode} ${badge}</div>
-                            </div>
-                            <div>
-                                <button onclick="window.customAlert('Fungsi Edit Token dapat dikembangkan di sini')" class="btn-3d" style="background:var(--warning); padding:8px 15px; font-size:0.85rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
-                            </div>
-                        </div>`; 
-                }); 
-            } else { listContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted); font-size: 0.95rem; background:white; border-radius:8px; border:1px solid var(--border-color);">Belum ada token aktif.</div>`; }
-        } catch (e) { listContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--danger); font-size: 0.95rem;">Gagal memuat token dari database.</div>`; }
-    }
-
-    const btnRefreshToken = document.getElementById('btn-refresh-token');
-    if(btnRefreshToken) btnRefreshToken.onclick = loadActiveTokens;
-
-    const btnSaveToken = document.getElementById('btn-save-token');
-    if(btnSaveToken) {
-        btnSaveToken.onclick = async () => {
-            const m = document.getElementById('set-token-mapel').value; const k = document.getElementById('set-token-kelas').value; const t = document.getElementById('input-token-baru').value.toUpperCase().trim();
-            if(!m || !k || !t) return window.customAlert("Pilih Mapel, Kelas, dan ketik Token terlebih dahulu!", "warning");
-            
-            const origText = btnSaveToken.innerHTML; btnSaveToken.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btnSaveToken.disabled = true;
-
-            try { 
-                await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${m}_${k}`]: { code: t, expiresAt: Date.now() + (15 * 60000) } }, { merge: true }); 
-                await window.customAlert("Token berhasil diaktifkan selama 15 Menit!", "success"); 
-                document.getElementById('input-token-baru').value = ''; loadActiveTokens(); 
-            } catch(e) { await window.customAlert("Gagal menyimpan token.", "error"); }
-            
-            btnSaveToken.innerHTML = origText; btnSaveToken.disabled = false;
-        };
-    }
 
     window.hapusDokumen = async (coll, id, callback) => { if(await customConfirm("Data akan dihapus permanen. Lanjutkan?", "danger")) { await deleteDoc(doc(db, coll, id)); if(callback) callback(); } };
 
