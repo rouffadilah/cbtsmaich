@@ -269,8 +269,8 @@
         </div>
     </div> 
 
-    <button id="btn-logout" class="btn-3d" style="position: fixed; bottom: 30px; right: 30px; background: var(--danger); width: 65px; height: 65px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5); z-index: 9999;" title="Keluar Aplikasi">
-        <i class="fas fa-power-off" style="font-size: 1.8rem; margin: 0;"></i>
+    <button id="btn-logout" class="btn-3d" style="position: fixed; bottom: -70px; right: 20px; background: var(--danger); width: 50px; height: 50px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5); z-index: 9999; transition: bottom 0.3s ease-in-out;" title="Keluar Aplikasi">
+        <i class="fas fa-power-off" style="font-size: 1.3rem; margin: 0;"></i>
     </button>
 
     <div id="modal-custom-alert" class="modal">
@@ -468,6 +468,53 @@
             <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; margin-top: 15px;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
         </div>
     </div>
+
+    <script>
+        let touchstartY = 0;
+        let touchendY = 0;
+        const btnLogoutEl = document.getElementById('btn-logout');
+        let hideTimeout;
+
+        function handleSwipe() {
+            const swipeDistance = touchstartY - touchendY;
+            
+            // Jika mengusap ke ATAS (Swipe Up) dengan jarak > 30px
+            if (swipeDistance > 30) {
+                btnLogoutEl.style.bottom = '20px'; // Munculkan tombol
+                
+                // Set otomatis sembunyi lagi setelah 4 detik
+                clearTimeout(hideTimeout);
+                hideTimeout = setTimeout(() => {
+                    btnLogoutEl.style.bottom = '-70px';
+                }, 4000);
+            } 
+            // Jika mengusap ke BAWAH (Swipe Down) dengan jarak > 30px
+            else if (swipeDistance < -30) {
+                btnLogoutEl.style.bottom = '-70px'; // Sembunyikan segera
+            }
+        }
+
+        // Listener Layar Sentuh (HP/Tablet)
+        document.addEventListener('touchstart', e => {
+            touchstartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            touchendY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, { passive: true });
+
+        // Tambahan untuk PC (Scroll Mouse) sebagai alternatif
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY > 0) {
+                btnLogoutEl.style.bottom = '20px';
+            } else {
+                btnLogoutEl.style.bottom = '-70px';
+            }
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => { btnLogoutEl.style.bottom = '-70px'; }, 4000);
+        });
+    </script>
 
     <script type="module" src="dashboard.js"></script>
 </body>
