@@ -67,6 +67,7 @@
                             
                             <div id="view-summary-bank-soal">
                                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                    <button id="btn-open-data-master" class="btn-3d" style="margin: 0; background-color: var(--info);"><i class="fas fa-database"></i> Data Master</button>
                                     <button id="btn-tambah-langsung" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Input Soal</button>
                                 </div>
                                 <div class="table-container">
@@ -122,33 +123,6 @@
                                 
                                 <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
                                     <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Memuat data soal...</div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <div class="card" id="admin-data-master" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                        <div class="toggle-accordion" data-target="container-data-master" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
-                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-database"></i> Data Master</h3>
-                            <i class="fas fa-chevron-down toggle-icon" style="color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
-                        </div>
-                        <div id="container-data-master" style="display: none; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
-                            
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                                <div>
-                                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                                        <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
-                                        <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div id="list-master-mapel" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; padding-right: 5px;"></div>
-                                </div>
-                                <div>
-                                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                                        <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
-                                        <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div id="list-master-kelas" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; padding-right: 5px;"></div>
                                 </div>
                             </div>
 
@@ -326,6 +300,30 @@
             <div style="display: flex; gap: 10px;">
                 <button id="btn-confirm-cancel" class="btn-3d btn-secondary" style="flex: 1; margin: 0;">Batal</button>
                 <button id="btn-confirm-ok" class="btn-3d" style="flex: 1; margin: 0; background-color: var(--warning);">Ya</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-data-master" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close-btn" id="close-modal-data-master">&times;</span>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-database"></i> Data Master (Mapel & Kelas)</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
+                        <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="list-master-mapel" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                </div>
+                <div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
+                        <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="list-master-kelas" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                </div>
             </div>
         </div>
     </div>
