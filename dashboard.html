@@ -12,20 +12,28 @@
 <body>
 
     <div class="app-layout">
-        <header class="app-header">
-            <div class="header-brand" onclick="window.location.hash='section-beranda'">
-                <img src="logo-smaich.png" alt="Logo SMAICH" class="brand-logo" onerror="this.src='https://via.placeholder.com/42x42?text=CBT'">
-                <span class="brand-text">CBT SMAICH</span>
-            </div>
-            <div class="header-actions">
-                <div class="user-badge">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="admin-name">Memuat...</span>
-                </div>
-                <button id="btn-logout" class="btn-logout" title="Keluar Aplikasi">
-                    <i class="fas fa-sign-out-alt"></i> <span class="logout-text">Keluar</span>
+        <header class="app-header" style="position: relative; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 100;">
+            
+            <div style="display: flex; align-items: center; z-index: 2; width: 60px;">
+                <button id="global-back-btn" onclick="window.history.back()" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; display: none;" title="Kembali">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
             </div>
+            
+            <div style="position: absolute; left: 50%; transform: translateX(-50%); cursor: pointer; z-index: 1; display: flex; align-items: center;" onclick="window.location.hash='section-beranda'">
+                <img src="logo-smaich.png" alt="Logo SMAICH" class="brand-logo" onerror="this.src='https://via.placeholder.com/42x42?text=CBT'" style="height: 40px; margin: 0;">
+            </div>
+
+            <div class="header-actions" style="display: flex; align-items: center; gap: 10px; z-index: 2;">
+                <div class="user-badge" style="display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="admin-name" style="max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Memuat...</span>
+                </div>
+                <button id="btn-logout" class="btn-logout" title="Keluar" style="padding: 8px 12px; border-radius: 8px;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+
         </header>
 
         <div class="main-wrapper">
@@ -53,7 +61,6 @@
                 </div> 
                 
                 <div id="section-soal" class="content-section">
-                    <button onclick="window.history.back()" class="btn-3d btn-secondary" style="padding: 8px 15px; margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Kembali</button>
                     
                     <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
                         <div class="toggle-accordion" data-target="container-bank-soal" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
@@ -157,7 +164,6 @@
                 </div>
 
                 <div id="section-pengguna" class="content-section">
-                    <button onclick="window.history.back()" class="btn-3d btn-secondary" style="padding: 8px 15px; margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Kembali</button>
 
                     <div id="admin-manajemen-pengguna">
                         
@@ -271,7 +277,6 @@
                 </div>
 
                 <div id="section-hasil" class="content-section">
-                    <button onclick="window.history.back()" class="btn-3d btn-secondary" style="padding: 8px 15px; margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Kembali</button>
                     
                     <div id="hasil-summary-view">
                         <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
@@ -290,7 +295,6 @@
                         <div class="card">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                                 <div style="display: flex; align-items: center; gap: 10px;">
-                                    <button id="btn-back-hasil" class="btn-3d btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-arrow-left"></i> Kembali</button>
                                     <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.1rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
                                 </div>
                                 <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;">
