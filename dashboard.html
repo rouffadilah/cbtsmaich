@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBT-SMAICH</title>
+    <title>CBT-SMAICH Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -65,34 +65,43 @@
                         </div>
                         <div id="container-bank-soal" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                             
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Kelola pertanyaan ujian yang akan disajikan ke siswa.</p>
-                                <button id="btn-tambah-manual" class="btn-3d" style="margin: 0;"><i class="fas fa-plus"></i> Kelola Soal</button>
+                            <div id="view-mapel-list">
+                                <p style="margin: 0 0 15px 0; color: var(--text-muted); font-size: 0.95rem;">Pilih mata pelajaran untuk memasukkan atau mengedit soal ujian.</p>
+                                <div id="list-mapel-bank-soal" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="text-align:center; padding: 20px; color: var(--text-muted);">Memuat mata pelajaran...</div>
+                                </div>
                             </div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
-                                <div style="flex: 1; min-width: 150px;">
-                                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">MATA PELAJARAN</label>
-                                    <select id="filter-soal-mapel" class="input-text"><option value="">Pilih Mapel...</option></select>
-                                </div>
-                                <div style="flex: 1; min-width: 150px;">
-                                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">KELAS</label>
-                                    <select id="filter-soal-kelas" class="input-text"><option value="">Pilih Kelas...</option></select>
-                                </div>
-                                <div style="display: flex; gap: 10px;">
-                                    <button id="btn-tampil-soal" class="btn-3d"><i class="fas fa-search"></i> Tampilkan</button>
-                                    <button id="btn-preview-full" class="btn-3d" style="background-color: var(--info); display: none;"><i class="fas fa-eye"></i> Preview</button>
-                                </div>
-                                <div style="border-left: 2px solid #cbd5e1; padding-left: 15px; display: flex; gap: 10px; align-items: flex-end;">
-                                    <div style="width: 130px;">
-                                        <label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> WAKTU (MNT)</label>
-                                        <input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);">
+
+                            <div id="view-soal-list" style="display: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                    <div style="display: flex; align-items: center; gap: 15px;">
+                                        <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali ke Daftar Mapel"><i class="fas fa-arrow-left"></i></button>
+                                        <h4 style="margin: 0; color: var(--secondary); font-size: 1.1rem;" id="label-mapel-edit">Mata Pelajaran</h4>
                                     </div>
-                                    <button id="btn-simpan-waktu" class="btn-3d" style="background: var(--warning);"><i class="fas fa-save"></i> Set Waktu</button>
+                                    <button id="btn-tambah-langsung" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Input Soal</button>
                                 </div>
-                            </div>
-                            
-                            <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-                                <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Silakan pilih <b>Mata Pelajaran</b> dan <b>Kelas</b>.</div>
+                                
+                                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
+                                    <input type="hidden" id="filter-soal-mapel"> <div style="flex: 1; min-width: 150px;">
+                                        <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">PILIH KELAS UNTUK DIEDIT</label>
+                                        <select id="filter-soal-kelas" class="input-text"><option value="">Pilih Kelas...</option></select>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button id="btn-tampil-soal" class="btn-3d"><i class="fas fa-search"></i> Tampilkan Soal</button>
+                                        <button id="btn-preview-full" class="btn-3d" style="background-color: var(--info); display: none;"><i class="fas fa-eye"></i> Preview</button>
+                                    </div>
+                                    <div style="border-left: 2px solid #cbd5e1; padding-left: 15px; display: flex; gap: 10px; align-items: flex-end;">
+                                        <div style="width: 130px;">
+                                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> WAKTU (MNT)</label>
+                                            <input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);">
+                                        </div>
+                                        <button id="btn-simpan-waktu" class="btn-3d" style="background: var(--warning);"><i class="fas fa-save"></i> Set Waktu</button>
+                                    </div>
+                                </div>
+                                
+                                <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                                    <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Silakan pilih <b>Kelas</b> dan klik Tampilkan Soal.</div>
+                                </div>
                             </div>
 
                         </div>
@@ -327,7 +336,7 @@
     <div id="modal-tambah-soal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
             <span class="close-btn" id="close-modal-soal">&times;</span>
-            <h2 style="margin-bottom: 20px;"><i class="fas fa-plus-circle"></i> Manajemen Soal</h2>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-plus-circle"></i> Manajemen Soal Baru</h2>
             
             <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;">
                 <button id="tab-manual" class="btn-3d" style="margin: 0;"><i class="fas fa-keyboard"></i> Buat Manual</button>
@@ -336,7 +345,7 @@
 
             <div id="area-import" style="display: none;">
                 <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div class="input-group"><label>Mapel Tujuan</label><select id="import-mapel" class="input-text"></select></div>
+                    <div class="input-group"><label>Mapel Tujuan</label><input type="text" id="import-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
                     <div class="input-group"><label>Kelas Tujuan</label><select id="import-kelas" class="input-text"></select></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
@@ -360,7 +369,7 @@
 
             <div id="area-manual">
                 <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <div class="input-group" style="flex: 1;"><label>Mapel</label><select id="soal-mapel" class="input-text"></select></div>
+                    <div class="input-group" style="flex: 1;"><label>Mapel</label><input type="text" id="soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
                     <div class="input-group" style="flex: 1;"><label>Kelas</label><select id="soal-kelas" class="input-text"></select></div>
                     <div class="input-group" style="flex: 1;"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text"></div>
                     <div class="input-group" style="flex: 1;"><label>Tipe Soal</label>
@@ -393,10 +402,10 @@
             <h2 style="margin-bottom: 20px;"><i class="fas fa-edit"></i> Edit Soal</h2>
             <input type="hidden" id="edit-soal-id">
             <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                <div class="input-group" style="flex: 1;"><label>Mapel</label><select id="edit-soal-mapel" class="input-text"></select></div>
+                <div class="input-group" style="flex: 1;"><label>Mapel</label><input type="text" id="edit-soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
                 <div class="input-group" style="flex: 1;"><label>Kelas</label><select id="edit-soal-kelas" class="input-text"></select></div>
                 <div class="input-group" style="flex: 1;"><label>No. Soal</label><input type="number" id="edit-soal-nomor" class="input-text"></div>
-                <div class="input-group" style="flex: 1;"><label>Tipe</label><input type="text" id="edit-soal-tipe" class="input-text" disabled></div>
+                <div class="input-group" style="flex: 1;"><label>Tipe</label><input type="text" id="edit-soal-tipe" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
             </div>
             <div class="input-group"><label>Teks Pertanyaan</label><textarea id="edit-soal-teks" class="input-text" rows="4"></textarea></div>
             <div id="edit-area-opsi-dinamis" style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;"></div>
