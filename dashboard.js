@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 4. DATA MASTER & MENYUSUN LIST MAPEL (Bank Soal)
+    // 4. DATA MASTER (GABUNGAN 1 TABEL & 1 INPUT)
     // ==========================================
     document.getElementById('btn-open-data-master')?.addEventListener('click', () => {
         document.getElementById('modal-data-master').style.display = 'flex';
@@ -211,6 +211,49 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTableMaster(); populateSemuaDropdown(); 
             loadBankSoalSummary();
         } catch (e) { console.error("Gagal load data master", e); }
+    }
+
+    document.getElementById('btn-add-master')?.addEventListener('click', async () => {
+        const type = document.getElementById('input-master-type').value;
+        const val = document.getElementById('input-master-name').value.trim(); 
+        if (!val) return window.customAlert("Masukkan nama terlebih dahulu!", "warning");
+        
+        if (type === 'mapel') {
+            if (listMapel.includes(val)) return await window.customAlert("Mata Pelajaran sudah ada!", "warning");
+            listMapel.push(val); 
+            await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true });
+        } else {
+            if (listKelas.includes(val)) return await window.customAlert("Kelas sudah ada!", "warning");
+            listKelas.push(val); 
+            await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
+        }
+        
+        document.getElementById('input-master-name').value = ''; 
+        loadDataMaster();
+        await window.customAlert("Data berhasil ditambahkan!", "success");
+    });
+
+    function renderTableMaster() {
+        const tbody = document.getElementById('tbody-master-combined');
+        if (!tbody) return;
+
+        let maxLen = Math.max(listMapel.length, listKelas.length);
+        if (maxLen === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; font-size:0.9rem; color:var(--text-muted); padding: 20px;">Belum ada data master.</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        for (let i = 0; i < maxLen; i++) {
+            let m = listMapel[i];
+            let k = listKelas[i];
+
+            let cellMapel = m ? `<td style="font-weight:600;">${m}</td><td style="text-align:center;"><button onclick="window.customAlert('Fungsi Edit Mapel')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i></button></td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td><td></td>`;
+            let cellKelas = k ? `<td style="font-weight:600;">${k}</td><td style="text-align:center;"><button onclick="window.customAlert('Fungsi Edit Kelas')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i></button></td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td><td></td>`;
+
+            html += `<tr>${cellMapel}${cellKelas}</tr>`;
+        }
+        tbody.innerHTML = html;
     }
 
     async function loadBankSoalSummary() {
@@ -292,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch(e) {
             console.error(e);
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red; padding: 20px;">Gagal memuat data dari database.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red; padding: 20px;">Gagal memuat bank soal dari database.</td></tr>';
         }
     }
     window.loadBankSoalSummary = loadBankSoalSummary;
@@ -369,26 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = orig; btn.disabled = false;
     });
 
-    function renderTableMaster() {
-        const tbodyMapel = document.getElementById('tbody-master-mapel');
-        if (tbodyMapel) tbodyMapel.innerHTML = listMapel.length === 0 ? `<tr><td colspan="2" style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Kosong</td></tr>` : listMapel.map((m, i) => `
-            <tr>
-                <td style="font-weight:600;">${m}</td>
-                <td style="text-align:center;">
-                    <button onclick="window.customAlert('Fungsi Edit Mapel dapat ditambahkan di sini')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
-                </td>
-            </tr>`).join('');
-
-        const tbodyKelas = document.getElementById('tbody-master-kelas');
-        if (tbodyKelas) tbodyKelas.innerHTML = listKelas.length === 0 ? `<tr><td colspan="2" style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Kosong</td></tr>` : listKelas.map((k, i) => `
-            <tr>
-                <td style="font-weight:600;">${k}</td>
-                <td style="text-align:center;">
-                    <button onclick="window.customAlert('Fungsi Edit Kelas dapat ditambahkan di sini')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
-                </td>
-            </tr>`).join('');
-    }
-
     function populateSemuaDropdown() {
         let allowedMapel = listMapel; let allowedKelas = listKelas;
         if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); allowedKelas = listKelas.filter(k => userKelas.includes(k)); }
@@ -410,20 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const emc = document.getElementById('edit-mapel-container'); if (emc) emc.innerHTML = listMapel.map(m => `<label><input type="checkbox" class="edit-mapel-cb" value="${m}"> ${m}</label>`).join('');
         const ekc = document.getElementById('edit-kelas-guru-container'); if (ekc) ekc.innerHTML = listKelas.map(k => `<label><input type="checkbox" class="edit-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
     }
-
-    document.getElementById('btn-add-mapel')?.addEventListener('click', async () => {
-        const val = document.getElementById('input-new-mapel').value.trim(); if (!val) return;
-        if (listMapel.includes(val)) return await window.customAlert("Mata Pelajaran sudah ada!", "warning");
-        listMapel.push(val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true });
-        document.getElementById('input-new-mapel').value = ''; loadDataMaster();
-    });
-
-    document.getElementById('btn-add-kelas')?.addEventListener('click', async () => {
-        const val = document.getElementById('input-new-kelas').value.trim(); if (!val) return;
-        if (listKelas.includes(val)) return await window.customAlert("Kelas sudah ada!", "warning");
-        listKelas.push(val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
-        document.getElementById('input-new-kelas').value = ''; loadDataMaster();
-    });
 
     async function fetchStatusReg() {
         try {
