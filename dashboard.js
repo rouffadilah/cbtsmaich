@@ -205,61 +205,131 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const docSnap = await getDoc(doc(db, "pengaturan", "data_akademik"));
             if (docSnap.exists()) { listMapel = docSnap.data().list_mapel || []; listKelas = docSnap.data().list_kelas || []; }
-            renderTableMaster(); populateSemuaDropdown(); renderBankSoalMapelList();
+            renderTableMaster(); populateSemuaDropdown(); 
+            loadBankSoalSummary();
         } catch (e) { console.error("Gagal load data master", e); }
     }
 
-    function renderBankSoalMapelList() {
-        const container = document.getElementById('list-mapel-bank-soal');
-        if(!container) return;
+    async function loadBankSoalSummary() {
+        const tbody = document.querySelector('#table-bank-soal-summary tbody');
+        if(!tbody) return;
         
-        let allowedMapel = listMapel;
-        if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Memuat data bank soal...</td></tr>';
+        
+        try {
+            const snap = await getDocs(collection(db, "bank_soal"));
+            let summary = {};
+            
+            let allowedMapel = listMapel;
+            if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
 
-        if (allowedMapel.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Belum ada mata pelajaran.</div>`;
-            return;
+            snap.forEach(d => {
+                let mapel = d.data().mataPelajaran;
+                let kelas = d.data().kelas;
+                if (allowedMapel.includes(mapel)) {
+                    let key = `${mapel}_${kelas}`;
+                    if(!summary[key]) summary[key] = { mapel, kelas, count: 0 };
+                    summary[key].count++;
+                }
+            });
+
+            const waktuSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
+            const waktuData = waktuSnap.exists() ? waktuSnap.data() : {};
+            
+            const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
+            const jadwalData = jadwalSnap.exists() ? jadwalSnap.data() : {};
+
+            let html = '';
+            for(let key in summary) {
+                let d = summary[key];
+                let durasi = waktuData[key] ? `${waktuData[key]} Menit` : '<span style="color:var(--danger); font-size:0.85rem;"><i class="fas fa-exclamation-triangle"></i> Belum Seting</span>';
+                
+                let jadwalRaw = jadwalData[key];
+                let jadwalFormat = '<span style="color:var(--danger); font-size:0.85rem;"><i class="fas fa-exclamation-triangle"></i> Belum Seting</span>';
+                if (jadwalRaw) {
+                    let dObj = new Date(jadwalRaw);
+                    jadwalFormat = dObj.toLocaleString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+                }
+
+                html += `<tr>
+                    <td><strong>${d.mapel}</strong></td>
+                    <td>${d.kelas}</td>
+                    <td>${jadwalFormat}</td>
+                    <td>${durasi}</td>
+                    <td><span style="background:var(--primary-light); color:var(--primary-hover); padding:3px 8px; border-radius:12px; font-weight:bold; font-size:0.85rem;">${d.count} Soal</span></td>
+                    <td style="text-align:center;">
+                        <button onclick="window.bukaEditSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--warning); margin:0; padding:6px 12px; font-size:0.85rem;"><i class="fas fa-edit"></i> Edit / Seting</button>
+                    </td>
+                </tr>`;
+            }
+
+            if(html === '') {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada bank soal terdaftar. Silakan klik <b>Input Soal Baru</b>.</td></tr>';
+            } else {
+                tbody.innerHTML = html;
+            }
+        } catch(e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red; padding: 20px;">Gagal memuat bank soal dari database.</td></tr>';
         }
-
-        container.innerHTML = allowedMapel.map(m => `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:15px 20px; border:1px solid var(--border-color); border-radius:8px; gap: 10px; flex-wrap: wrap;">
-                <span style="font-weight:bold; font-size:1.1rem; color:var(--secondary);"><i class="fas fa-book" style="color:var(--info); margin-right:8px;"></i> ${m}</span>
-                <div style="display:flex; gap:10px;">
-                    <button onclick="window.bukaInputSoal('${m}')" class="btn-3d" style="background:var(--success); padding:8px 15px; margin:0; font-size:0.85rem;" title="Input Soal Baru"><i class="fas fa-plus"></i> Input</button>
-                    <button onclick="window.bukaEditSoal('${m}')" class="btn-3d" style="background:var(--warning); padding:8px 15px; margin:0; font-size:0.85rem;" title="Edit Soal yang Sudah Ada"><i class="fas fa-edit"></i> Edit</button>
-                </div>
-            </div>
-        `).join('');
     }
+    window.loadBankSoalSummary = loadBankSoalSummary;
 
-    window.bukaInputSoal = (mapel) => {
-        const elMapelSoal = document.getElementById('soal-mapel');
-        const elMapelImport = document.getElementById('import-mapel');
-        if(elMapelSoal) elMapelSoal.value = mapel;
-        if(elMapelImport) elMapelImport.value = mapel;
-        document.getElementById('modal-tambah-soal').style.display = 'flex'; 
-        renderFormDinamis('PG');
-    };
-
-    window.bukaEditSoal = (mapel) => {
-        document.getElementById('view-mapel-list').style.display = 'none';
+    window.bukaEditSoal = async (mapel, kelas) => {
+        document.getElementById('view-summary-bank-soal').style.display = 'none';
         document.getElementById('view-soal-list').style.display = 'block';
-        document.getElementById('label-mapel-edit').innerText = mapel;
+        document.getElementById('label-mapel-edit').innerHTML = `${mapel} <span style="font-weight:normal; color:var(--text-muted); font-size:0.95rem;">(Kelas: ${kelas})</span>`;
+        
         document.getElementById('filter-soal-mapel').value = mapel;
-        document.getElementById('list-soal').innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Silakan pilih <b>Kelas</b> dan klik Tampilkan Soal.</div>`;
+        document.getElementById('filter-soal-kelas').value = kelas;
+        
+        document.getElementById('list-soal').innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Memuat soal...</div>`;
         document.getElementById('btn-preview-full').style.display = 'none';
-        document.getElementById('filter-soal-kelas').value = '';
-        document.getElementById('input-waktu-ujian').value = '';
+        
+        const key = `${mapel}_${kelas}`;
+        try {
+            const wSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
+            document.getElementById('input-waktu-ujian').value = (wSnap.exists() && wSnap.data()[key]) ? wSnap.data()[key] : '';
+            
+            const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
+            document.getElementById('input-jadwal-ujian').value = (jSnap.exists() && jSnap.data()[key]) ? jSnap.data()[key] : '';
+        } catch(e) {}
+
+        loadDataSoal(); 
     };
 
     document.getElementById('btn-back-mapel-list')?.addEventListener('click', () => {
         document.getElementById('view-soal-list').style.display = 'none';
-        document.getElementById('view-mapel-list').style.display = 'block';
+        document.getElementById('view-summary-bank-soal').style.display = 'block';
+        loadBankSoalSummary();
     });
     
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => {
+        document.getElementById('modal-tambah-soal').style.display = 'flex';
+        renderFormDinamis('PG');
+    });
+
+    document.getElementById('btn-simpan-pengaturan-ujian')?.addEventListener('click', async () => {
         const mapel = document.getElementById('filter-soal-mapel').value;
-        if (mapel) window.bukaInputSoal(mapel);
+        const kelas = document.getElementById('filter-soal-kelas').value;
+        const waktu = document.getElementById('input-waktu-ujian').value;
+        const jadwal = document.getElementById('input-jadwal-ujian').value;
+
+        if(!mapel || !kelas) return;
+        const btn = document.getElementById('btn-simpan-pengaturan-ujian');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+        btn.disabled = true;
+
+        try {
+            const key = `${mapel}_${kelas}`;
+            if(waktu) { await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: parseInt(waktu) }, { merge: true }); }
+            if(jadwal) { await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true }); }
+            await window.customAlert("Pengaturan Jadwal dan Waktu berhasil disimpan!", "success");
+        } catch(e) {
+            await window.customAlert("Gagal menyimpan pengaturan.", "error");
+        }
+        btn.innerHTML = orig; btn.disabled = false;
     });
 
     function renderTableMaster() {
@@ -285,11 +355,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const optionsKelasSiswa = '<option value="" disabled selected>Pilih Kelas...</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
         const optionsKelasFilter = '<option value="" disabled selected>Pilih Kelas...</option>' + allowedKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
-        ['set-token-kelas', 'soal-kelas', 'import-kelas', 'filter-soal-kelas', 'edit-soal-kelas'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsKelasFilter; });
+        ['set-token-kelas', 'soal-kelas', 'import-kelas', 'edit-soal-kelas'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsKelasFilter; });
         ['new-kelas-siswa', 'edit-kelas-siswa'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsKelasSiswa; });
 
         const optionsMapel = '<option value="" disabled selected>Pilih Mapel...</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
-        ['set-token-mapel'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsMapel; }); 
+        ['set-token-mapel', 'soal-mapel', 'import-mapel', 'edit-soal-mapel'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsMapel; }); 
 
         const mapelCheckboxes = listMapel.map(m => `<label><input type="checkbox" class="new-mapel-cb" value="${m}"> ${m}</label>`).join('');
         const kelasCheckboxes = listKelas.map(k => `<label><input type="checkbox" class="new-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
@@ -333,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 5. MANAJEMEN PENGGUNA (GURU vs SISWA)
+    // 5. MANAJEMEN PENGGUNA
     // ==========================================
     async function loadDataPengguna() {
         const tbodySiswa = document.querySelector('#table-siswa tbody'); 
@@ -529,15 +599,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 6. BANK SOAL & SET WAKTU UJIAN
     // ==========================================
-    const btnTampil = document.getElementById('btn-tampil-soal');
-    if(btnTampil) btnTampil.onclick = loadDataSoal;
-
     async function loadDataSoal() {
         const m = document.getElementById('filter-soal-mapel').value;
         const k = document.getElementById('filter-soal-kelas').value;
         const listContainer = document.getElementById('list-soal');
 
-        if(!k) return customAlert("Pilih Kelas terlebih dahulu!", "warning");
+        if(!m || !k) return;
         
         listContainer.innerHTML = `<div style="padding: 20px;"><div class="skeleton-box" style="width: 100%;"></div><div class="skeleton-box" style="width: 70%;"></div></div>`;
 
@@ -551,16 +618,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             document.getElementById('stat-soal').innerText = allSoalData.length;
 
-            try {
-                const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
-                if (timeSnap.exists() && timeSnap.data()[`${m}_${k}`]) {
-                    document.getElementById('input-waktu-ujian').value = timeSnap.data()[`${m}_${k}`];
-                } else { document.getElementById('input-waktu-ujian').value = ''; }
-            } catch(e) { console.error("Gagal load waktu", e); }
-
             listContainer.innerHTML = '';
             if(allSoalData.length === 0) {
-                listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--danger); background:white; border:1px solid var(--border-color); border-radius:8px;">Belum ada soal untuk kelas ini. Klik tombol Input Soal di atas untuk menambahkan.</div>';
+                listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--danger); background:white; border:1px solid var(--border-color); border-radius:8px;">Belum ada soal untuk kelas ini. Klik tombol Tambah Soal di atas untuk menambahkan.</div>';
                 document.getElementById('btn-preview-full').style.display = 'none'; return;
             }
 
@@ -577,7 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div>
                             <button onclick="window.editSoal('${dat.id}')" class="btn-3d" style="background:var(--warning); padding:8px 15px; font-size:0.85rem; margin:0;" title="Edit Soal"><i class="fas fa-edit"></i> Edit</button>
-                            <button onclick="window.hapusDokumen('bank_soal', '${dat.id}', window.loadDataSoal)" class="btn-3d" style="background:var(--danger); padding:8px 15px; font-size:0.85rem; margin:0; margin-left: 5px;" title="Hapus Soal"><i class="fas fa-trash"></i> Hapus</button>
+                            <button onclick="window.hapusDokumen('bank_soal', '${dat.id}', window.loadDataSoalRefresh)" class="btn-3d" style="background:var(--danger); padding:8px 15px; font-size:0.85rem; margin:0; margin-left: 5px;" title="Hapus Soal"><i class="fas fa-trash"></i> Hapus</button>
                         </div>
                     </div>`;
             });
@@ -585,27 +645,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e) { listContainer.innerHTML = '<div style="text-align:center; color:red; padding:20px;">Gagal memuat data dari database.</div>'; }
     }
     window.loadDataSoal = loadDataSoal; 
-
-    const btnSimpanWaktu = document.getElementById('btn-simpan-waktu');
-    if (btnSimpanWaktu) {
-        btnSimpanWaktu.onclick = async () => {
-            const m = document.getElementById('filter-soal-mapel').value;
-            const k = document.getElementById('filter-soal-kelas').value;
-            const w = document.getElementById('input-waktu-ujian').value;
-
-            if(!m || !k) return window.customAlert("Pilih Kelas terlebih dahulu!", "warning");
-            if(!w || w <= 0) return window.customAlert("Masukkan waktu ujian (menit) yang valid!", "warning");
-
-            const origText = btnSimpanWaktu.innerHTML;
-            btnSimpanWaktu.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btnSimpanWaktu.disabled = true;
-
-            try {
-                await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [`${m}_${k}`]: parseInt(w) }, { merge: true });
-                await window.customAlert(`Waktu ujian berhasil diatur menjadi ${w} Menit!`, "success");
-            } catch(e) { await window.customAlert("Gagal menyimpan waktu.", "error"); }
-            btnSimpanWaktu.innerHTML = origText; btnSimpanWaktu.disabled = false;
-        };
-    }
+    
+    window.loadDataSoalRefresh = () => {
+        loadDataSoal();
+        loadBankSoalSummary(); // Update count
+    };
 
     document.getElementById('close-modal-soal')?.addEventListener('click', () => { document.getElementById('modal-tambah-soal').style.display = 'none'; });
     document.getElementById('tab-manual')?.addEventListener('click', () => { document.getElementById('area-manual').style.display = 'block'; document.getElementById('area-import').style.display = 'none'; document.getElementById('tab-manual').classList.remove('btn-secondary'); document.getElementById('tab-import').classList.add('btn-secondary'); });
@@ -655,8 +699,11 @@ document.addEventListener('DOMContentLoaded', () => {
             await window.customAlert("Soal berhasil ditambahkan!", "success"); 
             document.getElementById('modal-tambah-soal').style.display = 'none'; 
             
-            // Auto reload jika sedang di view list soal
-            if(document.getElementById('view-soal-list').style.display === 'block') loadDataSoal(); 
+            if(document.getElementById('view-soal-list').style.display === 'block') {
+                loadDataSoal(); 
+            } else {
+                loadBankSoalSummary();
+            }
         } catch (error) { await window.customAlert("Gagal menyimpan.", "error"); }
         btnSimpan.innerHTML = origBtnText; btnSimpan.disabled = false;
     });
@@ -693,7 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         await addDoc(collection(db, "bank_soal"), payload); 
                     }
                     await window.customAlert(`Import Berhasil!`, "success"); document.getElementById('modal-tambah-soal').style.display = 'none'; 
-                    if(document.getElementById('view-soal-list').style.display === 'block') loadDataSoal(); 
+                    if(document.getElementById('view-soal-list').style.display === 'block') { loadDataSoal(); } else { loadBankSoalSummary(); }
                 } catch (err) { await window.customAlert("Gagal membaca Excel.", "error"); }
                 btn.innerHTML = origText; btn.disabled = false;
             };
@@ -735,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         await addDoc(collection(db, "bank_soal"), pay); 
                     }
                     await window.customAlert(`Import Word Berhasil!`, "success"); document.getElementById('modal-tambah-soal').style.display = 'none'; 
-                    if(document.getElementById('view-soal-list').style.display === 'block') loadDataSoal(); 
+                    if(document.getElementById('view-soal-list').style.display === 'block') { loadDataSoal(); } else { loadBankSoalSummary(); }
                 } catch (err) { console.error(err); await window.customAlert("Format Word tidak sesuai template.", "error"); }
                 btn.innerHTML = origText; btn.disabled = false;
             };
@@ -770,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(payload.tipe === 'PG') { payload.opsi = {A: document.getElementById('edit-opsi-A').value, B: document.getElementById('edit-opsi-B').value, C: document.getElementById('edit-opsi-C').value, D: document.getElementById('edit-opsi-D').value, E: document.getElementById('edit-opsi-E').value}; payload.kunci_jawaban = document.querySelector('input[name="edit_kunci"]:checked')?.value || ""; }
             else if(payload.tipe === 'Isian') { payload.kunci_jawaban = document.getElementById('edit_kunci_isian').value; }
             else if(payload.tipe === 'Uraian') { payload.rubrik = document.getElementById('edit_rubrik_uraian').value; }
-            await updateDoc(doc(db, "bank_soal", id), payload); await window.customAlert("Berhasil diperbarui!", "success"); document.getElementById('modal-edit-soal').style.display = 'none'; loadDataSoal();
+            await updateDoc(doc(db, "bank_soal", id), payload); await window.customAlert("Berhasil diperbarui!", "success"); document.getElementById('modal-edit-soal').style.display = 'none'; window.loadDataSoalRefresh();
         } catch(e) { await window.customAlert("Gagal.", "error"); }
         btn.innerHTML = 'PERBARUI SOAL'; btn.disabled = false;
     };
