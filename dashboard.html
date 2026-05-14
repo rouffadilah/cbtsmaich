@@ -309,42 +309,35 @@
             <span class="close-btn" id="close-modal-data-master">&times;</span>
             <h2 style="margin-bottom: 20px;"><i class="fas fa-database"></i> Data Master</h2>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                <div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <input type="text" id="input-new-mapel" class="input-text" placeholder="Ketik Nama Mapel Baru">
-                        <button id="btn-add-mapel" class="btn-3d" style="margin: 0; width: auto; background: var(--info);"><i class="fas fa-plus"></i></button>
-                    </div>
-                    <div class="table-container" style="max-height: 250px; overflow-y: auto;">
-                        <table id="table-master-mapel" style="margin: 0;">
-                            <thead>
-                                <tr>
-                                    <th>Mata Pelajaran</th>
-                                    <th style="text-align: center; width: 80px;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-master-mapel"></tbody>
-                        </table>
-                    </div>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">KATEGORI</label>
+                    <select id="input-master-type" class="input-text">
+                        <option value="mapel">Mata Pelajaran</option>
+                        <option value="kelas">Kelas</option>
+                    </select>
                 </div>
-                <div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <input type="text" id="input-new-kelas" class="input-text" placeholder="Ketik Nama Kelas Baru">
-                        <button id="btn-add-kelas" class="btn-3d" style="margin: 0; width: auto; background: var(--success);"><i class="fas fa-plus"></i></button>
-                    </div>
-                    <div class="table-container" style="max-height: 250px; overflow-y: auto;">
-                        <table id="table-master-kelas" style="margin: 0;">
-                            <thead>
-                                <tr>
-                                    <th>Daftar Kelas</th>
-                                    <th style="text-align: center; width: 80px;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-master-kelas"></tbody>
-                        </table>
-                    </div>
+                <div style="flex: 2; min-width: 200px;">
+                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">NAMA BARU</label>
+                    <input type="text" id="input-master-name" class="input-text" placeholder="Ketik nama mapel/kelas baru...">
                 </div>
+                <button id="btn-add-master" class="btn-3d" style="background: var(--success); margin: 0;"><i class="fas fa-plus"></i> Input Data</button>
             </div>
+
+            <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+                <table id="table-master-combined" style="margin: 0;">
+                    <thead>
+                        <tr>
+                            <th>Mata Pelajaran</th>
+                            <th style="text-align: center; width: 80px;">Aksi</th>
+                            <th>Kelas</th>
+                            <th style="text-align: center; width: 80px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-master-combined"></tbody>
+                </table>
+            </div>
+            
         </div>
     </div>
 
