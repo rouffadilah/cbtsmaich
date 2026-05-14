@@ -159,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (isGuru && !isAdmin) {
             if(document.getElementById('menu-pengguna')) document.getElementById('menu-pengguna').style.display = 'none'; 
             if(document.getElementById('admin-reg-status')) document.getElementById('admin-reg-status').style.display = 'none'; 
-            if(document.getElementById('admin-data-master')) document.getElementById('admin-data-master').style.display = 'none';
             if(document.getElementById('admin-manajemen-pengguna')) document.getElementById('admin-manajemen-pengguna').style.display = 'none';
         }
 
@@ -197,6 +196,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 4. DATA MASTER & MENYUSUN LIST MAPEL (Bank Soal)
     // ==========================================
+    document.getElementById('btn-open-data-master')?.addEventListener('click', () => {
+        document.getElementById('modal-data-master').style.display = 'flex';
+    });
+
+    document.getElementById('close-modal-data-master')?.addEventListener('click', () => {
+        document.getElementById('modal-data-master').style.display = 'none';
+    });
+
     async function loadDataMaster() {
         try {
             const docSnap = await getDoc(doc(db, "pengaturan", "data_akademik"));
@@ -279,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if(html === '') {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada bank soal terdaftar. Silakan klik <b>Input Soal</b>.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada bank soal terdaftar.</td></tr>';
             } else {
                 tbody.innerHTML = html;
             }
@@ -351,7 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(waktu) { await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: parseInt(waktu) }, { merge: true }); }
             if(jadwal) { await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true }); }
             
-            // Simpan Token & set aktif 15 menit
             if(token) {
                 await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: { code: token, expiresAt: Date.now() + (15 * 60000) } }, { merge: true });
             }
@@ -740,7 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     let selectedExcelSoal = null; let selectedWordSoal = null;
-    document.getElementById('file-excel')?.addEventListener('change', (e) => { selectedExcelSoal = e.target.files[0]; const label = document.getElementById('label-file-excel'); const box = document.getElementById('box-excel'); if(selectedExcelSoal) { label.innerHTML = `<b style="color:var(--success);">${selectedExcelSoal.name}</b>`; box.style.borderColor = "var(--success)"; box.style.background = "#f0fdf4"; selectedWordSoal = null; document.getElementById('file-word').value = ''; const lw = document.getElementById('label-file-word'); const bw = document.getElementById('box-word'); if(lw) { lw.innerHTML = `Klik untuk pilih file`; bw.style.borderColor = "#cbd5e1"; bw.style.background = "#f8fafc"; } } });
+    document.getElementById('file-excel')?.addEventListener('change', (e) => { selectedExcelSoal = e.target.files[0]; const label = document.getElementById('label-file-excel'); const box = document.getElementById('box-excel'); if(selectedExcelSoal) { label.innerHTML = `<b style="color:var(--success);">${selectedExcelSoal.name}</b>`; box.style.borderColor = "var(--success)"; box.style.background = "#f0fdf4"; selectedWordSoal = null; document.getElementById('file-word').value = ''; const lw = document.getElementById('label-file-word'); const bw = document.getElementById('box-word'); if(lw) { lw.innerHTML = `Klik untuk pilih file`; bw.style.borderColor = "#cbd5e1"; be.style.background = "#f8fafc"; } } });
     document.getElementById('file-word')?.addEventListener('change', (e) => { selectedWordSoal = e.target.files[0]; const label = document.getElementById('label-file-word'); const box = document.getElementById('box-word'); if(selectedWordSoal) { label.innerHTML = `<b style="color:var(--info);">${selectedWordSoal.name}</b>`; box.style.borderColor = "var(--info)"; box.style.background = "#eff6ff"; selectedExcelSoal = null; document.getElementById('file-excel').value = ''; const le = document.getElementById('label-file-excel'); const be = document.getElementById('box-excel'); if(le) { le.innerHTML = `Klik untuk pilih file`; be.style.borderColor = "#cbd5e1"; be.style.background = "#f8fafc"; } } });
     document.getElementById('btn-dl-excel')?.addEventListener('click', (e) => { e.preventDefault(); const ws_data = [["No", "Tipe", "Soal", "Media Soal", "OpsiA", "Media A", "OpsiB", "Media B", "OpsiC", "Media C", "OpsiD", "Media D", "OpsiE", "Media E", "Kunci", "Rubrik"], [1, "PG", "Contoh Soal", "", "A", "", "B", "", "C", "", "D", "", "E", "", "A", ""]]; const ws = XLSX.utils.aoa_to_sheet(ws_data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Soal"); XLSX.writeFile(wb, "Template_Soal.xlsx"); });
     document.getElementById('btn-dl-word')?.addEventListener('click', (e) => { e.preventDefault(); const content = `<html><body><p>NO: 1<br>TIPE: PG<br>SOAL: Contoh Soal?<br>A. Opsi A<br>B. Opsi B<br>KUNCI: A</p></body></html>`; const blob = new Blob(['\ufeff', content], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Template_Soal.doc'; a.click(); });
