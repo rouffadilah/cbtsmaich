@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.querySelector('#table-bank-soal-summary tbody');
         if(!tbody) return;
         
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Memuat data bank soal...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Memuat data...</td></tr>';
         
         try {
             const snap = await getDocs(collection(db, "bank_soal"));
@@ -286,13 +286,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if(html === '') {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada bank soal terdaftar.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada soal terdaftar.</td></tr>';
             } else {
                 tbody.innerHTML = html;
             }
         } catch(e) {
             console.error(e);
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red; padding: 20px;">Gagal memuat bank soal dari database.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red; padding: 20px;">Gagal memuat data dari database.</td></tr>';
         }
     }
     window.loadBankSoalSummary = loadBankSoalSummary;
@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: { code: token, expiresAt: Date.now() + (15 * 60000) } }, { merge: true });
             }
 
-            await window.customAlert("Jadwal, Waktu, dan Token (Aktif 15 Menit) berhasil disimpan!", "success");
+            await window.customAlert("Seting berhasil disimpan!", "success");
         } catch(e) {
             await window.customAlert("Gagal menyimpan pengaturan.", "error");
         }
@@ -370,19 +370,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function renderTableMaster() {
-        const divMapel = document.getElementById('list-master-mapel');
-        if (divMapel) divMapel.innerHTML = listMapel.length === 0 ? `<div style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Kosong</div>` : listMapel.map((m, i) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:10px 15px; border:1px solid var(--border-color); border-radius:6px;">
-                <span style="font-weight:600;">${m}</span>
-                <button onclick="window.customAlert('Fungsi Edit Mapel dapat ditambahkan di sini')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
-            </div>`).join('');
+        const tbodyMapel = document.getElementById('tbody-master-mapel');
+        if (tbodyMapel) tbodyMapel.innerHTML = listMapel.length === 0 ? `<tr><td colspan="2" style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Kosong</td></tr>` : listMapel.map((m, i) => `
+            <tr>
+                <td style="font-weight:600;">${m}</td>
+                <td style="text-align:center;">
+                    <button onclick="window.customAlert('Fungsi Edit Mapel dapat ditambahkan di sini')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
+                </td>
+            </tr>`).join('');
 
-        const divKelas = document.getElementById('list-master-kelas');
-        if (divKelas) divKelas.innerHTML = listKelas.length === 0 ? `<div style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Kosong</div>` : listKelas.map((k, i) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:10px 15px; border:1px solid var(--border-color); border-radius:6px;">
-                <span style="font-weight:600;">${k}</span>
-                <button onclick="window.customAlert('Fungsi Edit Kelas dapat ditambahkan di sini')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
-            </div>`).join('');
+        const tbodyKelas = document.getElementById('tbody-master-kelas');
+        if (tbodyKelas) tbodyKelas.innerHTML = listKelas.length === 0 ? `<tr><td colspan="2" style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Kosong</td></tr>` : listKelas.map((k, i) => `
+            <tr>
+                <td style="font-weight:600;">${k}</td>
+                <td style="text-align:center;">
+                    <button onclick="window.customAlert('Fungsi Edit Kelas dapat ditambahkan di sini')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
+                </td>
+            </tr>`).join('');
     }
 
     function populateSemuaDropdown() {
@@ -746,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     let selectedExcelSoal = null; let selectedWordSoal = null;
-    document.getElementById('file-excel')?.addEventListener('change', (e) => { selectedExcelSoal = e.target.files[0]; const label = document.getElementById('label-file-excel'); const box = document.getElementById('box-excel'); if(selectedExcelSoal) { label.innerHTML = `<b style="color:var(--success);">${selectedExcelSoal.name}</b>`; box.style.borderColor = "var(--success)"; box.style.background = "#f0fdf4"; selectedWordSoal = null; document.getElementById('file-word').value = ''; const lw = document.getElementById('label-file-word'); const bw = document.getElementById('box-word'); if(lw) { lw.innerHTML = `Klik untuk pilih file`; bw.style.borderColor = "#cbd5e1"; be.style.background = "#f8fafc"; } } });
+    document.getElementById('file-excel')?.addEventListener('change', (e) => { selectedExcelSoal = e.target.files[0]; const label = document.getElementById('label-file-excel'); const box = document.getElementById('box-excel'); if(selectedExcelSoal) { label.innerHTML = `<b style="color:var(--success);">${selectedExcelSoal.name}</b>`; box.style.borderColor = "var(--success)"; box.style.background = "#f0fdf4"; selectedWordSoal = null; document.getElementById('file-word').value = ''; const lw = document.getElementById('label-file-word'); const bw = document.getElementById('box-word'); if(lw) { lw.innerHTML = `Klik untuk pilih file`; bw.style.borderColor = "#cbd5e1"; bw.style.background = "#f8fafc"; } } });
     document.getElementById('file-word')?.addEventListener('change', (e) => { selectedWordSoal = e.target.files[0]; const label = document.getElementById('label-file-word'); const box = document.getElementById('box-word'); if(selectedWordSoal) { label.innerHTML = `<b style="color:var(--info);">${selectedWordSoal.name}</b>`; box.style.borderColor = "var(--info)"; box.style.background = "#eff6ff"; selectedExcelSoal = null; document.getElementById('file-excel').value = ''; const le = document.getElementById('label-file-excel'); const be = document.getElementById('box-excel'); if(le) { le.innerHTML = `Klik untuk pilih file`; be.style.borderColor = "#cbd5e1"; be.style.background = "#f8fafc"; } } });
     document.getElementById('btn-dl-excel')?.addEventListener('click', (e) => { e.preventDefault(); const ws_data = [["No", "Tipe", "Soal", "Media Soal", "OpsiA", "Media A", "OpsiB", "Media B", "OpsiC", "Media C", "OpsiD", "Media D", "OpsiE", "Media E", "Kunci", "Rubrik"], [1, "PG", "Contoh Soal", "", "A", "", "B", "", "C", "", "D", "", "E", "", "A", ""]]; const ws = XLSX.utils.aoa_to_sheet(ws_data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Soal"); XLSX.writeFile(wb, "Template_Soal.xlsx"); });
     document.getElementById('btn-dl-word')?.addEventListener('click', (e) => { e.preventDefault(); const content = `<html><body><p>NO: 1<br>TIPE: PG<br>SOAL: Contoh Soal?<br>A. Opsi A<br>B. Opsi B<br>KUNCI: A</p></body></html>`; const blob = new Blob(['\ufeff', content], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Template_Soal.doc'; a.click(); });
