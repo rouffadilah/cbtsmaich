@@ -3,10 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBT-SMAICH - Login</title>
+    <title>Portal CBT SMA ICH - Login</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
+    <style>
+        /* --- ANTI COPAS & ANTI AI --- */
+        body { 
+            -webkit-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
+        }
+        input { 
+            -webkit-user-select: auto !important; 
+            -ms-user-select: auto !important; 
+            user-select: auto !important; 
+        }
+        /* --- ANTI PRINT / PDF --- */
+        @media print {
+            body { display: none !important; }
+        }
+    </style>
 </head>
 <body class="login-page-bg">
 
@@ -32,7 +49,7 @@
 
                 <button type="submit" id="btn-submit" class="btn-3d">MASUK</button>
                 
-                <div style="margin-top: 20px; font-size: 0.9rem;">
+                <div style="margin-top: 20px; font-size: 0.9rem; text-align: center;">
                     Siswa baru? <a href="registrasi.html">Daftar di sini</a>
                 </div>
             </form>
@@ -44,9 +61,30 @@
         </div>
     </div>
 
+    <script>
+        // Blokir Klik Kanan
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // Blokir Aksi Copy, Cut, dan Paste
+        document.addEventListener('copy', event => event.preventDefault());
+        document.addEventListener('cut', event => event.preventDefault());
+        document.addEventListener('paste', event => event.preventDefault());
+
+        // Blokir Shortcut Keyboard Pencarian (Ctrl+C, Ctrl+V, Ctrl+F, Inspect Element F12, Print/SS)
+        document.addEventListener('keydown', event => {
+            if (
+                event.key === 'F12' || 
+                event.key === 'PrintScreen' ||
+                (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) ||
+                (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))
+            ) {
+                event.preventDefault();
+            }
+        });
+    </script>
+
     <script type="module" src="index.js"></script>
     <script>
-      // Mengecek apakah browser mendukung fitur Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
