@@ -91,9 +91,7 @@ function renderMediaHTML(mediaObj) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
 
-    let userRoles = []; 
-    let userMapel = []; 
-    let userKelas = [];
+    let userRoles = []; let userMapel = []; let userKelas = [];
     
     try { 
         userRoles = JSON.parse(localStorage.getItem("userRole") || "[]"); 
@@ -159,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (isGuru && !isAdmin) {
             if(document.getElementById('menu-pengguna')) document.getElementById('menu-pengguna').style.display = 'none'; 
             if(document.getElementById('admin-reg-status')) document.getElementById('admin-reg-status').style.display = 'none'; 
-            if(document.getElementById('admin-manajemen-pengguna')) document.getElementById('admin-manajemen-pengguna').style.display = 'none';
         }
 
         handleRouting(); 
@@ -194,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 4. DATA MASTER (GABUNGAN 1 TABEL & 1 INPUT)
+    // 4. DATA MASTER
     // ==========================================
     document.getElementById('btn-open-data-master')?.addEventListener('click', () => {
         document.getElementById('modal-data-master').style.display = 'flex';
@@ -202,6 +199,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('close-modal-data-master')?.addEventListener('click', () => {
         document.getElementById('modal-data-master').style.display = 'none';
+    });
+
+    document.getElementById('btn-edit-master-mode')?.addEventListener('click', () => {
+        window.customAlert("Fitur Edit Data Master keseluruhan saat ini sedang dalam tahap pengembangan.", "info", "Edit Data Master");
     });
 
     async function loadDataMaster() {
@@ -239,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let maxLen = Math.max(listMapel.length, listKelas.length);
         if (maxLen === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; font-size:0.9rem; color:var(--text-muted); padding: 20px;">Belum ada data master.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; font-size:0.9rem; color:var(--text-muted); padding: 20px;">Belum ada data master.</td></tr>`;
             return;
         }
 
@@ -248,8 +249,9 @@ document.addEventListener('DOMContentLoaded', () => {
             let m = listMapel[i];
             let k = listKelas[i];
 
-            let cellMapel = m ? `<td style="font-weight:600;">${m}</td><td style="text-align:center;"><button onclick="window.customAlert('Fungsi Edit Mapel')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i></button></td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td><td></td>`;
-            let cellKelas = k ? `<td style="font-weight:600;">${k}</td><td style="text-align:center;"><button onclick="window.customAlert('Fungsi Edit Kelas')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i></button></td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td><td></td>`;
+            // TAMPILAN TANPA TOMBOL AKSI DI SETIAP BARIS
+            let cellMapel = m ? `<td style="font-weight:600;">${m}</td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td>`;
+            let cellKelas = k ? `<td style="font-weight:600;">${k}</td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td>`;
 
             html += `<tr>${cellMapel}${cellKelas}</tr>`;
         }
@@ -285,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
             const jadwalData = jadwalSnap.exists() ? jadwalSnap.data() : {};
             
-            // Ambil data token
             const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
             const tokenData = tokenSnap.exists() ? tokenSnap.data() : {};
 
@@ -301,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     jadwalFormat = dObj.toLocaleString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
                 }
 
-                // Format tampilan Token
                 let tokenRaw = tokenData[`token_${key}`];
                 let tokenDisplay = '<span style="color:var(--text-muted); font-size:0.85rem;">-</span>';
                 if(tokenRaw) {
@@ -434,23 +434,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const ekc = document.getElementById('edit-kelas-guru-container'); if (ekc) ekc.innerHTML = listKelas.map(k => `<label><input type="checkbox" class="edit-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
     }
 
+    // ==========================================
+    // PORTAL REGISTRASI (TOGGLE SWITCH)
+    // ==========================================
     async function fetchStatusReg() {
         try {
             const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
             if (regSnap.exists()) {
-                const sSiswa = document.getElementById('status-reg-siswa'); const sGuru = document.getElementById('status-reg-guru');
-                if (sSiswa) sSiswa.value = regSnap.data().siswa_aktif !== false ? "buka" : "tutup";
-                if (sGuru) sGuru.value = regSnap.data().guru_aktif !== false ? "buka" : "tutup";
+                const sSiswa = document.getElementById('status-reg-siswa'); 
+                const sGuru = document.getElementById('status-reg-guru');
+                if (sSiswa) sSiswa.checked = regSnap.data().siswa_aktif !== false;
+                if (sGuru) sGuru.checked = regSnap.data().guru_aktif !== false;
             }
         } catch (e) {}
     }
 
     document.getElementById('btn-save-reg-status')?.addEventListener('click', async () => {
-        const statusSiswa = document.getElementById('status-reg-siswa').value === "buka"; const statusGuru = document.getElementById('status-reg-guru').value === "buka";
-        const btn = document.getElementById('btn-save-reg-status'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-        try { await setDoc(doc(db, "pengaturan", "status_registrasi"), { siswa_aktif: statusSiswa, guru_aktif: statusGuru }, { merge: true }); await window.customAlert("Status pendaftaran berhasil diperbarui!", "success"); } catch (error) { await window.customAlert("Gagal memperbarui status.", "error"); }
-        btn.innerHTML = '<i class="fas fa-save"></i> SIMPAN STATUS';
+        const statusSiswa = document.getElementById('status-reg-siswa').checked; 
+        const statusGuru = document.getElementById('status-reg-guru').checked;
+        const btn = document.getElementById('btn-save-reg-status'); 
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+        
+        try { 
+            await setDoc(doc(db, "pengaturan", "status_registrasi"), { siswa_aktif: statusSiswa, guru_aktif: statusGuru }, { merge: true }); 
+            await window.customAlert("Status pendaftaran berhasil diperbarui!", "success"); 
+        } catch (error) { 
+            await window.customAlert("Gagal memperbarui status.", "error"); 
+        }
+        btn.innerHTML = '<i class="fas fa-save"></i> SIMPAN STATUS REGISTRASI';
     });
+
 
     // ==========================================
     // 5. MANAJEMEN PENGGUNA
