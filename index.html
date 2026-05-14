@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal CBT SMA ICH - Login</title>
+    <title>CBT-SMAICH - Login</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
@@ -21,13 +21,13 @@
 
             <form id="login-form">
                 <div class="input-group">
-                    <label for="username"><i class="fas fa-id-card"></i> Username / NIS / NIP</label>
-                    <input type="text" id="username" class="input-text" placeholder="Masukkan Username Anda" required>
+                    <label for="username"><i class="fas fa-id-card"></i> Pengguna / NIP / NIS</label>
+                    <input type="text" id="username" class="input-text" placeholder="Input Pengguna" required>
                 </div>
                 
                 <div class="input-group">
-                    <label for="password"><i class="fas fa-lock"></i> Password</label>
-                    <input type="password" id="password" class="input-text" placeholder="Masukkan Password" required>
+                    <label for="password"><i class="fas fa-lock"></i> Sandi</label>
+                    <input type="password" id="password" class="input-text" placeholder="Masukkan Sandi" required>
                 </div>
 
                 <button type="submit" id="btn-submit" class="btn-3d">MASUK</button>
@@ -38,14 +38,13 @@
             </form>
             
             <div class="login-footer">
-                &copy; 2026 IT Support SMAICH.<br>All rights reserved.
+                Hak Cipta &copy; 2026<br>Pranata Komputer SMAICH
             </div>
             
         </div>
     </div>
 
     <script type="module" src="index.js"></script>
-    <!-- Pendaftaran Service Worker -->
     <script>
       // Mengecek apakah browser mendukung fitur Service Worker
       if ('serviceWorker' in navigator) {
