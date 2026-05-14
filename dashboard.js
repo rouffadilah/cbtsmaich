@@ -265,19 +265,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 5. MANAJEMEN PENGGUNA
+    // 5. MANAJEMEN PENGGUNA (GURU vs SISWA)
     // ==========================================
     async function loadDataPengguna() {
-        const tbody = document.querySelector('#table-siswa tbody'); if (!tbody) return;
+        const tbodySiswa = document.querySelector('#table-siswa tbody'); 
+        const tbodyGuru = document.querySelector('#table-guru tbody'); 
+        if (!tbodySiswa || !tbodyGuru) return;
         
-        tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px;"><div class="skeleton-box" style="width: 100%;"></div><div class="skeleton-box" style="width: 60%;"></div></td></tr>`;
+        const skeletonHTML = `<tr><td colspan="5" style="padding: 20px;"><div class="skeleton-box" style="width: 100%;"></div><div class="skeleton-box" style="width: 60%;"></div></td></tr>`;
+        tbodySiswa.innerHTML = skeletonHTML;
+        tbodyGuru.innerHTML = skeletonHTML;
             
         try {
             const snap = await getDocs(collection(db, "users")); 
             const statSiswa = document.getElementById('stat-siswa'); if (statSiswa) statSiswa.innerText = snap.size; 
             
-            tbody.innerHTML = ''; allUsersData = []; 
-            if(snap.empty) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data pengguna.</td></tr>'; return; }
+            tbodySiswa.innerHTML = ''; 
+            tbodyGuru.innerHTML = ''; 
+            allUsersData = []; 
+            
+            let countSiswa = 0; 
+            let countGuru = 0;
+
+            if(snap.empty) { 
+                tbodySiswa.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data siswa.</td></tr>'; 
+                tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data guru.</td></tr>'; 
+                return; 
+            }
 
             snap.forEach(docSnap => {
                 const data = docSnap.data(); data.id = docSnap.id; allUsersData.push(data);
@@ -288,13 +302,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (rls.includes('guru')) { detailText = `Mapel: ${Array.isArray(data.mapel) ? data.mapel.join(', ') : (data.mapel || '-')} <br><span style="font-size:0.75rem; color:var(--text-muted);">Kelas Ajar: ${Array.isArray(data.kelas) ? data.kelas.join(', ') : (data.kelas || '-')}</span>`; } 
                 else if (rls.includes('siswa')) { detailText = `Kelas: ${data.kelas || '-'}`; }
                 
-                tbody.innerHTML += `<tr><td>${data.username}</td><td><strong>${data.nama}</strong></td><td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${rls.join(', ').toUpperCase()}</span></td><td>${detailText}</td>
+                const rowHTML = `<tr><td>${data.username}</td><td><strong>${data.nama}</strong></td><td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${rls.join(', ').toUpperCase()}</span></td><td>${detailText}</td>
                     <td>
                         <button onclick="window.editPengguna('${docSnap.id}')" style="color:var(--warning); background:none; border:none; cursor:pointer; font-size:1.1rem; margin-right:10px;" title="Edit"><i class="fas fa-edit"></i></button>
                         <button onclick="window.hapusDokumen('users', '${docSnap.id}', window.loadDataPengguna)" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:1.1rem;" title="Hapus"><i class="fas fa-trash"></i></button>
                     </td></tr>`;
+                
+                if (rls.includes('guru') || rls.includes('admin')) {
+                    tbodyGuru.innerHTML += rowHTML;
+                    countGuru++;
+                } else {
+                    tbodySiswa.innerHTML += rowHTML;
+                    countSiswa++;
+                }
             });
-        } catch (error) { console.error(error); tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data.</td></tr>'; }
+
+            if(countSiswa === 0) tbodySiswa.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data siswa.</td></tr>';
+            if(countGuru === 0) tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data guru & admin.</td></tr>';
+
+        } catch (error) { 
+            console.error(error); 
+            tbodySiswa.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data.</td></tr>'; 
+            tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data.</td></tr>'; 
+        }
     }
     window.loadDataPengguna = loadDataPengguna;
 
