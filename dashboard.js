@@ -212,10 +212,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderTableMaster() {
-        const tbodyMapel = document.querySelector('#table-master-mapel tbody');
-        if (tbodyMapel) tbodyMapel.innerHTML = listMapel.length === 0 ? `<tr><td style="text-align:center;">Kosong</td></tr>` : listMapel.map((m, i) => `<tr><td>${m}</td><td style="text-align:right;"><button onclick="window.hapusMapel(${i})" class="btn-3d" style="background:var(--danger); padding:4px 8px;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-        const tbodyKelas = document.querySelector('#table-master-kelas tbody');
-        if (tbodyKelas) tbodyKelas.innerHTML = listKelas.length === 0 ? `<tr><td style="text-align:center;">Kosong</td></tr>` : listKelas.map((k, i) => `<tr><td>${k}</td><td style="text-align:right;"><button onclick="window.hapusKelas(${i})" class="btn-3d" style="background:var(--danger); padding:4px 8px;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        const divMapel = document.getElementById('list-master-mapel');
+        if (divMapel) divMapel.innerHTML = window.listMapel.length === 0 ? `<div style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Kosong</div>` : window.listMapel.map((m, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:10px 15px; border:1px solid var(--border-color); border-radius:6px;">
+                <span style="font-weight:600;">${m}</span>
+                <button onclick="window.customAlert('Fungsi Edit Mapel dapat ditambahkan di sini')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
+            </div>`).join('');
+
+        const divKelas = document.getElementById('list-master-kelas');
+        if (divKelas) divKelas.innerHTML = window.listKelas.length === 0 ? `<div style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Kosong</div>` : window.listKelas.map((k, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:10px 15px; border:1px solid var(--border-color); border-radius:6px;">
+                <span style="font-weight:600;">${k}</span>
+                <button onclick="window.customAlert('Fungsi Edit Kelas dapat ditambahkan di sini')" class="btn-3d" style="background:var(--warning); padding:6px 12px; font-size:0.8rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
+            </div>`).join('');
     }
 
     function populateSemuaDropdown() {
@@ -254,9 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
         listKelas.push(val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
         document.getElementById('input-new-kelas').value = ''; loadDataMaster();
     });
-
-    window.hapusMapel = async (index) => { if (!(await window.customConfirm("Hapus Mata Pelajaran ini secara permanen?", "danger", "Hapus Mapel"))) return; listMapel.splice(index, 1); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true }); loadDataMaster(); };
-    window.hapusKelas = async (index) => { if (!(await window.customConfirm("Hapus Kelas ini secara permanen?", "danger", "Hapus Kelas"))) return; listKelas.splice(index, 1); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true }); loadDataMaster(); };
 
     async function fetchStatusReg() {
         try {
@@ -479,11 +485,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDataSoal() {
         const m = document.getElementById('filter-soal-mapel').value;
         const k = document.getElementById('filter-soal-kelas').value;
-        const tbody = document.querySelector('#table-soal tbody');
+        const listContainer = document.getElementById('list-soal');
 
         if(!m || !k) return customAlert("Pilih Mapel dan Kelas terlebih dahulu!", "warning");
         
-        tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px;"><div class="skeleton-box" style="width: 100%;"></div><div class="skeleton-box" style="width: 70%;"></div><div class="skeleton-box" style="width: 85%;"></div></td></tr>`;
+        listContainer.innerHTML = `<div style="padding: 20px;"><div class="skeleton-box" style="width: 100%;"></div><div class="skeleton-box" style="width: 70%;"></div></div>`;
 
         try {
             const qS = query(collection(db, "bank_soal"), where("mataPelajaran", "==", m), where("kelas", "==", k));
@@ -502,28 +508,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else { document.getElementById('input-waktu-ujian').value = ''; }
             } catch(e) { console.error("Gagal load waktu", e); }
 
-            tbody.innerHTML = '';
+            listContainer.innerHTML = '';
             if(allSoalData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--danger);">Belum ada soal untuk kategori ini.</td></tr>';
+                listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--danger); background:white; border:1px solid var(--border-color); border-radius:8px;">Belum ada soal untuk kategori ini.</div>';
                 document.getElementById('btn-preview-full').style.display = 'none'; return;
             }
 
             allSoalData.forEach(dat => {
                 let statusMedia = dat.media_soal ? '<i class="fas fa-paperclip" style="color:var(--success); margin-left:5px;"></i>' : '';
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="text-align:center; font-weight:bold;">${dat.nomor_soal === 999 ? '-' : dat.nomor_soal}</td>
-                        <td>${dat.mataPelajaran}</td><td>${dat.kelas}</td>
-                        <td><span style="background:var(--primary-light); color:var(--primary-hover); font-weight:bold; padding:4px 8px; border-radius:4px; font-size:0.8rem;">${dat.tipe}</span></td>
-                        <td>${dat.teks_soal.substring(0,40)}... ${statusMedia}</td>
-                        <td>
-                            <button onclick="window.editSoal('${dat.id}')" style="color:var(--warning); background:none; border:none; cursor:pointer; font-size:1.1rem;" title="Edit"><i class="fas fa-edit"></i></button>
-                            <button onclick="window.hapusDokumen('bank_soal', '${dat.id}', window.loadDataSoal)" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:1.1rem; margin-left:10px;" title="Hapus"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>`;
+                listContainer.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; background:white; padding:15px; border:1px solid var(--border-color); border-radius:8px; gap:15px;">
+                        <div style="flex:1;">
+                            <div style="margin-bottom:5px;">
+                                <span style="font-weight:bold; color:var(--secondary);">Soal No. ${dat.nomor_soal === 999 ? '-' : dat.nomor_soal}</span>
+                                <span style="background:var(--primary-light); color:var(--primary-hover); font-weight:bold; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-left:8px;">${dat.tipe}</span>
+                            </div>
+                            <div style="color:var(--secondary); font-size:0.95rem;">${dat.teks_soal.substring(0,80)}... ${statusMedia}</div>
+                        </div>
+                        <div>
+                            <button onclick="window.editSoal('${dat.id}')" class="btn-3d" style="background:var(--warning); padding:8px 15px; font-size:0.85rem; margin:0;" title="Edit Soal"><i class="fas fa-edit"></i> Edit</button>
+                        </div>
+                    </div>`;
             });
             document.getElementById('btn-preview-full').style.display = 'inline-block';
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data dari database.</td></tr>'; }
+        } catch(e) { listContainer.innerHTML = '<div style="text-align:center; color:red; padding:20px;">Gagal memuat data dari database.</div>'; }
     }
     window.loadDataSoal = loadDataSoal; 
 
@@ -829,9 +837,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 8. MANAJEMEN TOKEN UJIAN (HAPUS & PERPANJANG AMAN)
     // ==========================================
     async function loadActiveTokens() {
-        const tbody = document.querySelector('#table-active-tokens tbody'); if(!tbody) return; 
+        const listContainer = document.getElementById('list-active-tokens'); if(!listContainer) return; 
         try {
-            const snap = await getDoc(doc(db, "pengaturan", "token_ujian")); tbody.innerHTML = '';
+            const snap = await getDoc(doc(db, "pengaturan", "token_ujian")); listContainer.innerHTML = '';
             if(snap.exists() && Object.keys(snap.data()).length > 0) { 
                 const data = snap.data();
                 Object.keys(data).forEach(k => { 
@@ -840,18 +848,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     let timeLeft = Math.floor((expiresAt - Date.now()) / 60000);
                     let badge = timeLeft > 0 ? `<span style="background: var(--success); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 10px; font-weight: bold;">Sisa ${timeLeft} mnt</span>` : `<span style="background: var(--danger); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 10px; font-weight: bold;">Habis</span>`;
 
-                    tbody.innerHTML += `
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 12px 10px; color: var(--secondary); font-size: 0.9rem;">${mapelKelas}</td>
-                            <td style="padding: 12px 10px; font-weight: bold; color: var(--primary); font-size: 1rem;">${tokenCode} ${badge}</td>
-                            <td style="padding: 12px 10px; text-align: right; white-space: nowrap;">
-                                <button onclick="window.perpanjangToken('${k}')" style="color: var(--success); background: #ecfdf5; border: 1px solid #a7f3d0; padding: 6px 10px; border-radius: 6px; cursor: pointer; margin-right: 5px; transition: 0.2s;" title="Perpanjang 15 Menit"><i class="fas fa-clock"></i></button>
-                                <button onclick="window.hapusTokenUtama('${k}')" style="color: var(--danger); background: #fee2e2; border: 1px solid #fecaca; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s;" title="Hapus Token"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`; 
+                    listContainer.innerHTML += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:15px; border:1px solid var(--border-color); border-radius:8px;">
+                            <div>
+                                <div style="color: var(--secondary); font-size: 0.85rem; margin-bottom: 4px; font-weight:600;">${mapelKelas}</div>
+                                <div style="font-weight: bold; color: var(--primary); font-size: 1.1rem;">${tokenCode} ${badge}</div>
+                            </div>
+                            <div>
+                                <button onclick="window.customAlert('Fungsi Edit Token dapat dikembangkan di sini')" class="btn-3d" style="background:var(--warning); padding:8px 15px; font-size:0.85rem; margin:0;"><i class="fas fa-edit"></i> Edit</button>
+                            </div>
+                        </div>`; 
                 }); 
-            } else { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 30px; color: var(--text-muted); font-size: 0.95rem;">Belum ada token aktif.</td></tr>`; }
-        } catch (e) { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 30px; color: var(--danger); font-size: 0.95rem;">Gagal memuat token dari database.</td></tr>`; }
+            } else { listContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted); font-size: 0.95rem; background:white; border-radius:8px; border:1px solid var(--border-color);">Belum ada token aktif.</div>`; }
+        } catch (e) { listContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--danger); font-size: 0.95rem;">Gagal memuat token dari database.</div>`; }
     }
 
     const btnRefreshToken = document.getElementById('btn-refresh-token');
@@ -874,33 +883,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSaveToken.innerHTML = origText; btnSaveToken.disabled = false;
         };
     }
-
-    window.hapusTokenUtama = async (k) => { 
-        if(await window.customConfirm("Hapus token ujian ini? Siswa tidak akan bisa login lagi ke mapel tersebut.", "danger", "Hapus Token")) { 
-            try { 
-                const snap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-                if(snap.exists()) {
-                    let dataTokens = snap.data(); delete dataTokens[k]; 
-                    await setDoc(doc(db, "pengaturan", "token_ujian"), dataTokens); 
-                    await window.customAlert("Token berhasil dihapus!", "success"); loadActiveTokens(); 
-                }
-            } catch (e) { window.customAlert("Gagal menghapus token.", "error"); }
-        } 
-    };
-
-    window.perpanjangToken = async (k) => {
-        if(await window.customConfirm("Tambahkan waktu 15 menit untuk token ini dihitung dari sekarang?", "info", "Perpanjang Waktu")) {
-            try {
-                const snap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-                if (snap.exists() && snap.data()[k]) {
-                    let currentData = snap.data()[k];
-                    let payload = (typeof currentData === 'object' && currentData !== null) ? { code: currentData.code, expiresAt: Date.now() + (15 * 60000) } : { code: currentData, expiresAt: Date.now() + (15 * 60000) };
-                    await setDoc(doc(db, "pengaturan", "token_ujian"), { [k]: payload }, { merge: true });
-                    await window.customAlert("Waktu ujian berhasil diperpanjang 15 Menit!", "success"); loadActiveTokens();
-                } else { await window.customAlert("Data token tidak ditemukan di sistem.", "error"); }
-            } catch(e) { await window.customAlert("Gagal memperpanjang waktu token. Coba buat ulang token baru.", "error"); }
-        }
-    };
 
     window.hapusDokumen = async (coll, id, callback) => { if(await customConfirm("Data akan dihapus permanen. Lanjutkan?", "danger")) { await deleteDoc(doc(db, coll, id)); if(callback) callback(); } };
 
