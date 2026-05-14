@@ -156,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchStatusReg(); 
         } else if (isGuru && !isAdmin) {
             if(document.getElementById('menu-pengguna')) document.getElementById('menu-pengguna').style.display = 'none'; 
-            if(document.getElementById('admin-reg-status')) document.getElementById('admin-reg-status').style.display = 'none'; 
         }
 
         handleRouting(); 
@@ -248,11 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < maxLen; i++) {
             let m = listMapel[i];
             let k = listKelas[i];
-
-            // TAMPILAN TANPA TOMBOL AKSI DI SETIAP BARIS
             let cellMapel = m ? `<td style="font-weight:600;">${m}</td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td>`;
             let cellKelas = k ? `<td style="font-weight:600;">${k}</td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td>`;
-
             html += `<tr>${cellMapel}${cellKelas}</tr>`;
         }
         tbody.innerHTML = html;
@@ -435,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // PORTAL REGISTRASI (TOGGLE SWITCH)
+    // PORTAL REGISTRASI (AUTO-SAVE)
     // ==========================================
     async function fetchStatusReg() {
         try {
@@ -449,19 +445,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {}
     }
 
-    document.getElementById('btn-save-reg-status')?.addEventListener('click', async () => {
-        const statusSiswa = document.getElementById('status-reg-siswa').checked; 
-        const statusGuru = document.getElementById('status-reg-guru').checked;
-        const btn = document.getElementById('btn-save-reg-status'); 
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-        
-        try { 
-            await setDoc(doc(db, "pengaturan", "status_registrasi"), { siswa_aktif: statusSiswa, guru_aktif: statusGuru }, { merge: true }); 
-            await window.customAlert("Status pendaftaran berhasil diperbarui!", "success"); 
-        } catch (error) { 
-            await window.customAlert("Gagal memperbarui status.", "error"); 
-        }
-        btn.innerHTML = '<i class="fas fa-save"></i> SIMPAN STATUS REGISTRASI';
+    // Listener otomatis menyimpan status saat toggle diklik
+    document.getElementById('status-reg-guru')?.addEventListener('change', async (e) => {
+        try { await setDoc(doc(db, "pengaturan", "status_registrasi"), { guru_aktif: e.target.checked }, { merge: true }); } 
+        catch (err) { console.error("Gagal simpan status guru", err); }
+    });
+    document.getElementById('status-reg-siswa')?.addEventListener('change', async (e) => {
+        try { await setDoc(doc(db, "pengaturan", "status_registrasi"), { siswa_aktif: e.target.checked }, { merge: true }); } 
+        catch (err) { console.error("Gagal simpan status siswa", err); }
     });
 
 
@@ -519,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if(countSiswa === 0) tbodySiswa.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data siswa.</td></tr>';
-            if(countGuru === 0) tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data guru & admin.</td></tr>';
+            if(countGuru === 0) tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data guru.</td></tr>';
 
         } catch (error) { 
             console.error(error); 
@@ -621,7 +612,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.editPengguna = (uid) => {
         const user = allUsersData.find(u => u.id === uid); if (!user) return;
-        document.getElementById('edit-uid').value = user.id; document.getElementById('edit-nama').value = user.nama; 
+        document.getElementById('edit-uid').value = user.id; 
+        document.getElementById('edit-nama').value = user.nama; 
+        document.getElementById('edit-username').value = user.username || '';
+        document.getElementById('edit-pass').value = ''; // Kosongkan agar opsional
         
         const rls = Array.isArray(user.role) ? user.role : [user.role];
         document.querySelectorAll('.edit-role-cb').forEach(cb => { cb.checked = rls.includes(cb.value); });
@@ -643,20 +637,42 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { document.getElementById('modal-edit-akun').style.display = 'none'; });
 
     document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
-        const uid = document.getElementById('edit-uid').value; const nama = document.getElementById('edit-nama').value.trim(); const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
-        if (selectedRoles.length === 0) return await window.customAlert("Pilih minimal 1 Role Akses!", "warning");
+        const uid = document.getElementById('edit-uid').value; 
+        const nama = document.getElementById('edit-nama').value.trim(); 
+        const username = document.getElementById('edit-username').value.trim();
+        const pass = document.getElementById('edit-pass').value;
+        const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
         
-        let payload = { nama: nama, role: selectedRoles };
+        if (selectedRoles.length === 0) return await window.customAlert("Pilih minimal 1 Role Akses!", "warning");
+        if (!username) return await window.customAlert("Username tidak boleh kosong!", "warning");
+        
+        let payload = { nama: nama, username: username, role: selectedRoles };
+        
+        // Simpan password di database referensi jika diisi
+        if (pass.length > 0) {
+            payload.password = pass; 
+        }
+
         if (selectedRoles.includes('guru')) { payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value); payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value); } 
         if (selectedRoles.includes('siswa')) { const ks = document.getElementById('edit-kelas-siswa').value; if (!selectedRoles.includes('guru')) payload.kelas = ks; else payload.kelas_siswa = ks; }
 
         try { 
             document.getElementById('btn-save-edit-akun').innerHTML = "Menyimpan..."; 
             await updateDoc(doc(db, "users", uid), payload); 
-            await window.customAlert("Profil pengguna diperbarui!", "success"); 
+            
+            if(pass.length > 0) {
+                await window.customAlert("Profil berhasil diperbarui. Perubahan password tersimpan ke database untuk referensi, tapi belum terganti di autentikasi utama (Membutuhkan akses sistem/Admin SDK).", "success");
+            } else {
+                await window.customAlert("Profil pengguna diperbarui!", "success"); 
+            }
+            
             document.getElementById('modal-edit-akun').style.display = 'none'; 
-            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; loadDataPengguna();
-        } catch (err) { await window.customAlert("Gagal menyimpan perubahan.", "error"); document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; }
+            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; 
+            loadDataPengguna();
+        } catch (err) { 
+            await window.customAlert("Gagal menyimpan perubahan.", "error"); 
+            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; 
+        }
     });
 
     // ==========================================
