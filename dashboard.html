@@ -60,7 +60,7 @@
                     
                     <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
                         <div class="toggle-accordion" data-target="container-bank-soal" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-file-alt"></i> Bank Soal</h3>
+                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-file-alt"></i> Bank Soal & Token</h3>
                             <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                         </div>
                         <div id="container-bank-soal" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
@@ -78,12 +78,13 @@
                                                 <th>Kelas</th>
                                                 <th>Jadwal Ujian</th>
                                                 <th>Durasi</th>
+                                                <th>Token</th>
                                                 <th>Jml Soal</th>
                                                 <th style="text-align: center;">Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
+                                            <tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -103,13 +104,17 @@
                                     <input type="hidden" id="filter-soal-kelas">
                                     
                                     <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; width: 100%;">
-                                        <div style="flex: 1; min-width: 200px;">
-                                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--info); display: block; margin-bottom: 5px;"><i class="fas fa-calendar-alt"></i> JADWAL UJIAN (TANGGAL & JAM)</label>
+                                        <div style="flex: 1; min-width: 180px;">
+                                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--info); display: block; margin-bottom: 5px;"><i class="fas fa-calendar-alt"></i> JADWAL UJIAN</label>
                                             <input type="datetime-local" id="input-jadwal-ujian" class="input-text" style="border-color: var(--info);">
                                         </div>
-                                        <div style="width: 150px;">
-                                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> DURASI (MENIT)</label>
+                                        <div style="width: 120px;">
+                                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> DURASI (MNT)</label>
                                             <input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);">
+                                        </div>
+                                        <div style="width: 150px;">
+                                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--danger); display: block; margin-bottom: 5px;"><i class="fas fa-key"></i> TOKEN</label>
+                                            <input type="text" id="input-token-ujian" class="input-text" placeholder="Ketik Kode..." style="border-color: var(--danger); text-transform: uppercase;">
                                         </div>
                                         <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--secondary);"><i class="fas fa-save"></i> Simpan Seting</button>
                                         <button id="btn-preview-full" class="btn-3d" style="background-color: var(--info); display: none; margin-left: auto;"><i class="fas fa-eye"></i> Preview</button>
@@ -119,30 +124,6 @@
                                 <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
                                     <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Memuat data soal...</div>
                                 </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                        <div class="toggle-accordion" data-target="container-token" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
-                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-key"></i> Token Ujian</h3>
-                            <i class="fas fa-chevron-down toggle-icon" style="color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
-                        </div>
-                        <div id="container-token" style="display: none; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
-                            
-                            <div class="input-group"><label>Pilih Mapel</label><select id="set-token-mapel" class="input-text"></select></div>
-                            <div class="input-group"><label>Pilih Kelas</label><select id="set-token-kelas" class="input-text"></select></div>
-                            <div class="input-group"><label>Buat Kode Token Baru</label><input type="text" id="input-token-baru" class="input-text" placeholder="Ketik Kode Token (Misal: UJIAN123)" style="text-transform: uppercase;"></div>
-                            <button id="btn-save-token" class="btn-3d" style="width: 100%;"><i class="fas fa-stopwatch"></i> Aktifkan (Durasi 15 Menit)</button>
-                            
-                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">Daftar Token Aktif:</label>
-                                <button id="btn-refresh-token" class="btn-3d btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; margin: 0;"><i class="fas fa-sync-alt"></i></button>
-                            </div>
-                            
-                            <div id="list-active-tokens" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color); padding: 15px;">
-                                <div style="text-align:center; color: var(--text-muted);">Memuat data...</div>
                             </div>
 
                         </div>
@@ -362,7 +343,7 @@
 
             <div id="area-import" style="display: none;">
                 <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div class="input-group"><label>Mapel Tujuan</label><select id="import-mapel" class="input-text"></select></div>
+                    <div class="input-group"><label>Mapel Tujuan</label><input type="text" id="import-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
                     <div class="input-group"><label>Kelas Tujuan</label><select id="import-kelas" class="input-text"></select></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
@@ -386,7 +367,7 @@
 
             <div id="area-manual">
                 <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <div class="input-group" style="flex: 1;"><label>Mapel</label><select id="soal-mapel" class="input-text"></select></div>
+                    <div class="input-group" style="flex: 1;"><label>Mapel</label><input type="text" id="soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
                     <div class="input-group" style="flex: 1;"><label>Kelas</label><select id="soal-kelas" class="input-text"></select></div>
                     <div class="input-group" style="flex: 1;"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text"></div>
                     <div class="input-group" style="flex: 1;"><label>Tipe Soal</label>
@@ -419,7 +400,7 @@
             <h2 style="margin-bottom: 20px;"><i class="fas fa-edit"></i> Edit Soal</h2>
             <input type="hidden" id="edit-soal-id">
             <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                <div class="input-group" style="flex: 1;"><label>Mapel</label><select id="edit-soal-mapel" class="input-text" disabled style="background:#f1f5f9;"></select></div>
+                <div class="input-group" style="flex: 1;"><label>Mapel</label><input type="text" id="edit-soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
                 <div class="input-group" style="flex: 1;"><label>Kelas</label><select id="edit-soal-kelas" class="input-text"></select></div>
                 <div class="input-group" style="flex: 1;"><label>No. Soal</label><input type="number" id="edit-soal-nomor" class="input-text"></div>
                 <div class="input-group" style="flex: 1;"><label>Tipe</label><input type="text" id="edit-soal-tipe" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
