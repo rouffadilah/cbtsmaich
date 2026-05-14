@@ -112,6 +112,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
 
+        // Menampilkan / Menyembunyikan tombol kembali Global
+        const globalBackBtn = document.getElementById('global-back-btn');
+        if (hash === 'section-beranda') {
+            if (globalBackBtn) globalBackBtn.style.display = 'none';
+        } else {
+            if (globalBackBtn) globalBackBtn.style.display = 'block';
+        }
+
         if (hash === 'section-hasil-detail') {
             if (!currentMapelDetail) { window.location.hash = 'section-hasil'; return; }
             document.getElementById('section-hasil').classList.add('active');
@@ -757,7 +765,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let maps = [...new Set(allHasilUjian.map(h => h.mataPelajaran))]; maps.forEach(m => { grid.innerHTML += `<div class="mapel-card" onclick="window.openDetailHasil('${m}')" style="background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow-sm); cursor: pointer; border: 1px solid var(--border-color);"><h3 style="margin: 0 0 5px 0; color: var(--secondary);">${m}</h3><p style="margin: 0; color: var(--success); font-weight: bold;"><i class="fas fa-check-circle"></i> ${allHasilUjian.filter(h=>h.mataPelajaran===m).length} Selesai</p></div>`; });
     }
 
-    // Fungsi Hapus Langsung 1 Siswa (Bypass Confirm Alert)
     window.hapusLangsung = async (coll, id, rowElement) => {
         rowElement.innerHTML = '<td colspan="5" style="text-align:center; color: var(--danger);"><i class="fas fa-spinner fa-spin"></i> Menghapus...</td>';
         try {
@@ -791,7 +798,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.refreshHasil = () => { loadDataHasil(); if(currentMapelDetail) window.openDetailHasil(currentMapelDetail); };
     if(document.getElementById('btn-back-hasil')) document.getElementById('btn-back-hasil').onclick = () => window.history.back();
 
-    // Hapus Semua Data Sekaligus (Mass Delete)
     document.getElementById('btn-hapus-semua-hasil')?.addEventListener('click', async () => {
         if (!currentMapelDetail) return;
         if (await window.customConfirm(`Hapus SEMUA data hasil ujian untuk mapel ${currentMapelDetail}? Tindakan ini tidak bisa dibatalkan.`, "danger", "Kosongkan Data")) {
@@ -807,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 await window.customAlert(`${dataAkanDihapus.length} data berhasil dikosongkan!`, "success");
                 window.refreshHasil(); 
-                document.getElementById('btn-back-hasil').click(); 
+                window.location.hash = 'section-hasil'; 
             } catch (e) {
                 await window.customAlert("Terjadi kesalahan saat menghapus data massal.", "error");
             }
