@@ -12,20 +12,24 @@
 <body>
 
     <div class="app-layout">
-        <header class="app-header" style="position: relative; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 100;">
+        <header class="app-header" style="position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 1000;">
             
-            <div style="display: flex; align-items: center; z-index: 2; width: 60px;">
-                <button id="global-back-btn" onclick="window.history.back()" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; display: none;" title="Kembali">
+            <div style="width: 60px; display: flex; align-items: center;">
+                <button id="global-back-btn" onclick="window.history.back()" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px; display: none;" title="Kembali">
                     <i class="fas fa-arrow-left"></i>
                 </button>
             </div>
-            
-            <div style="position: absolute; left: 50%; transform: translateX(-50%); cursor: pointer; z-index: 1; display: flex; align-items: center;" onclick="window.location.hash='section-beranda'">
-                <img src="logo-smaich.png" alt="Logo SMAICH" class="brand-logo" onerror="this.src='https://via.placeholder.com/42x42?text=CBT'" style="height: 40px; margin: 0;">
+
+            <div style="flex: 1; display: flex; justify-content: center; align-items: center; cursor: pointer;" onclick="window.location.hash='section-beranda'">
+                <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0;">
             </div>
 
-            <div class="header-actions" style="display: flex; align-items: center; z-index: 2;">
-                <button id="btn-logout" class="btn-logout" title="Keluar" style="padding: 8px 12px; border-radius: 8px; margin: 0;">
+            <div style="width: auto; display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+                <div class="user-badge" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-user-circle" style="font-size: 1.5rem; color: var(--secondary);"></i>
+                    <span id="admin-name" style="font-weight: 600; font-size: 0.95rem; color: var(--secondary); max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Memuat...</span>
+                </div>
+                <button id="btn-logout" class="btn-3d" style="background: var(--danger); margin: 0; padding: 8px 15px; border-radius: 8px;" title="Keluar">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
@@ -183,7 +187,7 @@
                                 </div>
 
                                 <div style="padding: 0; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: #ffffff;">
-                                    <div id="toggle-form-akun" style="padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-bottom: 1px solid var(--border-color);">
+                                    <div class="toggle-accordion" data-target="container-form-akun" style="padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-bottom: 1px solid var(--border-color);">
                                         <div style="display: flex; align-items: center; gap: 15px;">
                                             <div style="background: #eff6ff; color: var(--info); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fas fa-user-plus"></i></div>
                                             <div>
@@ -191,7 +195,7 @@
                                                 <p style="margin: 2px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Buat satu akun siswa atau guru baru</p>
                                             </div>
                                         </div>
-                                        <i id="icon-toggle-akun" class="fas fa-chevron-down" style="color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
+                                        <i class="fas fa-chevron-down toggle-icon" style="color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                                     </div>
                                     <div id="container-form-akun" style="display: none; padding: 25px; background: #ffffff;">
                                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
@@ -291,8 +295,7 @@
                         <div class="card">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                                 <div style="display: flex; align-items: center; gap: 10px;">
-                                    <button id="btn-back-hasil" class="btn-3d btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-arrow-left"></i> Kembali</button>
-                                    <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.1rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
+                                    <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.15rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
                                 </div>
                                 <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;">
                                     <i class="fas fa-trash-alt"></i> KOSONGKAN DATA MAPEL INI
