@@ -53,6 +53,19 @@ async function loadMapelOptions() {
     } catch(e) {}
 }
 
+// === FUNGSI BANTUAN FULLSCREEN LINTAS BROWSER ===
+function openFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) { elem.requestFullscreen().catch(()=>{}); } 
+    else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } // Safari
+    else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); } // Edge/IE
+}
+function closeFullscreen() {
+    if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); } 
+    else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); } 
+    else if (document.msExitFullscreen) { document.msExitFullscreen(); }
+}
+
 document.getElementById('btn-verifikasi').onclick = async () => {
     mapelTerpilih = document.getElementById('select-mapel').value;
     const tokenInput = document.getElementById('input-token').value.toUpperCase().trim();
@@ -69,7 +82,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         const tokenKey = `token_${mapelTerpilih}_${kelasSiswa}`;
         
         if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) {
-            btn.innerHTML = '<i class="fas fa-play"></i> MULAI'; btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
             return customAlert("Token tidak valid atau belum diaktifkan oleh Admin.", "Akses Ditolak");
         }
 
@@ -78,18 +91,18 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         const expiresAt = typeof tokenData === 'object' ? tokenData.expiresAt : 0;
 
         if (tokenInput !== tokenCode) {
-            btn.innerHTML = '<i class="fas fa-play"></i> MULAI'; btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
             return customAlert("Kode Token Salah!", "Akses Ditolak");
         }
         if (Date.now() > expiresAt) {
-            btn.innerHTML = '<i class="fas fa-play"></i> MULAI'; btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
             return customAlert("Waktu Token sudah habis! Silakan minta token baru ke Pengawas.", "Token Expired");
         }
 
         const qHasil = query(collection(db, "hasil_ujian"), where("uid", "==", studentData.uid), where("mataPelajaran", "==", mapelTerpilih));
         const cekHasil = await getDocs(qHasil);
         if(!cekHasil.empty) {
-            btn.innerHTML = '<i class="fas fa-play"></i> MULAI'; btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
             return customAlert("Anda sudah menyelesaikan ujian mapel ini.", "Ditolak");
         }
 
@@ -97,7 +110,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         const soalSnap = await getDocs(qSoal);
         
         if (soalSnap.empty) {
-            btn.innerHTML = '<i class="fas fa-play"></i> MULAI'; btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
             return customAlert("Belum ada soal untuk mata pelajaran ini.", "Kosong");
         }
 
@@ -115,7 +128,8 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
         durasiDetik = durasiMenit * 60;
         
-        document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen diblokir"));
+        // PAKSA FULLSCREEN & KEAMANAN
+        openFullscreen();
         mulaiKeamananUjian();
         
         document.getElementById('pre-exam-screen').style.display = 'none';
@@ -129,7 +143,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     } catch(e) {
         console.error(e);
         customAlert("Terjadi kesalahan jaringan.");
-        btn.innerHTML = '<i class="fas fa-play"></i> MULAI'; btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
     }
 };
 
@@ -284,7 +298,7 @@ async function selesaiUjian(isTimeOut = false, isPelanggaran = false) {
 
     try {
         await addDoc(collection(db, "hasil_ujian"), payload);
-        document.exitFullscreen().catch(e=>{});
+        closeFullscreen(); // Tutup Fullscreen saat selesai
         alert(`Ujian Selesai!\nJawaban Anda telah berhasil disimpan di server.`);
         window.location.href = "index.html";
     } catch(e) {
@@ -293,24 +307,27 @@ async function selesaiUjian(isTimeOut = false, isPelanggaran = false) {
 }
 
 // ==========================================
-// 5. KEAMANAN ANTI-NYONTEK & ANTI-AI
+// 5. KEAMANAN ANTI-NYONTEK & ANTI-AI SANGAT KETAT
 // ==========================================
 function mulaiKeamananUjian() {
+    // 1. Deteksi Pindah Tab (Membuka aplikasi lain / split screen)
     window.addEventListener('blur', catatPelanggaran);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') catatPelanggaran(); });
     
-    // Blokir Klik Kanan
+    // 2. Blokir Klik Kanan
     document.addEventListener('contextmenu', event => event.preventDefault());
 
-    // Blokir Aksi Copy, Cut, dan Paste (Anti AI & Google Lens)
-    document.addEventListener('copy', event => event.preventDefault());
-    document.addEventListener('cut', event => event.preventDefault());
-    document.addEventListener('paste', event => event.preventDefault());
+    // 3. Blokir Blok Teks (Mencegah Google Lens / Copy Teks Manual)
+    document.addEventListener('selectstart', event => event.preventDefault());
 
-    // Blokir Shortcut Keyboard Pencarian (Ctrl+C, Ctrl+V, Ctrl+F, Inspect Element F12, Print)
+    // 4. Blokir Aksi Copy, Cut, dan Paste
+    ['copy', 'cut', 'paste'].forEach(evt => document.addEventListener(evt, event => event.preventDefault()));
+
+    // 5. Blokir Shortcut Keyboard Pencarian & Inspect Element
     document.addEventListener('keydown', event => {
         if (
             event.key === 'F12' || 
+            event.key === 'PrintScreen' ||
             (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) ||
             (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(event.key.toLowerCase()))
         ) {
@@ -328,6 +345,7 @@ function catatPelanggaran() {
         selesaiUjian(true, true); 
     } else {
         alert(`PERINGATAN KE-${pelanggaran}!\nAnda terdeteksi keluar dari halaman ujian / membuka tab lain. Pada pelanggaran ke-3, ujian akan dihentikan.`);
+        openFullscreen(); // Paksa fullscreen lagi jika siswa mencoba keluar
     }
 }
 
