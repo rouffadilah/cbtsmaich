@@ -39,7 +39,7 @@ loginForm.addEventListener("submit", async (event) => {
         if (userDoc.exists()) {
             const userData = userDoc.data();
             
-            // PERBAIKAN: Menangkap Multi-Role dalam bentuk Array
+            // Menangkap Multi-Role dalam bentuk Array
             let roles = [];
             if (Array.isArray(userData.role)) roles = userData.role;
             else if (typeof userData.role === 'string' && userData.role.trim() !== '') roles = [userData.role];
@@ -71,6 +71,7 @@ loginForm.addEventListener("submit", async (event) => {
         }
 
     } catch (error) {
+        // Error handling already managed
     } finally {
         btnSubmit.innerHTML = originalBtnText;
         btnSubmit.disabled = false;
