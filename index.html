@@ -1,20 +1,50 @@
 <!DOCTYPE html>
-<html lang="id">
-<head>
+<html lang="id" translate="no"> <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBT-SMAICH - Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <meta name="google" content="notranslate"> <title>CBT-SMAICH - Login</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
     <style>
-        /* --- ANTI COPAS & ANTI AI --- */
-        body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
-        input { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
-        @media print { body { display: none !important; } }
+        /* --- ANTI COPAS, ANTI AI, & PENGAMANAN CETAK --- */
+        body { 
+            -webkit-user-select: none; 
+            -moz-user-select: none;
+            -ms-user-select: none; 
+            user-select: none; 
+            -webkit-touch-callout: none; /* Mencegah menu pop-up di HP saat ditahan */
+        }
+        input { 
+            -webkit-user-select: auto !important; 
+            -ms-user-select: auto !important; 
+            user-select: auto !important; 
+        }
+        @media print { 
+            body { display: none !important; } 
+        }
+
+        /* Overlay Peringatan Pindah Tab / Layar Mati */
+        #cheat-warning {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: red;
+            color: white;
+            z-index: 9999;
+            text-align: center;
+            padding-top: 20%;
+            font-size: 2rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="login-page-bg">
+    <div id="cheat-warning">
+        <i class="fas fa-exclamation-triangle" style="font-size: 4rem;"></i><br><br>
+        PELANGGARAN TERDETEKSI!<br>
+        <span style="font-size: 1rem;">Anda keluar dari layar ujian. Aktivitas direkam.</span>
+    </div>
+
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
@@ -53,7 +83,7 @@
     </div>
 
     <script>
-        // LOGIKA INSTALASI APLIKASI PWA
+        // --- LOGIKA INSTALASI APLIKASI PWA ---
         let deferredPrompt;
         const installBtn = document.getElementById('btn-install-app');
 
@@ -72,21 +102,58 @@
             }
         });
 
-        // KEAMANAN DASAR
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        ['copy', 'cut', 'paste'].forEach(evt => document.addEventListener(evt, event => event.preventDefault()));
+        // --- SISTEM KEAMANAN TINGKAT LANJUT ---
 
+        // 1. Mencegah Klik Kanan & Blokir Inspect Element
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
+        // 2. Mencegah Copy, Cut, Paste (Anti AI & Contek)
+        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => 
+            document.addEventListener(evt, event => event.preventDefault())
+        );
+
+        // 3. Memblokir Shortcut Keyboard (F12, Ctrl+C, dll)
         document.addEventListener('keydown', event => {
             if (
                 event.key === 'F12' || 
                 event.key === 'PrintScreen' ||
                 (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) ||
                 (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))
-            ) { event.preventDefault(); }
+            ) { 
+                event.preventDefault(); 
+            }
         });
 
-        history.pushState(null, null, location.href);
-        window.addEventListener('popstate', function(event) { history.pushState(null, null, location.href); });
+        // 4. MENGUNCI TOMBOL KEMBALI (Trap Back Button)
+        // Memaksa history browser terus tertahan di halaman ini
+        history.pushState(null, document.title, location.href);
+        window.addEventListener('popstate', function (event) {
+            history.pushState(null, document.title, location.href);
+            // Anda bisa tambahkan alert disini jika ingin memperingatkan siswa
+            // alert("Tombol kembali dinonaktifkan selama ujian!");
+        });
+
+        // 5. ANTI-TAB SWITCH & MINIMIZE (Sensor Kecurangan)
+        // Jika siswa membuka tab lain atau meminimize browser, layar akan merah
+        document.addEventListener('visibilitychange', () => {
+            const warningScreen = document.getElementById('cheat-warning');
+            if (document.visibilityState === 'hidden') {
+                warningScreen.style.display = 'block';
+                // Opsional: Anda bisa tambahkan logika untuk submit ujian otomatis atau logout paksa di sini
+            } else {
+                // Hapus baris di bawah ini jika ingin siswa tidak bisa lanjut ujian setelah ketahuan pindah tab
+                warningScreen.style.display = 'none'; 
+            }
+        });
+
+        // 6. ANTI SCREENSHOT MITIGASI (Blur saat kehilangan fokus)
+        // Membantu mencegah beberapa aplikasi Snipping Tool / Screenshot PC
+        window.addEventListener('blur', () => {
+            document.body.style.filter = "blur(10px)";
+        });
+        window.addEventListener('focus', () => {
+            document.body.style.filter = "none";
+        });
     </script>
 
     <script type="module" src="index.js"></script>
