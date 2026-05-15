@@ -1,6 +1,6 @@
 import { auth, db, storage } from './firebase-config.js'; 
-import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, updateProfile, getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { onAuthStateChanged, signOut, updateProfile, getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 
@@ -430,11 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const optionsMapel = '<option value="" disabled selected>Pilih Mapel...</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
         ['soal-mapel', 'import-mapel', 'edit-soal-mapel'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = optionsMapel; }); 
-
-        const mapelCheckboxes = listMapel.map(m => `<label><input type="checkbox" class="new-mapel-cb" value="${m}"> ${m}</label>`).join('');
-        const kelasCheckboxes = listKelas.map(k => `<label><input type="checkbox" class="new-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
-        const mc = document.getElementById('new-mapel-container'); if (mc) mc.innerHTML = mapelCheckboxes || '<small>Kosong</small>';
-        const kc = document.getElementById('new-kelas-guru-container'); if (kc) kc.innerHTML = kelasCheckboxes || '<small>Kosong</small>';
         
         const emc = document.getElementById('edit-mapel-container'); if (emc) emc.innerHTML = listMapel.map(m => `<label><input type="checkbox" class="edit-mapel-cb" value="${m}"> ${m}</label>`).join('');
         const ekc = document.getElementById('edit-kelas-guru-container'); if (ekc) ekc.innerHTML = listKelas.map(k => `<label><input type="checkbox" class="edit-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
@@ -528,96 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     window.loadDataPengguna = loadDataPengguna;
-
-    function updateNewFormVisibility() {
-        const checkedRoles = Array.from(document.querySelectorAll('.new-role-cb:checked')).map(cb => cb.value);
-        const gpMapel = document.getElementById('group-new-mapel'); const gpKelasGuru = document.getElementById('group-new-kelas-guru'); const gpKelasSiswa = document.getElementById('group-new-kelas-siswa');
-        if (gpMapel) gpMapel.style.display = checkedRoles.includes('guru') ? 'block' : 'none';
-        if (gpKelasGuru) gpKelasGuru.style.display = checkedRoles.includes('guru') ? 'block' : 'none';
-        if (gpKelasSiswa) gpKelasSiswa.style.display = checkedRoles.includes('siswa') ? 'block' : 'none';
-    }
-    document.querySelectorAll('.new-role-cb').forEach(cb => cb.addEventListener('change', updateNewFormVisibility));
-
-    document.getElementById('btn-add-user')?.addEventListener('click', async () => {
-        const nama = document.getElementById('new-nama').value.trim(); const username = document.getElementById('new-username').value.trim().replace(/\s+/g, ''); const pass = document.getElementById('new-pass').value;
-        const selectedRoles = Array.from(document.querySelectorAll('.new-role-cb:checked')).map(cb => cb.value);
-        const selectedMapels = Array.from(document.querySelectorAll('.new-mapel-cb:checked')).map(cb => cb.value);
-        const selectedKelasGuru = Array.from(document.querySelectorAll('.new-kelas-guru-cb:checked')).map(cb => cb.value);
-        const kelasSiswa = document.getElementById('new-kelas-siswa').value;
-
-        if (!nama || !username || !pass) return await window.customAlert("Lengkapi form nama, username, dan password!", "warning");
-        if (selectedRoles.length === 0) return await window.customAlert("Pilih minimal 1 Role/Hak Akses!", "warning");
-        if (selectedRoles.includes('guru') && (selectedMapels.length === 0 || selectedKelasGuru.length === 0)) return await window.customAlert("Centang minimal 1 Mapel & 1 Kelas untuk Guru!", "warning");
-        if (selectedRoles.includes('siswa') && !kelasSiswa) return await window.customAlert("Pilih Kelas untuk Siswa!", "warning");
-        if (pass.length < 6) return await window.customAlert("Password minimal 6 karakter!", "warning");
-
-        const btn = document.getElementById('btn-add-user'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses'; btn.disabled = true;
-
-        try {
-            const dummyEmail = `${username}@cbt.smaich.id`;
-            const userCred = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, pass);
-            await updateProfile(userCred.user, { displayName: nama });
-
-            let payload = { nama: nama, username: username, role: selectedRoles, createdAt: new Date() };
-            if (selectedRoles.includes('guru')) { payload.mapel = selectedMapels; payload.kelas = selectedKelasGuru; }
-            if (selectedRoles.includes('siswa')) { if (!selectedRoles.includes('guru')) payload.kelas = kelasSiswa; else payload.kelas_siswa = kelasSiswa; }
-
-            await setDoc(doc(db, "users", userCred.user.uid), payload); 
-            await window.customAlert(`Berhasil membuat akun!`, "success");
-            
-            document.getElementById('new-nama').value = ''; document.getElementById('new-username').value = ''; document.getElementById('new-pass').value = '';
-            document.querySelectorAll('.new-role-cb, .new-mapel-cb, .new-kelas-guru-cb').forEach(cb => cb.checked = false); document.getElementById('new-kelas-siswa').value = ''; updateNewFormVisibility();
-            loadDataPengguna(); await secondaryAuth.signOut();
-        } catch (error) { await window.customAlert("Gagal: Username mungkin sudah dipakai.", "error"); }
-        btn.innerHTML = '<i class="fas fa-save"></i> SIMPAN AKUN'; btn.disabled = false;
-    });
-
-    document.getElementById('upload-akun-excel')?.addEventListener('change', async (e) => {
-        const file = e.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                const jsonAkun = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                if (jsonAkun.length === 0) return await window.customAlert("File Excel kosong atau format tidak sesuai!", "warning");
-                if (!(await window.customConfirm(`Import Massal ${jsonAkun.length} akun?\n(Mohon jangan tutup halaman ini selama proses berjalan)`, "info", "Konfirmasi Import"))) return;
-
-                const labelUpload = document.querySelector('label[for="upload-akun-excel"]'); const origLabel = labelUpload.innerHTML; labelUpload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat...';
-                let successCount = 0; let failedCount = 0;
-
-                for (let row of jsonAkun) {
-                    const nama = row['Nama Lengkap']; const username = row['Username'] ? row['Username'].toString().replace(/\s+/g, '') : null;
-                    const roleStr = row['Role'] ? row['Role'].toString().toLowerCase() : 'siswa'; const password = row['Password'] ? row['Password'].toString() : '123456';
-                    if (!nama || !username) { failedCount++; continue; } 
-
-                    try {
-                        const dummyEmail = `${username}@cbt.smaich.id`;
-                        const userCred = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, password);
-                        await updateProfile(userCred.user, { displayName: nama });
-
-                        const roleArr = roleStr.split(',').map(s => s.trim());
-                        let payload = { nama: nama, username: username, role: roleArr, createdAt: new Date() };
-                        
-                        if (roleArr.includes('guru')) {
-                            const detailMapel = row['Detail (Mapel)']; const detailKelas = row['Detail (Kelas)'];
-                            if (detailMapel) payload.mapel = detailMapel.split(',').map(s => s.trim());
-                            if (detailKelas) payload.kelas = detailKelas.split(',').map(s => s.trim());
-                        }
-                        if (roleArr.includes('siswa')) {
-                            const ks = row['Detail (Kelas)'] || row['Detail (Mapel)'];
-                            if (!roleArr.includes('guru')) payload.kelas = ks; else payload.kelas_siswa = ks;
-                        }
-
-                        await setDoc(doc(db, "users", userCred.user.uid), payload); successCount++;
-                    } catch (err) { failedCount++; }
-                }
-                await secondaryAuth.signOut(); 
-                await window.customAlert(`Proses Selesai!\n✅ Sukses: ${successCount} Akun\n❌ Gagal: ${failedCount} Akun`, "success", "Hasil Import Massal"); 
-                labelUpload.innerHTML = origLabel; document.getElementById('upload-akun-excel').value = ''; loadDataPengguna();
-            } catch (err) { await window.customAlert("Gagal membaca file Excel.", "error"); }
-        };
-        reader.readAsArrayBuffer(file);
-    });
 
     window.editPengguna = (uid) => {
         const user = allUsersData.find(u => u.id === uid); if (!user) return;
