@@ -26,10 +26,8 @@
     </style>
 </head>
 <body class="login-page-bg">
-
     <div class="login-container">
         <div class="login-card">
-            
             <div class="login-header">
                 <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
                 <h2 id="portal-title">CBT-SMAICH</h2>
@@ -87,7 +85,6 @@
         // ========================================================
         history.pushState(null, null, location.href);
         window.addEventListener('popstate', function(event) {
-            // Ketika tombol back ditekan, paksa tetap di halaman ini
             history.pushState(null, null, location.href);
         });
     </script>
