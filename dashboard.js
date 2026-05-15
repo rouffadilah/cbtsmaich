@@ -224,58 +224,115 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 4. DATA MASTER
-    // ==========================================
-    document.getElementById('btn-open-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'flex'; });
-    document.getElementById('close-modal-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'none'; });
-    document.getElementById('btn-edit-master-mode')?.addEventListener('click', () => { window.customAlert("Fitur Edit Data Master keseluruhan saat ini sedang dalam tahap pengembangan.", "info", "Edit Data Master"); });
+// 4. DATA MASTER
+// ==========================================
+let editMasterMode = false; // Status mode edit
 
-    async function loadDataMaster() {
-        try {
-            const docSnap = await getDoc(doc(db, "pengaturan", "data_akademik"));
-            if (docSnap.exists()) { listMapel = docSnap.data().list_mapel || []; listKelas = docSnap.data().list_kelas || []; }
-            renderTableMaster(); populateSemuaDropdown(); loadBankSoalSummary();
-        } catch (e) { console.error("Gagal load data master", e); }
+document.getElementById('btn-open-data-master')?.addEventListener('click', () => { 
+    document.getElementById('modal-data-master').style.display = 'flex'; 
+    editMasterMode = false; // Reset mode saat buka
+    renderTableMaster();
+});
+
+document.getElementById('close-modal-data-master')?.addEventListener('click', () => { 
+    document.getElementById('modal-data-master').style.display = 'none'; 
+});
+
+// LOGIKA TOMBOL EDIT DATA MASTER (DIPERBAIKI)
+document.getElementById('btn-edit-master-mode')?.addEventListener('click', () => { 
+    editMasterMode = !editMasterMode;
+    const btn = document.getElementById('btn-edit-master-mode');
+    
+    if (editMasterMode) {
+        btn.innerHTML = '<i class="fas fa-check"></i> Selesai Edit';
+        btn.classList.remove('btn-secondary');
+        btn.style.backgroundColor = 'var(--success)';
+    } else {
+        btn.innerHTML = '<i class="fas fa-edit"></i> Edit Data Master';
+        btn.classList.add('btn-secondary');
+        btn.style.backgroundColor = '';
+    }
+    renderTableMaster();
+});
+
+async function loadDataMaster() {
+    try {
+        const docSnap = await getDoc(doc(db, "pengaturan", "data_akademik"));
+        if (docSnap.exists()) { 
+            listMapel = docSnap.data().list_mapel || []; 
+            listKelas = docSnap.data().list_kelas || []; 
+        }
+        renderTableMaster(); 
+        populateSemuaDropdown(); 
+        loadBankSoalSummary();
+    } catch (e) { console.error("Gagal load data master", e); }
+}
+
+document.getElementById('btn-add-master')?.addEventListener('click', async () => {
+    const type = document.getElementById('input-master-type').value;
+    const val = document.getElementById('input-master-name').value.trim(); 
+    if (!val) return window.customAlert("Masukkan nama terlebih dahulu!", "warning");
+    
+    if (type === 'mapel') {
+        if (listMapel.includes(val)) return await window.customAlert("Mata Pelajaran sudah ada!", "warning");
+        listMapel.push(val); 
+        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true });
+    } else {
+        if (listKelas.includes(val)) return await window.customAlert("Kelas sudah ada!", "warning");
+        listKelas.push(val); 
+        await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
+    }
+    
+    document.getElementById('input-master-name').value = ''; 
+    loadDataMaster();
+    await window.customAlert("Data berhasil ditambahkan!", "success");
+});
+
+// FUNGSI RENDER TABEL (DIPERBAIKI DENGAN TOMBOL HAPUS)
+function renderTableMaster() {
+    const tbody = document.getElementById('tbody-master-combined');
+    if (!tbody) return;
+
+    let maxLen = Math.max(listMapel.length, listKelas.length);
+    if (maxLen === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; padding: 20px;">Belum ada data master.</td></tr>`;
+        return;
     }
 
-    document.getElementById('btn-add-master')?.addEventListener('click', async () => {
-        const type = document.getElementById('input-master-type').value;
-        const val = document.getElementById('input-master-name').value.trim(); 
-        if (!val) return window.customAlert("Masukkan nama terlebih dahulu!", "warning");
+    let html = '';
+    for (let i = 0; i < maxLen; i++) {
+        let m = listMapel[i]; 
+        let k = listKelas[i];
         
+        // Buat HTML tombol hapus jika mode edit aktif
+        let delMapel = (m && editMasterMode) ? `<button onclick="window.hapusMasterItem('mapel', '${m}')" style="color:var(--danger); background:none; border:none; cursor:pointer; margin-left:10px;"><i class="fas fa-times-circle"></i></button>` : '';
+        let delKelas = (k && editMasterMode) ? `<button onclick="window.hapusMasterItem('kelas', '${k}')" style="color:var(--danger); background:none; border:none; cursor:pointer; margin-left:10px;"><i class="fas fa-times-circle"></i></button>` : '';
+
+        let cellMapel = m ? `<td style="font-weight:600; display:flex; justify-content:space-between;">${m} ${delMapel}</td>` : `<td>-</td>`;
+        let cellKelas = k ? `<td style="font-weight:600; display:flex; justify-content:space-between;">${k} ${delKelas}</td>` : `<td>-</td>`;
+        
+        html += `<tr>${cellMapel}${cellKelas}</tr>`;
+    }
+    tbody.innerHTML = html;
+}
+
+// FUNGSI HAPUS ITEM MASTER (TAMBAHAN BARU)
+window.hapusMasterItem = async (type, val) => {
+    if (!(await window.customConfirm(`Hapus ${type === 'mapel' ? 'Mapel' : 'Kelas'} "${val}"?`, "danger"))) return;
+    
+    try {
         if (type === 'mapel') {
-            if (listMapel.includes(val)) return await window.customAlert("Mata Pelajaran sudah ada!", "warning");
-            listMapel.push(val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true });
+            listMapel = listMapel.filter(item => item !== val);
+            await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true });
         } else {
-            if (listKelas.includes(val)) return await window.customAlert("Kelas sudah ada!", "warning");
-            listKelas.push(val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
+            listKelas = listKelas.filter(item => item !== val);
+            await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
         }
-        
-        document.getElementById('input-master-name').value = ''; 
-        loadDataMaster();
-        await window.customAlert("Data berhasil ditambahkan!", "success");
-    });
-
-    function renderTableMaster() {
-        const tbody = document.getElementById('tbody-master-combined');
-        if (!tbody) return;
-
-        let maxLen = Math.max(listMapel.length, listKelas.length);
-        if (maxLen === 0) {
-            tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; font-size:0.9rem; color:var(--text-muted); padding: 20px;">Belum ada data master.</td></tr>`;
-            return;
-        }
-
-        let html = '';
-        for (let i = 0; i < maxLen; i++) {
-            let m = listMapel[i]; let k = listKelas[i];
-            let cellMapel = m ? `<td style="font-weight:600;">${m}</td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td>`;
-            let cellKelas = k ? `<td style="font-weight:600;">${k}</td>` : `<td><span style="color:var(--text-muted); font-style:italic;">-</span></td>`;
-            html += `<tr>${cellMapel}${cellKelas}</tr>`;
-        }
-        tbody.innerHTML = html;
+        loadDataMaster(); // Refresh tabel dan dropdown
+    } catch (e) {
+        window.customAlert("Gagal menghapus data.", "error");
     }
-
+};
     async function loadBankSoalSummary() {
         const tbody = document.querySelector('#table-bank-soal-summary tbody');
         if(!tbody) return;
