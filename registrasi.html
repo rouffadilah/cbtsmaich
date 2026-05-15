@@ -45,6 +45,23 @@
                     <input type="text" id="reg-username" class="input-text" placeholder="Gunakan sebagai Username" required>
                 </div>
                 
+                <div class="input-group" id="group-kelas-siswa">
+                    <label>Pilih Kelas</label>
+                    <select id="reg-kelas-siswa" class="input-text" required>
+                        <option value="" disabled selected>Memuat data kelas...</option>
+                    </select>
+                </div>
+
+                <div class="input-group" id="group-mapel-guru" style="display: none;">
+                    <label>Mata Pelajaran (Guru)</label>
+                    <div id="reg-mapel-container" class="checkbox-container">Memuat data...</div>
+                </div>
+
+                <div class="input-group" id="group-kelas-guru" style="display: none;">
+                    <label>Kelas Ajar (Guru)</label>
+                    <div id="reg-kelas-guru-container" class="checkbox-container">Memuat data...</div>
+                </div>
+
                 <div class="input-group">
                     <label>Password</label>
                     <input type="password" id="reg-password" class="input-text" placeholder="Minimal 6 karakter" required>
