@@ -1,7 +1,6 @@
-// Beri nama versi cache Anda. Jika ada update aplikasi, ubah ke v2, v3, dst.
-const CACHE_NAME = 'cbt-smaich'; 
+// Nama cache diperbarui ke v2 untuk memaksa pembaruan di HP siswa
+const CACHE_NAME = 'cbt-smaich-v2'; 
 
-// Daftar file yang ingin disimpan agar bisa diakses offline
 const urlsToCache = [
   './',
   './index.html',
@@ -15,58 +14,44 @@ const urlsToCache = [
   './logo-smaich.png',
   './registrasi.html',
   './registrasi.js',
-  './style.css',
-  // Tambahkan file CSS, JS, atau gambar lain yang diperlukan di sini
-  // contoh: '/style.css', '/logo.png'
+  './style.css'
 ];
 
-// 1. Tahap Instalasi: Menyimpan file-file di atas ke dalam Cache HP pengguna
 self.addEventListener('install', event => {
+  self.skipWaiting(); // Memaksa HP untuk langsung menggunakan versi terbaru
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache berhasil dibuka');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
-// 2. Tahap Fetch: Mengatur bagaimana aplikasi memuat data
 self.addEventListener('fetch', event => {
-  // ATURAN 1: Biarkan request POST, PUT, DELETE lewat begitu saja
-  // (Service Worker hanya bagus untuk menyimpan request GET)
-  if (event.request.method !== 'GET') {
-    return; 
-  }
-
-  // ATURAN 2: Biarkan request ke server luar (Firebase, Google Fonts) lewat begitu saja
+  if (event.request.method !== 'GET') return; 
   const url = new URL(event.request.url);
-  if (url.origin !== location.origin) {
-    return; 
-  }
+  if (url.origin !== location.origin) return; 
 
-  // ATURAN 3: Jika request GET dan dari domain sendiri, gunakan Cache
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Tampilkan dari cache jika ada, jika tidak, ambil dari internet
-        return response || fetch(event.request);
-      })
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request).then(fetchRes => {
+          return caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, fetchRes.clone());
+              return fetchRes;
+          });
+      });
+    })
   );
 });
 
-// 3. Tahap Aktivasi: Membersihkan cache versi lama jika CACHE_NAME diubah
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName); // Hapus cache versi lama
           }
         })
       );
     })
   );
+  self.clients.claim();
 });
