@@ -75,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const groupKelasSiswa = document.getElementById("group-kelas-siswa");
         const groupMapelGuru = document.getElementById("group-mapel-guru");
         const groupKelasGuru = document.getElementById("group-kelas-guru");
+        const groupRoleGuru = document.getElementById("group-role-guru"); // Tambahan
         const inputKelasSiswa = document.getElementById("reg-kelas-siswa");
         const inputUsername = document.getElementById("reg-username");
 
@@ -90,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
             inputUsername.setAttribute("maxlength", "9");
             
             if(groupKelasSiswa) groupKelasSiswa.style.display = 'none';
+            if(groupRoleGuru) groupRoleGuru.style.display = 'block'; // Munculkan Role Guru
             if(groupMapelGuru) groupMapelGuru.style.display = 'block';
             if(groupKelasGuru) groupKelasGuru.style.display = 'block';
             if(inputKelasSiswa) inputKelasSiswa.removeAttribute("required");
@@ -105,6 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
             inputUsername.setAttribute("maxlength", "10");
 
             if(groupKelasSiswa) groupKelasSiswa.style.display = 'block';
+            if(groupRoleGuru) groupRoleGuru.style.display = 'none'; // Sembunyikan Role Guru
             if(groupMapelGuru) groupMapelGuru.style.display = 'none';
             if(groupKelasGuru) groupKelasGuru.style.display = 'none';
             if(inputKelasSiswa) inputKelasSiswa.setAttribute("required", "true");
@@ -125,7 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Guru sedang ditutup!");
         
         const name = document.getElementById("reg-name").value;
-        // Konversi username jadi uppercase agar formatnya seragam
         const username = document.getElementById("reg-username").value.replace(/\s+/g, '').toUpperCase();
         const password = document.getElementById("reg-password").value;
 
@@ -133,23 +135,15 @@ document.addEventListener("DOMContentLoaded", () => {
             return alert("Password tidak cocok!");
         }
 
-        // --- AWAL VALIDASI FORMAT USERNAME ---
+        // --- VALIDASI FORMAT USERNAME ---
         if (role === 'siswa') {
             const isNumeric = /^\d+$/.test(username);
-            if (!isNumeric) {
-                return alert("Pendaftaran Ditolak: NIS Siswa harus berupa angka!");
-            }
-            if (username.length !== 10) {
-                return alert(`Pendaftaran Ditolak: NIS harus berjumlah 10 digit angka! (Anda memasukkan ${username.length} digit)`);
-            }
+            if (!isNumeric) return alert("Pendaftaran Ditolak: NIS Siswa harus berupa angka!");
+            if (username.length !== 10) return alert(`Pendaftaran Ditolak: NIS harus berjumlah 10 digit angka!`);
         } else if (role === 'guru') {
-            // Regex Format: [1huruf][2angka][1huruf][1angka]-[3angka]
             const regexGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/;
-            if (!regexGuru.test(username)) {
-                return alert("Pendaftaran Ditolak: Format ID Guru tidak sesuai!\n\nGunakan format: [1 Huruf][2 Angka][1 Huruf][1 Angka]-[3 Angka]\nContoh: E24H6-223");
-            }
+            if (!regexGuru.test(username)) return alert("Pendaftaran Ditolak: Format ID Guru tidak sesuai!\nContoh: E24H6-223");
         }
-        // --- AKHIR VALIDASI FORMAT USERNAME ---
 
         const originalBtnText = btnSubmit.innerHTML;
         btnSubmit.innerHTML = "<i class='fas fa-spinner fa-spin'></i> MEMPROSES...";
@@ -161,13 +155,18 @@ document.addEventListener("DOMContentLoaded", () => {
             let payload = {
                 nama: name,
                 username: username,
-                role: [role],
                 createdAt: serverTimestamp()
             };
 
             if (role === 'siswa') {
+                payload.role = ['siswa'];
                 payload.kelas = document.getElementById("reg-kelas-siswa").value;
             } else if (role === 'guru') {
+                // MENGAMBIL ROLE TERPILIH (BARU)
+                const roleTerpilih = Array.from(document.querySelectorAll('.reg-role-cb:checked')).map(cb => cb.value);
+                if (!roleTerpilih.includes('guru')) roleTerpilih.push('guru'); // Pastikan 'guru' tetap ada
+                payload.role = roleTerpilih;
+
                 const mapelTerpilih = Array.from(document.querySelectorAll('.reg-mapel-cb:checked')).map(cb => cb.value);
                 const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-cb:checked')).map(cb => cb.value);
                 
@@ -187,8 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             await setDoc(doc(db, "users", user.uid), payload);
 
-            // PENAMBAHAN PESAN PERINGATAN GANTI PASSWORD
-            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat.\n\nINFO KEAMANAN: Sangat disarankan bagi Anda (atau User terkait) untuk mengubah password ini nanti secara mandiri, agar hak akses pribadi tetap terjaga dan aman.`);
+            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat.\n\nINFO KEAMANAN: Sangat disarankan bagi Anda untuk mengubah password ini nanti secara mandiri, agar hak akses pribadi tetap terjaga dan aman.`);
             window.location.href = "index.html";
 
         } catch (error) {
