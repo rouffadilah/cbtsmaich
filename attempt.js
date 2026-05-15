@@ -377,3 +377,33 @@ document.getElementById('nav-grid').addEventListener('click', (e) => {
         closeDrawer();
     }
 });
+
+// ==========================================
+// 7. LOGIKA KELUAR & HANDLER TOMBOL BACK HP
+// ==========================================
+
+// Fungsi untuk tombol Keluar UI
+const btnExitExam = document.getElementById('btn-exit-exam');
+if (btnExitExam) {
+    btnExitExam.addEventListener('click', () => {
+        const conf = confirm("Apakah Anda yakin ingin keluar? Progress ujian Anda tidak akan tersimpan jika belum menekan tombol SELESAI UJIAN.");
+        if (conf) {
+            closeFullscreen(); // Pastikan keluar dari mode fullscreen
+            window.location.href = "index.html";
+        }
+    });
+}
+
+// Menangkap event tombol 'Back' fisik di HP atau Browser
+history.pushState(null, null, location.href); // Push state pertama
+window.addEventListener('popstate', function(event) {
+    // Tahan state agar tidak langsung terlempar keluar tanpa izin
+    history.pushState(null, null, location.href);
+    
+    // Tampilkan konfirmasi
+    const conf = confirm("Tombol kembali ditekan. Apakah Anda benar-benar ingin keluar dari aplikasi ujian ini?");
+    if (conf) {
+        closeFullscreen();
+        window.location.href = "index.html"; // Arahkan kembali ke halaman login
+    }
+});
