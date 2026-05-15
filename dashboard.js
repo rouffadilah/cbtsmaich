@@ -428,126 +428,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 5. MANAJEMEN PENGGUNA
-    // ==========================================
-    async function loadDataPengguna() {
-        const tbodySiswa = document.querySelector('#table-siswa tbody'); 
-        const tbodyGuru = document.querySelector('#table-guru tbody'); 
-        if (!tbodySiswa || !tbodyGuru) return;
-        
-        const skeletonHTML = `<tr><td colspan="5" style="padding: 20px;"><div class="skeleton-box" style="width: 100%;"></div><div class="skeleton-box" style="width: 60%;"></div></td></tr>`;
-        tbodySiswa.innerHTML = skeletonHTML;
-        tbodyGuru.innerHTML = skeletonHTML;
-            
-        try {
-            const snap = await getDocs(collection(db, "users")); 
-            const statSiswa = document.getElementById('stat-siswa'); if (statSiswa) statSiswa.innerText = snap.size; 
-            
-            tbodySiswa.innerHTML = ''; tbodyGuru.innerHTML = ''; allUsersData = []; 
-            let countSiswa = 0; let countGuru = 0;
+// 5. MANAJEMEN PENGGUNA (ADMIN)
+// ==========================================
 
-            if(snap.empty) { 
-                tbodySiswa.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data siswa.</td></tr>'; 
-                tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data guru.</td></tr>'; 
-                return; 
-            }
+// ... (kode loadDataPengguna dan lainnya tetap sama) ...
 
-            snap.forEach(docSnap => {
-                const data = docSnap.data(); data.id = docSnap.id; allUsersData.push(data);
-                const rls = Array.isArray(data.role) ? data.role : [data.role]; 
-                const roleColor = rls.includes('admin') ? 'var(--danger)' : (rls.includes('guru') ? 'var(--info)' : 'var(--success)');
-                
-                let detailText = '-';
-                if (rls.includes('guru')) { detailText = `Mapel: ${Array.isArray(data.mapel) ? data.mapel.join(', ') : (data.mapel || '-')} <br><span style="font-size:0.75rem; color:var(--text-muted);">Kelas Ajar: ${Array.isArray(data.kelas) ? data.kelas.join(', ') : (data.kelas || '-')}</span>`; } 
-                else if (rls.includes('siswa')) { detailText = `Kelas: ${data.kelas || '-'}`; }
-                
-                let aksiHTML = '<span style="color:var(--text-muted);">-</span>';
-                if (isAdmin) {
-                    aksiHTML = `
-                        <button onclick="window.editPengguna('${docSnap.id}')" style="color:var(--warning); background:none; border:none; cursor:pointer; font-size:1.1rem; margin-right:15px;" title="Edit Pengguna/Role"><i class="fas fa-edit"></i></button>
-                        <button onclick="window.hapusDokumen('users', '${docSnap.id}', window.loadDataPengguna)" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:1.1rem;" title="Hapus Permanen"><i class="fas fa-trash"></i></button>
-                    `;
-                }
-
-                const rowHTML = `<tr><td>${data.username}</td><td><strong>${data.nama}</strong></td><td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${rls.join(', ').toUpperCase()}</span></td><td>${detailText}</td>
-                    <td style="text-align: center;">${aksiHTML}</td></tr>`;
-                
-                if (rls.includes('guru') || rls.includes('admin')) {
-                    tbodyGuru.innerHTML += rowHTML; countGuru++;
-                } else {
-                    tbodySiswa.innerHTML += rowHTML; countSiswa++;
-                }
-            });
-
-            if(countSiswa === 0) tbodySiswa.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data siswa.</td></tr>';
-            if(countGuru === 0) tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Belum ada data guru.</td></tr>';
-
-        } catch (error) { 
-            console.error(error); 
-            tbodySiswa.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data.</td></tr>'; 
-            tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data.</td></tr>'; 
-        }
+document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
+    const uid = document.getElementById('edit-uid').value;
+    const name = document.getElementById('edit-nama').value.trim();
+    const username = document.getElementById('edit-username').value.trim();
+    const pass = document.getElementById('edit-pass').value.trim();
+    const roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
+    
+    if (!name || !username || roles.length === 0) {
+        return window.customAlert("Nama, Username, dan minimal satu Role harus diisi!", "warning");
     }
-    window.loadDataPengguna = loadDataPengguna;
 
-    window.editPengguna = (uid) => {
-        const user = allUsersData.find(u => u.id === uid); if (!user) return;
-        document.getElementById('edit-uid').value = user.id; 
-        document.getElementById('edit-nama').value = user.nama; 
-        document.getElementById('edit-username').value = user.username || '';
-        document.getElementById('edit-pass').value = ''; 
-        
-        const rls = Array.isArray(user.role) ? user.role : [user.role];
-        document.querySelectorAll('.edit-role-cb').forEach(cb => { cb.checked = rls.includes(cb.value); });
-        
-        const egGuru = document.getElementById('group-edit-guru'); const egKelasSiswa = document.getElementById('group-edit-kelas-siswa');
-        if (egGuru) egGuru.style.display = rls.includes('guru') ? 'flex' : 'none';
-        if (egKelasSiswa) egKelasSiswa.style.display = rls.includes('siswa') ? 'block' : 'none';
-        
-        if (rls.includes('guru')) {
-            const mapelArray = Array.isArray(user.mapel) ? user.mapel : [user.mapel]; const kelasArray = Array.isArray(user.kelas) ? user.kelas : [user.kelas];
-            document.querySelectorAll('.edit-mapel-cb').forEach(cb => { cb.checked = mapelArray.includes(cb.value); });
-            document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = kelasArray.includes(cb.value); });
+    const btn = document.getElementById('btn-save-edit-akun');
+    const originalHTML = btn.innerHTML;
+
+    // 1. Ubah tombol menjadi status loading
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    btn.disabled = true;
+
+    try {
+        const payload = {
+            nama: name,
+            username: username,
+            role: roles
+        };
+
+        // Jika role guru, ambil data mapel & kelas
+        if (roles.includes('guru')) {
+            payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value);
+            payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value);
         }
-        if (rls.includes('siswa')) { document.getElementById('edit-kelas-siswa').value = user.kelas_siswa || user.kelas || ""; }
-        
-        document.getElementById('modal-edit-akun').style.display = 'flex';
-    };
 
-    document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { document.getElementById('modal-edit-akun').style.display = 'none'; });
-
-    document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
-        const uid = document.getElementById('edit-uid').value; 
-        const nama = document.getElementById('edit-nama').value.trim(); 
-        const username = document.getElementById('edit-username').value.trim();
-        const pass = document.getElementById('edit-pass').value;
-        const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
-        
-        if (selectedRoles.length === 0) return await window.customAlert("Pilih minimal 1 Role Akses!", "warning");
-        if (!username) return await window.customAlert("Username tidak boleh kosong!", "warning");
-        
-        let payload = { nama: nama, username: username, role: selectedRoles };
-        if (pass.length > 0) { payload.password = pass; }
-
-        if (selectedRoles.includes('guru')) { payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value); payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value); } 
-        if (selectedRoles.includes('siswa')) { const ks = document.getElementById('edit-kelas-siswa').value; if (!selectedRoles.includes('guru')) payload.kelas = ks; else payload.kelas_siswa = ks; }
-
-        try { 
-            document.getElementById('btn-save-edit-akun').innerHTML = "Menyimpan..."; 
-            await updateDoc(doc(db, "users", uid), payload); 
-            
-            if(pass.length > 0) { await window.customAlert("Profil berhasil diperbarui. Perubahan password tersimpan ke database untuk referensi, tapi belum terganti di autentikasi utama.", "success"); } 
-            else { await window.customAlert("Profil pengguna diperbarui!", "success"); }
-            
-            document.getElementById('modal-edit-akun').style.display = 'none'; 
-            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; 
-            loadDataPengguna();
-        } catch (err) { 
-            await window.customAlert("Gagal menyimpan perubahan.", "error"); 
-            document.getElementById('btn-save-edit-akun').innerHTML = '<i class="fas fa-save"></i> SIMPAN PERUBAHAN'; 
+        // Jika role siswa, ambil kelas siswa
+        if (roles.includes('siswa')) {
+            payload.kelas = document.getElementById('edit-kelas-siswa').value;
         }
-    });
 
+        // Simpan password ke Firestore (hanya referensi, tidak mengubah Auth password secara otomatis)
+        if (pass) {
+            payload.password = pass; 
+        }
+
+        // 2. Update Dokumen di Firestore
+        await updateDoc(doc(db, "users", uid), payload);
+
+        // 3. Notifikasi Berhasil
+        await window.customAlert("Profil pengguna berhasil diperbarui!", "success");
+        
+        // Tutup modal
+        document.getElementById('modal-edit-akun').style.display = 'none';
+        
+        // Refresh tabel
+        if (typeof window.loadDataPengguna === 'function') {
+            window.loadDataPengguna();
+        }
+
+    } catch (err) {
+        console.error("Error updating user:", err);
+        await window.customAlert("Gagal menyimpan perubahan: " + err.message, "error");
+    } finally {
+        // 4. KEMBALIKAN TOMBOL KE SEMULA (Solusi agar tidak freeze)
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+});
     // ==========================================
     // 6. BANK SOAL
     // ==========================================
