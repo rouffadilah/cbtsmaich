@@ -302,3 +302,37 @@ table tbody tr:hover { background-color: #f8fafc !important; }
         padding: 20px;
     }
 }
+
+/* =========================================
+   12. MODERN EXIT BUTTON
+========================================= */
+.btn-exit-modern {
+    background: transparent;
+    color: var(--danger);
+    border: 1.5px solid var(--danger);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.btn-exit-modern:hover {
+    background: #fef2f2;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15);
+    transform: translateY(-1px);
+}
+
+/* Responsif untuk Layar HP */
+@media screen and (max-width: 1024px) {
+    .btn-exit-modern span { 
+        display: none; /* Sembunyikan teks 'Keluar', sisakan ikon saja */
+    } 
+    .btn-exit-modern { 
+        padding: 8px 12px; 
+    }
+}
