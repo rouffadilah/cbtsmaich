@@ -75,7 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const groupKelasSiswa = document.getElementById("group-kelas-siswa");
         const groupMapelGuru = document.getElementById("group-mapel-guru");
         const groupKelasGuru = document.getElementById("group-kelas-guru");
-        const groupRoleGuru = document.getElementById("group-role-guru"); // Tambahan
         const inputKelasSiswa = document.getElementById("reg-kelas-siswa");
         const inputUsername = document.getElementById("reg-username");
 
@@ -91,7 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
             inputUsername.setAttribute("maxlength", "9");
             
             if(groupKelasSiswa) groupKelasSiswa.style.display = 'none';
-            if(groupRoleGuru) groupRoleGuru.style.display = 'block'; // Munculkan Role Guru
             if(groupMapelGuru) groupMapelGuru.style.display = 'block';
             if(groupKelasGuru) groupKelasGuru.style.display = 'block';
             if(inputKelasSiswa) inputKelasSiswa.removeAttribute("required");
@@ -107,7 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
             inputUsername.setAttribute("maxlength", "10");
 
             if(groupKelasSiswa) groupKelasSiswa.style.display = 'block';
-            if(groupRoleGuru) groupRoleGuru.style.display = 'none'; // Sembunyikan Role Guru
             if(groupMapelGuru) groupMapelGuru.style.display = 'none';
             if(groupKelasGuru) groupKelasGuru.style.display = 'none';
             if(inputKelasSiswa) inputKelasSiswa.setAttribute("required", "true");
@@ -162,10 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 payload.role = ['siswa'];
                 payload.kelas = document.getElementById("reg-kelas-siswa").value;
             } else if (role === 'guru') {
-                // MENGAMBIL ROLE TERPILIH (BARU)
-                const roleTerpilih = Array.from(document.querySelectorAll('.reg-role-cb:checked')).map(cb => cb.value);
-                if (!roleTerpilih.includes('guru')) roleTerpilih.push('guru'); // Pastikan 'guru' tetap ada
-                payload.role = roleTerpilih;
+                payload.role = ['guru'];
 
                 const mapelTerpilih = Array.from(document.querySelectorAll('.reg-mapel-cb:checked')).map(cb => cb.value);
                 const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-cb:checked')).map(cb => cb.value);
