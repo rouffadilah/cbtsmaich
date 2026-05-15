@@ -9,20 +9,9 @@
     <link rel="manifest" href="./manifest.json">
     <style>
         /* --- ANTI COPAS & ANTI AI --- */
-        body { 
-            -webkit-user-select: none; 
-            -ms-user-select: none; 
-            user-select: none; 
-        }
-        input { 
-            -webkit-user-select: auto !important; 
-            -ms-user-select: auto !important; 
-            user-select: auto !important; 
-        }
-        /* --- ANTI PRINT / PDF --- */
-        @media print {
-            body { display: none !important; }
-        }
+        body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+        input { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
+        @media print { body { display: none !important; } }
     </style>
 </head>
 <body class="login-page-bg">
@@ -48,6 +37,10 @@
                     <i class="fas fa-sign-in-alt"></i> MASUK
                 </button>
 
+                <button type="button" id="btn-install-app" class="btn-3d btn-secondary" style="width: 100%; margin-top: 15px; display: none; background-color: var(--info);">
+                    <i class="fas fa-download"></i> INSTAL APLIKASI CBT DI HP
+                </button>
+
                 <div style="margin-top: 20px; font-size: 0.9rem; text-align: center;">
                     Belum punya akun? <a href="registrasi.html" style="color: var(--primary); font-weight: bold; text-decoration: none;">Daftar di sini</a>
                 </div>
@@ -60,46 +53,47 @@
     </div>
 
     <script>
-        // Blokir Klik Kanan
+        // LOGIKA INSTALASI APLIKASI PWA
+        let deferredPrompt;
+        const installBtn = document.getElementById('btn-install-app');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block'; 
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') { installBtn.style.display = 'none'; }
+                deferredPrompt = null;
+            }
+        });
+
+        // KEAMANAN DASAR
         document.addEventListener('contextmenu', event => event.preventDefault());
+        ['copy', 'cut', 'paste'].forEach(evt => document.addEventListener(evt, event => event.preventDefault()));
 
-        // Blokir Aksi Copy, Cut, dan Paste
-        document.addEventListener('copy', event => event.preventDefault());
-        document.addEventListener('cut', event => event.preventDefault());
-        document.addEventListener('paste', event => event.preventDefault());
-
-        // Blokir Shortcut Keyboard Pencarian (Ctrl+C, Ctrl+V, Ctrl+F, Inspect Element F12, Print/SS)
         document.addEventListener('keydown', event => {
             if (
                 event.key === 'F12' || 
                 event.key === 'PrintScreen' ||
                 (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) ||
                 (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))
-            ) {
-                event.preventDefault();
-            }
+            ) { event.preventDefault(); }
         });
 
-        // ========================================================
-        // JEBAKAN TOMBOL BACK (Mencegah Keluar Aplikasi di HP)
-        // ========================================================
         history.pushState(null, null, location.href);
-        window.addEventListener('popstate', function(event) {
-            history.pushState(null, null, location.href);
-        });
+        window.addEventListener('popstate', function(event) { history.pushState(null, null, location.href); });
     </script>
 
     <script type="module" src="index.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-              console.log('Service Worker berhasil didaftarkan! Scope: ', registration.scope);
-            })
-            .catch(err => {
-              console.log('Pendaftaran Service Worker gagal: ', err);
-            });
+          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Gagal: ', err));
         });
       }
     </script>
