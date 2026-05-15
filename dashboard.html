@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
-        /* CSS Tambahan untuk Toggle Switch (On/Off) Registrasi */
         .switch { position: relative; display: inline-block; width: 44px; height: 22px; margin: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
@@ -141,7 +140,7 @@
                                 
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                     <h4 style="margin: 0; color: var(--info); font-size: 1.05rem;"><i class="fas fa-chalkboard-teacher"></i> Akun Guru</h4>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div id="wrap-reg-guru" style="display: flex; align-items: center; gap: 10px;">
                                         <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">Izin Registrasi Guru:</span>
                                         <label class="switch">
                                             <input type="checkbox" id="status-reg-guru">
@@ -151,14 +150,14 @@
                                 </div>
                                 <div class="table-container" style="margin-bottom: 30px;">
                                     <table id="table-guru">
-                                        <thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Detail Data</th><th style="text-align: center;">Aksi</th></tr></thead>
+                                        <thead><tr><th>ID Guru</th><th>Nama</th><th>Role</th><th>Detail Data</th><th style="text-align: center;">Aksi</th></tr></thead>
                                         <tbody></tbody>
                                     </table>
                                 </div>
 
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                     <h4 style="margin: 0; color: var(--success); font-size: 1.05rem;"><i class="fas fa-user-graduate"></i> Akun Siswa</h4>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div id="wrap-reg-siswa" style="display: flex; align-items: center; gap: 10px;">
                                         <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">Izin Registrasi Siswa:</span>
                                         <label class="switch">
                                             <input type="checkbox" id="status-reg-siswa">
@@ -184,7 +183,7 @@
                     <div id="hasil-summary-view">
                         <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
                             <div class="toggle-accordion" data-target="container-rekap-hasil" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-                                <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian</h3>
+                                <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian (Per Mapel & Kelas)</h3>
                                 <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                             </div>
                             <div id="container-rekap-hasil" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
@@ -197,15 +196,16 @@
                         <div class="card">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                                 <div style="display: flex; align-items: center; gap: 10px;">
+                                    <button onclick="window.location.hash='section-hasil'" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali"><i class="fas fa-arrow-left"></i></button>
                                     <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.15rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
                                 </div>
                                 <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;">
-                                    <i class="fas fa-trash-alt"></i> KOSONGKAN DATA MAPEL INI
+                                    <i class="fas fa-trash-alt"></i> KOSONGKAN KELAS INI
                                 </button>
                             </div>
                             <div class="table-container">
                                 <table id="table-hasil">
-                                    <thead><tr><th>Nama Siswa</th><th>Kelas</th><th>Benar/Total</th><th>Nilai Akhir</th><th style="text-align: center;">Aksi</th></tr></thead>
+                                    <thead><tr><th>Nama Siswa</th><th>Benar/Total</th><th>Nilai Akhir</th><th style="text-align: center;">Aksi</th></tr></thead>
                                     <tbody></tbody>
                                 </table>
                             </div>
@@ -250,7 +250,7 @@
             <div class="input-group"><label>Nama Lengkap</label><input type="text" id="edit-nama" class="input-text"></div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                <div class="input-group" style="margin: 0;"><label>Username / NIS</label><input type="text" id="edit-username" class="input-text"></div>
+                <div class="input-group" style="margin: 0;"><label>Username / NIS / ID</label><input type="text" id="edit-username" class="input-text"></div>
                 <div class="input-group" style="margin: 0;"><label>Password Baru (Opsional)</label><input type="password" id="edit-pass" class="input-text" placeholder="Kosongkan jika tidak diubah"></div>
             </div>
 
@@ -309,147 +309,6 @@
             
         </div>
     </div>
-
-    <div id="modal-tambah-soal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
-            <span class="close-btn" id="close-modal-soal">&times;</span>
-            <h2 style="margin-bottom: 20px;"><i class="fas fa-plus-circle"></i> Manajemen Soal</h2>
-            
-            <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;">
-                <button id="tab-manual" class="btn-3d" style="margin: 0;"><i class="fas fa-keyboard"></i> Input Manual</button>
-                <button id="tab-import" class="btn-3d btn-secondary" style="margin: 0;"><i class="fas fa-file-excel"></i> Import Dokumen</button>
-            </div>
-
-            <div id="area-import" style="display: none;">
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div class="input-group"><label>Mapel Tujuan</label><input type="text" id="import-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
-                    <div class="input-group"><label>Kelas Tujuan</label><select id="import-kelas" class="input-text"></select></div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                    <div id="box-excel" style="border: 2px dashed #cbd5e1; padding: 20px; text-align: center; border-radius: 8px; background: #f8fafc;">
-                        <i class="fas fa-file-excel fa-3x" style="color: var(--success); margin-bottom: 10px;"></i>
-                        <h4 style="margin: 0 0 5px 0;">Import via Excel</h4>
-                        <button id="btn-dl-excel" class="btn-3d btn-secondary" style="padding: 5px 10px; font-size: 0.75rem; margin-bottom: 10px;">Unduh Template</button>
-                        <input type="file" id="file-excel" accept=".xlsx, .xls" style="display: none;">
-                        <label for="file-excel" id="label-file-excel" style="display: block; cursor: pointer; color: var(--info); font-weight: bold;">Klik untuk pilih file</label>
-                    </div>
-                    <div id="box-word" style="border: 2px dashed #cbd5e1; padding: 20px; text-align: center; border-radius: 8px; background: #f8fafc;">
-                        <i class="fas fa-file-word fa-3x" style="color: var(--info); margin-bottom: 10px;"></i>
-                        <h4 style="margin: 0 0 5px 0;">Import via Word (.docx)</h4>
-                        <button id="btn-dl-word" class="btn-3d btn-secondary" style="padding: 5px 10px; font-size: 0.75rem; margin-bottom: 10px;">Unduh Template</button>
-                        <input type="file" id="file-word" accept=".docx" style="display: none;">
-                        <label for="file-word" id="label-file-word" style="display: block; cursor: pointer; color: var(--info); font-weight: bold;">Klik untuk pilih file</label>
-                    </div>
-                </div>
-                <button id="btn-proses-import-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-upload"></i> PROSES IMPORT SOAL</button>
-            </div>
-
-            <div id="area-manual">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                    <div class="input-group" style="margin: 0;"><label>Mapel</label><input type="text" id="soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
-                    <div class="input-group" style="margin: 0;"><label>Kelas</label><select id="soal-kelas" class="input-text"></select></div>
-                    <div class="input-group" style="margin: 0;"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text"></div>
-                    <div class="input-group" style="margin: 0;"><label>Tipe Soal</label>
-                        <select id="soal-tipe" class="input-text">
-                            <option value="PG">Pilihan Ganda (PG)</option>
-                            <option value="PGK">PG Kompleks (Banyak Jawaban)</option>
-                            <option value="Menjodohkan">Menjodohkan</option>
-                            <option value="Isian">Isian Singkat</option>
-                            <option value="Uraian">Uraian / Essay</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Teks Pertanyaan</label>
-                    <textarea id="soal-teks" class="input-text" rows="4" placeholder="Ketik soal di sini..."></textarea>
-                </div>
-                <div class="input-group">
-                    <label>Lampiran Media (Gambar/Audio/Video Opsional)</label>
-                    <input type="file" id="soal-media" class="input-text" accept="image/*, audio/*, video/*">
-                </div>
-                <div id="area-opsi-dinamis" style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;"></div>
-                <button id="btn-simpan-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-save"></i> SIMPAN SOAL MANUAL</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-edit-soal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
-            <span class="close-btn" id="close-modal-edit-soal">&times;</span>
-            <h2 style="margin-bottom: 20px;"><i class="fas fa-edit"></i> Edit Soal</h2>
-            <input type="hidden" id="edit-soal-id">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                <div class="input-group" style="margin: 0;"><label>Mapel</label><input type="text" id="edit-soal-mapel" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
-                <div class="input-group" style="margin: 0;"><label>Kelas</label><select id="edit-soal-kelas" class="input-text"></select></div>
-                <div class="input-group" style="margin: 0;"><label>No. Soal</label><input type="number" id="edit-soal-nomor" class="input-text"></div>
-                <div class="input-group" style="margin: 0;"><label>Tipe</label><input type="text" id="edit-soal-tipe" class="input-text" disabled style="background:#f1f5f9; font-weight:bold;"></div>
-            </div>
-            <div class="input-group"><label>Teks Pertanyaan</label><textarea id="edit-soal-teks" class="input-text" rows="4"></textarea></div>
-            <div id="edit-area-opsi-dinamis" style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;"></div>
-            <button id="btn-update-soal" class="btn-3d" style="width: 100%;"><i class="fas fa-save"></i> PERBARUI SOAL</button>
-        </div>
-    </div>
-
-    <div id="modal-preview-full" class="modal" style="background: var(--bg-main);">
-        <div class="modal-content" style="width: 100%; height: 100%; max-width: 100%; border-radius: 0; padding: 0; display: flex; flex-direction: column;">
-            
-            <div style="background: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-bottom: 1px solid var(--border-color);">
-                <div>
-                    <h3 style="margin: 0; color: var(--secondary);"><i class="fas fa-eye"></i> Mode Preview Guru</h3>
-                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Tampilan ini merepresentasikan apa yang dilihat siswa.</p>
-                </div>
-                <button class="btn-3d btn-secondary" id="close-preview-full" style="margin: 0; padding: 8px 15px;"><i class="fas fa-times"></i> Tutup Preview</button>
-            </div>
-
-            <div class="preview-body-container">
-                <div class="preview-q-area">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
-                        <h2 style="margin: 0; color: var(--secondary);">Soal No. <span id="prev-current-q-num">1</span></h2>
-                        <span id="prev-badge-tipe" style="background: var(--info); color: white; padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem;">PG</span>
-                    </div>
-                    
-                    <div id="prev-q-container" style="flex: 1;"></div>
-                    
-                    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
-                        <button id="prev-btn-prev" class="btn-3d btn-secondary" style="margin: 0;"><i class="fas fa-chevron-left"></i> SEBELUMNYA</button>
-                        <button id="prev-btn-next" class="btn-3d" style="margin: 0;">SELANJUTNYA <i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
-                
-                <div class="preview-nav-area">
-                    <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-th"></i> Navigasi Soal</h4>
-                    <div class="q-grid" id="prev-q-grid"></div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <script>
-        let touchstartY = 0;
-        let touchendY = 0;
-        const btnLogoutEl = document.getElementById('btn-logout');
-        let hideTimeout;
-
-        function handleSwipe() {
-            const swipeDistance = touchstartY - touchendY;
-            if (swipeDistance > 30) {
-                btnLogoutEl.style.bottom = '20px';
-                clearTimeout(hideTimeout);
-                hideTimeout = setTimeout(() => { btnLogoutEl.style.bottom = '-70px'; }, 4000);
-            } else if (swipeDistance < -30) {
-                btnLogoutEl.style.bottom = '-70px';
-            }
-        }
-
-        document.addEventListener('touchstart', e => { touchstartY = e.changedTouches[0].screenY; }, { passive: true });
-        document.addEventListener('touchend', e => { touchendY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
-        window.addEventListener('wheel', (e) => {
-            if (e.deltaY > 0) { btnLogoutEl.style.bottom = '20px'; } else { btnLogoutEl.style.bottom = '-70px'; }
-            clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(() => { btnLogoutEl.style.bottom = '-70px'; }, 4000);
-        });
-    </script>
 
     <script type="module" src="dashboard.js"></script>
 </body>
