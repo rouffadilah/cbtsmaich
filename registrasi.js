@@ -76,12 +76,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const groupMapelGuru = document.getElementById("group-mapel-guru");
         const groupKelasGuru = document.getElementById("group-kelas-guru");
         const inputKelasSiswa = document.getElementById("reg-kelas-siswa");
+        const inputUsername = document.getElementById("reg-username");
 
         if (role === 'guru') {
             regTitle.innerText = "REGISTRASI GURU";
-            usernameLabel.innerText = "Username / NIP";
+            usernameLabel.innerText = "ID Guru";
             boxGuru.classList.add('active');
             boxSiswa.classList.remove('active');
+            
+            // Set input khusus Guru
+            inputUsername.placeholder = "Contoh: E24H6-223";
+            inputUsername.removeAttribute("inputmode");
+            inputUsername.setAttribute("maxlength", "9");
             
             if(groupKelasSiswa) groupKelasSiswa.style.display = 'none';
             if(groupMapelGuru) groupMapelGuru.style.display = 'block';
@@ -93,6 +99,11 @@ document.addEventListener("DOMContentLoaded", () => {
             boxSiswa.classList.add('active');
             boxGuru.classList.remove('active');
             
+            // Set input khusus Siswa
+            inputUsername.placeholder = "Masukkan NIS (10 Digit Angka)";
+            inputUsername.setAttribute("inputmode", "numeric");
+            inputUsername.setAttribute("maxlength", "10");
+
             if(groupKelasSiswa) groupKelasSiswa.style.display = 'block';
             if(groupMapelGuru) groupMapelGuru.style.display = 'none';
             if(groupKelasGuru) groupKelasGuru.style.display = 'none';
@@ -114,12 +125,31 @@ document.addEventListener("DOMContentLoaded", () => {
         if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Guru sedang ditutup!");
         
         const name = document.getElementById("reg-name").value;
-        const username = document.getElementById("reg-username").value.replace(/\s+/g, '');
+        // Konversi username jadi uppercase agar formatnya seragam
+        const username = document.getElementById("reg-username").value.replace(/\s+/g, '').toUpperCase();
         const password = document.getElementById("reg-password").value;
 
         if(password !== document.getElementById("reg-confirm-password").value) {
             return alert("Password tidak cocok!");
         }
+
+        // --- AWAL VALIDASI FORMAT USERNAME ---
+        if (role === 'siswa') {
+            const isNumeric = /^\d+$/.test(username);
+            if (!isNumeric) {
+                return alert("Pendaftaran Ditolak: NIS Siswa harus berupa angka!");
+            }
+            if (username.length !== 10) {
+                return alert(`Pendaftaran Ditolak: NIS harus berjumlah 10 digit angka! (Anda memasukkan ${username.length} digit)`);
+            }
+        } else if (role === 'guru') {
+            // Regex Format: [1huruf][2angka][1huruf][1angka]-[3angka]
+            const regexGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/;
+            if (!regexGuru.test(username)) {
+                return alert("Pendaftaran Ditolak: Format ID Guru tidak sesuai!\n\nGunakan format: [1 Huruf][2 Angka][1 Huruf][1 Angka]-[3 Angka]\nContoh: E24H6-223");
+            }
+        }
+        // --- AKHIR VALIDASI FORMAT USERNAME ---
 
         const originalBtnText = btnSubmit.innerHTML;
         btnSubmit.innerHTML = "<i class='fas fa-spinner fa-spin'></i> MEMPROSES...";
