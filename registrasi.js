@@ -187,7 +187,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             await setDoc(doc(db, "users", user.uid), payload);
 
-            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat.`);
+            // PENAMBAHAN PESAN PERINGATAN GANTI PASSWORD
+            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat.\n\nINFO KEAMANAN: Sangat disarankan bagi Anda (atau User terkait) untuk mengubah password ini nanti secara mandiri, agar hak akses pribadi tetap terjaga dan aman.`);
             window.location.href = "index.html";
 
         } catch (error) {
