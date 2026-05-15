@@ -31,33 +31,33 @@
         <div class="login-card">
             
             <div class="login-header">
-                <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo">
+                <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
                 <h2 id="portal-title">CBT-SMAICH</h2>
                 <p>SMA ISLAM CIKAL HARAPAN I BSD</p>
             </div>
 
             <form id="login-form">
                 <div class="input-group">
-                    <label for="username"><i class="fas fa-id-card"></i> Pengguna / NIP / NIS</label>
-                    <input type="text" id="username" class="input-text" placeholder="Input Pengguna" required>
+                    <label>Username / NIS / NIP</label>
+                    <input type="text" id="username" class="input-text" placeholder="Masukkan ID Anda" required autocomplete="off">
                 </div>
-                
                 <div class="input-group">
-                    <label for="password"><i class="fas fa-lock"></i> Sandi</label>
-                    <input type="password" id="password" class="input-text" placeholder="Masukkan Sandi" required>
+                    <label>Password</label>
+                    <input type="password" id="password" class="input-text" placeholder="Masukkan Password" required>
                 </div>
-
-                <button type="submit" id="btn-submit" class="btn-3d">MASUK</button>
                 
+                <button type="submit" class="btn-3d" id="btn-submit" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> MASUK
+                </button>
+
                 <div style="margin-top: 20px; font-size: 0.9rem; text-align: center;">
-                    Siswa baru? <a href="registrasi.html">Daftar di sini</a>
+                    Belum punya akun? <a href="registrasi.html" style="color: var(--primary); font-weight: bold; text-decoration: none;">Daftar di sini</a>
                 </div>
             </form>
             
-            <div class="login-footer">
-                Hak Cipta &copy; 2026<br>Pranata Komputer SMAICH
+            <div class="login-footer" style="margin-top: 20px; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+                &copy; 2026 IT Support SMAICH. All rights reserved.
             </div>
-            
         </div>
     </div>
 
@@ -80,6 +80,15 @@
             ) {
                 event.preventDefault();
             }
+        });
+
+        // ========================================================
+        // JEBAKAN TOMBOL BACK (Mencegah Keluar Aplikasi di HP)
+        // ========================================================
+        history.pushState(null, null, location.href);
+        window.addEventListener('popstate', function(event) {
+            // Ketika tombol back ditekan, paksa tetap di halaman ini
+            history.pushState(null, null, location.href);
         });
     </script>
 
