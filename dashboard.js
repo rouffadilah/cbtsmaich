@@ -91,6 +91,16 @@ function renderMediaHTML(mediaObj) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Mencegah tombol kembali di HP keluar ke halaman index (login)
+    if (!window.location.hash) {
+        window.location.hash = 'section-beranda';
+    }
+    window.addEventListener('popstate', function(event) {
+        if (!window.location.hash || window.location.hash === '') {
+            window.location.hash = 'section-beranda'; // Memaksa kembali ke dashboard
+        }
+    });
+
     let userRoles = []; let userMapel = []; let userKelas = [];
     
     try { 
@@ -496,7 +506,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const rowHTML = `<tr><td>${data.username}</td><td><strong>${data.nama}</strong></td><td><span style="background: ${roleColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight:bold;">${rls.join(', ').toUpperCase()}</span></td><td>${detailText}</td>
                     <td>
-                        <button onclick="window.editPengguna('${docSnap.id}')" style="color:var(--warning); background:none; border:none; cursor:pointer; font-size:1.1rem; margin-right:10px;" title="Edit"><i class="fas fa-edit"></i></button>
                         <button onclick="window.hapusDokumen('users', '${docSnap.id}', window.loadDataPengguna)" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:1.1rem;" title="Hapus"><i class="fas fa-trash"></i></button>
                     </td></tr>`;
                 
