@@ -124,6 +124,18 @@
         </div>
     </div>
 
+    <div id="modal-custom-confirm" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
+        <div class="modal-content" style="width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-top: 5px solid var(--warning);">
+            <i class="fas fa-question-circle fa-4x" style="color: var(--warning); margin-bottom: 15px;"></i>
+            <h3 id="confirm-title" style="color: var(--secondary); margin-bottom: 10px;">Konfirmasi</h3>
+            <p id="confirm-message" style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;">Apakah Anda yakin?</p>
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-confirm-cancel" class="btn-3d btn-secondary" style="flex: 1; margin: 0;">Batal</button>
+                <button id="btn-confirm-ok" class="btn-3d" style="flex: 1; margin: 0; background-color: var(--warning);">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('contextmenu', event => event.preventDefault());
         ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => document.addEventListener(evt, event => { if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } }));
@@ -136,10 +148,9 @@
         for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
         window.addEventListener('popstate', function (event) { 
             history.pushState(null, document.title, location.href); 
-            alert("⛔ TINDAKAN ILEGAL: Tombol kembali dinonaktifkan!"); 
             if(window.openFullscreen) { window.openFullscreen(); }
         });
-        window.addEventListener('beforeunload', function (e) { e.preventDefault(); e.returnValue = "Ujian sedang berlangsung! Keluar akan membatalkan progress."; return "Ujian sedang berlangsung!"; });
+        window.addEventListener('beforeunload', function (e) { e.preventDefault(); e.returnValue = ""; return ""; });
     </script>
     <script type="module" src="attempt.js"></script>
 </body>
