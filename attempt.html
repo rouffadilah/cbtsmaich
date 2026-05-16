@@ -16,7 +16,6 @@
         input, textarea, select { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
         @media print { body { display: none !important; } }
         
-        /* Layout Ujian */
         .pre-exam-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .pre-exam-card { background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 100%; max-width: 500px; text-align: center; }
         .warning-box { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: left; }
@@ -57,7 +56,7 @@
 
             <div class="warning-box">
                 <i class="fas fa-shield-alt" style="font-size: 1.2rem; margin-bottom: 8px; display: block;"></i> 
-                <b>MODE AMAN AKTIF:</b> <br>Sistem anti-contek telah aktif. Jangan minimize atau pindah tab selama ujian berlangsung.
+                <b>SISTEM AMAN AKTIF:</b> <br>Segala aktivitas keluar jendela browser, meminimalkan aplikasi, atau menekan tombol back akan terhitung pelanggaran (Maksimal 3x).
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -116,18 +115,32 @@
         </div>
     </div>
 
+    <div id="modal-custom-alert" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
+        <div class="modal-content" style="width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-top: 5px solid var(--info);">
+            <i class="fas fa-info-circle fa-4x" style="color: var(--info); margin-bottom: 15px;"></i>
+            <h3 id="alert-title" style="color: var(--secondary); margin-bottom: 10px;">Informasi</h3>
+            <p id="alert-message" style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;">Pesan</p>
+            <button id="btn-alert-ok" class="btn-3d" style="width: 100%; margin: 0; background-color: var(--info);">OK, Mengerti</button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('contextmenu', event => event.preventDefault());
         ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => document.addEventListener(evt, event => { if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } }));
         document.addEventListener('keydown', event => {
             if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { event.preventDefault(); }
         });
-        history.pushState(null, document.title, location.href);
-        window.addEventListener('popstate', function (event) { history.pushState(null, document.title, location.href); });
         window.addEventListener('blur', () => { document.body.style.filter = "blur(15px)"; });
         window.addEventListener('focus', () => { document.body.style.filter = "none"; });
-    </script>
 
+        for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
+        window.addEventListener('popstate', function (event) { 
+            history.pushState(null, document.title, location.href); 
+            alert("⛔ TINDAKAN ILEGAL: Tombol kembali dinonaktifkan!"); 
+            if(window.openFullscreen) { window.openFullscreen(); }
+        });
+        window.addEventListener('beforeunload', function (e) { e.preventDefault(); e.returnValue = "Ujian sedang berlangsung! Keluar akan membatalkan progress."; return "Ujian sedang berlangsung!"; });
+    </script>
     <script type="module" src="attempt.js"></script>
 </body>
 </html>
