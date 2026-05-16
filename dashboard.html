@@ -16,7 +16,7 @@
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(22px); }
-        
+
         /* --- KEAMANAN GLOBAL: ANTI COPAS, AI, & CETAK --- */
         body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea, select { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
@@ -34,7 +34,7 @@
 
         <div class="main-wrapper">
             <main class="main-content">
-                
+
                 <div id="section-beranda" class="content-section active">
                     <div class="welcome-banner">
                         <div>
@@ -54,8 +54,8 @@
                             <div><p>Capaian Siswa</p><h3 id="stat-ujian">0</h3></div><div style="color: var(--success);"><i class="fas fa-chart-bar"></i></div>
                         </div>
                     </div>
-                </div> 
-                
+                </div>
+
                 <div id="section-soal" class="content-section">
                     <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
                         <div class="toggle-accordion" data-target="container-bank-soal" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
@@ -63,7 +63,7 @@
                             <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                         </div>
                         <div id="container-bank-soal" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
-                            
+
                             <div id="view-summary-bank-soal">
                                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                                     <button id="btn-open-data-master" class="btn-3d" style="margin: 0; background-color: var(--info);"><i class="fas fa-database"></i> Data Master</button>
@@ -85,7 +85,7 @@
                                     </div>
                                     <button onclick="document.getElementById('modal-tambah-soal').style.display='flex'; document.getElementById('soal-mapel').value=document.getElementById('filter-soal-mapel').value; document.getElementById('soal-kelas').value=document.getElementById('filter-soal-kelas').value;" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Tambah Soal</button>
                                 </div>
-                                
+
                                 <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
                                     <input type="hidden" id="filter-soal-mapel">
                                     <input type="hidden" id="filter-soal-kelas">
@@ -97,7 +97,7 @@
                                         <button id="btn-preview-full" class="btn-3d" style="background-color: var(--info); display: none; margin-left: auto;"><i class="fas fa-eye"></i> Preview</button>
                                     </div>
                                 </div>
-                                
+
                                 <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
                                     <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Memuat data soal...</div>
                                 </div>
@@ -118,7 +118,7 @@
                                 <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                             </div>
                             <div id="container-daftar-pengguna" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
-                                
+
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                     <h4 style="margin: 0; color: var(--info); font-size: 1.05rem;"><i class="fas fa-chalkboard-teacher"></i> Akun Guru</h4>
                                     <div id="wrap-reg-guru" style="display: flex; align-items: center; gap: 10px;">
@@ -157,7 +157,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div id="hasil-detail-view" style="display: none;">
                         <div class="card">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
@@ -176,7 +176,7 @@
 
             </main>
         </div>
-    </div> 
+    </div>
 
     <button id="btn-logout" class="btn-3d" style="position: fixed; bottom: -70px; right: 20px; background: var(--danger); width: 50px; height: 50px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5); z-index: 9999; transition: bottom 0.3s ease-in-out;" title="Keluar Aplikasi"><i class="fas fa-power-off" style="font-size: 1.3rem; margin: 0;"></i></button>
 
@@ -188,7 +188,7 @@
             <button id="btn-alert-ok" class="btn-3d" style="width: 100%; margin: 0; background-color: var(--info);">OK</button>
         </div>
     </div>
-    
+
     <div id="modal-custom-confirm" class="modal">
         <div class="modal-content" style="width: 400px; text-align: center;">
             <i id="confirm-icon" class="fas fa-question-circle fa-4x" style="color: var(--warning); margin-bottom: 15px;"></i>
@@ -198,6 +198,69 @@
                 <button id="btn-confirm-cancel" class="btn-3d btn-secondary" style="flex: 1; margin: 0;">Batal</button>
                 <button id="btn-confirm-ok" class="btn-3d" style="flex: 1; margin: 0; background-color: var(--warning);">Ya</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-edit-akun" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-btn" id="close-modal-edit-akun">&times;</span>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-user-edit"></i> Edit Profil Pengguna</h2>
+            <input type="hidden" id="edit-uid">
+            <div class="input-group"><label>Nama Lengkap</label><input type="text" id="edit-nama" class="input-text"></div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div class="input-group" style="margin: 0;"><label>Username / NIS / ID</label><input type="text" id="edit-username" class="input-text"></div>
+                <div class="input-group" style="margin: 0;"><label>Password Baru (Opsional)</label><input type="password" id="edit-pass" class="input-text" placeholder="Kosongkan jika tidak diubah"></div>
+            </div>
+
+            <div class="input-group">
+                <label>Role Akses</label>
+                <div style="display: flex; gap: 20px; padding: 15px; background: white; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm);">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" class="edit-role-cb" value="siswa"> Siswa</label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" class="edit-role-cb" value="guru"> Guru</label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" class="edit-role-cb" value="admin"> Admin</label>
+                </div>
+            </div>
+            <div id="group-edit-guru" style="display: flex; gap: 15px; display: none;">
+                <div class="input-group" style="flex: 1;"><label>Mapel (Guru)</label><div id="edit-mapel-container" class="checkbox-container"></div></div>
+                <div class="input-group" style="flex: 1;"><label>Kelas Ajar (Guru)</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
+            </div>
+            <div class="input-group" id="group-edit-kelas-siswa" style="display: none;"><label>Kelas (Siswa)</label><select id="edit-kelas-siswa" class="input-text"></select></div>
+            <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; margin-top: 15px;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
+        </div>
+    </div>
+
+    <div id="modal-data-master" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-btn" id="close-modal-data-master">&times;</span>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-database"></i> Data Master</h2>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">KATEGORI</label>
+                    <select id="input-master-type" class="input-text">
+                        <option value="mapel">Mata Pelajaran</option>
+                        <option value="kelas">Kelas</option>
+                    </select>
+                </div>
+                <div style="flex: 2; min-width: 200px;">
+                    <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">NAMA BARU</label>
+                    <input type="text" id="input-master-name" class="input-text" placeholder="Ketik nama mapel/kelas baru...">
+                </div>
+                <button id="btn-add-master" class="btn-3d" style="background: var(--success); margin: 0;"><i class="fas fa-plus"></i> Input Data</button>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                <button id="btn-edit-master-mode" class="btn-3d btn-secondary" style="margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-edit"></i> Edit Data Master</button>
+            </div>
+
+            <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+                <table id="table-master-combined" style="margin: 0;">
+                    <thead><tr><th>Mata Pelajaran</th><th>Kelas</th></tr></thead>
+                    <tbody id="tbody-master-combined"></tbody>
+                </table>
+            </div>
+
         </div>
     </div>
 
