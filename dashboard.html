@@ -97,7 +97,7 @@
                                         <button id="btn-preview-full" class="btn-3d" style="background-color: var(--info); display: none; margin-left: auto;"><i class="fas fa-eye"></i> Preview</button>
                                     </div>
                                 </div>
-
+                                
                                 <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
                                     <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Memuat data soal...</div>
                                 </div>
@@ -260,7 +260,6 @@
                     <tbody id="tbody-master-combined"></tbody>
                 </table>
             </div>
-
         </div>
     </div>
 
@@ -270,10 +269,12 @@
         document.addEventListener('keydown', event => {
             if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { event.preventDefault(); }
         });
-        history.pushState(null, document.title, location.href);
-        window.addEventListener('popstate', function (event) { history.pushState(null, document.title, location.href); });
         window.addEventListener('blur', () => { document.body.style.filter = "blur(15px)"; });
         window.addEventListener('focus', () => { document.body.style.filter = "none"; });
+
+        for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
+        window.addEventListener('popstate', function (event) { history.pushState(null, document.title, location.href); alert("⛔ TINDAKAN ILEGAL: Tombol kembali dinonaktifkan!"); });
+        window.addEventListener('beforeunload', function (e) { e.preventDefault(); e.returnValue = "Apakah Anda yakin ingin keluar?"; return "Apakah Anda yakin ingin keluar?"; });
     </script>
     <script type="module" src="dashboard.js"></script>
 </body>
