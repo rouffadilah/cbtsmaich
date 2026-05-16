@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* --- KEAMANAN GLOBAL: ANTI COPAS & ANTI AI --- */
+        /* --- KEAMANAN GLOBAL & UI SPESIFIK UJIAN --- */
         body { 
             -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; 
             -webkit-touch-callout: none; background-color: var(--bg-main); 
@@ -45,8 +45,14 @@
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px;">Siapkan diri Anda dan berdoa sebelum memulai ujian.</p>
             
             <div style="display: flex; gap: 15px; margin-bottom: 15px; text-align: left;">
-                <div style="flex: 1;"><label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Kelas</label><input type="text" id="student-class" class="input-text" disabled style="background: #e2e8f0; font-weight: bold;"></div>
-                <div style="flex: 1;"><label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Pilih Mapel</label><select id="select-mapel" class="input-text"></select></div>
+                <div style="flex: 1;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Kelas</label>
+                    <input type="text" id="student-class" class="input-text" disabled style="background: #e2e8f0; font-weight: bold;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Pilih Mapel</label>
+                    <select id="select-mapel" class="input-text"></select>
+                </div>
             </div>
             
             <div style="text-align: left; margin-bottom: 20px;">
@@ -98,7 +104,6 @@
             </div>
 
             <div id="drawer-overlay" class="overlay-drawer"></div>
-
             <div class="sidebar-area" id="sidebar-nav">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h4 style="color: var(--secondary); margin: 0;"><i class="fas fa-th"></i> Navigasi Soal</h4>
@@ -136,22 +141,6 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => document.addEventListener(evt, event => { if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } }));
-        document.addEventListener('keydown', event => {
-            if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { event.preventDefault(); }
-        });
-        window.addEventListener('blur', () => { document.body.style.filter = "blur(15px)"; });
-        window.addEventListener('focus', () => { document.body.style.filter = "none"; });
-
-        for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
-        window.addEventListener('popstate', function (event) { 
-            history.pushState(null, document.title, location.href); 
-            if(window.openFullscreen) { window.openFullscreen(); }
-        });
-        window.addEventListener('beforeunload', function (e) { e.preventDefault(); e.returnValue = ""; return ""; });
-    </script>
     <script type="module" src="attempt.js"></script>
 </body>
 </html>
