@@ -379,34 +379,35 @@ document.getElementById('nav-grid').addEventListener('click', (e) => {
 });
 
 // ==========================================
-// 7. LOGIKA KELUAR & HANDLER TOMBOL BACK HP
+// 7. LOGIKA KELUAR UI & PENGIKAT BACK-TRAP MUTLAK
 // ==========================================
 
-// Fungsi untuk tombol Keluar UI (Tombol yang memang disengaja)
+// Fungsi tombol Keluar Manual di Pojok Kanan Atas Ujian
 const btnExitExam = document.getElementById('btn-exit-exam');
 if (btnExitExam) {
     btnExitExam.addEventListener('click', () => {
         const conf = confirm("Apakah Anda yakin ingin keluar? Progress ujian Anda tidak akan tersimpan jika belum menekan tombol SELESAI UJIAN.");
         if (conf) {
-            closeFullscreen(); // Pastikan keluar dari mode fullscreen
+            closeFullscreen(); 
             window.location.href = "index.html";
         }
     });
 }
 
-// ==========================================
-// KUNCI TOMBOL KEMBALI MUTLAK 
-// ==========================================
-// Menangkap event tombol 'Back' fisik di HP atau Browser dan menolaknya mentah-mentah
+// Global scope binding untuk diakses oleh script proteksi di HTML
+window.openFullscreen = openFullscreen;
+
+// Menangkap event tombol 'Back' fisik di HP/Browser dan menolaknya mentah-mentah
 history.pushState(null, null, location.href);
 window.addEventListener('popstate', function(event) {
-    // Tahan state agar tidak langsung terlempar keluar tanpa izin
+    // Tahan history paksa agar tetap diam di laman ujian
     history.pushState(null, null, location.href);
     
-    // Tampilkan peringatan TEGAS
-    alert("⛔ PERINGATAN: Tombol kembali dinonaktifkan demi keamanan. Silakan gunakan tombol Navigasi di dalam layar.");
+    // Tampilkan notifikasi tegas berupa alert sistem browser
+    alert("⛔ PERINGATAN: Tombol kembali dinonaktifkan demi keamanan. Silakan gunakan tombol Navigasi di dalam aplikasi.");
     
-    // Memastikan layar tidak kabur (re-focus) dan kembali fullscreen jika terlepas
+    // Hilangkan efek blur dan kembalikan ke fullscreen
     document.body.style.filter = "none"; 
     openFullscreen();
 });
+
