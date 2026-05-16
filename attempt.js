@@ -44,10 +44,144 @@ window.customConfirm = (msg, title = 'Konfirmasi') => {
 };
 
 // ==========================================
-// 3. INISIALISASI DATA SISWA
+// 3. WATERMARK MANAGER (ANTI-SCREENSHOT)
+// ==========================================
+const WatermarkManager = {
+    overlayId: 'cbt-secure-watermark',
+
+    init: function(nama, nis) {
+        this.createOverlay(nama, nis);
+        this.enforceOverlay(nama, nis);
+    },
+
+    createOverlay: function(nama, nis) {
+        if (document.getElementById(this.overlayId)) return;
+
+        const watermarkDiv = document.createElement('div');
+        watermarkDiv.id = this.overlayId;
+        
+        watermarkDiv.style.position = 'fixed';
+        watermarkDiv.style.top = '0';
+        watermarkDiv.style.left = '0';
+        watermarkDiv.style.width = '100vw';
+        watermarkDiv.style.height = '100vh';
+        watermarkDiv.style.pointerEvents = 'none'; 
+        watermarkDiv.style.zIndex = '99999';
+        watermarkDiv.style.opacity = '0.12'; 
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 350; 
+        canvas.height = 200; 
+        const ctx = canvas.getContext('2d');
+
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(-Math.PI / 6); 
+        ctx.font = 'bold 18px Inter, sans-serif';
+        ctx.fillStyle = '#0f172a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillText(`${nama}`, 0, -25);
+        ctx.fillText(`NIS: ${nis}`, 0, 0);
+        ctx.fillText(`CBT SMAICH`, 0, 25);
+
+        watermarkDiv.style.backgroundImage = `url(${canvas.toDataURL('image/png')})`;
+        watermarkDiv.style.backgroundRepeat = 'repeat';
+
+        document.body.appendChild(watermarkDiv);
+    },
+
+    enforceOverlay: function(nama, nis) {
+        const observer = new MutationObserver((mutations) => {
+            if (!document.getElementById(this.overlayId)) {
+                console.warn("Watermark dihapus paksa! Memulihkan...");
+                this.createOverlay(nama, nis);
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+};
+
+// ==========================================
+// 4. SECURITY MANAGER (ANTI-CHEAT)
+// ==========================================
+const SecurityManager = {
+    initGlobal: function() {
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => 
+            document.addEventListener(evt, e => { 
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); } 
+            })
+        );
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || e.key === 'PrintScreen' || 
+               (e.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(e.key.toLowerCase())) || 
+               (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 's'].includes(e.key.toLowerCase()))) { 
+                e.preventDefault(); 
+            }
+        });
+
+        for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
+        window.addEventListener('popstate', () => { 
+            history.pushState(null, document.title, location.href); 
+            if(examState.isExamActive) this.openFullscreen(); 
+        });
+
+        window.addEventListener('beforeunload', (e) => { 
+            if(examState.isExamActive) { e.preventDefault(); e.returnValue = ""; return ""; }
+        });
+    },
+
+    startStrictExamMode: function() {
+        this.openFullscreen();
+        
+        window.addEventListener('blur', this.handleViolation.bind(this));
+        document.addEventListener('visibilitychange', () => { 
+            if (document.visibilityState === 'hidden') this.handleViolation(); 
+        });
+        
+        window.addEventListener('blur', () => { if(examState.isExamActive) document.body.style.filter = "blur(15px)"; });
+        window.addEventListener('focus', () => { if(examState.isExamActive) document.body.style.filter = "none"; });
+    },
+
+    handleViolation: async function() {
+        if (!examState.isExamActive) return;
+
+        examState.pelanggaran++;
+        const violationEl = document.getElementById('violation-count');
+        if (violationEl) violationEl.innerText = examState.pelanggaran;
+        
+        this.openFullscreen();
+
+        if (examState.pelanggaran >= examState.maxPelanggaran) {
+            await window.customAlert(`Anda telah melakukan ${examState.maxPelanggaran} kali pelanggaran aktivitas mencurigakan. Ujian dihentikan secara otomatis.`, 'PELANGGARAN MAKSIMAL');
+            selesaiUjian(true, true); 
+        } else {
+            window.customAlert(`Anda terdeteksi keluar dari layar ujian atau membuka tab lain.\n\nPeringatan Ke-${examState.pelanggaran}! Pada pelanggaran ke-${examState.maxPelanggaran}, ujian otomatis dihentikan.`, 'Peringatan Keamanan Aktif');
+        }
+    },
+
+    openFullscreen: function() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) { elem.requestFullscreen().catch(()=>{}); } 
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+    },
+
+    closeFullscreen: function() {
+        if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); } 
+        else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); } 
+        else if (document.msExitFullscreen) { document.msExitFullscreen(); }
+    }
+};
+
+window.openFullscreen = SecurityManager.openFullscreen.bind(SecurityManager);
+
+// ==========================================
+// 5. INISIALISASI DATA SISWA & AUTH
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    SecurityManager.initGlobal(); // Jalankan proteksi dasar
+    SecurityManager.initGlobal(); 
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.replace("index.html"); return; }
@@ -60,6 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('welcome-student').innerText = `Assalamu'alaikum ${examState.student.nama}...`;
                 document.getElementById('student-class').value = examState.student.kelas || examState.student.kelas_siswa || "-";
                 document.getElementById('exam-student-name').innerText = `${examState.student.nama} (${examState.student.username})`;
+                
+                // Aktifkan Watermark Dinamis
+                WatermarkManager.init(examState.student.nama, examState.student.username);
                 
                 await loadMapelOptions();
             } else {
@@ -87,7 +224,7 @@ async function loadMapelOptions() {
 }
 
 // ==========================================
-// 4. LOGIKA MULAI UJIAN & VERIFIKASI TOKEN
+// 6. LOGIKA MULAI UJIAN & VERIFIKASI TOKEN
 // ==========================================
 document.getElementById('btn-verifikasi').onclick = async () => {
     examState.mapelTerpilih = document.getElementById('select-mapel').value;
@@ -101,7 +238,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     btn.disabled = true;
 
     try {
-        // Cek Token
         const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         const tokenKey = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
         
@@ -116,12 +252,10 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         if (tokenInput !== tokenCode) throw new Error("Kode Token Salah!");
         if (Date.now() > expiresAt) throw new Error("Waktu Token sudah habis! Silakan minta token baru ke Pengawas.");
 
-        // Cek Riwayat Pengerjaan
         const qHasil = query(collection(db, "hasil_ujian"), where("uid", "==", examState.student.uid), where("mataPelajaran", "==", examState.mapelTerpilih));
         const cekHasil = await getDocs(qHasil);
         if(!cekHasil.empty) throw new Error("Anda sudah menyelesaikan ujian mapel ini.");
 
-        // Ambil Soal
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", examState.mapelTerpilih), where("kelas", "==", kelasSiswa));
         const soalSnap = await getDocs(qSoal);
         
@@ -131,7 +265,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         soalSnap.forEach(d => examState.arraySoal.push({id: d.id, ...d.data()}));
         examState.arraySoal.sort((a, b) => a.nomor_soal - b.nomor_soal);
 
-        // Atur Waktu
         let durasiMenit = 90; 
         const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
         if (timeSnap.exists() && timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]) {
@@ -139,7 +272,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         }
         examState.durasiDetik = durasiMenit * 60;
         
-        // Transisi ke Area Ujian
+        // Transisi ke Area Ujian (Mengunci Mode Penuh)
         SecurityManager.startStrictExamMode();
         examState.isExamActive = true;
         
@@ -160,7 +293,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 };
 
 // ==========================================
-// 5. RENDER UI UJIAN
+// 7. RENDER UI UJIAN & NAVIGASI
 // ==========================================
 function renderMedia(mediaObj) {
     if (!mediaObj) return '';
@@ -212,7 +345,6 @@ function tampilkanSoal(idx) {
 
     document.getElementById('question-content').innerHTML = html;
     
-    // Atur tombol navigasi Bawah
     document.getElementById('btn-prev').style.visibility = idx === 0 ? 'hidden' : 'visible';
     const btnNext = document.getElementById('btn-next');
     if (idx === examState.arraySoal.length - 1) {
@@ -226,6 +358,7 @@ function tampilkanSoal(idx) {
     updateWarnaGrid();
 }
 
+// Window Binding untuk akses onClick dari HTML dinamis
 window.pilihJawabanPG = (soalId, opsi) => { 
     examState.jawabanSiswa[soalId] = opsi; 
     tampilkanSoal(examState.currentIndex); 
@@ -265,7 +398,7 @@ function updateWarnaGrid() {
 }
 
 // ==========================================
-// 6. TIMER & PENGUMPULAN (SUBMIT)
+// 8. TIMER & PENGUMPULAN (SUBMIT)
 // ==========================================
 function jalankanTimer() {
     examState.timerInterval = setInterval(() => {
@@ -340,92 +473,11 @@ async function selesaiUjian(isTimeOut = false, isPelanggaran = false) {
         window.location.replace("index.html");
     } catch(e) {
         await window.customAlert("Gagal menyimpan ke server. Pastikan koneksi internet stabil dan lapor pengawas!", 'Error Jaringan');
-        // Fallback: bisa menyimpan ke LocalStorage di sini jika offline
     }
 }
 
 // ==========================================
-// 7. SECURITY MANAGER (ANTI-CHEAT)
-// ==========================================
-const SecurityManager = {
-    initGlobal: function() {
-        // Pencegahan aksi standar form/browser yang tidak berkaitan dengan form isi ujian
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => 
-            document.addEventListener(evt, e => { 
-                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); } 
-            })
-        );
-        document.addEventListener('keydown', e => {
-            if (e.key === 'F12' || e.key === 'PrintScreen' || 
-               (e.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(e.key.toLowerCase())) || 
-               (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 's'].includes(e.key.toLowerCase()))) { 
-                e.preventDefault(); 
-            }
-        });
-
-        // Mengikat riwayat browser agar tidak bisa menekan "Back"
-        for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
-        window.addEventListener('popstate', () => { 
-            history.pushState(null, document.title, location.href); 
-            if(examState.isExamActive) this.openFullscreen(); 
-        });
-
-        // Peringatan sebelum tab di-close paksa
-        window.addEventListener('beforeunload', (e) => { 
-            if(examState.isExamActive) { e.preventDefault(); e.returnValue = ""; return ""; }
-        });
-    },
-
-    startStrictExamMode: function() {
-        this.openFullscreen();
-        
-        // Deteksi tab blur / pindah aplikasi
-        window.addEventListener('blur', this.handleViolation.bind(this));
-        document.addEventListener('visibilitychange', () => { 
-            if (document.visibilityState === 'hidden') this.handleViolation(); 
-        });
-        
-        // Blur visual saat kehilangan fokus
-        window.addEventListener('blur', () => { if(examState.isExamActive) document.body.style.filter = "blur(15px)"; });
-        window.addEventListener('focus', () => { if(examState.isExamActive) document.body.style.filter = "none"; });
-    },
-
-    handleViolation: async function() {
-        if (!examState.isExamActive) return;
-
-        examState.pelanggaran++;
-        const violationEl = document.getElementById('violation-count');
-        if (violationEl) violationEl.innerText = examState.pelanggaran;
-        
-        this.openFullscreen();
-
-        if (examState.pelanggaran >= examState.maxPelanggaran) {
-            await window.customAlert(`Anda telah melakukan ${examState.maxPelanggaran} kali pelanggaran aktivitas mencurigakan. Ujian dihentikan secara otomatis.`, 'PELANGGARAN MAKSIMAL');
-            selesaiUjian(true, true); 
-        } else {
-            window.customAlert(`Anda terdeteksi keluar dari layar ujian atau membuka tab lain.\n\nPeringatan Ke-${examState.pelanggaran}! Pada pelanggaran ke-${examState.maxPelanggaran}, ujian otomatis dihentikan.`, 'Peringatan Keamanan Aktif');
-        }
-    },
-
-    openFullscreen: function() {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) { elem.requestFullscreen().catch(()=>{}); } 
-        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
-        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
-    },
-
-    closeFullscreen: function() {
-        if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); } 
-        else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); } 
-        else if (document.msExitFullscreen) { document.msExitFullscreen(); }
-    }
-};
-
-window.openFullscreen = SecurityManager.openFullscreen.bind(SecurityManager);
-
-// ==========================================
-// 8. LOGIKA DRAWER NAVIGASI (MOBILE)
+// 9. LOGIKA DRAWER NAVIGASI (MOBILE) & EXIT
 // ==========================================
 const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
 const btnCloseDrawer = document.getElementById('btn-close-drawer');
