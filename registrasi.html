@@ -59,10 +59,12 @@
         document.addEventListener('keydown', event => {
             if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { event.preventDefault(); }
         });
-        history.pushState(null, document.title, location.href);
-        window.addEventListener('popstate', function (event) { history.pushState(null, document.title, location.href); });
         window.addEventListener('blur', () => { document.body.style.filter = "blur(15px)"; });
         window.addEventListener('focus', () => { document.body.style.filter = "none"; });
+
+        for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
+        window.addEventListener('popstate', function (event) { history.pushState(null, document.title, location.href); alert("⛔ TINDAKAN ILEGAL: Tombol kembali dinonaktifkan!"); });
+        window.addEventListener('beforeunload', function (e) { e.preventDefault(); e.returnValue = "Apakah Anda yakin ingin keluar?"; return "Apakah Anda yakin ingin keluar?"; });
     </script>
     <script type="module" src="registrasi.js"></script>
 </body>
