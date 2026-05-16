@@ -22,6 +22,17 @@ window.customAlert = (msg, title = 'Informasi') => {
     });
 };
 
+window.customConfirm = (msg, title = 'Konfirmasi') => {
+    return new Promise(res => {
+        const modal = document.getElementById('modal-custom-confirm');
+        document.getElementById('confirm-title').innerText = title;
+        document.getElementById('confirm-message').innerText = msg;
+        modal.style.display = 'flex';
+        document.getElementById('btn-confirm-ok').onclick = () => { modal.style.display = 'none'; res(true); };
+        document.getElementById('btn-confirm-cancel').onclick = () => { modal.style.display = 'none'; res(false); };
+    });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = "index.html"; return; }
@@ -35,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('exam-student-name').innerText = `${studentData.nama} (${studentData.username})`;
                 await loadMapelOptions();
             } else {
-                await customAlert("Data siswa tidak ditemukan.");
+                await window.customAlert("Data siswa tidak ditemukan.");
                 auth.signOut(); window.location.href = "index.html";
             }
         } catch(e) { console.error(e); }
@@ -71,7 +82,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     const tokenInput = document.getElementById('input-token').value.toUpperCase().trim();
     const kelasSiswa = document.getElementById('student-class').value;
 
-    if(!mapelTerpilih || !tokenInput) return customAlert("Pilih mapel dan masukkan token!", "Peringatan");
+    if(!mapelTerpilih || !tokenInput) return window.customAlert("Pilih mapel dan masukkan token!", "Peringatan");
 
     const btn = document.getElementById('btn-verifikasi');
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memeriksa...'; 
@@ -83,7 +94,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         
         if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) {
             btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
-            return customAlert("Token tidak valid atau belum diaktifkan oleh Admin.", "Akses Ditolak");
+            return window.customAlert("Token tidak valid atau belum diaktifkan oleh Admin.", "Akses Ditolak");
         }
 
         const tokenData = tokenSnap.data()[tokenKey];
@@ -92,18 +103,18 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
         if (tokenInput !== tokenCode) {
             btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
-            return customAlert("Kode Token Salah!", "Akses Ditolak");
+            return window.customAlert("Kode Token Salah!", "Akses Ditolak");
         }
         if (Date.now() > expiresAt) {
             btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
-            return customAlert("Waktu Token sudah habis! Silakan minta token baru ke Pengawas.", "Token Expired");
+            return window.customAlert("Waktu Token sudah habis! Silakan minta token baru ke Pengawas.", "Token Expired");
         }
 
         const qHasil = query(collection(db, "hasil_ujian"), where("uid", "==", studentData.uid), where("mataPelajaran", "==", mapelTerpilih));
         const cekHasil = await getDocs(qHasil);
         if(!cekHasil.empty) {
             btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
-            return customAlert("Anda sudah menyelesaikan ujian mapel ini.", "Ditolak");
+            return window.customAlert("Anda sudah menyelesaikan ujian mapel ini.", "Ditolak");
         }
 
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapelTerpilih), where("kelas", "==", kelasSiswa));
@@ -111,7 +122,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         
         if (soalSnap.empty) {
             btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
-            return customAlert("Belum ada soal untuk mata pelajaran ini.", "Kosong");
+            return window.customAlert("Belum ada soal untuk mata pelajaran ini.", "Kosong");
         }
 
         arraySoal = [];
@@ -142,7 +153,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
     } catch(e) {
         console.error(e);
-        customAlert("Terjadi kesalahan jaringan.");
+        window.customAlert("Terjadi kesalahan jaringan.");
         btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
     }
 };
@@ -260,14 +271,14 @@ async function selesaiUjian(isTimeOut = false, isPelanggaran = false) {
         let terjawab = Object.keys(jawabanSiswa).filter(k => jawabanSiswa[k].trim() !== '').length;
         if(terjawab < arraySoal.length) {
             let sisa = arraySoal.length - terjawab;
-            let conf = confirm(`Peringatan! Masih ada ${sisa} soal yang BELUM TERJAWAB. Yakin ingin mengumpulkan ujian sekarang?`);
+            let conf = await window.customConfirm(`Masih ada ${sisa} soal yang BELUM TERJAWAB. Yakin ingin mengumpulkan ujian sekarang?`, 'Peringatan Kosong');
             if(!conf) return;
         } else {
-            let conf = confirm("Apakah Anda yakin telah selesai dan ingin mengumpulkan jawaban?");
+            let conf = await window.customConfirm("Apakah Anda yakin telah selesai dan ingin mengumpulkan jawaban?", 'Konfirmasi Selesai');
             if(!conf) return;
         }
     } else if (isTimeOut && !isPelanggaran) { 
-        alert("Waktu habis! Jawaban Anda otomatis dikumpulkan."); 
+        await window.customAlert("Waktu ujian telah habis! Jawaban Anda akan dikumpulkan secara otomatis.", "Waktu Habis"); 
     }
 
     clearInterval(timerInterval);
@@ -299,10 +310,10 @@ async function selesaiUjian(isTimeOut = false, isPelanggaran = false) {
     try {
         await addDoc(collection(db, "hasil_ujian"), payload);
         closeFullscreen(); // Tutup Fullscreen saat selesai
-        alert(`Ujian Selesai!\nJawaban Anda telah berhasil disimpan di server.`);
+        await window.customAlert(`Ujian Selesai!\nJawaban Anda telah berhasil disimpan di server.`, 'Berhasil');
         window.location.href = "index.html";
     } catch(e) {
-        alert("Gagal menyimpan ke server. Hubungi pengawas!");
+        await window.customAlert("Gagal menyimpan ke server. Hubungi pengawas!", 'Error Jaringan');
     }
 }
 
@@ -336,16 +347,17 @@ function mulaiKeamananUjian() {
     });
 }
 
-function catatPelanggaran() {
+async function catatPelanggaran() {
     pelanggaran++;
     document.getElementById('violation-count').innerText = pelanggaran;
     
+    openFullscreen();
+
     if (pelanggaran >= 3) {
-        alert(`PERINGATAN MAKSIMAL!\nAnda telah melakukan 3 kali pelanggaran. Ujian dihentikan secara otomatis.`);
+        await window.customAlert(`Anda telah melakukan 3 kali pelanggaran aktivitas mencurigakan. Ujian dihentikan secara otomatis.`, 'PELANGGARAN MAKSIMAL');
         selesaiUjian(true, true); 
     } else {
-        alert(`PERINGATAN KE-${pelanggaran}!\nAnda terdeteksi keluar dari halaman ujian / membuka tab lain. Pada pelanggaran ke-3, ujian akan dihentikan.`);
-        openFullscreen(); // Paksa fullscreen lagi jika siswa mencoba keluar
+        window.customAlert(`Anda terdeteksi keluar dari layar ujian atau membuka tab lain.\n\nPeringatan Ke-${pelanggaran}! Pada pelanggaran ke-3, ujian akan otomatis dihentikan.`, 'Peringatan Keamanan Aktif');
     }
 }
 
@@ -385,8 +397,8 @@ document.getElementById('nav-grid').addEventListener('click', (e) => {
 // Fungsi tombol Keluar Manual di Pojok Kanan Atas Ujian
 const btnExitExam = document.getElementById('btn-exit-exam');
 if (btnExitExam) {
-    btnExitExam.addEventListener('click', () => {
-        const conf = confirm("Apakah Anda yakin ingin keluar? Progress ujian Anda tidak akan tersimpan jika belum menekan tombol SELESAI UJIAN.");
+    btnExitExam.addEventListener('click', async () => {
+        const conf = await window.customConfirm("Apakah Anda yakin ingin keluar? Progress ujian Anda tidak akan tersimpan jika belum menekan tombol SELESAI UJIAN.", "Keluar Ujian");
         if (conf) {
             closeFullscreen(); 
             window.location.href = "index.html";
@@ -397,17 +409,10 @@ if (btnExitExam) {
 // Global scope binding untuk diakses oleh script proteksi di HTML
 window.openFullscreen = openFullscreen;
 
-// Menangkap event tombol 'Back' fisik di HP/Browser dan menolaknya mentah-mentah
+// Menangkap event tombol 'Back' fisik di HP/Browser tanpa memberhentikan timer dengan alert bawaan
 history.pushState(null, null, location.href);
 window.addEventListener('popstate', function(event) {
-    // Tahan history paksa agar tetap diam di laman ujian
     history.pushState(null, null, location.href);
-    
-    // Tampilkan notifikasi tegas berupa alert sistem browser
-    alert("⛔ PERINGATAN: Tombol kembali dinonaktifkan demi keamanan. Silakan gunakan tombol Navigasi di dalam aplikasi.");
-    
-    // Hilangkan efek blur dan kembalikan ke fullscreen
     document.body.style.filter = "none"; 
     openFullscreen();
 });
-
