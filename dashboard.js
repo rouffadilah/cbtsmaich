@@ -132,12 +132,10 @@ window.AppActions = {
 // ==========================================
 const UIManager = {
     init: function() {
-        // Handle Routing
         if (!window.location.hash) window.location.hash = 'section-beranda';
-        window.addEventListener('hashchange', this.handleRouting);
+        window.addEventListener('hashchange', this.handleRouting.bind(this));
         this.handleRouting();
 
-        // Handle Accordions
         document.addEventListener('click', (e) => {
             const header = e.target.closest('.toggle-accordion');
             if (!header) return;
@@ -154,7 +152,6 @@ const UIManager = {
             }
         });
 
-        // Security
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => { if (e.key === 'F12' || (e.ctrlKey && ['c', 'v', 'u', 'i'].includes(e.key.toLowerCase()))) e.preventDefault(); });
     },
@@ -252,7 +249,7 @@ const DataManager = {
 // ==========================================
 const UserManager = {
     loadUsers: async function() {
-        if(!AppState.isAdmin) return; // Hanya admin yang load tabel
+        if(!AppState.isAdmin) return; // Hanya admin yang meload tabel
         const tbGuru = document.querySelector('#table-guru tbody');
         const tbSiswa = document.querySelector('#table-siswa tbody');
         
@@ -268,6 +265,13 @@ const UserManager = {
                 let roles = Array.isArray(data.role) ? data.role : [data.role];
                 let isSiswa = roles.includes('siswa');
                 let isGuru = roles.includes('guru') || roles.includes('admin');
+                
+                // Cek Admin Protected Row
+                let isRowAdmin = roles.includes('admin');
+                let actionButtons = isRowAdmin ? 
+                    `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-shield-alt"></i> Protected</span>` : 
+                    `<button onclick="window.AppActions.editAkun('${d.id}')" class="btn-3d" style="background:var(--warning); padding:6px; font-size:0.8rem; margin-right: 4px;"><i class="fas fa-edit"></i></button>
+                     <button onclick="window.AppActions.hapusAkun('${d.id}')" class="btn-3d" style="background:var(--danger); padding:6px; font-size:0.8rem;"><i class="fas fa-trash-alt"></i></button>`;
 
                 if (isGuru) {
                     countGuru++;
@@ -277,10 +281,7 @@ const UserManager = {
                         <td>${data.username}</td><td>${data.nama}</td>
                         <td><span class="badge" style="background:var(--info); color:white; padding:3px 8px; border-radius:4px;">${roles.join(', ').toUpperCase()}</span></td>
                         <td><span style="font-size:0.8rem"><b>Mapel:</b> ${m}<br><b>Kelas:</b> ${k}</span></td>
-                        <td style="text-align:center;">
-                            <button onclick="window.AppActions.editAkun('${d.id}')" class="btn-3d" style="background:var(--warning); padding:6px; font-size:0.8rem;"><i class="fas fa-edit"></i></button>
-                            <button onclick="window.AppActions.hapusAkun('${d.id}')" class="btn-3d" style="background:var(--danger); padding:6px; font-size:0.8rem;"><i class="fas fa-trash-alt"></i></button>
-                        </td>
+                        <td style="text-align:center; white-space: nowrap;">${actionButtons}</td>
                     </tr>`;
                 } 
                 if (isSiswa) {
@@ -289,10 +290,7 @@ const UserManager = {
                         <td>${data.username}</td><td>${data.nama}</td>
                         <td><span class="badge" style="background:var(--success); color:white; padding:3px 8px; border-radius:4px;">SISWA</span></td>
                         <td>${data.kelas || '-'}</td>
-                        <td style="text-align:center;">
-                            <button onclick="window.AppActions.editAkun('${d.id}')" class="btn-3d" style="background:var(--warning); padding:6px; font-size:0.8rem;"><i class="fas fa-edit"></i></button>
-                            <button onclick="window.AppActions.hapusAkun('${d.id}')" class="btn-3d" style="background:var(--danger); padding:6px; font-size:0.8rem;"><i class="fas fa-trash-alt"></i></button>
-                        </td>
+                        <td style="text-align:center; white-space: nowrap;">${actionButtons}</td>
                     </tr>`;
                 }
             });
@@ -343,6 +341,50 @@ const UserManager = {
         const isGuru = document.querySelector('.edit-role-cb[value="guru"]').checked;
         document.getElementById('group-edit-kelas-siswa').style.display = isSiswa ? 'block' : 'none';
         document.getElementById('group-edit-guru').style.display = isGuru ? 'flex' : 'none';
+    },
+
+    saveEditUser: async function() {
+        const uid = document.getElementById('edit-uid').value;
+        const name = document.getElementById('edit-nama').value.trim();
+        const username = document.getElementById('edit-username').value.trim();
+        const pass = document.getElementById('edit-pass').value;
+
+        let roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
+        if(roles.length === 0) return window.customAlert('Pilih minimal satu role!', 'warning');
+
+        let payload = { nama: name, username: username, role: roles };
+
+        if (roles.includes('siswa')) {
+            payload.kelas = document.getElementById('edit-kelas-siswa').value;
+        }
+
+        if (roles.includes('guru') || roles.includes('admin')) {
+            payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value);
+            payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value);
+        }
+
+        const btnSave = document.getElementById('btn-save-edit-akun');
+        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENYIMPAN...';
+        btnSave.disabled = true;
+
+        try {
+            await updateDoc(doc(db, "users", uid), payload);
+            
+            if (pass) {
+                 window.customAlert('Profil diperbarui! Catatan: Pengubahan password via dashboard (Client-Side) memerlukan Firebase Admin SDK agar efektif diterapkan ke Autentikasi.', 'warning');
+            } else {
+                 window.customAlert('Profil berhasil diperbarui!', 'success');
+            }
+            
+            document.getElementById('modal-edit-akun').style.display = 'none';
+            this.loadUsers();
+        } catch(e) {
+            console.error(e);
+            window.customAlert('Gagal menyimpan perubahan.', 'error');
+        } finally {
+            btnSave.innerHTML = '<i class="fas fa-save"></i> SIMPAN';
+            btnSave.disabled = false;
+        }
     }
 };
 
@@ -384,7 +426,7 @@ const ExamManager = {
                     <td>${d.mapel}</td><td>${d.kelas}</td><td>${jadwal}</td><td>${durasi}</td>
                     <td style="font-weight:bold; color:var(--danger);">${token}</td><td>${d.count}</td>
                     <td style="text-align:center;">
-                        <button onclick="window.AppActions.bukaDetailSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--info; padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
+                        <button onclick="window.AppActions.bukaDetailSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
                     </td>
                 </tr>`;
             }
@@ -458,6 +500,9 @@ const ResultManager = {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     UIManager.init();
+
+    // Event Listener untuk Tombol Simpan Edit Profil
+    document.getElementById('btn-save-edit-akun')?.addEventListener('click', () => UserManager.saveEditUser());
 
     // Event Listeners UI Master
     document.getElementById('btn-open-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'flex'; AppState.editMasterMode = false; DataManager.renderTableMaster(); });
