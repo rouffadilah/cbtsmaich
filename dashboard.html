@@ -26,11 +26,11 @@
 <body>
 
     <div class="app-layout">
-        <header class="app-header">
-            <div style="cursor: pointer;" onclick="window.location.hash='section-beranda'">
-                <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0;">
+        <header class="app-header" style="justify-content: center;">
+            <div style="cursor: pointer; text-align: center;" onclick="window.location.hash='section-beranda'">
+                <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0 auto; display: block;">
             </div>
-            </header>
+        </header>
 
         <div class="main-wrapper">
             <main class="main-content">
@@ -221,7 +221,8 @@
                 <div class="input-group" style="flex: 1;"><label>Kelas Ajar (Guru)</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
             </div>
             <div class="input-group" id="group-edit-kelas-siswa" style="display: none;"><label>Kelas (Siswa)</label><select id="edit-kelas-siswa" class="input-text"></select></div>
-            <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; margin-top: 15px;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
+            
+            <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; margin-top: 15px;"><i class="fas fa-save"></i> SIMPAN</button>
         </div>
     </div>
 
