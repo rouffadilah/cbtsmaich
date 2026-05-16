@@ -61,10 +61,6 @@
         });
         window.addEventListener('blur', () => { document.body.style.filter = "blur(15px)"; });
         window.addEventListener('focus', () => { document.body.style.filter = "none"; });
-
-        for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
-        window.addEventListener('popstate', function (event) { history.pushState(null, document.title, location.href); alert("⛔ TINDAKAN ILEGAL: Tombol kembali dinonaktifkan!"); });
-        window.addEventListener('beforeunload', function (e) { e.preventDefault(); e.returnValue = "Apakah Anda yakin ingin keluar?"; return "Apakah Anda yakin ingin keluar?"; });
     </script>
     <script type="module" src="registrasi.js"></script>
 </body>
