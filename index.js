@@ -1,3 +1,4 @@
+// index.js
 import { auth, db } from './firebase-config.js';
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -5,74 +6,76 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-
 const loginForm = document.getElementById("login-form");
 const btnSubmit = document.getElementById("btn-submit");
 
+/**
+ * Fungsi untuk menstandarkan array data (role, mapel, kelas)
+ */
+const normalizeArrayData = (data) => {
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'string' && data.trim() !== '') return [data];
+    return [];
+};
+
 loginForm.addEventListener("submit", async (event) => {
     event.preventDefault(); 
     
+    // Set UI State: Loading
     const originalBtnText = btnSubmit.innerHTML;
     btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
     btnSubmit.disabled = true;
 
-    const username = document.getElementById("username").value.trim();
+    // Sanitasi Input
+    const username = document.getElementById("username").value.trim().toLowerCase();
     const password = document.getElementById("password").value;
     const dummyEmail = `${username}@cbt.smaich.id`;
 
     try {
-        let userCred;
-        try {
-            userCred = await signInWithEmailAndPassword(auth, dummyEmail, password);
-        } catch (authError) {
-            console.error("Auth Error:", authError);
-            alert("LOGIN GAGAL: Username atau Password Anda salah!");
-            throw new Error("Henti");
-        }
-
+        // 1. Proses Autentikasi
+        const userCred = await signInWithEmailAndPassword(auth, dummyEmail, password);
         const user = userCred.user;
-        let userDoc;
-        try {
-            userDoc = await getDoc(doc(db, "users", user.uid));
-        } catch (dbError) {
-            console.error("Database Error:", dbError);
-            alert("ERROR DATABASE: Koneksi ke Firestore diblokir. Pastikan Rules Firestore sudah disetel 'allow read, write: if true;'");
-            throw new Error("Henti");
-        }
 
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-            
-            // Menangkap Multi-Role dalam bentuk Array
-            let roles = [];
-            if (Array.isArray(userData.role)) roles = userData.role;
-            else if (typeof userData.role === 'string' && userData.role.trim() !== '') roles = [userData.role];
-            
-            localStorage.setItem("userRole", JSON.stringify(roles));
-            
-            if (roles.includes('guru')) {
-                let mapels = [];
-                if (Array.isArray(userData.mapel)) mapels = userData.mapel;
-                else if (typeof userData.mapel === 'string' && userData.mapel.trim() !== '') mapels = [userData.mapel];
-                
-                let kelases = [];
-                if (Array.isArray(userData.kelas)) kelases = userData.kelas;
-                else if (typeof userData.kelas === 'string' && userData.kelas.trim() !== '') kelases = [userData.kelas];
+        // 2. Tarik Data Profil dari Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
 
-                localStorage.setItem("userMapel", JSON.stringify(mapels));
-                localStorage.setItem("userKelas", JSON.stringify(kelases));
-            }
-
-            // Arahkan ke Dashboard jika Admin ATAU Guru
-            if (roles.includes("admin") || roles.includes("guru")) {
-                window.location.href = "dashboard.html"; 
-            } else {
-                window.location.href = "attempt.html"; 
-            }
-        } else {
+        if (!userDoc.exists()) {
             alert("AKSES DITOLAK: Akun Anda tidak memiliki data di database.");
             await auth.signOut();
+            return;
+        }
+
+        const userData = userDoc.data();
+        
+        // 3. Normalisasi Role dan Akses
+        const roles = normalizeArrayData(userData.role);
+        localStorage.setItem("userRole", JSON.stringify(roles));
+        
+        if (roles.includes('guru')) {
+            const mapels = normalizeArrayData(userData.mapel);
+            const kelases = normalizeArrayData(userData.kelas);
+
+            localStorage.setItem("userMapel", JSON.stringify(mapels));
+            localStorage.setItem("userKelas", JSON.stringify(kelases));
+        }
+
+        // 4. Routing Berdasarkan Role
+        if (roles.includes("admin") || roles.includes("guru")) {
+            window.location.replace("dashboard.html"); 
+        } else {
+            window.location.replace("attempt.html"); 
         }
 
     } catch (error) {
-        // Error handling already managed
+        console.error("Proses Login Gagal:", error);
+        
+        // Menangani tipe error yang umum
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            alert("LOGIN GAGAL: Username atau Password Anda salah!");
+        } else if (error.code === 'permission-denied') {
+            alert("ERROR DATABASE: Akses ke Firestore ditolak. Periksa Firestore Rules.");
+        } else {
+            alert(`TERJADI KESALAHAN: ${error.message}`);
+        }
     } finally {
+        // Reset UI State
         btnSubmit.innerHTML = originalBtnText;
         btnSubmit.disabled = false;
     }
