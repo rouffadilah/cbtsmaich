@@ -1,3 +1,4 @@
+// firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -13,8 +14,14 @@ const firebaseConfig = {
     measurementId: "G-GF6PJWK2S5"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
+// Export instances for use in other modules
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Catatan Keamanan: Karena apiKey terekspos di sisi klien (standar Firebase Web),
+// pastikan Firebase Firestore Rules Anda disetel dengan ketat berdasarkan autentikasi (request.auth != null)
+// dan bukan 'allow read, write: if true;' pada versi produksinya nanti.
