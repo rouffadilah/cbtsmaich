@@ -1,11 +1,18 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" translate="no">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="google" content="notranslate">
     <title>Registrasi - CBT SMA ICH</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- KEAMANAN GLOBAL: ANTI COPAS, AI, & CETAK --- */
+        body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        input, textarea, select { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
+        @media print { body { display: none !important; } }
+    </style>
 </head>
 <body class="login-page-bg">
     <div class="login-container">
@@ -18,12 +25,10 @@
 
             <div class="role-selection-container">
                 <div class="role-box active" id="select-siswa">
-                    <i class="fas fa-user-graduate"></i>
-                    <span>SISWA</span>
+                    <i class="fas fa-user-graduate"></i><span>SISWA</span>
                 </div>
                 <div class="role-box" id="select-guru">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    <span>GURU</span>
+                    <i class="fas fa-chalkboard-teacher"></i><span>GURU</span>
                 </div>
             </div>
 
@@ -33,57 +38,32 @@
 
             <form id="register-form">
                 <input type="hidden" id="reg-role" value="siswa">
-
-                <div class="input-group">
-                    <label>Nama Lengkap</label>
-                    <input type="text" id="reg-name" class="input-text" placeholder="Masukkan nama lengkap" required>
-                </div>
-
-                <div class="input-group">
-                    <label id="username-label">Nomor Peserta / NIS</label>
-                    <input type="text" id="reg-username" class="input-text" placeholder="Masukkan NIS (10 Digit Angka)" inputmode="numeric" maxlength="10" required>
-                </div>
-                
-                <div class="input-group" id="group-kelas-siswa">
-                    <label>Pilih Kelas</label>
-                    <select id="reg-kelas-siswa" class="input-text" required>
-                        <option value="" disabled selected>Memuat data kelas...</option>
-                    </select>
-                </div>
-
-                <div class="input-group" id="group-mapel-guru" style="display: none;">
-                    <label>Mata Pelajaran (Guru)</label>
-                    <div id="reg-mapel-container" class="checkbox-container">Memuat data...</div>
-                </div>
-
-                <div class="input-group" id="group-kelas-guru" style="display: none;">
-                    <label>Kelas Ajar (Guru)</label>
-                    <div id="reg-kelas-guru-container" class="checkbox-container">Memuat data...</div>
-                </div>
-
-                <div class="input-group">
-                    <label>Password</label>
-                    <input type="password" id="reg-password" class="input-text" placeholder="Minimal 6 karakter" required>
-                </div>
-
-                <div class="input-group">
-                    <label>Konfirmasi Password</label>
-                    <input type="password" id="reg-confirm-password" class="input-text" placeholder="Ketik ulang password" required>
-                </div>
-
+                <div class="input-group"><label>Nama Lengkap</label><input type="text" id="reg-name" class="input-text" placeholder="Masukkan nama lengkap" required></div>
+                <div class="input-group"><label id="username-label">Nomor Peserta / NIS</label><input type="text" id="reg-username" class="input-text" placeholder="Masukkan NIS (10 Digit Angka)" inputmode="numeric" maxlength="10" required></div>
+                <div class="input-group" id="group-kelas-siswa"><label>Pilih Kelas</label><select id="reg-kelas-siswa" class="input-text" required><option value="" disabled selected>Memuat data kelas...</option></select></div>
+                <div class="input-group" id="group-mapel-guru" style="display: none;"><label>Mata Pelajaran (Guru)</label><div id="reg-mapel-container" class="checkbox-container">Memuat data...</div></div>
+                <div class="input-group" id="group-kelas-guru" style="display: none;"><label>Kelas Ajar (Guru)</label><div id="reg-kelas-guru-container" class="checkbox-container">Memuat data...</div></div>
+                <div class="input-group"><label>Password</label><input type="password" id="reg-password" class="input-text" placeholder="Minimal 6 karakter" required></div>
+                <div class="input-group"><label>Konfirmasi Password</label><input type="password" id="reg-confirm-password" class="input-text" placeholder="Ketik ulang password" required></div>
                 <button type="submit" class="btn-3d" id="btn-submit">DAFTAR SEKARANG</button>
-                
-                <div style="margin-top: 20px; font-size: 0.9rem;">
-                    Sudah punya akun? <a href="index.html">Masuk di sini</a>
-                </div>
+                <div style="margin-top: 20px; font-size: 0.9rem;">Sudah punya akun? <a href="index.html">Masuk di sini</a></div>
             </form>
             
-            <div class="login-footer">
-                &copy; 2026 IT Support SMAICH. All rights reserved.
-            </div>
+            <div class="login-footer">&copy; 2026 IT Support SMAICH. All rights reserved.</div>
         </div>
     </div>
 
+    <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => document.addEventListener(evt, event => { if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } }));
+        document.addEventListener('keydown', event => {
+            if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { event.preventDefault(); }
+        });
+        history.pushState(null, document.title, location.href);
+        window.addEventListener('popstate', function (event) { history.pushState(null, document.title, location.href); });
+        window.addEventListener('blur', () => { document.body.style.filter = "blur(15px)"; });
+        window.addEventListener('focus', () => { document.body.style.filter = "none"; });
+    </script>
     <script type="module" src="registrasi.js"></script>
 </body>
 </html>
