@@ -311,25 +311,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 5. MANAJEMEN PENGGUNA (ADMIN)
+    // 5. MANAJEMEN PENGGUNA (ADMIN & GURU EDIT DIRI SENDIRI)
     // ==========================================
     async function loadDataPengguna() {
         const tbodyGuru = document.querySelector('#table-guru tbody');
         const tbodySiswa = document.querySelector('#table-siswa tbody');
         
-        // Tentukan jumlah kolom berdasarkan role (Admin = 5 kolom, selain itu = 4 kolom)
-        let colCount = isAdmin ? 5 : 4;
+        let colCount = 5; 
 
         if (tbodyGuru) tbodyGuru.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Memuat data...</td></tr>`;
         if (tbodySiswa) tbodySiswa.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Memuat data...</td></tr>`;
 
-        // Sembunyikan header (th) 'Aksi' jika bukan admin
-        if (!isAdmin) {
-            const thGuru = document.querySelector('#table-guru th:nth-child(5)');
-            const thSiswa = document.querySelector('#table-siswa th:nth-child(5)');
-            if (thGuru) thGuru.style.display = 'none';
-            if (thSiswa) thSiswa.style.display = 'none';
-        }
+        // Pastikan header Aksi ditampilkan
+        const thGuru = document.querySelector('#table-guru th:nth-child(5)');
+        const thSiswa = document.querySelector('#table-siswa th:nth-child(5)');
+        if (thGuru) thGuru.style.display = 'table-cell';
+        if (thSiswa) thSiswa.style.display = 'table-cell';
 
         try {
             const snap = await getDocs(collection(db, "users"));
@@ -339,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let htmlSiswa = '';
 
             allUsersData = [];
+            const currentUserUid = auth.currentUser.uid;
 
             snap.forEach(d => {
                 const data = d.data();
@@ -348,21 +346,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 let roleArray = typeof data.role === 'string' ? [data.role] : (Array.isArray(data.role) ? data.role : []);
                 let roleStr = roleArray.join(', ');
                 let isSiswa = roleArray.includes('siswa');
-                let isGuru = roleArray.includes('guru') || roleArray.includes('admin');
+                let isGuruAcc = roleArray.includes('guru') || roleArray.includes('admin');
 
-                // Siapkan sel Aksi HANYA jika pengguna yang login adalah Admin
+                let isOwnAccount = (id === currentUserUid);
                 let actionCell = '';
-                if (isAdmin) {
+
+                // Aksi HANYA muncul untuk Admin ATAU pada akun milik user itu sendiri
+                if (isAdmin || isOwnAccount) {
                     let isRowAdmin = roleArray.includes('admin');
-                    let actionButtons = isRowAdmin ? 
-                        `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-shield-alt"></i> Protected</span>` : 
-                        `<button onclick="window.editAkun('${id}')" class="btn-3d" style="background:var(--warning); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Edit Akun"><i class="fas fa-edit"></i></button>
-                         <button onclick="window.hapusAkun('${id}')" class="btn-3d" style="background:var(--danger); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Hapus Akun"><i class="fas fa-trash-alt"></i></button>`;
+                    let actionButtons = '';
                     
+                    if (isAdmin && isRowAdmin && !isOwnAccount) {
+                        actionButtons = `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-shield-alt"></i> Protected</span>`;
+                    } else {
+                        actionButtons = `<button onclick="window.editAkun('${id}')" class="btn-3d" style="background:var(--warning); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Edit Akun"><i class="fas fa-edit"></i></button>`;
+                        
+                        // Guru biasa TIDAK boleh hapus akun (termasuk dirinya sendiri)
+                        if (isAdmin && !isOwnAccount) {
+                            actionButtons += ` <button onclick="window.hapusAkun('${id}')" class="btn-3d" style="background:var(--danger); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Hapus Akun"><i class="fas fa-trash-alt"></i></button>`;
+                        }
+                    }
                     actionCell = `<td style="text-align:center; white-space: nowrap;">${actionButtons}</td>`;
+                } else {
+                    actionCell = `<td style="text-align:center; color:var(--text-muted); font-size:0.8rem;">-</td>`;
                 }
 
-                if (isGuru) {
+                if (isGuruAcc) {
                     countGuru++;
                     let mapelStr = data.mapel ? (Array.isArray(data.mapel) ? data.mapel.join(', ') : data.mapel) : '-';
                     let kelasStr = data.kelas ? (Array.isArray(data.kelas) ? data.kelas.join(', ') : data.kelas) : '-';
@@ -420,26 +429,31 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-username').value = user.username || '';
         document.getElementById('edit-pass').value = '';
         
-        document.querySelectorAll('.edit-role-cb').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.edit-role-cb').forEach(cb => { cb.checked = false; cb.disabled = !isAdmin; });
+        
         let roles = Array.isArray(user.role) ? user.role : (typeof user.role === 'string' ? [user.role] : []);
         roles.forEach(r => {
             let cb = document.querySelector(`.edit-role-cb[value="${r}"]`);
             if(cb) cb.checked = true;
         });
 
-        document.querySelectorAll('.edit-mapel-cb').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.edit-mapel-cb').forEach(cb => { cb.checked = false; cb.disabled = !isAdmin; });
         if(user.mapel) {
             let userMapels = Array.isArray(user.mapel) ? user.mapel : [user.mapel];
             userMapels.forEach(m => { let cb = document.querySelector(`.edit-mapel-cb[value="${m}"]`); if(cb) cb.checked = true; });
         }
-        document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => cb.checked = false);
+        
+        document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = false; cb.disabled = !isAdmin; });
         if(user.kelas && roles.includes('guru')) {
             let userKelasGuru = Array.isArray(user.kelas) ? user.kelas : [user.kelas];
             userKelasGuru.forEach(k => { let cb = document.querySelector(`.edit-kelas-guru-cb[value="${k}"]`); if(cb) cb.checked = true; });
         }
 
+        const editKelasSiswa = document.getElementById('edit-kelas-siswa');
+        if(editKelasSiswa) editKelasSiswa.disabled = !isAdmin;
+        
         if (roles.includes('siswa')) {
-            document.getElementById('edit-kelas-siswa').value = user.kelas || '';
+            editKelasSiswa.value = user.kelas || '';
         }
 
         toggleEditGroup();
@@ -468,18 +482,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const username = document.getElementById('edit-username').value.trim();
         const pass = document.getElementById('edit-pass').value;
 
-        let roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
-        if(roles.length === 0) return window.customAlert('Pilih minimal satu role!', 'warning');
+        let payload = { nama: name, username: username };
 
-        let payload = { nama: name, username: username, role: roles };
+        // Hanya admin yang diizinkan untuk update Role, Mapel, dan Kelas
+        if (isAdmin) {
+            let roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
+            if(roles.length === 0) return window.customAlert('Pilih minimal satu role!', 'warning');
+            payload.role = roles;
 
-        if (roles.includes('siswa')) {
-            payload.kelas = document.getElementById('edit-kelas-siswa').value;
-        }
+            if (roles.includes('siswa')) {
+                payload.kelas = document.getElementById('edit-kelas-siswa').value;
+            }
 
-        if (roles.includes('guru') || roles.includes('admin')) {
-            payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value);
-            payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value);
+            if (roles.includes('guru') || roles.includes('admin')) {
+                payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value);
+                payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value);
+            }
         }
 
         try {
@@ -498,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 6. BANK SOAL & SUMMARY
+    // 6. BANK SOAL & SUMMARY (GURU MELIHAT SEMUA MAPEL)
     // ==========================================
     async function loadBankSoalSummary() {
         const tbody = document.querySelector('#table-bank-soal-summary tbody');
@@ -509,19 +527,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const snap = await getDocs(collection(db, "bank_soal"));
             let summary = {};
-            let uniqueMapel = new Set(); // Hitung banyaknya mapel
-            
-            let allowedMapel = listMapel;
-            if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
+            let uniqueMapel = new Set(); 
 
+            // Tampilkan SEMUA MAPEL baik untuk Admin maupun Guru
             snap.forEach(d => {
                 let mapel = d.data().mataPelajaran; let kelas = d.data().kelas;
-                if (allowedMapel.includes(mapel)) {
-                    uniqueMapel.add(mapel);
-                    let key = `${mapel}_${kelas}`;
-                    if(!summary[key]) summary[key] = { mapel, kelas, count: 0 };
-                    summary[key].count++;
-                }
+                uniqueMapel.add(mapel);
+                let key = `${mapel}_${kelas}`;
+                if(!summary[key]) summary[key] = { mapel, kelas, count: 0 };
+                summary[key].count++;
             });
 
             // Tampilkan jumlah mapel pada kartu statistik
@@ -548,6 +562,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     token = typeof tokenData[`token_${key}`] === 'object' ? tokenData[`token_${key}`].code : tokenData[`token_${key}`];
                 }
 
+                // Cek hak kelola: Guru hanya bisa Kelola mapel yang dimilikinya
+                let isMapelGuru = isGuru && userMapel.includes(d.mapel);
+                let actionBtn = '';
+                if (isAdmin || isMapelGuru) {
+                    actionBtn = `<button onclick="window.bukaDetailSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>`;
+                } else {
+                    actionBtn = `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>`;
+                }
+
                 html += `<tr>
                     <td>${d.mapel}</td>
                     <td>${d.kelas}</td>
@@ -555,9 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${durasi}</td>
                     <td style="font-weight:bold; color:var(--danger);">${token}</td>
                     <td>${d.count}</td>
-                    <td style="text-align:center;">
-                        <button onclick="window.bukaDetailSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
-                    </td>
+                    <td style="text-align:center;">${actionBtn}</td>
                 </tr>`;
             }
 
@@ -570,9 +591,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Tombol Input Soal di Summary -> arahkan agar klik Kelola
+    // Tombol Input Soal 
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => {
-        window.customAlert("Silakan klik tombol 'Kelola' pada baris mata pelajaran yang diinginkan, lalu klik tombol 'Tambah Soal'.", "info", "Cara Tambah Soal");
+        window.customAlert("Silakan klik tombol 'Kelola' pada baris mata pelajaran yang diinginkan terlebih dahulu, lalu klik tombol 'Tambah Soal'.", "info", "Cara Tambah Soal");
     });
 
     window.bukaDetailSoal = async (mapel, kelas) => {
