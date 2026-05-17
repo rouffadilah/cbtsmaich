@@ -17,7 +17,7 @@
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(22px); }
 
-        /* --- KEAMANAN GLOBAL: ANTI COPAS, AI, & CETAK --- */
+        /* --- KEAMANAN GLOBAL --- */
         body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea, select { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
         @media print { body { display: none !important; } }
@@ -67,7 +67,7 @@
                             <div id="view-summary-bank-soal">
                                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                                     <button id="btn-open-data-master" class="btn-3d" style="margin: 0; background-color: var(--info);"><i class="fas fa-database"></i> Data Master</button>
-                                    <button id="btn-tambah-langsung" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Input Soal</button>
+                                    <button id="btn-tambah-langsung" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-file-import"></i> Input Soal</button>
                                 </div>
                                 <div class="table-container">
                                     <table id="table-bank-soal-summary">
@@ -80,7 +80,7 @@
                             <div id="view-soal-list" style="display: none;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                                     <div style="display: flex; align-items: center; gap: 15px;">
-                                        <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali ke Daftar Mapel"><i class="fas fa-arrow-left"></i></button>
+                                        <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali"><i class="fas fa-arrow-left"></i></button>
                                         <h4 style="margin: 0; color: var(--secondary); font-size: 1.1rem;" id="label-mapel-edit">Mata Pelajaran</h4>
                                     </div>
                                     <button onclick="window.bukaModalTambahSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value)" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Tambah Soal</button>
@@ -93,14 +93,11 @@
                                         <div style="flex: 1; min-width: 180px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--info); display: block; margin-bottom: 5px;"><i class="fas fa-calendar-alt"></i> JADWAL UJIAN</label><input type="datetime-local" id="input-jadwal-ujian" class="input-text" style="border-color: var(--info);"></div>
                                         <div style="width: 120px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> DURASI (MNT)</label><input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);"></div>
                                         <div style="width: 150px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--danger); display: block; margin-bottom: 5px;"><i class="fas fa-key"></i> TOKEN</label><input type="text" id="input-token-ujian" class="input-text" placeholder="Ketik Kode..." style="border-color: var(--danger); text-transform: uppercase;"></div>
-                                        
                                         <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--secondary);"><i class="fas fa-save"></i> Simpan</button>
                                     </div>
                                 </div>
                                 
-                                <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-                                    <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Memuat data soal...</div>
-                                </div>
+                                <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;"></div>
                             </div>
 
                         </div>
@@ -113,7 +110,7 @@
                             <div class="toggle-accordion" data-target="container-daftar-pengguna" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
                                 <div style="display: flex; align-items: center; gap: 15px;">
                                     <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-list"></i> Daftar Pengguna</h3>
-                                    <button id="btn-open-manajemen" class="btn-3d" style="padding: 6px 15px; font-size: 0.85rem; margin: 0; background-color: var(--success);" onclick="event.stopPropagation(); window.location.href='registrasi.html';" title="Tambah Akun (Registrasi)"><i class="fas fa-user-plus"></i></button>
+                                    <button id="btn-open-manajemen" class="btn-3d" style="padding: 6px 15px; font-size: 0.85rem; margin: 0; background-color: var(--success);" onclick="event.stopPropagation(); window.location.href='registrasi.html';" title="Tambah Akun"><i class="fas fa-user-plus"></i></button>
                                 </div>
                                 <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                             </div>
@@ -201,53 +198,6 @@
         </div>
     </div>
 
-    <div id="modal-tambah-soal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
-            <span class="close-btn" onclick="document.getElementById('modal-tambah-soal').style.display='none'">&times;</span>
-            <h2 style="margin-bottom: 20px; color: var(--secondary);"><i class="fas fa-plus-circle"></i> Input Soal Baru</h2>
-            <form id="form-tambah-soal">
-                
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div class="input-group" style="flex: 1; margin: 0;">
-                        <label>Mata Pelajaran</label>
-                        <select id="soal-mapel" class="input-text" required></select>
-                    </div>
-                    <div class="input-group" style="flex: 1; margin: 0;">
-                        <label>Kelas</label>
-                        <select id="soal-kelas" class="input-text" required></select>
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <label>Tipe Soal</label>
-                    <select id="soal-tipe" class="input-text" required>
-                        <option value="PG">Pilihan Ganda (PG)</option>
-                        <option value="Essay">Essay / Uraian</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Teks / Pertanyaan Soal</label>
-                    <textarea id="soal-teks" class="input-text" rows="4" placeholder="Ketik pertanyaan di sini..." required></textarea>
-                </div>
-                
-                <div id="pg-options">
-                    <div class="input-group"><label>Opsi A</label><input type="text" id="soal-opsi-A" class="input-text"></div>
-                    <div class="input-group"><label>Opsi B</label><input type="text" id="soal-opsi-B" class="input-text"></div>
-                    <div class="input-group"><label>Opsi C</label><input type="text" id="soal-opsi-C" class="input-text"></div>
-                    <div class="input-group"><label>Opsi D</label><input type="text" id="soal-opsi-D" class="input-text"></div>
-                    <div class="input-group"><label>Opsi E</label><input type="text" id="soal-opsi-E" class="input-text"></div>
-                    <div class="input-group">
-                        <label style="color: var(--success);"><i class="fas fa-check"></i> Kunci Jawaban Benar</label>
-                        <select id="soal-kunci" class="input-text" style="border-color: var(--success); font-weight: bold;">
-                            <option value="A">Jawaban A</option><option value="B">Jawaban B</option><option value="C">Jawaban C</option><option value="D">Jawaban D</option><option value="E">Jawaban E</option>
-                        </select>
-                    </div>
-                </div>
-                <button type="submit" class="btn-3d" style="width:100%; margin-top: 15px;"><i class="fas fa-save"></i> SIMPAN SOAL</button>
-            </form>
-        </div>
-    </div>
-
     <div id="modal-edit-akun" class="modal">
         <div class="modal-content" style="max-width: 600px;">
             <span class="close-btn" id="close-modal-edit-akun">&times;</span>
@@ -307,6 +257,82 @@
                     <tbody id="tbody-master-combined"></tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-tambah-soal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-btn" onclick="document.getElementById('modal-tambah-soal').style.display='none'">&times;</span>
+            <h2 id="title-modal-soal" style="margin-bottom: 20px; color: var(--secondary);"><i class="fas fa-file-import"></i> Input Soal</h2>
+            <form id="form-tambah-soal">
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div class="input-group" style="flex: 1; margin: 0;">
+                        <label>Mata Pelajaran</label>
+                        <select id="soal-mapel" class="input-text" required></select>
+                    </div>
+                    <div class="input-group" style="flex: 1; margin: 0;">
+                        <label>Kelas</label>
+                        <select id="soal-kelas" class="input-text" required></select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Tipe Soal</label>
+                    <select id="soal-tipe" class="input-text" required>
+                        <option value="PG">Pilihan Ganda Biasa (PG)</option>
+                        <option value="PGK">Pilihan Ganda Kompleks (PGK)</option>
+                        <option value="Menjodohkan">Menjodohkan (Matching)</option>
+                        <option value="Essay">Essay / Uraian</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Media Soal (Opsional: Gambar / Audio / Video)</label>
+                    <input type="file" id="soal-media" class="input-text" accept="image/*, audio/*, video/*">
+                </div>
+
+                <div class="input-group">
+                    <label>Teks / Pertanyaan Soal</label>
+                    <textarea id="soal-teks" class="input-text" rows="4" placeholder="Ketik pertanyaan di sini..." required></textarea>
+                </div>
+                
+                <div id="pg-options">
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;"><i class="fas fa-info-circle"></i> Centang "Kunci Benar" pada jawaban yang tepat (Bisa lebih dari 1 jika PGK). Biarkan file kosong jika tidak ada gambar/audio.</p>
+                    
+                    <script>
+                        const opsiHuruf = ['A', 'B', 'C', 'D', 'E'];
+                        opsiHuruf.forEach(h => {
+                            document.write(`
+                            <div style="margin-bottom:15px; border:1px solid #e2e8f0; padding:15px; border-radius:8px; background:#f8fafc;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <label style="font-weight:bold; margin:0; color:var(--info);">Opsi ${h}</label>
+                                    <label class="kunci-pg-container" style="cursor:pointer; color:var(--success); font-weight:bold;"><input type="radio" name="kunci-pg" value="${h}" style="transform:scale(1.2);"> Kunci Benar (PG)</label>
+                                    <label class="kunci-pgk-container" style="display:none; cursor:pointer; color:var(--success); font-weight:bold;"><input type="checkbox" class="kunci-pgk" value="${h}" style="transform:scale(1.2);"> Kunci Benar (PGK)</label>
+                                </div>
+                                <input type="text" id="soal-opsi-${h}" class="input-text" placeholder="Teks opsi ${h}...">
+                                <input type="file" id="media-opsi-${h}" class="input-text" style="margin-top:8px; padding:8px;" accept="image/*, audio/*, video/*">
+                            </div>`);
+                        });
+                    </script>
+                </div>
+
+                <div id="menjodohkan-options" style="display:none;">
+                    <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;"><i class="fas fa-info-circle"></i> Masukkan pasangan yang benar. Sistem akan mengacak urutan "Baris Kanan" secara otomatis saat ujian berlangsung.</p>
+                        <div id="pasangan-container">
+                            <div class="pasangan-item" style="display:flex; gap:10px; margin-bottom:10px;">
+                                <input type="text" class="input-text m-kiri" placeholder="Pernyataan Kiri (Soal)" required>
+                                <input type="text" class="input-text m-kanan" placeholder="Pasangan Kanan (Jawaban Tepat)" required>
+                                <button type="button" class="btn-hapus-pasangan" style="background:var(--danger); color:white; border:none; padding:0 15px; border-radius:8px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <button type="button" id="btn-tambah-pasangan" class="btn-3d btn-secondary" style="font-size:0.85rem; padding:8px 15px; margin:0;"><i class="fas fa-plus"></i> Tambah Pasangan</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-3d" style="width:100%; margin-top: 15px; font-size:1.1rem;"><i class="fas fa-cloud-upload-alt"></i> SIMPAN SOAL KE DATABASE</button>
+            </form>
         </div>
     </div>
 
