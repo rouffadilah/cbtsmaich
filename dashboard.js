@@ -476,15 +476,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('group-edit-guru').style.display = isGuru ? 'flex' : 'none';
     }
 
+    // UPDATE PROFIL KE DATABASE FIREBASE FIRESTORE
     document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
         const uid = document.getElementById('edit-uid').value;
         const name = document.getElementById('edit-nama').value.trim();
         const username = document.getElementById('edit-username').value.trim();
         const pass = document.getElementById('edit-pass').value;
 
+        // Payload dasar (Semua user boleh mengedit Nama dan Username mereka)
         let payload = { nama: name, username: username };
 
-        // Hanya admin yang diizinkan untuk update Role, Mapel, dan Kelas
+        // Hanya admin yang diizinkan untuk update Role, Mapel, dan Kelas ke Database
         if (isAdmin) {
             let roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
             if(roles.length === 0) return window.customAlert('Pilih minimal satu role!', 'warning');
@@ -501,17 +503,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
+            // PROSES SIMPAN KE DATABASE BERDASARKAN UID
             await updateDoc(doc(db, "users", uid), payload);
+            
             if (pass) {
                  window.customAlert('Profil diperbarui! Perhatian: Mengubah password dari dashboard ini tidak berpengaruh pada Autentikasi Firebase tanpa Backend/Cloud Function.', 'warning');
             } else {
-                 window.customAlert('Profil berhasil diperbarui!', 'success');
+                 window.customAlert('Profil berhasil diperbarui dan tersimpan di Database!', 'success');
             }
             document.getElementById('modal-edit-akun').style.display = 'none';
             loadDataPengguna();
         } catch(e) {
             console.error(e);
-            window.customAlert('Gagal menyimpan perubahan.', 'error');
+            window.customAlert('Gagal menyimpan perubahan ke Database. Pastikan koneksi dan hak akses Rules Firebase sesuai.', 'error');
         }
     });
 
@@ -701,12 +705,13 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSubmitSoal.disabled = true;
 
         try {
+            // SIMPAN SOAL KE DATABASE FIRESTORE
             await addDoc(collection(db, "bank_soal"), payload);
             document.getElementById('form-tambah-soal').reset();
             document.getElementById('modal-tambah-soal').style.display = 'none';
             window.customAlert("Soal berhasil ditambahkan!", "success");
             window.loadDaftarSoal(mapel, kelas);
-            loadBankSoalSummary(); // Update jumlah soal di latar belakang
+            loadBankSoalSummary(); 
         } catch(err) {
             window.customAlert("Gagal menyimpan soal.", "error");
         } finally {
@@ -737,6 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
+            // SIMPAN PENGATURAN (Waktu, Jadwal, Token) KE DATABASE FIRESTORE
             if(waktu) await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: waktu }, { merge: true });
             if(jadwal) await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true });
             if(token) {
@@ -851,6 +857,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnHapusAll.disabled = true;
             
             try {
+                // HAPUS SEMUA DATA HASIL UJIAN DARI DATABASE FIRESTORE
                 const dataAkanDihapus = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail && h.kelas === currentKelasDetail);
                 await Promise.all(dataAkanDihapus.map(h => deleteDoc(doc(db, "hasil_ujian", h.id))));
                 
