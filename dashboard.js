@@ -1,7 +1,8 @@
-import { auth, db, storage } from './firebase-config.js'; 
+import { auth, db, storage, functions } from './firebase-config.js'; 
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 // Variabel Globals
 let listMapel = []; let listKelas = []; let allUsersData = []; let allSoalData = []; let filteredSoalData = [];
@@ -476,20 +477,27 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('group-edit-guru').style.display = isGuru ? 'flex' : 'none';
     }
 
-    // UPDATE PROFIL KE DATABASE FIREBASE FIRESTORE
+    // UPDATE PROFIL KE DATABASE FIRESTORE & FIREBASE AUTH MELALUI CLOUD FUNCTIONS
     document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
         const uid = document.getElementById('edit-uid').value;
         const name = document.getElementById('edit-nama').value.trim();
         const username = document.getElementById('edit-username').value.trim();
         const pass = document.getElementById('edit-pass').value;
 
-        // Payload dasar (Semua user boleh mengedit Nama dan Username mereka)
+        const btnSave = document.getElementById('btn-save-edit-akun');
+        const originalText = btnSave.innerHTML;
+        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENYIMPAN...';
+        btnSave.disabled = true;
+
+        // Payload dasar untuk Firestore
         let payload = { nama: name, username: username };
 
-        // Hanya admin yang diizinkan untuk update Role, Mapel, dan Kelas ke Database
         if (isAdmin) {
             let roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
-            if(roles.length === 0) return window.customAlert('Pilih minimal satu role!', 'warning');
+            if(roles.length === 0) {
+                btnSave.innerHTML = originalText; btnSave.disabled = false;
+                return window.customAlert('Pilih minimal satu role!', 'warning');
+            }
             payload.role = roles;
 
             if (roles.includes('siswa')) {
@@ -503,19 +511,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // PROSES SIMPAN KE DATABASE BERDASARKAN UID
+            // 1. UPDATE DATA DI FIRESTORE (Data Profil)
             await updateDoc(doc(db, "users", uid), payload);
             
-            if (pass) {
-                 window.customAlert('Profil diperbarui! Perhatian: Mengubah password dari dashboard ini tidak berpengaruh pada Autentikasi Firebase tanpa Backend/Cloud Function.', 'warning');
-            } else {
-                 window.customAlert('Profil berhasil diperbarui dan tersimpan di Database!', 'success');
+            // 2. UPDATE AUTENTIKASI MELALUI CLOUD FUNCTION (Khusus Admin)
+            if (isAdmin) {
+                const updateAkunAdmin = httpsCallable(functions, 'updateAkunAdmin');
+                await updateAkunAdmin({
+                    targetUid: uid,
+                    newUsername: username, // Akan diubah menjadi email di backend
+                    newPassword: pass || null // Hanya update jika password diisi
+                });
             }
+
+            await window.customAlert('Profil dan Autentikasi berhasil diperbarui sepenuhnya!', 'success');
             document.getElementById('modal-edit-akun').style.display = 'none';
             loadDataPengguna();
+            
         } catch(e) {
-            console.error(e);
-            window.customAlert('Gagal menyimpan perubahan ke Database. Pastikan koneksi dan hak akses Rules Firebase sesuai.', 'error');
+            console.error("Error Update Akun:", e);
+            window.customAlert(`Gagal menyimpan perubahan. Pastikan koneksi stabil. Error: ${e.message}`, 'error');
+        } finally {
+            btnSave.innerHTML = originalText;
+            btnSave.disabled = false;
         }
     });
 
@@ -595,9 +613,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Tombol Input Soal 
+    // Fungsi Global untuk membuka Modal Tambah Soal
+    window.bukaModalTambahSoal = (mapelParams = "", kelasParams = "") => {
+        const mapelSelect = document.getElementById('soal-mapel');
+        const kelasSelect = document.getElementById('soal-kelas');
+
+        // Batasi pilihan mapel jika yang login adalah guru
+        let allowedMapel = listMapel;
+        if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
+
+        // Isi dropdown
+        mapelSelect.innerHTML = '<option value="" disabled selected>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
+        kelasSelect.innerHTML = '<option value="" disabled selected>-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+
+        // Cek darimana modal ini dibuka
+        if (mapelParams && kelasParams) {
+            // Jika dibuka dari menu "Kelola" (detail mapel tertentu)
+            mapelSelect.value = mapelParams;
+            kelasSelect.value = kelasParams;
+            
+            // Kunci dropdown agar tidak salah input
+            mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0';
+            kelasSelect.style.pointerEvents = 'none'; kelasSelect.style.backgroundColor = '#e2e8f0';
+        } else {
+            // Jika dibuka langsung dari "Input Soal" (halaman utama)
+            mapelSelect.value = "";
+            kelasSelect.value = "";
+            
+            // Buka dropdown agar bisa milih mapel dan kelas
+            mapelSelect.style.pointerEvents = 'auto'; mapelSelect.style.backgroundColor = '#fafafa';
+            kelasSelect.style.pointerEvents = 'auto'; kelasSelect.style.backgroundColor = '#fafafa';
+        }
+
+        document.getElementById('modal-tambah-soal').style.display = 'flex';
+    };
+
+    // Tombol Input Soal Langsung (Halaman Depan)
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => {
-        window.customAlert("Silakan klik tombol 'Kelola' pada baris mata pelajaran yang diinginkan terlebih dahulu, lalu klik tombol 'Tambah Soal'.", "info", "Cara Tambah Soal");
+        window.bukaModalTambahSoal();
     });
 
     window.bukaDetailSoal = async (mapel, kelas) => {
@@ -710,8 +763,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('form-tambah-soal').reset();
             document.getElementById('modal-tambah-soal').style.display = 'none';
             window.customAlert("Soal berhasil ditambahkan!", "success");
-            window.loadDaftarSoal(mapel, kelas);
+            
+            // Perbarui tampilan soal sesuai dengan darimana user membuka form (dari detail / luar)
+            if(document.getElementById('view-soal-list').style.display === 'block') {
+                window.loadDaftarSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value);
+            }
             loadBankSoalSummary(); 
+            
         } catch(err) {
             window.customAlert("Gagal menyimpan soal.", "error");
         } finally {
