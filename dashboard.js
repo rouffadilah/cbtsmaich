@@ -317,8 +317,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbodyGuru = document.querySelector('#table-guru tbody');
         const tbodySiswa = document.querySelector('#table-siswa tbody');
         
-        if (tbodyGuru) tbodyGuru.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>';
-        if (tbodySiswa) tbodySiswa.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>';
+        // Tentukan jumlah kolom berdasarkan role (Admin = 5 kolom, selain itu = 4 kolom)
+        let colCount = isAdmin ? 5 : 4;
+
+        if (tbodyGuru) tbodyGuru.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Memuat data...</td></tr>`;
+        if (tbodySiswa) tbodySiswa.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Memuat data...</td></tr>`;
+
+        // Sembunyikan header (th) 'Aksi' jika bukan admin
+        if (!isAdmin) {
+            const thGuru = document.querySelector('#table-guru th:nth-child(5)');
+            const thSiswa = document.querySelector('#table-siswa th:nth-child(5)');
+            if (thGuru) thGuru.style.display = 'none';
+            if (thSiswa) thSiswa.style.display = 'none';
+        }
 
         try {
             const snap = await getDocs(collection(db, "users"));
@@ -339,11 +350,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 let isSiswa = roleArray.includes('siswa');
                 let isGuru = roleArray.includes('guru') || roleArray.includes('admin');
 
-                let isRowAdmin = roleArray.includes('admin');
-                let actionButtons = isRowAdmin ? 
-                    `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-shield-alt"></i> Protected</span>` : 
-                    `<button onclick="window.editAkun('${id}')" class="btn-3d" style="background:var(--warning); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Edit Akun"><i class="fas fa-edit"></i></button>
-                     <button onclick="window.hapusAkun('${id}')" class="btn-3d" style="background:var(--danger); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Hapus Akun"><i class="fas fa-trash-alt"></i></button>`;
+                // Siapkan sel Aksi HANYA jika pengguna yang login adalah Admin
+                let actionCell = '';
+                if (isAdmin) {
+                    let isRowAdmin = roleArray.includes('admin');
+                    let actionButtons = isRowAdmin ? 
+                        `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-shield-alt"></i> Protected</span>` : 
+                        `<button onclick="window.editAkun('${id}')" class="btn-3d" style="background:var(--warning); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Edit Akun"><i class="fas fa-edit"></i></button>
+                         <button onclick="window.hapusAkun('${id}')" class="btn-3d" style="background:var(--danger); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Hapus Akun"><i class="fas fa-trash-alt"></i></button>`;
+                    
+                    actionCell = `<td style="text-align:center; white-space: nowrap;">${actionButtons}</td>`;
+                }
 
                 if (isGuru) {
                     countGuru++;
@@ -356,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${data.nama || '-'}</td>
                         <td><span class="badge" style="background:var(--info); color:white; padding:3px 8px; border-radius:4px; font-size:0.75rem;">${roleStr.toUpperCase()}</span></td>
                         <td>${detail}</td>
-                        <td style="text-align:center; white-space: nowrap;">${actionButtons}</td>
+                        ${actionCell}
                     </tr>`;
                 } 
                 if (isSiswa) {
@@ -366,13 +383,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${data.nama || '-'}</td>
                         <td><span class="badge" style="background:var(--success); color:white; padding:3px 8px; border-radius:4px; font-size:0.75rem;">SISWA</span></td>
                         <td>${data.kelas || '-'}</td>
-                        <td style="text-align:center; white-space: nowrap;">${actionButtons}</td>
+                        ${actionCell}
                     </tr>`;
                 }
             });
 
-            if (tbodyGuru) tbodyGuru.innerHTML = countGuru > 0 ? htmlGuru : '<tr><td colspan="5" style="text-align:center;">Belum ada data guru.</td></tr>';
-            if (tbodySiswa) tbodySiswa.innerHTML = countSiswa > 0 ? htmlSiswa : '<tr><td colspan="5" style="text-align:center;">Belum ada data siswa.</td></tr>';
+            if (tbodyGuru) tbodyGuru.innerHTML = countGuru > 0 ? htmlGuru : `<tr><td colspan="${colCount}" style="text-align:center;">Belum ada data guru.</td></tr>`;
+            if (tbodySiswa) tbodySiswa.innerHTML = countSiswa > 0 ? htmlSiswa : `<tr><td colspan="${colCount}" style="text-align:center;">Belum ada data siswa.</td></tr>`;
             
             let statSiswaEl = document.getElementById('stat-siswa');
             if (statSiswaEl) statSiswaEl.innerText = countSiswa + countGuru;
