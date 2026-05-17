@@ -83,7 +83,7 @@
                                         <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali ke Daftar Mapel"><i class="fas fa-arrow-left"></i></button>
                                         <h4 style="margin: 0; color: var(--secondary); font-size: 1.1rem;" id="label-mapel-edit">Mata Pelajaran</h4>
                                     </div>
-                                    <button onclick="document.getElementById('modal-tambah-soal').style.display='flex'; document.getElementById('soal-mapel').value=document.getElementById('filter-soal-mapel').value; document.getElementById('soal-kelas').value=document.getElementById('filter-soal-kelas').value;" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Tambah Soal</button>
+                                    <button onclick="window.bukaModalTambahSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value)" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Tambah Soal</button>
                                 </div>
 
                                 <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
@@ -206,8 +206,17 @@
             <span class="close-btn" onclick="document.getElementById('modal-tambah-soal').style.display='none'">&times;</span>
             <h2 style="margin-bottom: 20px; color: var(--secondary);"><i class="fas fa-plus-circle"></i> Input Soal Baru</h2>
             <form id="form-tambah-soal">
-                <input type="hidden" id="soal-mapel">
-                <input type="hidden" id="soal-kelas">
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div class="input-group" style="flex: 1; margin: 0;">
+                        <label>Mata Pelajaran</label>
+                        <select id="soal-mapel" class="input-text" required></select>
+                    </div>
+                    <div class="input-group" style="flex: 1; margin: 0;">
+                        <label>Kelas</label>
+                        <select id="soal-kelas" class="input-text" required></select>
+                    </div>
+                </div>
                 
                 <div class="input-group">
                     <label>Tipe Soal</label>
