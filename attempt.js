@@ -2,12 +2,18 @@ import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+// ==========================================
+// 1. STATE MANAGEMENT (STATUS UJIAN)
+// ==========================================
 const examState = {
     student: null, mapelTerpilih: "", arraySoal: [], currentIndex: 0,
     jawabanSiswa: {}, raguRagu: {}, timerInterval: null, durasiDetik: 0,
     pelanggaran: 0, maxPelanggaran: 3, isExamActive: false
 };
 
+// ==========================================
+// 2. MODAL & UTILITIES
+// ==========================================
 window.customAlert = (msg, title = 'Informasi') => {
     return new Promise(res => {
         const modal = document.getElementById('modal-custom-alert');
@@ -29,6 +35,9 @@ window.customConfirm = (msg, title = 'Konfirmasi') => {
     });
 };
 
+// ==========================================
+// 3. WATERMARK MANAGER (ANTI-SCREENSHOT)
+// ==========================================
 const WatermarkManager = {
     overlayId: 'cbt-secure-watermark',
     init: function(nama, nis) { this.createOverlay(nama, nis); this.enforceOverlay(nama, nis); },
@@ -37,27 +46,25 @@ const WatermarkManager = {
         const watermarkDiv = document.createElement('div');
         watermarkDiv.id = this.overlayId;
         watermarkDiv.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:99999; opacity:0.12;';
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = 350; canvas.height = 200; 
+        const canvas = document.createElement('canvas'); canvas.width = 350; canvas.height = 200; 
         const ctx = canvas.getContext('2d');
         ctx.translate(canvas.width / 2, canvas.height / 2); ctx.rotate(-Math.PI / 6); 
         ctx.font = 'bold 18px Inter, sans-serif'; ctx.fillStyle = '#0f172a';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(`${nama}`, 0, -25); ctx.fillText(`NIS: ${nis}`, 0, 0); ctx.fillText(`CBT SMAICH`, 0, 25);
-        
         watermarkDiv.style.backgroundImage = `url(${canvas.toDataURL('image/png')})`;
         watermarkDiv.style.backgroundRepeat = 'repeat';
         document.body.appendChild(watermarkDiv);
     },
     enforceOverlay: function(nama, nis) {
-        const observer = new MutationObserver(() => {
-            if (!document.getElementById(this.overlayId)) { this.createOverlay(nama, nis); }
-        });
+        const observer = new MutationObserver(() => { if (!document.getElementById(this.overlayId)) this.createOverlay(nama, nis); });
         observer.observe(document.body, { childList: true, subtree: true });
     }
 };
 
+// ==========================================
+// 4. SECURITY MANAGER (ANTI-CHEAT)
+// ==========================================
 const SecurityManager = {
     initGlobal: function() {
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -70,7 +77,7 @@ const SecurityManager = {
         window.addEventListener('beforeunload', (e) => { if(examState.isExamActive) { e.preventDefault(); e.returnValue = ""; return ""; } });
     },
     startStrictExamMode: function() {
-        this.openFullscreen();
+        this.openFullscreen(); // Panggil ulang untuk keamanan
         window.addEventListener('blur', this.handleViolation.bind(this));
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.handleViolation(); });
         window.addEventListener('blur', () => { if(examState.isExamActive) document.body.style.filter = "blur(15px)"; });
@@ -99,6 +106,9 @@ const SecurityManager = {
 
 window.openFullscreen = SecurityManager.openFullscreen.bind(SecurityManager);
 
+// ==========================================
+// 5. INISIALISASI DATA SISWA & AUTH
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     SecurityManager.initGlobal(); 
     onAuthStateChanged(auth, async (user) => {
@@ -125,25 +135,38 @@ async function loadMapelOptions() {
     } catch(e) {}
 }
 
+// ==========================================
+// 6. LOGIKA MULAI UJIAN & VERIFIKASI TOKEN
+// ==========================================
 document.getElementById('btn-verifikasi').onclick = async () => {
     examState.mapelTerpilih = document.getElementById('select-mapel').value;
     const tokenInput = document.getElementById('input-token').value.toUpperCase().trim();
     const kelasSiswa = document.getElementById('student-class').value;
 
     if(!examState.mapelTerpilih || !tokenInput) return window.customAlert("Pilih mapel dan masukkan token!", "Peringatan");
-    const btn = document.getElementById('btn-verifikasi'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memeriksa...'; btn.disabled = true;
+
+    // [PENTING] Eksekusi Fullscreen harus dipanggil SECARA LANGSUNG saat di-klik,
+    // sebelum ada await/promise berjalan, agar tidak diblokir browser.
+    SecurityManager.openFullscreen();
+
+    const btn = document.getElementById('btn-verifikasi'); 
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memeriksa...'; 
+    btn.disabled = true;
 
     try {
         const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         const tokenKey = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
-        if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) throw new Error("Token tidak valid atau belum diaktifkan oleh Admin.");
+        
+        if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) {
+            throw new Error("Token tidak valid atau belum diatur oleh Admin.");
+        }
 
         const tokenData = tokenSnap.data()[tokenKey];
         const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
-        const expiresAt = typeof tokenData === 'object' ? tokenData.expiresAt : Infinity;
+        const isActive = typeof tokenData === 'object' ? (tokenData.active !== false) : true;
 
         if (tokenInput !== tokenCode) throw new Error("Kode Token Salah!");
-        if (Date.now() > expiresAt) throw new Error("Waktu Token sudah habis! Silakan minta token baru ke Pengawas.");
+        if (!isActive) throw new Error("Token sudah dinonaktifkan oleh Admin!");
 
         const qHasil = query(collection(db, "hasil_ujian"), where("uid", "==", examState.student.uid), where("mataPelajaran", "==", examState.mapelTerpilih));
         const cekHasil = await getDocs(qHasil);
@@ -162,16 +185,25 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         if (timeSnap.exists() && timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]) { durasiMenit = timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]; }
         examState.durasiDetik = durasiMenit * 60;
         
-        SecurityManager.startStrictExamMode(); examState.isExamActive = true;
+        SecurityManager.startStrictExamMode(); 
+        examState.isExamActive = true;
         document.getElementById('pre-exam-screen').style.display = 'none'; document.getElementById('exam-workspace').style.display = 'flex';
         document.getElementById('exam-mapel-title').innerText = `UJIAN: ${examState.mapelTerpilih.toUpperCase()}`;
         
         renderNavigasi(); tampilkanSoal(0); jalankanTimer();
 
-    } catch(e) { window.customAlert(e.message || "Terjadi kesalahan sistem.", "Gagal Akses"); } 
-    finally { btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false; }
+    } catch(e) { 
+        SecurityManager.closeFullscreen(); // Batalkan fullscreen jika token gagal
+        window.customAlert(e.message || "Terjadi kesalahan sistem.", "Gagal Akses"); 
+    } finally { 
+        btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; 
+        btn.disabled = false; 
+    }
 };
 
+// ==========================================
+// 7. RENDER UI UJIAN & NAVIGASI
+// ==========================================
 function renderMedia(mediaObj) {
     if (!mediaObj) return '';
     if (mediaObj.type === 'image') return `<img src="${mediaObj.url}" style="max-width:100%; max-height:250px; border-radius:8px; margin-top:10px; display:block;" ondragstart="return false;">`;
@@ -315,6 +347,9 @@ function updateWarnaGrid() {
     });
 }
 
+// ==========================================
+// 8. TIMER & PENGUMPULAN (SUBMIT)
+// ==========================================
 function jalankanTimer() {
     examState.timerInterval = setInterval(() => {
         examState.durasiDetik--;
@@ -384,6 +419,9 @@ async function selesaiUjian(isTimeOut = false, isPelanggaran = false) {
     } catch(e) { await window.customAlert("Gagal menyimpan ke server. Pastikan koneksi internet stabil dan lapor pengawas!", 'Error Jaringan'); }
 }
 
+// ==========================================
+// 9. LOGIKA DRAWER NAVIGASI (MOBILE) & EXIT
+// ==========================================
 const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
 const btnCloseDrawer = document.getElementById('btn-close-drawer');
 const sidebarNav = document.getElementById('sidebar-nav');
