@@ -128,7 +128,7 @@ window.AppActions = {
 };
 
 // ==========================================
-// 3. UI & ROUTING MANAGER
+// 3. UI, ROUTING & SETTINGS MANAGER
 // ==========================================
 const UIManager = {
     init: function() {
@@ -136,6 +136,22 @@ const UIManager = {
         window.addEventListener('hashchange', this.handleRouting.bind(this));
         this.handleRouting();
 
+        // AKSI: Mencegah Back Button keluar dari aplikasi (Dashboard)
+        history.pushState(null, null, window.location.href);
+        window.addEventListener('popstate', function(event) {
+            // Jika user menekan back hingga hash hilang (berarti mau keluar web)
+            if (!window.location.hash) {
+                history.pushState(null, null, window.location.href); // Patahkan dengan dorong state kembali
+                window.location.hash = 'section-beranda'; // Paksa ke beranda
+            }
+        });
+
+        // AKSI: Tombol Tutup/Silang Modal Edit Profil
+        document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { 
+            document.getElementById('modal-edit-akun').style.display = 'none'; 
+        });
+
+        // Toggle Accordion Navigasi
         document.addEventListener('click', (e) => {
             const header = e.target.closest('.toggle-accordion');
             if (!header) return;
@@ -151,6 +167,10 @@ const UIManager = {
                 if(icon) icon.style.transform = 'rotate(0deg)';
             }
         });
+
+        // Event Listener Izin Registrasi
+        document.getElementById('status-reg-guru')?.addEventListener('change', (e) => SettingsManager.updateStatusRegistrasi('guru', e.target.checked));
+        document.getElementById('status-reg-siswa')?.addEventListener('change', (e) => SettingsManager.updateStatusRegistrasi('siswa', e.target.checked));
 
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => { if (e.key === 'F12' || (e.ctrlKey && ['c', 'v', 'u', 'i'].includes(e.key.toLowerCase()))) e.preventDefault(); });
@@ -185,6 +205,26 @@ const UIManager = {
             document.getElementById('admin-manajemen-pengguna')?.setAttribute('style', 'display:none !important');
             document.getElementById('btn-hapus-semua-hasil')?.setAttribute('style', 'display:none !important');
         }
+    }
+};
+
+const SettingsManager = {
+    loadStatusRegistrasi: async function() {
+        try {
+            const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
+            if (regSnap.exists()) {
+                const sg = document.getElementById('status-reg-guru');
+                const ss = document.getElementById('status-reg-siswa');
+                if(sg) sg.checked = regSnap.data().guru_aktif !== false;
+                if(ss) ss.checked = regSnap.data().siswa_aktif !== false;
+            }
+        } catch(e) { console.error("Gagal memuat status registrasi", e); }
+    },
+    updateStatusRegistrasi: async function(type, isChecked) {
+        try {
+            let payload = type === 'guru' ? { guru_aktif: isChecked } : { siswa_aktif: isChecked };
+            await setDoc(doc(db, "pengaturan", "status_registrasi"), payload, { merge: true });
+        } catch(e) { console.error(e); }
     }
 };
 
@@ -371,7 +411,7 @@ const UserManager = {
             await updateDoc(doc(db, "users", uid), payload);
             
             if (pass) {
-                 window.customAlert('Profil diperbarui! Catatan: Pengubahan password via dashboard (Client-Side) memerlukan Firebase Admin SDK agar efektif diterapkan ke Autentikasi.', 'warning');
+                 window.customAlert('Profil diperbarui! Catatan: Pengubahan password via dashboard memerlukan Firebase Admin SDK agar efektif.', 'warning');
             } else {
                  window.customAlert('Profil berhasil diperbarui!', 'success');
             }
@@ -561,6 +601,11 @@ document.addEventListener('DOMContentLoaded', () => {
             DataManager.loadDataMaster(); 
             ResultManager.loadDataHasil(); 
             UserManager.loadUsers(); 
+
+            // Load Status Izin Registrasi untuk Admin
+            if (AppState.isAdmin) {
+                SettingsManager.loadStatusRegistrasi();
+            }
 
         } catch (e) { console.error(e); }
     });
