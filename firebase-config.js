@@ -3,6 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+import { getFunctions } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyB8R0VNO0noUlkcUcjBkpsGFrYPdtA7KxM",
@@ -21,7 +22,4 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-
-// Catatan Keamanan: Karena apiKey terekspos di sisi klien (standar Firebase Web),
-// pastikan Firebase Firestore Rules Anda disetel dengan ketat berdasarkan autentikasi (request.auth != null)
-// dan bukan 'allow read, write: if true;' pada versi produksinya nanti.
+export const functions = getFunctions(app); // Akses ke Cloud Functions
