@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
-        /* Toggles and Basic Security specific to Dashboard */
         .switch { position: relative; display: inline-block; width: 44px; height: 22px; margin: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
@@ -18,17 +17,18 @@
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(22px); }
 
-        body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-        input, textarea, select { -webkit-user-select: auto !important; user-select: auto !important; }
+        /* --- KEAMANAN GLOBAL: ANTI COPAS, AI, & CETAK --- */
+        body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        input, textarea, select { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
         @media print { body { display: none !important; } }
     </style>
 </head>
 <body>
 
     <div class="app-layout">
-        <header class="app-header" style="justify-content: center;">
-            <div style="cursor: pointer; text-align: center;" onclick="window.location.hash='section-beranda'">
-                <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0 auto; display: block;">
+        <header class="app-header" style="position: sticky; top: 0; display: flex; justify-content: center; align-items: center; padding: 10px 20px; background: white; border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 1000;">
+            <div style="cursor: pointer;" onclick="window.location.hash='section-beranda'">
+                <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0;">
             </div>
         </header>
 
@@ -58,12 +58,12 @@
 
                 <div id="section-soal" class="content-section">
                     <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                        <div class="toggle-accordion" data-target="container-bank-soal">
+                        <div class="toggle-accordion" data-target="container-bank-soal" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
                             <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-file-alt"></i> Bank Soal & Token</h3>
-                            <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg);"></i>
+                            <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                         </div>
-                        
                         <div id="container-bank-soal" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
+
                             <div id="view-summary-bank-soal">
                                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                                     <button id="btn-open-data-master" class="btn-3d" style="margin: 0; background-color: var(--info);"><i class="fas fa-database"></i> Data Master</button>
@@ -80,9 +80,10 @@
                             <div id="view-soal-list" style="display: none;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                                     <div style="display: flex; align-items: center; gap: 15px;">
-                                        <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali"><i class="fas fa-arrow-left"></i></button>
+                                        <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali ke Daftar Mapel"><i class="fas fa-arrow-left"></i></button>
                                         <h4 style="margin: 0; color: var(--secondary); font-size: 1.1rem;" id="label-mapel-edit">Mata Pelajaran</h4>
                                     </div>
+                                    <button onclick="document.getElementById('modal-tambah-soal').style.display='flex'; document.getElementById('soal-mapel').value=document.getElementById('filter-soal-mapel').value; document.getElementById('soal-kelas').value=document.getElementById('filter-soal-kelas').value;" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Tambah Soal</button>
                                 </div>
 
                                 <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
@@ -92,14 +93,16 @@
                                         <div style="flex: 1; min-width: 180px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--info); display: block; margin-bottom: 5px;"><i class="fas fa-calendar-alt"></i> JADWAL UJIAN</label><input type="datetime-local" id="input-jadwal-ujian" class="input-text" style="border-color: var(--info);"></div>
                                         <div style="width: 120px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> DURASI (MNT)</label><input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);"></div>
                                         <div style="width: 150px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--danger); display: block; margin-bottom: 5px;"><i class="fas fa-key"></i> TOKEN</label><input type="text" id="input-token-ujian" class="input-text" placeholder="Ketik Kode..." style="border-color: var(--danger); text-transform: uppercase;"></div>
-                                        <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--secondary);"><i class="fas fa-save"></i> Simpan Seting</button>
+                                        
+                                        <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--secondary);"><i class="fas fa-save"></i> Simpan</button>
                                     </div>
                                 </div>
                                 
                                 <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-                                    <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Area daftar soal...</div>
+                                    <div style="text-align:center; padding: 30px; color: var(--text-muted); background: white; border: 1px solid var(--border-color); border-radius: 8px;">Memuat data soal...</div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -107,19 +110,19 @@
                 <div id="section-pengguna" class="content-section">
                     <div id="admin-manajemen-pengguna">
                         <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                            <div class="toggle-accordion" data-target="container-daftar-pengguna">
+                            <div class="toggle-accordion" data-target="container-daftar-pengguna" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
                                 <div style="display: flex; align-items: center; gap: 15px;">
                                     <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-list"></i> Daftar Pengguna</h3>
-                                    <button id="btn-open-manajemen" class="btn-3d" style="padding: 6px 15px; font-size: 0.85rem; margin: 0; background-color: var(--success);" onclick="event.stopPropagation(); window.location.href='registrasi.html';" title="Tambah Akun"><i class="fas fa-user-plus"></i></button>
+                                    <button id="btn-open-manajemen" class="btn-3d" style="padding: 6px 15px; font-size: 0.85rem; margin: 0; background-color: var(--success);" onclick="event.stopPropagation(); window.location.href='registrasi.html';" title="Tambah Akun (Registrasi)"><i class="fas fa-user-plus"></i></button>
                                 </div>
-                                <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg);"></i>
+                                <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                             </div>
                             <div id="container-daftar-pengguna" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
 
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                     <h4 style="margin: 0; color: var(--info); font-size: 1.05rem;"><i class="fas fa-chalkboard-teacher"></i> Akun Guru</h4>
                                     <div id="wrap-reg-guru" style="display: flex; align-items: center; gap: 10px;">
-                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">Izin Registrasi:</span>
+                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">Izin Registrasi Guru:</span>
                                         <label class="switch"><input type="checkbox" id="status-reg-guru"><span class="slider"></span></label>
                                     </div>
                                 </div>
@@ -130,7 +133,7 @@
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                     <h4 style="margin: 0; color: var(--success); font-size: 1.05rem;"><i class="fas fa-user-graduate"></i> Akun Siswa</h4>
                                     <div id="wrap-reg-siswa" style="display: flex; align-items: center; gap: 10px;">
-                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">Izin Registrasi:</span>
+                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">Izin Registrasi Siswa:</span>
                                         <label class="switch"><input type="checkbox" id="status-reg-siswa"><span class="slider"></span></label>
                                     </div>
                                 </div>
@@ -145,9 +148,9 @@
                 <div id="section-hasil" class="content-section">
                     <div id="hasil-summary-view">
                         <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                            <div class="toggle-accordion" data-target="container-rekap-hasil">
+                            <div class="toggle-accordion" data-target="container-rekap-hasil" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
                                 <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian</h3>
-                                <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg);"></i>
+                                <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                             </div>
                             <div id="container-rekap-hasil" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                                 <div class="stats-grid" id="grid-mapel-hasil"></div>
@@ -159,7 +162,7 @@
                         <div class="card">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                                 <div style="display: flex; align-items: center; gap: 10px;">
-                                    <button onclick="window.location.hash='section-hasil'" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;"><i class="fas fa-arrow-left"></i></button>
+                                    <button onclick="window.location.hash='section-hasil'" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali"><i class="fas fa-arrow-left"></i></button>
                                     <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.15rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
                                 </div>
                                 <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-trash-alt"></i> KOSONGKAN KELAS INI</button>
@@ -175,7 +178,7 @@
         </div>
     </div>
 
-    <button id="btn-logout" class="btn-3d" style="position: fixed; bottom: 20px; right: 20px; background: var(--danger); width: 50px; height: 50px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5); z-index: 9999;" title="Keluar"><i class="fas fa-power-off" style="font-size: 1.3rem;"></i></button>
+    <button id="btn-logout" class="btn-3d" style="position: fixed; bottom: 20px; right: 20px; background: var(--danger); width: 50px; height: 50px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5); z-index: 9999;" title="Keluar Aplikasi"><i class="fas fa-power-off" style="font-size: 1.3rem; margin: 0;"></i></button>
 
     <div id="modal-custom-alert" class="modal">
         <div class="modal-content" style="width: 400px; text-align: center;">
@@ -198,22 +201,62 @@
         </div>
     </div>
 
+    <div id="modal-tambah-soal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-btn" onclick="document.getElementById('modal-tambah-soal').style.display='none'">&times;</span>
+            <h2 style="margin-bottom: 20px; color: var(--secondary);"><i class="fas fa-plus-circle"></i> Input Soal Baru</h2>
+            <form id="form-tambah-soal">
+                <input type="hidden" id="soal-mapel">
+                <input type="hidden" id="soal-kelas">
+                
+                <div class="input-group">
+                    <label>Tipe Soal</label>
+                    <select id="soal-tipe" class="input-text" required>
+                        <option value="PG">Pilihan Ganda (PG)</option>
+                        <option value="Essay">Essay / Uraian</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Teks / Pertanyaan Soal</label>
+                    <textarea id="soal-teks" class="input-text" rows="4" placeholder="Ketik pertanyaan di sini..." required></textarea>
+                </div>
+                
+                <div id="pg-options">
+                    <div class="input-group"><label>Opsi A</label><input type="text" id="soal-opsi-A" class="input-text"></div>
+                    <div class="input-group"><label>Opsi B</label><input type="text" id="soal-opsi-B" class="input-text"></div>
+                    <div class="input-group"><label>Opsi C</label><input type="text" id="soal-opsi-C" class="input-text"></div>
+                    <div class="input-group"><label>Opsi D</label><input type="text" id="soal-opsi-D" class="input-text"></div>
+                    <div class="input-group"><label>Opsi E</label><input type="text" id="soal-opsi-E" class="input-text"></div>
+                    <div class="input-group">
+                        <label style="color: var(--success);"><i class="fas fa-check"></i> Kunci Jawaban Benar</label>
+                        <select id="soal-kunci" class="input-text" style="border-color: var(--success); font-weight: bold;">
+                            <option value="A">Jawaban A</option><option value="B">Jawaban B</option><option value="C">Jawaban C</option><option value="D">Jawaban D</option><option value="E">Jawaban E</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn-3d" style="width:100%; margin-top: 15px;"><i class="fas fa-save"></i> SIMPAN SOAL</button>
+            </form>
+        </div>
+    </div>
+
     <div id="modal-edit-akun" class="modal">
         <div class="modal-content" style="max-width: 600px;">
             <span class="close-btn" id="close-modal-edit-akun">&times;</span>
-            <h2 style="margin-bottom: 20px;"><i class="fas fa-user-edit"></i> Edit Profil</h2>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-user-edit"></i> Edit Profil Pengguna</h2>
             <input type="hidden" id="edit-uid">
             <div class="input-group"><label>Nama Lengkap</label><input type="text" id="edit-nama" class="input-text"></div>
+
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
                 <div class="input-group" style="margin: 0;"><label>Username / NIS / ID</label><input type="text" id="edit-username" class="input-text"></div>
                 <div class="input-group" style="margin: 0;"><label>Password Baru (Opsional)</label><input type="password" id="edit-pass" class="input-text" placeholder="Kosongkan jika tidak diubah"></div>
             </div>
+
             <div class="input-group">
                 <label>Role Akses</label>
                 <div style="display: flex; gap: 20px; padding: 15px; background: white; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm);">
-                    <label style="display: flex; align-items: center; gap: 8px;"><input type="checkbox" class="edit-role-cb" value="siswa"> Siswa</label>
-                    <label style="display: flex; align-items: center; gap: 8px;"><input type="checkbox" class="edit-role-cb" value="guru"> Guru</label>
-                    <label style="display: flex; align-items: center; gap: 8px;"><input type="checkbox" class="edit-role-cb" value="admin"> Admin</label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" class="edit-role-cb" value="siswa"> Siswa</label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" class="edit-role-cb" value="guru"> Guru</label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" class="edit-role-cb" value="admin"> Admin</label>
                 </div>
             </div>
             <div id="group-edit-guru" style="display: flex; gap: 15px; display: none;">
@@ -221,8 +264,7 @@
                 <div class="input-group" style="flex: 1;"><label>Kelas Ajar (Guru)</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
             </div>
             <div class="input-group" id="group-edit-kelas-siswa" style="display: none;"><label>Kelas (Siswa)</label><select id="edit-kelas-siswa" class="input-text"></select></div>
-            
-            <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; margin-top: 15px;"><i class="fas fa-save"></i> SIMPAN</button>
+            <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; margin-top: 15px;"><i class="fas fa-save"></i> SIMPAN PERUBAHAN</button>
         </div>
     </div>
 
@@ -230,20 +272,26 @@
         <div class="modal-content" style="max-width: 800px;">
             <span class="close-btn" id="close-modal-data-master">&times;</span>
             <h2 style="margin-bottom: 20px;"><i class="fas fa-database"></i> Data Master</h2>
+
             <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 150px;">
                     <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">KATEGORI</label>
-                    <select id="input-master-type" class="input-text"><option value="mapel">Mata Pelajaran</option><option value="kelas">Kelas</option></select>
+                    <select id="input-master-type" class="input-text">
+                        <option value="mapel">Mata Pelajaran</option>
+                        <option value="kelas">Kelas</option>
+                    </select>
                 </div>
                 <div style="flex: 2; min-width: 200px;">
                     <label style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">NAMA BARU</label>
                     <input type="text" id="input-master-name" class="input-text" placeholder="Ketik nama mapel/kelas baru...">
                 </div>
-                <button id="btn-add-master" class="btn-3d" style="background: var(--success); margin: 0;"><i class="fas fa-plus"></i> Input</button>
+                <button id="btn-add-master" class="btn-3d" style="background: var(--success); margin: 0;"><i class="fas fa-plus"></i> Input Data</button>
             </div>
+
             <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-                <button id="btn-edit-master-mode" class="btn-3d btn-secondary" style="margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-edit"></i> Mode Edit</button>
+                <button id="btn-edit-master-mode" class="btn-3d btn-secondary" style="margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-edit"></i> Edit Data Master</button>
             </div>
+
             <div class="table-container" style="max-height: 350px; overflow-y: auto;">
                 <table id="table-master-combined" style="margin: 0;">
                     <thead><tr><th>Mata Pelajaran</th><th>Kelas</th></tr></thead>
@@ -253,6 +301,15 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => document.addEventListener(evt, event => { if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } }));
+        document.addEventListener('keydown', event => {
+            if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { event.preventDefault(); }
+        });
+        window.addEventListener('blur', () => { document.body.style.filter = "blur(15px)"; });
+        window.addEventListener('focus', () => { document.body.style.filter = "none"; });
+    </script>
     <script type="module" src="dashboard.js"></script>
 </body>
 </html>
