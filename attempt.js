@@ -36,71 +36,186 @@ window.customConfirm = (msg, title = 'Konfirmasi') => {
 };
 
 // ==========================================
-// 3. WATERMARK MANAGER (ANTI-SCREENSHOT)
+// 3. WATERMARK MANAGER (DINAMIS & BERGERAK)
 // ==========================================
 const WatermarkManager = {
     overlayId: 'cbt-secure-watermark',
-    init: function(nama, nis) { this.createOverlay(nama, nis); this.enforceOverlay(nama, nis); },
+
+    init: function(nama, nis) {
+        this.createOverlay(nama, nis);
+        this.enforceOverlay(nama, nis);
+    },
+
     createOverlay: function(nama, nis) {
         if (document.getElementById(this.overlayId)) return;
+
         const watermarkDiv = document.createElement('div');
         watermarkDiv.id = this.overlayId;
-        watermarkDiv.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:99999; opacity:0.12;';
-        const canvas = document.createElement('canvas'); canvas.width = 350; canvas.height = 200; 
+        
+        watermarkDiv.style.position = 'fixed';
+        watermarkDiv.style.top = '0';
+        watermarkDiv.style.left = '0';
+        watermarkDiv.style.width = '200vw'; // Dibuat lebih besar untuk animasi
+        watermarkDiv.style.height = '200vh';
+        watermarkDiv.style.pointerEvents = 'none'; 
+        watermarkDiv.style.zIndex = '99999';
+        watermarkDiv.style.opacity = '0.15'; // Sedikit lebih tebal untuk merusak AI/OCR
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 300; 
+        canvas.height = 180; 
         const ctx = canvas.getContext('2d');
-        ctx.translate(canvas.width / 2, canvas.height / 2); ctx.rotate(-Math.PI / 6); 
-        ctx.font = 'bold 18px Inter, sans-serif'; ctx.fillStyle = '#0f172a';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(`${nama}`, 0, -25); ctx.fillText(`NIS: ${nis}`, 0, 0); ctx.fillText(`CBT SMAICH`, 0, 25);
+
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(-Math.PI / 5); 
+        ctx.font = 'bold 18px Inter, sans-serif';
+        ctx.fillStyle = '#0f172a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillText(`${nama}`, 0, -25);
+        ctx.fillText(`NIS: ${nis}`, 0, 0);
+        ctx.fillText(`CBT SMAICH`, 0, 25);
+
         watermarkDiv.style.backgroundImage = `url(${canvas.toDataURL('image/png')})`;
         watermarkDiv.style.backgroundRepeat = 'repeat';
+        
+        // Animasi pergerakan watermark (Anti Foto HP & Anti Google Lens)
+        let pos = 0;
+        setInterval(() => {
+            pos -= 1;
+            watermarkDiv.style.backgroundPosition = `${pos}px ${pos}px`;
+        }, 50);
+
         document.body.appendChild(watermarkDiv);
     },
+
     enforceOverlay: function(nama, nis) {
-        const observer = new MutationObserver(() => { if (!document.getElementById(this.overlayId)) this.createOverlay(nama, nis); });
+        const observer = new MutationObserver((mutations) => {
+            if (!document.getElementById(this.overlayId)) {
+                console.warn("Watermark dihapus paksa! Memulihkan...");
+                this.createOverlay(nama, nis);
+                SecurityManager.handleViolation("Terdeteksi percobaan menghapus sistem keamanan layar!");
+            }
+        });
         observer.observe(document.body, { childList: true, subtree: true });
     }
 };
 
 // ==========================================
-// 4. SECURITY MANAGER (ANTI-CHEAT)
+// 4. SECURITY MANAGER (ANTI-CHEAT ADVANCED)
 // ==========================================
 const SecurityManager = {
     initGlobal: function() {
+        // 1. Blokir Klik Kanan & Drag Text
         document.addEventListener('contextmenu', e => e.preventDefault());
-        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => document.addEventListener(evt, e => { if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); } }));
+        ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => 
+            document.addEventListener(evt, e => { 
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); } 
+            })
+        );
+
+        // 2. Blokir Tombol Keyboard Bahaya (Anti PrintScreen, Snipping Tool, Inspect Element)
         document.addEventListener('keydown', e => {
-            if (e.key === 'F12' || e.key === 'PrintScreen' || (e.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(e.key.toLowerCase())) || (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 's'].includes(e.key.toLowerCase()))) { e.preventDefault(); }
+            const forbiddenKeys = ['F12', 'PrintScreen', 'Meta', 'OS', 'ContextMenu'];
+            if (forbiddenKeys.includes(e.key) || 
+               (e.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(e.key.toLowerCase())) || 
+               (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 's'].includes(e.key.toLowerCase()))) { 
+                e.preventDefault(); 
+                
+                if (e.key === 'PrintScreen' || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 's')) {
+                    navigator.clipboard.writeText("Tindakan Ilegal CBT SMAICH").catch(()=>{});
+                    if(examState.isExamActive) this.handleViolation("Percobaan Screenshot/PrintScreen Terdeteksi!");
+                }
+            }
         });
+
+        // Hapus clipboard saat tombol dilepas
+        document.addEventListener('keyup', e => {
+            if (e.key === 'PrintScreen') {
+                navigator.clipboard.writeText("Tindakan Ilegal CBT SMAICH").catch(()=>{});
+                if(examState.isExamActive) this.handleViolation("Tombol PrintScreen Ditekan!");
+            }
+        });
+
+        // 3. Jebakan Back Button (Mencegah Keluar lewat Tombol Back Browser)
         history.pushState(null, null, window.location.href);
-        window.addEventListener('popstate', () => { history.pushState(null, null, window.location.href); if(examState.isExamActive) this.openFullscreen(); });
-        window.addEventListener('beforeunload', (e) => { if(examState.isExamActive) { e.preventDefault(); e.returnValue = ""; return ""; } });
+        window.addEventListener('popstate', () => { 
+            history.pushState(null, null, window.location.href); 
+            if(examState.isExamActive) this.openFullscreen(); 
+        });
+
+        window.addEventListener('beforeunload', (e) => { 
+            if(examState.isExamActive) { e.preventDefault(); e.returnValue = ""; return ""; }
+        });
+
+        // 4. Mulai Jebakan Debugger (Anti Inspect Element)
+        this.startDevToolsTrap();
     },
+
+    startDevToolsTrap: function() {
+        setInterval(() => {
+            const start = performance.now();
+            debugger; // Browser akan freeze di sini jika DevTools/Inspect Element terbuka
+            if (performance.now() - start > 100) {
+                if(examState.isExamActive) {
+                    this.handleViolation("Terdeteksi membuka Inspect Element / Developer Tools!");
+                }
+            }
+        }, 1500);
+    },
+
     startStrictExamMode: function() {
-        this.openFullscreen(); // Panggil ulang untuk keamanan
-        window.addEventListener('blur', this.handleViolation.bind(this));
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.handleViolation(); });
-        window.addEventListener('blur', () => { if(examState.isExamActive) document.body.style.filter = "blur(15px)"; });
-        window.addEventListener('focus', () => { if(examState.isExamActive) document.body.style.filter = "none"; });
-    },
-    handleViolation: async function() {
-        if (!examState.isExamActive) return;
-        examState.pelanggaran++;
-        const violationEl = document.getElementById('violation-count'); if (violationEl) violationEl.innerText = examState.pelanggaran;
         this.openFullscreen();
+        
+        // Anti AI Extension (Jika klik ekstensi AI di pojok layar, browser akan hilang fokus)
+        window.addEventListener('blur', () => {
+            if(examState.isExamActive) {
+                document.body.style.filter = "blur(20px)"; // Blur tebal agar OCR AI gagal membaca soal
+                this.handleViolation("Fokus layar hilang! (Terdeteksi membuka aplikasi lain / Ekstensi AI)");
+            }
+        });
+        
+        document.addEventListener('visibilitychange', () => { 
+            if (document.visibilityState === 'hidden' && examState.isExamActive) {
+                document.body.style.filter = "blur(20px)";
+                this.handleViolation("Terdeteksi pindah tab atau layar diminimize!"); 
+            }
+        });
+        
+        window.addEventListener('focus', () => { 
+            if(examState.isExamActive) document.body.style.filter = "none"; 
+        });
+    },
+
+    handleViolation: async function(alasan = "Aktivitas mencurigakan terdeteksi") {
+        if (!examState.isExamActive) return;
+
+        examState.pelanggaran++;
+        const violationEl = document.getElementById('violation-count');
+        if (violationEl) violationEl.innerText = examState.pelanggaran;
+        
+        this.openFullscreen();
+
         if (examState.pelanggaran >= examState.maxPelanggaran) {
-            await window.customAlert(`Anda telah melakukan ${examState.maxPelanggaran} kali pelanggaran aktivitas mencurigakan. Ujian dihentikan secara otomatis.`, 'PELANGGARAN MAKSIMAL');
+            await window.customAlert(`Anda telah melakukan ${examState.maxPelanggaran} kali pelanggaran.\nAlasan Terakhir: ${alasan}\n\nUjian Anda DIHENTIKAN SECARA OTOMATIS!`, 'PELANGGARAN MAKSIMAL (SANKSI)');
             selesaiUjian(true, true); 
         } else {
-            window.customAlert(`Anda terdeteksi keluar dari layar ujian atau membuka tab lain.\n\nPeringatan Ke-${examState.pelanggaran}! Pada pelanggaran ke-${examState.maxPelanggaran}, ujian otomatis dihentikan.`, 'Peringatan Keamanan Aktif');
+            window.customAlert(`${alasan}\n\nPeringatan Ke-${examState.pelanggaran}! Pada peringatan ke-${examState.maxPelanggaran}, ujian akan dihentikan dan nilai dianggap 0.`, 'PERINGATAN KEAMANAN');
         }
     },
+
     openFullscreen: function() {
         const elem = document.documentElement;
-        if (elem.requestFullscreen) { elem.requestFullscreen().catch(()=>{}); } else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+        if (elem.requestFullscreen) { elem.requestFullscreen().catch(()=>{}); } 
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
     },
+
     closeFullscreen: function() {
-        if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); } else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); } else if (document.msExitFullscreen) { document.msExitFullscreen(); }
+        if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); } 
+        else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); } 
+        else if (document.msExitFullscreen) { document.msExitFullscreen(); }
     }
 };
 
