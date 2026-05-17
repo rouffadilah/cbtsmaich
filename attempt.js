@@ -121,9 +121,12 @@ const SecurityManager = {
             }
         });
 
-        for(let i = 0; i < 5; i++) { history.pushState(null, document.title, location.href); }
+        // AKSI: BACK-TRAP MUTLAK (Mencegah Keluar lewat Tombol Back)
+        history.pushState(null, null, window.location.href);
         window.addEventListener('popstate', () => { 
-            history.pushState(null, document.title, location.href); 
+            // Dorong kembali state ke depan agar tidak mundur ke halaman login
+            history.pushState(null, null, window.location.href); 
+            // Jika sedang di dalam mode ujian, peringatkan atau paksa balik fullscreen
             if(examState.isExamActive) this.openFullscreen(); 
         });
 
@@ -358,7 +361,6 @@ function tampilkanSoal(idx) {
     updateWarnaGrid();
 }
 
-// Window Binding untuk akses onClick dari HTML dinamis
 window.pilihJawabanPG = (soalId, opsi) => { 
     examState.jawabanSiswa[soalId] = opsi; 
     tampilkanSoal(examState.currentIndex); 
