@@ -2,138 +2,26 @@ import { auth, db } from './firebase-config.js';
 import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// ==========================================
-// 1. STATE & KONFIGURASI
-// ==========================================
-const regState = {
-    role: 'siswa',
-    isSiswaOpen: true,
-    isGuruOpen: true
-};
-
-// ==========================================
-// 2. SECURITY MANAGER (UI Dasar)
-// ==========================================
-const SecurityManager = {
-    init: function() {
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => {
-            document.addEventListener(evt, e => { 
-                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault(); 
-            });
-        });
-        document.addEventListener('keydown', e => {
-            if (e.key === 'F12' || e.key === 'PrintScreen' || 
-               (e.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(e.key.toLowerCase())) || 
-               (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 's'].includes(e.key.toLowerCase()))) { 
-                e.preventDefault(); 
-            }
-        });
-        window.addEventListener('blur', () => { document.body.style.filter = "blur(10px)"; });
-        window.addEventListener('focus', () => { document.body.style.filter = "none"; });
-    }
-};
-
-// ==========================================
-// 3. UI & FORM MANAGER
-// ==========================================
-const UIManager = {
-    updateRegStatusUI: function() {
-        const btnSubmit = document.getElementById("btn-submit");
-        const warningBox = document.getElementById("reg-warning");
-        
-        let isAllowed = (regState.role === 'siswa' && regState.isSiswaOpen) || 
-                        (regState.role === 'guru' && regState.isGuruOpen);
-
-        if (!isAllowed) {
-            btnSubmit.disabled = true;
-            btnSubmit.style.opacity = '0.5';
-            btnSubmit.innerHTML = '<i class="fas fa-lock"></i> PENDAFTARAN DITUTUP';
-            warningBox.style.display = 'block';
-            warningBox.innerHTML = `<i class="fas fa-lock"></i> Pendaftaran form <b>${regState.role.toUpperCase()}</b> saat ini ditutup oleh Admin.`;
-        } else {
-            btnSubmit.disabled = false;
-            btnSubmit.style.opacity = '1';
-            btnSubmit.innerHTML = 'DAFTAR SEKARANG';
-            warningBox.style.display = 'none';
-        }
-    },
-
-    setRoleMode: function(role) {
-        regState.role = role;
-        document.getElementById("reg-role").value = role;
-        
-        const boxSiswa = document.getElementById("select-siswa");
-        const boxGuru = document.getElementById("select-guru");
-        const inputUsername = document.getElementById("reg-username");
-        const inputKelasSiswa = document.getElementById("reg-kelas-siswa");
-        
-        if (role === 'guru') {
-            document.getElementById("reg-title").innerText = "REGISTRASI GURU";
-            document.getElementById("username-label").innerText = "ID Guru";
-            boxGuru.classList.add('active');
-            boxSiswa.classList.remove('active');
-            
-            inputUsername.placeholder = "Contoh: E24H6-223";
-            inputUsername.removeAttribute("inputmode");
-            inputUsername.setAttribute("maxlength", "9");
-            
-            document.getElementById("group-kelas-siswa").style.display = 'none';
-            document.getElementById("group-mapel-guru").style.display = 'block';
-            document.getElementById("group-kelas-guru").style.display = 'block';
-            if(inputKelasSiswa) inputKelasSiswa.removeAttribute("required");
-        } else {
-            document.getElementById("reg-title").innerText = "REGISTRASI SISWA";
-            document.getElementById("username-label").innerText = "Nomor Peserta / NIS";
-            boxSiswa.classList.add('active');
-            boxGuru.classList.remove('active');
-            
-            inputUsername.placeholder = "Masukkan NIS (10 Digit Angka)";
-            inputUsername.setAttribute("inputmode", "numeric");
-            inputUsername.setAttribute("maxlength", "10");
-
-            document.getElementById("group-kelas-siswa").style.display = 'block';
-            document.getElementById("group-mapel-guru").style.display = 'none';
-            document.getElementById("group-kelas-guru").style.display = 'none';
-            if(inputKelasSiswa) inputKelasSiswa.setAttribute("required", "true");
-        }
-        this.updateRegStatusUI(); 
-    },
-
-    setLoadingState: function(isLoading) {
-        const btnSubmit = document.getElementById("btn-submit");
-        if(isLoading) {
-            btnSubmit.dataset.originalText = btnSubmit.innerHTML;
-            btnSubmit.innerHTML = "<i class='fas fa-spinner fa-spin'></i> MEMPROSES...";
-            btnSubmit.disabled = true;
-        } else {
-            btnSubmit.innerHTML = btnSubmit.dataset.originalText || "DAFTAR SEKARANG";
-            btnSubmit.disabled = false;
-        }
-    }
-};
-
-// ==========================================
-// 4. MAIN EXECUTION & FIREBASE LOGIC
-// ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    SecurityManager.init();
+    const registerForm = document.getElementById("register-form");
+    const btnSubmit = document.getElementById("btn-submit");
+    const boxSiswa = document.getElementById("select-siswa");
+    const boxGuru = document.getElementById("select-guru");
+    const roleInput = document.getElementById("reg-role");
+    const usernameLabel = document.getElementById("username-label");
+    const regTitle = document.getElementById("reg-title");
+    
+    let statusRegSiswa = true;
+    let statusRegGuru = true;
 
-    // Event Listener Ganti Role
-    document.getElementById("select-siswa").addEventListener('click', () => UIManager.setRoleMode('siswa'));
-    document.getElementById("select-guru").addEventListener('click', () => UIManager.setRoleMode('guru'));
-
-    // Tarik Data Konfigurasi Master dari Firestore
-    async function fetchInitialData() {
+    async function fetchRegStatus() {
         try {
-            // Ambil Status Izin Registrasi
             const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
             if(regSnap.exists()) {
-                regState.isSiswaOpen = regSnap.data().siswa_aktif !== false; 
-                regState.isGuruOpen = regSnap.data().guru_aktif !== false; 
+                statusRegSiswa = regSnap.data().siswa_aktif !== false; 
+                statusRegGuru = regSnap.data().guru_aktif !== false; 
             }
 
-            // Ambil Data Master (Kelas & Mapel)
             const akademikSnap = await getDoc(doc(db, "pengaturan", "data_akademik"));
             if(akademikSnap.exists()) {
                 const data = akademikSnap.data();
@@ -156,90 +44,150 @@ document.addEventListener("DOMContentLoaded", () => {
                     containerKelasGuru.innerHTML = listKelas.map(k => `<label><input type="checkbox" class="reg-kelas-cb" value="${k}"> ${k}</label>`).join('');
                 }
             }
-            UIManager.updateRegStatusUI();
+            updateRegUI(roleInput.value);
         } catch(e) { 
-            console.error("Gagal menarik data akademik awal:", e); 
+            console.error("Gagal menarik data awal", e); 
         }
     }
 
-    fetchInitialData();
+    function updateRegUI(role) {
+        const warningBox = document.getElementById("reg-warning");
+        let isAllowed = true;
+        if (role === 'siswa' && !statusRegSiswa) isAllowed = false;
+        if (role === 'guru' && !statusRegGuru) isAllowed = false;
 
-    // Proses Submit Registrasi
-    document.getElementById("register-form")?.addEventListener("submit", async (e) => {
+        if (!isAllowed) {
+            btnSubmit.disabled = true;
+            btnSubmit.style.opacity = '0.5';
+            btnSubmit.innerHTML = '<i class="fas fa-lock"></i> PENDAFTARAN DITUTUP';
+            warningBox.style.display = 'block';
+            warningBox.innerHTML = `<i class="fas fa-lock"></i> Pendaftaran form <b>${role.toUpperCase()}</b> saat ini ditutup oleh Admin.`;
+        } else {
+            btnSubmit.disabled = false;
+            btnSubmit.style.opacity = '1';
+            btnSubmit.innerHTML = 'DAFTAR'; // Diubah
+            warningBox.style.display = 'none';
+        }
+    }
+
+    function setRole(role) {
+        roleInput.value = role;
+        const groupKelasSiswa = document.getElementById("group-kelas-siswa");
+        const groupMapelGuru = document.getElementById("group-mapel-guru");
+        const groupKelasGuru = document.getElementById("group-kelas-guru");
+        const inputKelasSiswa = document.getElementById("reg-kelas-siswa");
+        const inputUsername = document.getElementById("reg-username");
+
+        if (role === 'guru') {
+            regTitle.innerText = "REGISTRASI GURU";
+            usernameLabel.innerText = "ID Guru";
+            boxGuru.classList.add('active');
+            boxSiswa.classList.remove('active');
+            
+            inputUsername.placeholder = "Contoh: E24H6-223";
+            inputUsername.removeAttribute("inputmode");
+            inputUsername.setAttribute("maxlength", "9");
+            
+            if(groupKelasSiswa) groupKelasSiswa.style.display = 'none';
+            if(groupMapelGuru) groupMapelGuru.style.display = 'block';
+            if(groupKelasGuru) groupKelasGuru.style.display = 'block';
+            if(inputKelasSiswa) inputKelasSiswa.removeAttribute("required");
+        } else {
+            regTitle.innerText = "REGISTRASI SISWA";
+            usernameLabel.innerText = "Nomor Peserta / NIS";
+            boxSiswa.classList.add('active');
+            boxGuru.classList.remove('active');
+            
+            inputUsername.placeholder = "Masukkan NIS (10 Digit Angka)";
+            inputUsername.setAttribute("inputmode", "numeric");
+            inputUsername.setAttribute("maxlength", "10");
+
+            if(groupKelasSiswa) groupKelasSiswa.style.display = 'block';
+            if(groupMapelGuru) groupMapelGuru.style.display = 'none';
+            if(groupKelasGuru) groupKelasGuru.style.display = 'none';
+            if(inputKelasSiswa) inputKelasSiswa.setAttribute("required", "true");
+        }
+        updateRegUI(role); 
+    }
+
+    boxSiswa.addEventListener('click', () => setRole('siswa'));
+    boxGuru.addEventListener('click', () => setRole('guru'));
+
+    fetchRegStatus();
+
+    registerForm?.addEventListener("submit", async (e) => {
         e.preventDefault(); 
+        const role = roleInput.value;
         
-        // Proteksi Tambahan
-        if (regState.role === 'siswa' && !regState.isSiswaOpen) return alert("Pendaftaran Siswa sedang ditutup oleh Admin!");
-        if (regState.role === 'guru' && !regState.isGuruOpen) return alert("Pendaftaran Guru sedang ditutup oleh Admin!");
+        if (role === 'siswa' && !statusRegSiswa) return alert("Pendaftaran Siswa sedang ditutup!");
+        if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Guru sedang ditutup!");
         
-        const name = document.getElementById("reg-name").value.trim();
+        const name = document.getElementById("reg-name").value;
         const username = document.getElementById("reg-username").value.replace(/\s+/g, '').toUpperCase();
         const password = document.getElementById("reg-password").value;
-        const confirmPassword = document.getElementById("reg-confirm-password").value;
 
-        // Validasi Dasar
-        if(password !== confirmPassword) return alert("Validasi Gagal: Konfirmasi Password tidak cocok!");
-        if(password.length < 6) return alert("Validasi Gagal: Password minimal 6 karakter!");
+        if(password !== document.getElementById("reg-confirm-password").value) {
+            return alert("Password tidak cocok!");
+        }
 
-        // Validasi Format Username (ID)
-        if (regState.role === 'siswa') {
+        if (role === 'siswa') {
             const isNumeric = /^\d+$/.test(username);
-            if (!isNumeric || username.length !== 10) return alert("Pendaftaran Ditolak: NIS harus berupa 10 digit angka tanpa spasi!");
-        } else if (regState.role === 'guru') {
-            const regexGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/; // Contoh Format: E24H6-223
-            if (!regexGuru.test(username)) return alert("Pendaftaran Ditolak: Format ID Guru tidak sesuai standar!\n(Contoh valid: E24H6-223)");
+            if (!isNumeric) return alert("Pendaftaran Ditolak: NIS Siswa harus berupa angka!");
+            if (username.length !== 10) return alert(`Pendaftaran Ditolak: NIS harus berjumlah 10 digit angka!`);
+        } else if (role === 'guru') {
+            const regexGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/;
+            if (!regexGuru.test(username)) return alert("Pendaftaran Ditolak: Format ID Guru tidak sesuai!\nContoh: E24H6-223");
         }
 
-        // Siapkan Payload Data
-        let payload = {
-            nama: name,
-            username: username,
-            createdAt: serverTimestamp()
-        };
+        const originalBtnText = btnSubmit.innerHTML;
+        btnSubmit.innerHTML = "<i class='fas fa-spinner fa-spin'></i> MEMPROSES...";
+        btnSubmit.disabled = true;
 
-        if (regState.role === 'siswa') {
-            payload.role = ['siswa'];
-            payload.kelas = document.getElementById("reg-kelas-siswa").value;
-            if(!payload.kelas) return alert("Silakan pilih kelas terlebih dahulu!");
-            
-        } else if (regState.role === 'guru') {
-            payload.role = ['guru'];
-            const mapelTerpilih = Array.from(document.querySelectorAll('.reg-mapel-cb:checked')).map(cb => cb.value);
-            const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-cb:checked')).map(cb => cb.value);
-            
-            if (mapelTerpilih.length === 0 || kelasTerpilih.length === 0) {
-                return alert("Pendaftaran Ditolak: Silakan centang minimal 1 Mata Pelajaran dan 1 Kelas Ajar!");
-            }
-            payload.mapel = mapelTerpilih;
-            payload.kelas = kelasTerpilih;
-        }
-
-        // Eksekusi Pembuatan Akun
-        UIManager.setLoadingState(true);
-        const dummyEmail = `${username.toLowerCase()}@cbt.smaich.id`;
+        const dummyEmail = `${username}@cbt.smaich.id`;
 
         try {
-            // 1. Buat user di Firebase Auth
+            let payload = {
+                nama: name,
+                username: username,
+                createdAt: serverTimestamp()
+            };
+
+            if (role === 'siswa') {
+                payload.role = ['siswa'];
+                payload.kelas = document.getElementById("reg-kelas-siswa").value;
+            } else if (role === 'guru') {
+                payload.role = ['guru'];
+
+                const mapelTerpilih = Array.from(document.querySelectorAll('.reg-mapel-cb:checked')).map(cb => cb.value);
+                const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-cb:checked')).map(cb => cb.value);
+                
+                if (mapelTerpilih.length === 0 || kelasTerpilih.length === 0) {
+                    btnSubmit.innerHTML = "DAFTAR";
+                    btnSubmit.disabled = false;
+                    return alert("Pendaftaran ditolak: Silakan centang minimal 1 Mata Pelajaran dan 1 Kelas Ajar!");
+                }
+                
+                payload.mapel = mapelTerpilih;
+                payload.kelas = kelasTerpilih;
+            }
+
             const userCred = await createUserWithEmailAndPassword(auth, dummyEmail, password);
             const user = userCred.user;
-            
-            // 2. Update Profil Auth bawaan (untuk keperluan quick-display)
             await updateProfile(user, { displayName: name });
 
-            // 3. Simpan relasi/data lengkap ke Firestore
             await setDoc(doc(db, "users", user.uid), payload);
 
-            alert(`Sukses! Akun ${regState.role.toUpperCase()} atas nama ${name} berhasil dibuat.\n\nINFO: Simpan kredensial Anda baik-baik, sistem akan mengalihkan ke halaman Login.`);
-            window.location.replace("index.html"); // Replace mencegah user back ke form ini
+            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat.\n\nINFO KEAMANAN: Sangat disarankan bagi Anda untuk mengubah password ini nanti secara mandiri, agar hak akses pribadi tetap terjaga dan aman.`);
+            window.location.href = "index.html";
 
         } catch (error) {
-            console.error("Registrasi Error:", error);
-            let msg = "Terjadi kesalahan sistem saat registrasi.";
-            if (error.code === 'auth/email-already-in-use') msg = "Pendaftaran Gagal: ID/Username tersebut sudah terdaftar di sistem!";
-            if (error.code === 'auth/network-request-failed') msg = "Pendaftaran Gagal: Periksa koneksi internet Anda.";
+            let msg = "Terjadi kesalahan.";
+            if (error.code === 'auth/email-already-in-use') msg = "ID/Username sudah terdaftar!";
+            if (error.code === 'auth/weak-password') msg = "Password minimal 6 karakter!";
             
             alert(msg);
-            UIManager.setLoadingState(false);
+            btnSubmit.innerHTML = "DAFTAR";
+            btnSubmit.disabled = false;
         }
     });
 });
