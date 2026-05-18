@@ -86,7 +86,6 @@ const SecurityManager = {
             });
         });
 
-        // Deteksi tab/aplikasi ditinggalkan (Siswa buka Snipping Tool / Screenshot bawaan OS)
         window.addEventListener('blur', () => { 
             if(examState.isExamActive) { document.body.style.filter = "blur(25px)"; }
         });
@@ -94,7 +93,6 @@ const SecurityManager = {
             if(examState.isExamActive) { document.body.style.filter = "none"; this.openFullscreen(); }
         });
 
-        // Blokir Tombol Keyboard & Kosongkan Clipboard jika PrintScreen
         document.addEventListener('keydown', e => {
             const forbidden = ['F12', 'PrintScreen', 'Meta', 'OS', 'ContextMenu'];
             if (forbidden.includes(e.key) || 
@@ -223,7 +221,12 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
         let durasiMenit = 90;
         const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
-        if (timeSnap.exists() && timeSnap.data Meso = timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]) { durasiMenit = timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]; }
+        
+        // TYPO TELAH DIPERBAIKI DI BARIS INI:
+        if (timeSnap.exists() && timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]) { 
+            durasiMenit = timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]; 
+        }
+        
         examState.durasiDetik = durasiMenit * 60;
 
         SecurityManager.startStrictExamMode();
@@ -286,7 +289,6 @@ function tampilkanSoal(idx) {
     const container = document.getElementById('soal-content');
     let htmlContent = `<p style="font-size:1.1rem; line-height:1.6; margin-bottom:20px;">${soal.teksSoal || soal.pertanyaan || ''}</p>`;
 
-    // Render Pilihan Ganda (PG)
     if (!soal.tipe_soal || soal.tipe_soal === 'PG') {
         const opsi = ['A', 'B', 'C', 'D', 'E'];
         htmlContent += `<div style="display:flex; flex-direction:column; gap:12px;">`;
@@ -302,14 +304,12 @@ function tampilkanSoal(idx) {
         });
         htmlContent += `</div>`;
     } else {
-        // Tipe Esai / Jawaban Pendek
         const nilaiInput = examState.jawabanSiswa[soal.id] || '';
         htmlContent += `<textarea id="essay-ans" class="input-text" rows="4" placeholder="Ketik jawaban Anda di sini...">${nilaiInput}</textarea>`;
     }
 
     container.innerHTML = htmlContent;
 
-    // Pasang Event Listener Simpan Otomatis
     if (!soal.tipe_soal || soal.tipe_soal === 'PG') {
         container.querySelectorAll('input[name="answer"]').forEach(radio => {
             radio.onchange = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
@@ -319,16 +319,13 @@ function tampilkanSoal(idx) {
         tx.oninput = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
     }
 
-    // Checkbox Ragu-Ragu
     const cbRagu = document.getElementById('cb-ragu');
     cbRagu.checked = !!examState.raguRagu[soal.id];
     cbRagu.onchange = (e) => { examState.raguRagu[soal.id] = e.target.checked; renderNavigasi(); };
 
-    // Update State Tombol Aktif Navigasi Grid
     renderNavigasi();
 }
 
-// Navigasi Tombol Bawah
 document.getElementById('btn-prev').onclick = () => tampilkanSoal(examState.currentIndex - 1);
 document.getElementById('btn-next').onclick = () => tampilkanSoal(examState.currentIndex + 1);
 
@@ -353,7 +350,6 @@ async function selesaiUjian(isForceSubmit = false) {
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
 
-    // Hitung Nilai Otomatis Khusus Pilihan Ganda (PG)
     let benar = 0; let salah = 0; let skor = 0;
     let totalSoalPG = 0;
 
