@@ -83,7 +83,7 @@
                                         <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali"><i class="fas fa-arrow-left"></i></button>
                                         <h4 style="margin: 0; color: var(--secondary); font-size: 1.1rem;" id="label-mapel-edit">Mata Pelajaran</h4>
                                     </div>
-                                    <button onclick="window.bukaModalTambahSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value)" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-plus"></i> Tambah Soal</button>
+                                    <button onclick="window.bukaModalKelolaSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value)" class="btn-3d" style="margin: 0; background-color: var(--warning);"><i class="fas fa-edit"></i> Edit Soal</button>
                                 </div>
 
                                 <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
@@ -273,12 +273,28 @@
             </div>
         </div>
     </div>
-
+    
+    <div id="modal-kelola-soal" class="modal">
+        <div class="modal-content" style="max-width: 900px; background: #f8fafc;">
+            <span class="close-btn" onclick="document.getElementById('modal-kelola-soal').style.display='none'">&times;</span>
+            <h2 style="margin-bottom: 20px; color: var(--secondary);"><i class="fas fa-edit"></i> Kelola & Edit Soal</h2>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Pilih soal untuk diedit atau dihapus.</p>
+                <button onclick="window.bukaModalTambahSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value)" class="btn-3d" style="background-color: var(--success); margin: 0; padding: 8px 15px; font-size: 0.9rem;"><i class="fas fa-plus"></i> Tambah Soal Baru</button>
+            </div>
+            
+            <div id="list-kelola-soal" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                </div>
+        </div>
+    </div>
+    
     <div id="modal-tambah-soal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
             <span class="close-btn" onclick="document.getElementById('modal-tambah-soal').style.display='none'">&times;</span>
             <h2 id="title-modal-soal" style="margin-bottom: 20px; color: var(--secondary);"><i class="fas fa-file-import"></i> Input Soal</h2>
             <form id="form-tambah-soal">
+                <input type="hidden" id="edit-soal-id">
                 
                 <div style="display: flex; gap: 15px; margin-bottom: 15px;">
                     <div class="input-group" style="flex: 1; margin: 0;">
