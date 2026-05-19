@@ -815,23 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
     };
 
-    // --- DAFTAR SOAL DALAM KELOLA MAPEL (HANYA PREVIEW, BERSATU DALAM 1 KOTAK) ---
-    window.bukaDetailSoal = async (mapel, kelas) => {
-        document.getElementById('view-summary-bank-soal').style.display = 'none'; document.getElementById('view-soal-list').style.display = 'block';
-        document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
-        document.getElementById('filter-soal-mapel').value = mapel; document.getElementById('filter-soal-kelas').value = kelas;
-        
-        let key = `${mapel}_${kelas}`;
-        try {
-            const wSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian")); document.getElementById('input-waktu-ujian').value = (wSnap.exists() && wSnap.data()[key]) ? wSnap.data()[key] : '';
-            const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian")); document.getElementById('input-jadwal-ujian').value = (jSnap.exists() && jSnap.data()[key]) ? jSnap.data()[key] : '';
-            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-            if(tSnap.exists() && tSnap.data()[`token_${key}`]) { let tData = tSnap.data()[`token_${key}`]; document.getElementById('input-token-ujian').value = typeof tData === 'object' ? tData.code : tData; } 
-            else { document.getElementById('input-token-ujian').value = ''; }
-        } catch(e) {}
-        window.loadDaftarSoal(mapel, kelas);
-    };
-
+    // --- DAFTAR SOAL DALAM KELOLA MAPEL (PREVIEW LENGKAP DENGAN OPSI JAWABAN) ---
     window.loadDaftarSoal = async (mapel, kelas) => {
         const container = document.getElementById('list-soal');
         container.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Memuat soal...</div>';
@@ -842,38 +826,80 @@ document.addEventListener('DOMContentLoaded', () => {
             let soalArr = []; snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
             soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); 
 
-            // PERUBAHAN: Membungkus semua pertanyaan dalam 1 kotak utama
             let html = '<div style="background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">';
             
             soalArr.forEach((s, idx) => {
-                // Menambahkan garis bawah (border-bottom) sebagai pemisah antar soal, kecuali soal terakhir
                 let borderBottom = (idx === soalArr.length - 1) ? '' : 'border-bottom: 1px solid var(--border-color);';
                 
                 html += `
-                <div style="padding: 20px; display:flex; justify-content:space-between; align-items:flex-start; ${borderBottom}">
+                <div style="padding: 25px 20px; display:flex; justify-content:space-between; align-items:flex-start; ${borderBottom}">
                     <div style="flex:1; padding-right:15px;">
-                        <span style="font-weight:800; color:var(--primary); display:block; margin-bottom:5px;">Soal ${idx+1} <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">${s.tipe || 'PG'}</span></span>
-                        <div style="color:var(--secondary); line-height:1.6; margin-bottom:10px;">${s.teks_soal}</div>
-                        ${s.media_soal ? `<div style="margin-bottom:10px; font-size:0.8rem; color:var(--info); background:#eff6ff; padding:5px 10px; border-radius:4px; display:inline-block;"><i class="fas fa-paperclip"></i> Terlampir File Media (${s.media_soal.type.toUpperCase()})</div><br>` : ''}
+                        <span style="font-weight:800; color:var(--primary); display:block; margin-bottom:8px;">Soal ${idx+1} <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">${s.tipe || 'PG'}</span></span>
+                        
+                        <div style="color:var(--secondary); line-height:1.6; margin-bottom:15px; font-size: 1.05rem;">${s.teks_soal}</div>
+                        
+                        ${s.media_soal ? `<div style="margin-bottom:15px; font-size:0.85rem; color:var(--info); background:#eff6ff; padding:8px 12px; border-radius:6px; display:inline-block;"><i class="fas fa-paperclip"></i> Terlampir File Media (${s.media_soal.type.toUpperCase()})</div><br>` : ''}
                 `;
                 
-                // Menampilkan Kunci Jawaban
-                if (s.tipe === 'PG' || !s.tipe) { 
-                    html += `<div style="font-size:0.85rem; background:#f0fdf4; color:#166534; padding:5px 10px; border-radius:4px; display:inline-block;">Kunci PG: <b>${s.kunci_jawaban}</b></div>`; 
-                } 
-                else if (s.tipe === 'PGK') { 
-                    html += `<div style="font-size:0.85rem; background:#fef3c7; color:#92400e; padding:5px 10px; border-radius:4px; display:inline-block;">Kunci PGK: <b>${Array.isArray(s.kunci_jawaban) ? s.kunci_jawaban.join(', ') : s.kunci_jawaban}</b></div>`; 
-                } 
-                else if (s.tipe === 'Menjodohkan') {
-                    html += `<div style="font-size:0.85rem; background:#eff6ff; color:#1e40af; padding:10px; border-radius:4px; display:inline-block; width:100%;"><b>Pasangan Menjodohkan:</b><br>`;
-                    if(s.pasangan) { s.pasangan.forEach(p => { html += `- ${p.kiri} <i class="fas fa-arrow-right" style="margin:0 5px; opacity:0.5;"></i> <span style="color:var(--success); font-weight:bold;">${p.kanan}</span><br>`; }); }
+                // Menampilkan Opsi Jawaban (Pilihan Ganda & Pilihan Ganda Kompleks)
+                if (s.tipe === 'PG' || s.tipe === 'PGK' || !s.tipe) {
+                    html += `<div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">`;
+                    const opsiArr = ['A', 'B', 'C', 'D', 'E'];
+                    let adaOpsi = false;
+                    
+                    opsiArr.forEach(o => {
+                        const teksOpsi = (s.opsi && s.opsi[o]) ? s.opsi[o] : '';
+                        if (teksOpsi) {
+                            adaOpsi = true;
+                            // Cek apakah opsi ini adalah jawaban yang benar
+                            let isBenar = false;
+                            if ((s.tipe === 'PG' || !s.tipe) && s.kunci_jawaban === o) isBenar = true;
+                            if (s.tipe === 'PGK' && Array.isArray(s.kunci_jawaban) && s.kunci_jawaban.includes(o)) isBenar = true;
+
+                            // Styling khusus untuk Kunci Jawaban
+                            let bgKunci = isBenar ? 'background: #ecfdf5; border-color: var(--success);' : 'background: #f8fafc; border-color: var(--border-color);';
+                            let textKunci = isBenar ? 'color: var(--success); font-weight: 700;' : 'color: var(--secondary); font-weight: 500;';
+                            let iconKunci = isBenar ? '<i class="fas fa-check-circle" style="color: var(--success); margin-left: auto; font-size: 1.2rem;"></i>' : '';
+
+                            html += `
+                                <div style="display:flex; align-items:center; gap:12px; padding:12px 15px; border:1px solid; border-radius:8px; ${bgKunci} font-size: 0.95rem;">
+                                    <span style="${textKunci} width: 25px; font-weight: bold;">${o}.</span>
+                                    <span style="flex:1; ${textKunci}">${teksOpsi}</span>
+                                    ${iconKunci}
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    // Fallback jika guru lupa mengisi teks opsi tapi sudah menset kunci
+                    if (!adaOpsi) {
+                        html += `<div style="font-size:0.85rem; color:var(--warning);"><i>Teks opsi belum diisi. Kunci Jawaban: <b>${s.kunci_jawaban}</b></i></div>`;
+                    }
                     html += `</div>`;
+                } 
+                
+                // Menampilkan Jawaban Benar Tipe Menjodohkan
+                else if (s.tipe === 'Menjodohkan') {
+                    html += `<div style="font-size:0.9rem; background:#eff6ff; border: 1px solid #bfdbfe; color:#1e40af; padding:15px; border-radius:8px; display:inline-block; width:100%;"><b>Pasangan Jawaban Benar:</b><div style="margin-top: 10px; display:flex; flex-direction:column; gap:8px;">`;
+                    if(s.pasangan) { 
+                        s.pasangan.forEach(p => { 
+                            html += `
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="flex:1; background:white; padding:10px 15px; border-radius:6px; border:1px solid #bfdbfe; color:var(--secondary);">${p.kiri}</span> 
+                                <i class="fas fa-arrow-right" style="color:#60a5fa;"></i> 
+                                <span style="flex:1; background:#dcfce7; padding:10px 15px; border-radius:6px; border:1px solid #bbf7d0; color:var(--success); font-weight:bold;">${p.kanan}</span>
+                            </div>`; 
+                        }); 
+                    }
+                    html += `</div></div>`;
                 }
                 
-                html += `</div></div>`; // Tutup div per-soal
+                // Tipe Essay tidak ada opsi, dikosongkan (Bisa ditambahkan field rubrik jika ada)
+                
+                html += `</div></div>`; 
             });
             
-            html += `</div>`; // Tutup div container kotak utama
+            html += `</div>`; 
             container.innerHTML = html;
         } catch(e) { container.innerHTML = '<div style="text-align:center; color:red; padding: 20px;">Gagal memuat soal</div>'; }
     };
