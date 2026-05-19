@@ -156,6 +156,139 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
+    // FUNGSI BARU: LIHAT DETAIL JAWABAN & EDIT NILAI
+    // ==========================================
+    window.lihatDetailJawaban = async (hasilId) => {
+        const h = allHasilUjian.find(item => item.id === hasilId);
+        if (!h) return;
+
+        // 1. Set Identitas & Nilai di Modal
+        document.getElementById('edit-id-hasil').value = hasilId;
+        document.getElementById('detail-nama-siswa').innerText = `${h.nama} (${h.username || '-'}) | Kelas: ${h.kelas}`;
+        
+        let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : (h.nilai || 0));
+        document.getElementById('edit-nilai-siswa').value = nilaiSiswa;
+
+        const container = document.getElementById('container-jawaban-siswa');
+        container.innerHTML = '<div style="text-align:center; padding: 30px; color:var(--text-muted);"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Memuat data jawaban & menyinkronkan dengan bank soal...</div>';
+        
+        document.getElementById('modal-detail-jawaban').style.display = 'flex';
+
+        try {
+            // 2. Tarik soal asli dari database berdasarkan mapel & kelas
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", h.mataPelajaran), where("kelas", "==", h.kelas));
+            const snap = await getDocs(q);
+            
+            if(snap.empty) { 
+                container.innerHTML = '<div style="text-align:center; color:var(--danger); padding: 20px; background: white; border-radius: 8px;">Soal ujian tidak ditemukan di database. (Mungkin sudah dihapus)</div>'; 
+                return; 
+            }
+
+            let soalArr = []; 
+            snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+            soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); 
+
+            let html = '';
+            const jawabanSiswa = h.jawaban || {}; // Mengambil record jawaban yang tersimpan saat submit
+
+            // 3. Render perbandingan Soal, Jawaban Siswa, dan Kunci Jawaban
+            soalArr.forEach((s, idx) => {
+                const jwbSiswa = jawabanSiswa[s.id] || '(Tidak Menjawab)';
+                const jwbBenar = s.kunci_jawaban || s.jawaban_benar || '-';
+                const tipe = s.tipe || 'PG';
+                
+                let statusWarna = 'var(--text-muted)';
+                let statusIcon = '<i class="fas fa-minus-circle"></i> Tidak Dijawab';
+                
+                if(tipe === 'PG') {
+                    if(jwbSiswa === jwbBenar) {
+                        statusWarna = 'var(--success)'; statusIcon = '<i class="fas fa-check-circle"></i> Benar';
+                    } else if(jwbSiswa !== '(Tidak Menjawab)') {
+                        statusWarna = 'var(--danger)'; statusIcon = '<i class="fas fa-times-circle"></i> Salah';
+                    }
+                } else if (tipe === 'Essay') {
+                    statusWarna = 'var(--warning)'; statusIcon = '<i class="fas fa-pen"></i> Tipe Uraian';
+                }
+
+                html += `
+                <div style="background: white; border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                        <span style="font-weight: 800; font-size: 1rem; color: var(--secondary);">Soal ${idx + 1} <span style="background: #e2e8f0; color: var(--text-muted); padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 5px;">${tipe}</span></span>
+                        <span style="color: ${statusWarna}; font-weight: 700; font-size: 0.85rem; background: ${statusWarna}15; padding: 5px 10px; border-radius: 6px;">${statusIcon}</span>
+                    </div>
+                    
+                    <div style="font-size: 0.95rem; margin-bottom: 15px; color: var(--text-main); line-height: 1.6;">
+                        ${s.teks_soal || s.pertanyaan || ''}
+                    </div>
+                    
+                    <div style="background: #f8fafc; padding: 12px 15px; border-radius: 6px; font-size: 0.9rem; border-left: 4px solid ${statusWarna};">
+                        <div style="margin-bottom: 6px;">
+                            <span style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 2px;">Jawaban Siswa:</span> 
+                            <span style="color: ${jwbSiswa === jwbBenar && tipe === 'PG' ? 'var(--success)' : (tipe === 'PG' ? 'var(--danger)' : 'var(--secondary)')}; font-weight: 700;">${jwbSiswa}</span>
+                        </div>
+                        ${tipe === 'PG' ? `
+                        <div style="margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                            <span style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 2px;">Kunci Jawaban:</span> 
+                            <span style="color: var(--success); font-weight: 700;">${jwbBenar}</span>
+                        </div>` : ''}
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+
+        } catch(e) {
+            console.error(e);
+            container.innerHTML = '<div style="text-align:center; color:var(--danger); font-weight: bold;">Terjadi kesalahan saat memuat detail jawaban.</div>';
+        }
+    };
+
+    // 4. Event Listener untuk Simpan Nilai Baru
+    document.getElementById('btn-simpan-nilai-baru')?.addEventListener('click', async () => {
+        const id = document.getElementById('edit-id-hasil').value;
+        const nilaiBaru = parseFloat(document.getElementById('edit-nilai-siswa').value);
+
+        if (!id || isNaN(nilaiBaru)) {
+            return window.customAlert("Angka nilai tidak valid!", "warning");
+        }
+
+        if (await window.customConfirm(`Apakah Anda yakin ingin mengubah nilai akhir siswa ini secara manual menjadi ${nilaiBaru}?`, "warning", "Konfirmasi Edit Nilai")) {
+            const btn = document.getElementById('btn-simpan-nilai-baru');
+            const origText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+            btn.disabled = true;
+
+            try {
+                // Update ke Firestore
+                await updateDoc(doc(db, "hasil_ujian", id), {
+                    skorPG: nilaiBaru,
+                    skor: nilaiBaru // disimpan di dua key untuk mencegah error backward compatibility
+                });
+                
+                // Update array lokal agar langsung terlihat perubahannya di tabel tanpa refresh page
+                const hIndex = allHasilUjian.findIndex(item => item.id === id);
+                if(hIndex > -1) {
+                    allHasilUjian[hIndex].skorPG = nilaiBaru;
+                    allHasilUjian[hIndex].skor = nilaiBaru;
+                }
+
+                await window.customAlert("Nilai berhasil diperbarui di database!", "success");
+                document.getElementById('modal-detail-jawaban').style.display = 'none';
+                
+                // Refresh baris tabel
+                renderDetailHasil();
+
+            } catch (e) {
+                console.error(e);
+                window.customAlert("Gagal menyimpan nilai baru.", "error");
+            } finally {
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+        }
+    });
+    
+    // ==========================================
     // 3. REGISTRASI & PENGATURAN ADMIN
     // ==========================================
     async function fetchStatusReg() {
@@ -798,7 +931,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${waktu}
                         </td>
                         <td style="text-align:center;">
-                            <button onclick="hapusHasil('${h.id}')" class="btn-3d" style="background:var(--danger); padding:6px 10px; font-size:0.85rem;" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>
+                            <div style="display: flex; gap: 5px; justify-content: center;">
+                                <button onclick="window.lihatDetailJawaban('${h.id}')" class="btn-3d" style="background:var(--info); padding:6px 10px; font-size:0.85rem;" title="Lihat Detail & Edit Nilai"><i class="fas fa-eye"></i></button>
+                                <button onclick="window.hapusHasil('${h.id}')" class="btn-3d" style="background:var(--danger); padding:6px 10px; font-size:0.85rem;" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>
+                            </div>
                         </td>
                     </tr>
                 `;
