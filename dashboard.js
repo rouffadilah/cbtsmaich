@@ -243,8 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 4. Event Listener untuk Simpan Nilai Baru
-    document.getElementById('btn-simpan-nilai-baru')?.addEventListener('click', async () => {
+    // 4. Logika Simpan Nilai Baru
+    window.simpanNilaiBaru = async () => {
         const id = document.getElementById('edit-id-hasil').value;
         const nilaiBaru = parseFloat(document.getElementById('edit-nilai-siswa').value);
 
@@ -262,10 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update ke Firestore
                 await updateDoc(doc(db, "hasil_ujian", id), {
                     skorPG: nilaiBaru,
-                    skor: nilaiBaru // disimpan di dua key untuk mencegah error backward compatibility
+                    skor: nilaiBaru
                 });
                 
-                // Update array lokal agar langsung terlihat perubahannya di tabel tanpa refresh page
+                // Update array lokal
                 const hIndex = allHasilUjian.findIndex(item => item.id === id);
                 if(hIndex > -1) {
                     allHasilUjian[hIndex].skorPG = nilaiBaru;
@@ -275,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 await window.customAlert("Nilai berhasil diperbarui di database!", "success");
                 document.getElementById('modal-detail-jawaban').style.display = 'none';
                 
-                // Refresh baris tabel
                 renderDetailHasil();
 
             } catch (e) {
@@ -286,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.disabled = false;
             }
         }
-    });
+    };
     
     // ==========================================
     // 3. REGISTRASI & PENGATURAN ADMIN
@@ -838,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- FUNGSI BARU: GENERATE & DOWNLOAD EXCEL MASAL / PER MAPEL ---
-    window.downloadExcelHasil = (mapel, kelas) => {
+    window.downloadExcelHasil = (mapel = currentMapelDetail, kelas = currentKelasDetail) => {
         const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === mapel && h.kelas === kelas);
         
         if (dataFiltered.length === 0) {
