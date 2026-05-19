@@ -668,7 +668,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (allowedMapel.includes(h.mataPelajaran)) {
                     let key = `${h.mataPelajaran} - Kelas ${h.kelas}`;
                     if(!summaryMapel[key]) summaryMapel[key] = { mapel: h.mataPelajaran, kelas: h.kelas, count: 0, avg: 0, totalNilai: 0 };
-                    summaryMapel[key].count++; summaryMapel[key].totalNilai += (h.nilai || 0);
+                    summaryMapel[key].count++; 
+                    
+                    // Gunakan properti skorPG sesuai yang dikirim dari attempt.js
+                    let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : (h.nilai || 0));
+                    summaryMapel[key].totalNilai += nilaiSiswa;
                 }
             });
 
@@ -688,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function renderDetailHasil() {
-        const tbody = document.querySelector('#table-hasil-detail tbody');
+        const tbody = document.querySelector('#table-hasil tbody'); // ID diperbaiki
         if (!tbody) return;
 
         // Mencari data yang sesuai dengan mapel dan kelas yang sedang diklik
