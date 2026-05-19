@@ -243,49 +243,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 4. Logika Simpan Nilai Baru
-    window.simpanNilaiBaru = async () => {
-        const id = document.getElementById('edit-id-hasil').value;
-        const nilaiBaru = parseFloat(document.getElementById('edit-nilai-siswa').value);
+    // ==========================================
+    // LOGIKA SIMPAN NILAI MANUAL (DIPERBAIKI)
+    // ==========================================
+    const btnSimpanNilai = document.getElementById('btn-simpan-nilai-baru');
+    if (btnSimpanNilai) {
+        btnSimpanNilai.onclick = async () => {
+            const id = document.getElementById('edit-id-hasil').value;
+            const nilaiBaru = parseFloat(document.getElementById('edit-nilai-siswa').value);
 
-        if (!id || isNaN(nilaiBaru)) {
-            return window.customAlert("Angka nilai tidak valid!", "warning");
-        }
-
-        if (await window.customConfirm(`Apakah Anda yakin ingin mengubah nilai akhir siswa ini secara manual menjadi ${nilaiBaru}?`, "warning", "Konfirmasi Edit Nilai")) {
-            const btn = document.getElementById('btn-simpan-nilai-baru');
-            const origText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-            btn.disabled = true;
-
-            try {
-                // Update ke Firestore
-                await updateDoc(doc(db, "hasil_ujian", id), {
-                    skorPG: nilaiBaru,
-                    skor: nilaiBaru
-                });
-                
-                // Update array lokal
-                const hIndex = allHasilUjian.findIndex(item => item.id === id);
-                if(hIndex > -1) {
-                    allHasilUjian[hIndex].skorPG = nilaiBaru;
-                    allHasilUjian[hIndex].skor = nilaiBaru;
-                }
-
-                await window.customAlert("Nilai berhasil diperbarui di database!", "success");
-                document.getElementById('modal-detail-jawaban').style.display = 'none';
-                
-                renderDetailHasil();
-
-            } catch (e) {
-                console.error(e);
-                window.customAlert("Gagal menyimpan nilai baru.", "error");
-            } finally {
-                btn.innerHTML = origText;
-                btn.disabled = false;
+            if (!id || isNaN(nilaiBaru)) {
+                return window.customAlert("Angka nilai tidak valid!", "warning");
             }
-        }
-    };
+
+            if (await window.customConfirm(`Apakah Anda yakin ingin mengubah nilai akhir siswa ini secara manual menjadi ${nilaiBaru}?`, "warning", "Konfirmasi Edit Nilai")) {
+                
+                const origText = btnSimpanNilai.innerHTML;
+                btnSimpanNilai.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                btnSimpanNilai.disabled = true;
+
+                try {
+                    // 1. Update ke Firestore Database
+                    await updateDoc(doc(db, "hasil_ujian", id), {
+                        skorPG: nilaiBaru,
+                        skor: nilaiBaru
+                    });
+                    
+                    // 2. Update array lokal agar tabel langsung berubah tanpa perlu refresh
+                    const hIndex = allHasilUjian.findIndex(item => item.id === id);
+                    if(hIndex > -1) {
+                        allHasilUjian[hIndex].skorPG = nilaiBaru;
+                        allHasilUjian[hIndex].skor = nilaiBaru;
+                        allHasilUjian[hIndex].nilai = nilaiBaru; // support format lama
+                    }
+
+                    // 3. Tutup Modal & Berikan Notifikasi
+                    document.getElementById('modal-detail-jawaban').style.display = 'none';
+                    await window.customAlert("Nilai berhasil diperbarui di database!", "success");
+                    
+                    // 4. Render ulang tabel
+                    renderDetailHasil();
+
+                } catch (e) {
+                    console.error("Error update nilai:", e);
+                    window.customAlert(`Gagal menyimpan nilai. Error: ${e.message}`, "error");
+                } finally {
+                    btnSimpanNilai.innerHTML = origText;
+                    btnSimpanNilai.disabled = false;
+                }
+            }
+        };
+    }
     
     // ==========================================
     // 3. REGISTRASI & PENGATURAN ADMIN
