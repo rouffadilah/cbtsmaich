@@ -911,6 +911,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const jmlPelanggaran = h.pelanggaran || 0;
                 const status = h.statusPelanggaran || 'NORMAL';
                 
+                // --- LOGIKA WARNA STATUS ---
+                let warnaStatus = '#10b981'; // Default Hijau (NORMAL)
+                if (status === 'DISKUALIFIKASI' || status === 'DIHENTIKAN PAKSA') {
+                    warnaStatus = '#ef4444'; // Merah
+                } else if (status === 'WAKTU HABIS') {
+                    warnaStatus = '#f59e0b'; // Oranye
+                }
+                
                 // Format waktu agar lebih rapi (menangani format string maupun object tanggal)
                 let waktu = '-';
                 if (h.waktuSubmit) {
@@ -932,7 +940,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="badge ${jmlPelanggaran > 0 ? 'badge-danger' : 'badge-success'}">${jmlPelanggaran}</span>
                         </td>
                         <td style="text-align:center;">
-                            <span class="badge ${status === 'NORMAL' ? 'badge-success' : 'badge-danger'}">${status}</span>
+                            <span style="background: ${warnaStatus}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">${status}</span>
                         </td>
                         <td style="text-align:center; font-size:0.85rem;">
                             ${waktu}
