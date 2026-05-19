@@ -193,25 +193,14 @@
 
     <button id="btn-logout" class="btn-3d" style="position: fixed; bottom: 20px; right: 20px; background: var(--danger); width: 50px; height: 50px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5); z-index: 9999;" title="Keluar Aplikasi"><i class="fas fa-power-off" style="font-size: 1.3rem; margin: 0;"></i></button>
 
-    <div id="modal-custom-alert" class="modal">
+    <div id="modal-custom-alert" class="modal" style="z-index: 99999;">
         <div class="modal-content" style="width: 400px; text-align: center;">
-            <i id="alert-icon" class="fas fa-info-circle fa-4x" style="color: var(--info); margin-bottom: 15px;"></i>
-            <h3 id="alert-title" style="margin-bottom: 10px;">Informasi</h3>
-            <p id="alert-message" style="margin-bottom: 25px;">Pesan</p>
-            <button id="btn-alert-ok" class="btn-3d" style="width: 100%; margin: 0; background-color: var(--info);">OK</button>
-        </div>
+            </div>
     </div>
 
-    <div id="modal-custom-confirm" class="modal">
+    <div id="modal-custom-confirm" class="modal" style="z-index: 99999;">
         <div class="modal-content" style="width: 400px; text-align: center;">
-            <i id="confirm-icon" class="fas fa-question-circle fa-4x" style="color: var(--warning); margin-bottom: 15px;"></i>
-            <h3 id="confirm-title" style="margin-bottom: 10px;">Konfirmasi</h3>
-            <p id="confirm-message" style="margin-bottom: 25px;">Apakah Anda yakin?</p>
-            <div style="display: flex; gap: 10px;">
-                <button id="btn-confirm-cancel" class="btn-3d btn-secondary" style="flex: 1; margin: 0;">Batal</button>
-                <button id="btn-confirm-ok" class="btn-3d" style="flex: 1; margin: 0; background-color: var(--warning);">Ya</button>
             </div>
-        </div>
     </div>
 
     <div id="modal-edit-akun" class="modal">
