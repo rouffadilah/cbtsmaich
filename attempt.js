@@ -141,7 +141,7 @@ const SecurityManager = {
         if (examState.pelanggaran >= examState.maxPelanggaran) {
             examState.isExamActive = false;
             await window.customAlert(`Ujian dihentikan karena mencapai batas maksimal ${examState.maxPelanggaran} kali pelanggaran.\nAlasan: ${alasan}`, 'DISKUALIFIKASI');
-            selesaiUjian(true);
+            selesaiUjian("DISKUALIFIKASI");
         } else {
             window.customAlert(`${alasan}\nPeringatan ${examState.pelanggaran}/${examState.maxPelanggaran}! Jika mencapai batas, ujian otomatis selesai.`, 'PERINGATAN KEAMANAN');
         }
@@ -260,7 +260,7 @@ function jalankanTimer() {
     examState.timerInterval = setInterval(() => {
         if (examState.durasiDetik <= 0) {
             clearInterval(examState.timerInterval);
-            window.customAlert("Waktu ujian telah habis!", "Selesai").then(() => selesaiUjian(true));
+            window.customAlert("Waktu ujian telah habis!", "Selesai").then(() => selesaiUjian("WAKTU HABIS"));
             return;
         }
         examState.durasiDetik--;
@@ -361,11 +361,11 @@ document.getElementById('btn-selesai').onclick = async () => {
     if(adaRagu) infoMsg += `\n\n⚠️ PERINGATAN: Masih ada soal yang ditandai RAGU-RAGU!`;
 
     if (await window.customConfirm(`${infoMsg}\n\nApakah Anda yakin ingin menyelesaikan ujian sekarang?`, "Selesai Ujian")) {
-        selesaiUjian(false);
+        selesaiUjian("NORMAL");
     }
 };
 
-async function selesaiUjian(isForceSubmit = false) {
+async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
@@ -394,7 +394,7 @@ async function selesaiUjian(isForceSubmit = false) {
         pelanggaran: examState.pelanggaran,
         skorPG: skor,
         waktuSubmit: new Date().toISOString(),
-        statusPelanggaran: isForceSubmit ? "DIHENTIKAN PAKSA" : "NORMAL"
+        statusPelanggaran: statusAkhir
     };
 
     try {
