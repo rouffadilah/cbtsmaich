@@ -688,12 +688,60 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function renderDetailHasil() {
-        const tbody = document.querySelector('#table-hasil tbody'); if(!tbody) return;
-        let filteredHasil = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail && h.kelas === currentKelasDetail);
-        if(filteredHasil.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Tidak ada data.</td></tr>'; return; }
-        let html = '';
-        filteredHasil.forEach(h => { html += `<tr><td>${h.namaSiswa}</td><td>${h.benar || h.jumlahBenar || 0} / ${h.totalSoal}</td><td style="font-weight:bold; color:var(--success);">${h.nilai}</td><td style="text-align:center;"><button onclick="window.hapusHasil('${h.id}')" class="btn-3d" style="background:var(--danger); padding:5px 10px; font-size:0.8rem;"><i class="fas fa-trash"></i></button></td></tr>`; });
-        tbody.innerHTML = html;
+        const tbody = document.querySelector('#table-hasil-detail tbody');
+        if (!tbody) return;
+
+        // Mencari data yang sesuai dengan mapel dan kelas yang sedang diklik
+        const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail && h.kelas === currentKelasDetail);
+        
+        if (dataFiltered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Belum ada data hasil ujian untuk mapel dan kelas ini.</td></tr>';
+        } else {
+            let html = '';
+            dataFiltered.forEach((h, index) => {
+                
+                // --- PENGAMAN VARIABEL (Mencegah teks 'undefined' muncul) ---
+                const namaSiswa = h.nama || "Nama Tidak Terdata";
+                const nisSiswa = h.username || h.uid || "-";
+                // Prioritaskan skorPG (format baru), jika tidak ada pakai skor (format lama), jika kosong berikan nilai 0
+                const nilai = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
+                const jmlPelanggaran = h.pelanggaran || 0;
+                const status = h.statusPelanggaran || 'NORMAL';
+                
+                // Format waktu agar lebih rapi (menangani format string maupun object tanggal)
+                let waktu = '-';
+                if (h.waktuSubmit) {
+                    const dateObj = new Date(h.waktuSubmit);
+                    // Cek apakah tanggal valid
+                    if (!isNaN(dateObj)) {
+                        waktu = dateObj.toLocaleString('id-ID', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+                    } else {
+                        waktu = h.waktuSubmit; // Tampilkan teks aslinya jika bukan format Date standar
+                    }
+                }
+                
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${namaSiswa} <br><small style="color:var(--text-muted)">${nisSiswa}</small></td>
+                        <td style="text-align:center; font-weight:bold; font-size:1.1rem;">${nilai}</td>
+                        <td style="text-align:center;">
+                            <span class="badge ${jmlPelanggaran > 0 ? 'badge-danger' : 'badge-success'}">${jmlPelanggaran}</span>
+                        </td>
+                        <td style="text-align:center;">
+                            <span class="badge ${status === 'NORMAL' ? 'badge-success' : 'badge-danger'}">${status}</span>
+                        </td>
+                        <td style="text-align:center; font-size:0.85rem;">
+                            ${waktu}
+                        </td>
+                        <td style="text-align:center;">
+                            <button onclick="hapusHasil('${h.id}')" class="btn-3d" style="background:var(--danger); padding:6px 10px; font-size:0.85rem;" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
     }
 
     window.hapusHasil = async (id) => {
