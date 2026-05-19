@@ -609,17 +609,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const val = e.target.value;
         const pgOpts = document.getElementById('pg-options');
         const menjodohkanOpts = document.getElementById('menjodohkan-options');
+        const essayOpts = document.getElementById('essay-options'); // BLOCK UNTUK ESSAY
         const kunciPg = document.querySelectorAll('.kunci-pg-container');
         const kunciPgk = document.querySelectorAll('.kunci-pgk-container');
 
         if (val === 'PG' || val === 'PGK') {
-            pgOpts.style.display = 'block'; menjodohkanOpts.style.display = 'none';
+            pgOpts.style.display = 'block'; menjodohkanOpts.style.display = 'none'; if(essayOpts) essayOpts.style.display = 'none';
             kunciPg.forEach(c => c.style.display = (val === 'PG') ? 'inline-block' : 'none');
             kunciPgk.forEach(c => c.style.display = (val === 'PGK') ? 'inline-block' : 'none');
         } else if (val === 'Menjodohkan') {
-            pgOpts.style.display = 'none'; menjodohkanOpts.style.display = 'block';
+            pgOpts.style.display = 'none'; menjodohkanOpts.style.display = 'block'; if(essayOpts) essayOpts.style.display = 'none';
         } else { // Essay
-            pgOpts.style.display = 'none'; menjodohkanOpts.style.display = 'none';
+            pgOpts.style.display = 'none'; menjodohkanOpts.style.display = 'none'; if(essayOpts) essayOpts.style.display = 'block';
         }
     });
 
@@ -697,6 +698,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (pasangan.length === 0) throw new Error("Masukkan minimal satu pasangan!");
                 payload.pasangan = pasangan;
+            } else if (tipe === 'Essay') {
+                // TANGKAP INPUTAN REFERENSI ESSAY
+                const kunciEssay = document.getElementById('soal-kunci-essay').value.trim();
+                if (kunciEssay) {
+                    payload.kunci_jawaban = kunciEssay;
+                }
             }
 
             const editId = document.getElementById('edit-soal-id').value;
@@ -836,6 +843,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     container.appendChild(row);
                 });
             }
+        } else if (soal.tipe === 'Essay') {
+            // LOAD DATA REFERENSI ESSAY JIKA ADA
+            const fieldEssay = document.getElementById('soal-kunci-essay');
+            if (fieldEssay) {
+                fieldEssay.value = soal.kunci_jawaban || '';
+            }
         }
         
         document.getElementById('title-modal-soal').innerHTML = '<i class="fas fa-edit"></i> Update Soal';
@@ -937,7 +950,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     html += `</div></div>`;
                 }
                 
-                // Tipe Essay tidak ada opsi, dikosongkan (Bisa ditambahkan field rubrik jika ada)
+                // Tipe Essay - MENGELUARKAN REFERENSI JAWABAN YANG SUDAH DISIMPAN GURU
+                else if (s.tipe === 'Essay') {
+                    if (s.kunci_jawaban) {
+                        html += `<div style="font-size:0.9rem; background:#f0fdf4; border: 1px solid #bbf7d0; color:#166534; padding:15px; border-radius:8px; display:inline-block; width:100%; margin-top: 10px;"><b>Referensi Jawaban (Acuan Sistem Penilaian):</b><div style="margin-top: 8px; color: #15803d; line-height: 1.5;">${s.kunci_jawaban}</div></div>`;
+                    } else {
+                        html += `<div style="font-size:0.85rem; color:var(--warning); margin-top: 10px;"><i>Referensi jawaban essay belum diisi. Penilaian sistem otomatis tidak akan optimal.</i></div>`;
+                    }
+                }
                 
                 html += `</div></div>`; 
             });
