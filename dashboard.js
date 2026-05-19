@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 4. DATA MASTER (MAPEL & KELAS)
+    // 4. DATA MASTER (MAPEL & KELAS) - GRID BARU
     // ==========================================
     let editMasterMode = false; 
 
@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editMasterMode = !editMasterMode;
         const btn = document.getElementById('btn-edit-master-mode');
         if (editMasterMode) { btn.innerHTML = '<i class="fas fa-check"></i> Selesai Edit'; btn.classList.remove('btn-secondary'); btn.style.backgroundColor = 'var(--success)'; } 
-        else { btn.innerHTML = '<i class="fas fa-edit"></i> Edit Data Master'; btn.classList.add('btn-secondary'); btn.style.backgroundColor = ''; }
+        else { btn.innerHTML = '<i class="fas fa-edit"></i> Mode Hapus Data'; btn.classList.add('btn-secondary'); btn.style.backgroundColor = ''; }
         renderTableMaster();
     });
 
@@ -365,21 +365,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function renderTableMaster() {
-        const tbody = document.getElementById('tbody-master-combined');
-        if (!tbody) return;
-        let maxLen = Math.max(listMapel.length, listKelas.length);
-        if (maxLen === 0) { tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; padding: 20px;">Belum ada data master.</td></tr>`; return; }
+        const containerMapel = document.getElementById('list-master-mapel');
+        const containerKelas = document.getElementById('list-master-kelas');
+        const countMapel = document.getElementById('count-mapel');
+        const countKelas = document.getElementById('count-kelas');
+        
+        if (!containerMapel || !containerKelas) return;
 
-        let html = '';
-        for (let i = 0; i < maxLen; i++) {
-            let m = listMapel[i]; let k = listKelas[i];
-            let delMapel = (m && editMasterMode) ? `<button onclick="window.hapusMasterItem('mapel', '${m}')" style="color:var(--danger); background:none; border:none; cursor:pointer; margin-left:10px;"><i class="fas fa-times-circle"></i></button>` : '';
-            let delKelas = (k && editMasterMode) ? `<button onclick="window.hapusMasterItem('kelas', '${k}')" style="color:var(--danger); background:none; border:none; cursor:pointer; margin-left:10px;"><i class="fas fa-times-circle"></i></button>` : '';
-            let cellMapel = m ? `<td style="font-weight:600; display:flex; justify-content:space-between;">${m} ${delMapel}</td>` : `<td>-</td>`;
-            let cellKelas = k ? `<td style="font-weight:600; display:flex; justify-content:space-between;">${k} ${delKelas}</td>` : `<td>-</td>`;
-            html += `<tr>${cellMapel}${cellKelas}</tr>`;
+        // Update indikator jumlah data
+        countMapel.innerText = listMapel.length;
+        countKelas.innerText = listKelas.length;
+
+        // 1. Render List Mata Pelajaran
+        if (listMapel.length === 0) {
+            containerMapel.innerHTML = `<div style="text-align:center; padding: 30px 20px; color: var(--text-muted); font-size: 0.9rem; border: 1px dashed #cbd5e1; border-radius: 8px;">Belum ada Mata Pelajaran</div>`;
+        } else {
+            let htmlMapel = '';
+            listMapel.forEach(m => {
+                let btnDel = editMasterMode ? `<button onclick="window.hapusMasterItem('mapel', '${m}')" style="color:var(--danger); background:#fee2e2; border:none; width: 30px; height: 30px; border-radius: 8px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s;" title="Hapus Mapel"><i class="fas fa-trash-alt"></i></button>` : '';
+                htmlMapel += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 15px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                    <span style="font-weight: 600; color: var(--secondary); font-size: 0.95rem;">${m}</span>
+                    ${btnDel}
+                </div>`;
+            });
+            containerMapel.innerHTML = htmlMapel;
         }
-        tbody.innerHTML = html;
+
+        // 2. Render List Kelas
+        if (listKelas.length === 0) {
+            containerKelas.innerHTML = `<div style="text-align:center; padding: 30px 20px; color: var(--text-muted); font-size: 0.9rem; border: 1px dashed #cbd5e1; border-radius: 8px;">Belum ada Kelas</div>`;
+        } else {
+            let htmlKelas = '';
+            listKelas.forEach(k => {
+                let btnDel = editMasterMode ? `<button onclick="window.hapusMasterItem('kelas', '${k}')" style="color:var(--danger); background:#fee2e2; border:none; width: 30px; height: 30px; border-radius: 8px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s;" title="Hapus Kelas"><i class="fas fa-trash-alt"></i></button>` : '';
+                htmlKelas += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 15px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                    <span style="font-weight: 600; color: var(--secondary); font-size: 0.95rem;">${k}</span>
+                    ${btnDel}
+                </div>`;
+            });
+            containerKelas.innerHTML = htmlKelas;
+        }
     }
 
     window.hapusMasterItem = async (type, val) => {
