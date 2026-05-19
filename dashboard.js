@@ -844,8 +844,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.hash = 'section-hasil-detail'; renderDetailHasil();
     };
 
-    // --- FUNGSI BARU: GENERATE & DOWNLOAD EXCEL MASAL / PER MAPEL ---
-    window.downloadExcelHasil = (mapel = currentMapelDetail, kelas = currentKelasDetail) => {
+    // =================================================================
+    // FUNGSI BARU: DOWNLOAD EXCEL LENGKAP (REKAP NILAI + DATA SOAL & JAWABAN)
+    // =================================================================
+    window.downloadExcelHasil = async (mapel = currentMapelDetail, kelas = currentKelasDetail) => {
         const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === mapel && h.kelas === kelas);
         
         if (dataFiltered.length === 0) {
@@ -853,43 +855,106 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Mapping struktur data agar rapi saat dibuka di Microsoft Excel
-        const rowsForExcel = dataFiltered.map((h, index) => {
-            let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
-            let waktu = '-';
-            if (h.waktuSubmit) {
-                const dObj = new Date(h.waktuSubmit);
-                waktu = !isNaN(dObj) ? dObj.toLocaleString('id-ID') : h.waktuSubmit;
+        // Efek Loading: Ubah teks tombol sementara agar user tahu proses sedang berjalan
+        const btn = document.querySelector(`button[onclick="window.downloadExcelHasil()"]`) || document.querySelector(`button[onclick*="downloadExcelHasil('${mapel}'"]`);
+        let origText = "";
+        if (btn) {
+            origText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghubungkan Bank Soal...';
+            btn.disabled = true;
+        }
+
+        try {
+            // 1. Tarik data bank soal asli dari Firestore untuk mendapatkan teks pertanyaan & kunci
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
+            const soalSnap = await getDocs(q);
+            let soalArr = [];
+            soalSnap.forEach(doc => soalArr.push({ id: doc.id, ...doc.data() }));
+            soalArr.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
+
+            // 2. Mapping struktur baris untuk Excel
+            const rowsForExcel = dataFiltered.map((h, index) => {
+                let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
+                let waktu = '-';
+                if (h.waktuSubmit) {
+                    const dObj = new Date(h.waktuSubmit);
+                    waktu = !isNaN(dObj) ? dObj.toLocaleString('id-ID') : h.waktuSubmit;
+                }
+
+                // Masukkan data informasi utama siswa
+                let rowData = {
+                    "No": index + 1,
+                    "Nama Siswa": h.nama || "Nama Tidak Terdata",
+                    "NIS / Username": h.username || h.uid || "-",
+                    "Mata Pelajaran": h.mataPelajaran,
+                    "Kelas": h.kelas,
+                    "Nilai Akhir": nilaiSiswa,
+                    "Jumlah Pelanggaran": h.pelanggaran || 0,
+                    "Status Ujian": h.statusPelanggaran || 'NORMAL',
+                    "Waktu Submit": waktu
+                };
+
+                // 3. Tambahkan jawaban siswa secara dinamis ke kolom sebelah kanan per soal
+                soalArr.forEach((s, idx) => {
+                    const tipe = s.tipe || 'PG';
+                    const jawabanSiswa = h.jawaban || {};
+                    const jwbSiswa = jawabanSiswa[s.id] || '-';
+                    const jwbBenar = s.kunci_jawaban || s.jawaban_benar || '-';
+
+                    // Bersihkan teks soal dari tag HTML (seperti <p> atau <b>) dan batasi teks agar kolom tidak kepanjangan
+                    let teksBersih = (s.teks_soal || s.pertanyaan || '').replace(/<[^>]*>/g, '');
+                    if (teksBersih.length > 45) teksBersih = teksBersih.substring(0, 45) + '...';
+                    
+                    // Buat nama header kolom: "Soal 1 (PG): Teks Pertanyaan..."
+                    const keyKolomSoal = `Soal ${idx + 1} (${tipe}): ${teksBersih}`;
+                    
+                    if (tipe === 'PG' || tipe === 'PGK') {
+                        // Cek kebenaran otomatis (mendukung pilihan ganda kompleks berbentuk array)
+                        const isBenar = Array.isArray(jwbBenar) 
+                            ? (Array.isArray(jwbSiswa) && jwbSiswa.sort().join(',') === jwbBenar.sort().join(','))
+                            : (jwbSiswa === jwbBenar);
+                        
+                        // Format Cell: "A [Kunci: A] (BENAR)" atau "B [Kunci: A] (SALAH)"
+                        rowData[keyKolomSoal] = `${jwbSiswa} [Kunci: ${Array.isArray(jwbBenar) ? jwbBenar.join('-') : jwbBenar}] (${isBenar ? 'BENAR' : 'SALAH'})`;
+                    } else {
+                        // Jika Essay / Uraian / Menjodohkan, langsung tampilkan jawaban teks dari siswa
+                        rowData[keyKolomSoal] = jwbSiswa;
+                    }
+                });
+
+                return rowData;
+            });
+
+            // 4. Proses kompilasi data menjadi lembar kerja Excel (SheetJS)
+            const worksheet = XLSX.utils.json_to_sheet(rowsForExcel);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Analisis Hasil Ujian");
+
+            // 5. Atur lebar kolom spreadsheet agar rapi dan tidak terpotong text-nya
+            let colsConfig = [
+                {wch: 5}, {wch: 25}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 12}, {wch: 18}, {wch: 15}, {wch: 20}
+            ];
+            // Berikan lebar ekstra (lebar 45) khusus untuk kolom-kolom soal agar teks pertanyaan terbaca
+            soalArr.forEach(() => {
+                colsConfig.push({wch: 45});
+            });
+            worksheet['!cols'] = colsConfig;
+
+            // 6. Trigger unduhan file langsung ke perangkat browser
+            const namaFileClean = `Hasil_Lengkap_CBT_${mapel}_${kelas}`.replace(/[^a-zA-Z0-9]/g, "_");
+            XLSX.writeFile(workbook, `${namaFileClean}.xlsx`);
+
+        } catch (e) {
+            console.error("Gagal generate excel lengkap:", e);
+            window.customAlert("Terjadi kesalahan sistem saat mencoba merekap data jawaban ke excel.", "error");
+        } finally {
+            // Kembalikan status tombol seperti semula
+            if (btn) {
+                btn.innerHTML = origText;
+                btn.disabled = false;
             }
-
-            return {
-                "No": index + 1,
-                "Nama Siswa": h.nama || "Nama Tidak Terdata",
-                "NIS / Username": h.username || h.uid || "-",
-                "Mata Pelajaran": h.mataPelajaran,
-                "Kelas": h.kelas,
-                "Nilai Akhir": nilaiSiswa,
-                "Jumlah Pelanggaran": h.pelanggaran || 0,
-                "Status Ujian": h.statusPelanggaran || 'NORMAL',
-                "Waktu Submit": waktu
-            };
-        });
-
-        // Proses pembuatan spreadsheet via SheetJS
-        const worksheet = XLSX.utils.json_to_sheet(rowsForExcel);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil Ujian");
-
-        // Autowidth kolom excel secara berkala agar tidak terpotong text-nya
-        worksheet['!cols'] = [
-            {wch: 5}, {wch: 25}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 12}, {wch: 18}, {wch: 15}, {wch: 20}
-        ];
-
-        // Trigger download file ke device browser komputer / smartphone
-        const namaFileClean = `Hasil_CBT_${mapel}_${kelas}`.replace(/[^a-zA-Z0-9]/g, "_");
-        XLSX.writeFile(workbook, `${namaFileClean}.xlsx`);
+        }
     };
-
     function renderDetailHasil() {
         const tbody = document.querySelector('#table-hasil tbody'); // ID diperbaiki
         if (!tbody) return;
