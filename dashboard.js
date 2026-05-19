@@ -672,13 +672,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 payload.pasangan = pasangan;
             }
 
-            await addDoc(collection(db, "bank_soal"), payload);
-            document.getElementById('form-tambah-soal').reset();
-            document.getElementById('modal-tambah-soal').style.display = 'none';
-            window.customAlert("Soal dan Media berhasil ditambahkan!", "success");
+            const editId = document.getElementById('edit-soal-id').value;
+            
+            if (editId) {
+                // Proses Edit/Update
+                await updateDoc(doc(db, "bank_soal", editId), payload);
+                window.customAlert("Soal berhasil diperbarui!", "success");
+            } else {
+                // Proses Tambah Baru
+                await addDoc(collection(db, "bank_soal"), payload);
+                window.customAlert("Soal dan Media berhasil ditambahkan!", "success");
+            }
 
+            document.getElementById('form-tambah-soal').reset();
+            document.getElementById('edit-soal-id').value = '';
+            document.getElementById('modal-tambah-soal').style.display = 'none';
+
+            // Refresh tampilan secara dinamis
+            const curMapel = document.getElementById('filter-soal-mapel').value;
+            const curKelas = document.getElementById('filter-soal-kelas').value;
+            
             if(document.getElementById('view-soal-list').style.display === 'block') {
-                window.loadDaftarSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value);
+                window.loadDaftarSoal(curMapel, curKelas);
+            }
+            if(document.getElementById('modal-kelola-soal').style.display === 'flex') {
+                window.bukaModalKelolaSoal(curMapel, curKelas); // Refresh tabel popup
             }
             loadBankSoalSummary();
 
@@ -688,6 +706,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- BUKA MODAL SOAL (INPUT BARU vs TAMBAH DI MAPEL TERSEBUT) ---
     window.bukaModalTambahSoal = (mapelParams = "", kelasParams = "") => {
+        document.getElementById('edit-soal-id').value = '';
+        document.getElementById('form-tambah-soal').reset();
+        
         const mapelSelect = document.getElementById('soal-mapel');
         const kelasSelect = document.getElementById('soal-kelas');
         const modalTitle = document.getElementById('title-modal-soal');
@@ -715,7 +736,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { window.bukaModalTambahSoal(); });
 
-    // --- DAFTAR SOAL DALAM KELOLA MAPEL ---
+    // --- MODAL KELOLA SOAL (EDIT/HAPUS MASAL) ---
+    window.bukaModalKelolaSoal = async (mapel, kelas) => {
+        document.getElementById('modal-kelola-soal').style.display = 'flex';
+        const container = document.getElementById('list-kelola-soal');
+        container.innerHTML = '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Memuat data...</div>';
+        
+        try {
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
+            const snap = await getDocs(q);
+            if(snap.empty) { container.innerHTML = '<div style="text-align:center; padding: 20px; background: white; border-radius: 8px;">Belum ada soal. Silakan tambah soal baru.</div>'; return; }
+            
+            let soalArr = []; snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+            soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); 
+            window.tempDataSoalKelola = soalArr; // Simpan ke memory untuk dipanggil saat edit
+
+            let html = '';
+            soalArr.forEach((s, idx) => {
+                let teksPendek = (s.teks_soal || '').replace(/<[^>]*>/g, '');
+                if (teksPendek.length > 80) teksPendek = teksPendek.substring(0, 80) + '...';
+                
+                html += `
+                <div style="background: white; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex: 1; padding-right: 15px;">
+                        <span style="font-weight:bold; color:var(--primary);">Soal ${idx+1} <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${s.tipe || 'PG'}</span></span>
+                        <p style="margin:5px 0 0 0; font-size:0.9rem; color:var(--secondary);">${teksPendek}</p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="window.editDataSoal('${s.id}')" class="btn-3d" style="background:var(--warning); padding:8px 12px; margin:0;" title="Edit Soal"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.hapusSoal('${s.id}')" class="btn-3d" style="background:var(--danger); padding:8px 12px; margin:0;" title="Hapus Soal"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        } catch(e) { container.innerHTML = '<div style="text-align:center; color:red;">Gagal memuat soal</div>'; }
+    };
+
+    window.editDataSoal = (id) => {
+        const soal = window.tempDataSoalKelola.find(s => s.id === id);
+        if (!soal) return;
+        
+        document.getElementById('edit-soal-id').value = id;
+        document.getElementById('soal-mapel').value = soal.mataPelajaran;
+        document.getElementById('soal-kelas').value = soal.kelas;
+        document.getElementById('soal-tipe').value = soal.tipe || 'PG';
+        document.getElementById('soal-teks').value = soal.teks_soal || '';
+        
+        // Trigger perubahan tipe soal
+        document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
+
+        // Load data opsi berdasarkan tipe
+        if (soal.tipe === 'PG' || soal.tipe === 'PGK') {
+            ['A', 'B', 'C', 'D', 'E'].forEach(k => {
+                document.getElementById(`soal-opsi-${k}`).value = (soal.opsi && soal.opsi[k]) ? soal.opsi[k] : '';
+            });
+            if (soal.tipe === 'PG') {
+                const radio = document.querySelector(`input[name="kunci-pg"][value="${soal.kunci_jawaban}"]`);
+                if (radio) radio.checked = true;
+            } else {
+                document.querySelectorAll('.kunci-pgk').forEach(cb => {
+                    cb.checked = Array.isArray(soal.kunci_jawaban) && soal.kunci_jawaban.includes(cb.value);
+                });
+            }
+        } else if (soal.tipe === 'Menjodohkan') {
+            const container = document.getElementById('pasangan-container');
+            container.innerHTML = '';
+            if (soal.pasangan) {
+                soal.pasangan.forEach(p => {
+                    const row = document.createElement('div');
+                    row.className = 'pasangan-item'; row.style.cssText = 'display:flex; gap:10px; margin-bottom:10px;';
+                    row.innerHTML = `<input type="text" class="input-text m-kiri" value="${p.kiri}" required><input type="text" class="input-text m-kanan" value="${p.kanan}" required><button type="button" class="btn-hapus-pasangan" style="background:var(--danger); color:white; border:none; padding:0 15px; border-radius:8px; cursor:pointer;"><i class="fas fa-trash"></i></button>`;
+                    container.appendChild(row);
+                });
+            }
+        }
+        
+        document.getElementById('title-modal-soal').innerHTML = '<i class="fas fa-edit"></i> Update Soal';
+        document.getElementById('modal-tambah-soal').style.display = 'flex';
+    };
+
+    // --- DAFTAR SOAL DALAM KELOLA MAPEL (HANYA PREVIEW, TANPA TOMBOL HAPUS) ---
     window.bukaDetailSoal = async (mapel, kelas) => {
         document.getElementById('view-summary-bank-soal').style.display = 'none'; document.getElementById('view-soal-list').style.display = 'block';
         document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
@@ -758,7 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(s.pasangan) { s.pasangan.forEach(p => { html += `- ${p.kiri} <i class="fas fa-arrow-right" style="margin:0 5px; opacity:0.5;"></i> <span style="color:var(--success); font-weight:bold;">${p.kanan}</span><br>`; }); }
                     html += `</div>`;
                 }
-                html += `</div><button onclick="window.hapusSoal('${s.id}')" class="btn-3d" style="background:var(--danger); padding:8px 12px; font-size:0.85rem; margin:0;" title="Hapus Soal"><i class="fas fa-trash-alt"></i></button></div>`;
+                html += `</div></div>`; // Ditutup tanpa tombol hapus di sini
             });
             container.innerHTML = html;
         } catch(e) { container.innerHTML = '<div style="text-align:center; color:red; padding: 20px;">Gagal memuat soal</div>'; }
@@ -766,7 +866,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.hapusSoal = async (id) => {
         if(await window.customConfirm("Apakah Anda yakin ingin menghapus soal ini beserta medianya?", "danger")) {
-            try { await deleteDoc(doc(db, "bank_soal", id)); window.loadDaftarSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value); loadBankSoalSummary(); } 
+            try { 
+                await deleteDoc(doc(db, "bank_soal", id)); 
+                const curMapel = document.getElementById('filter-soal-mapel').value;
+                const curKelas = document.getElementById('filter-soal-kelas').value;
+                
+                window.loadDaftarSoal(curMapel, curKelas); 
+                loadBankSoalSummary(); 
+                
+                // Refresh modal kelola soal jika sedang terbuka
+                if (document.getElementById('modal-kelola-soal').style.display === 'flex') {
+                    window.bukaModalKelolaSoal(curMapel, curKelas); 
+                }
+            } 
             catch(e) { window.customAlert("Gagal menghapus soal", "error"); }
         }
     };
