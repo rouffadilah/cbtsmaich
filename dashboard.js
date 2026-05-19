@@ -816,6 +816,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- DAFTAR SOAL DALAM KELOLA MAPEL (PREVIEW LENGKAP DENGAN OPSI JAWABAN) ---
+    window.bukaDetailSoal = async (mapel, kelas) => {
+        document.getElementById('view-summary-bank-soal').style.display = 'none'; document.getElementById('view-soal-list').style.display = 'block';
+        document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
+        document.getElementById('filter-soal-mapel').value = mapel; document.getElementById('filter-soal-kelas').value = kelas;
+        
+        let key = `${mapel}_${kelas}`;
+        try {
+            const wSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian")); document.getElementById('input-waktu-ujian').value = (wSnap.exists() && wSnap.data()[key]) ? wSnap.data()[key] : '';
+            const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian")); document.getElementById('input-jadwal-ujian').value = (jSnap.exists() && jSnap.data()[key]) ? jSnap.data()[key] : '';
+            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            if(tSnap.exists() && tSnap.data()[`token_${key}`]) { let tData = tSnap.data()[`token_${key}`]; document.getElementById('input-token-ujian').value = typeof tData === 'object' ? tData.code : tData; } 
+            else { document.getElementById('input-token-ujian').value = ''; }
+        } catch(e) {}
+        window.loadDaftarSoal(mapel, kelas);
+    };
+
     window.loadDaftarSoal = async (mapel, kelas) => {
         const container = document.getElementById('list-soal');
         container.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Memuat soal...</div>';
