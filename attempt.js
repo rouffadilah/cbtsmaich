@@ -120,8 +120,6 @@ const SecurityManager = {
         });
     },
     startStrictExamMode: function() {
-        // HAPUS pemanggilan this.openFullscreen() di sini karena akan bentrok dengan proses Async Firebase (User Gesture error)
-        
         document.addEventListener('visibilitychange', () => { 
             if (document.visibilityState === 'hidden' && examState.isExamActive) {
                 document.body.style.filter = "blur(25px)";
@@ -150,16 +148,18 @@ const SecurityManager = {
     },
     openFullscreen: function() {
         const el = document.documentElement;
-        // Tambahkan .catch() agar error tidak muncul merah di console jika browser memblokirnya
         if (el.requestFullscreen) {
-            el.requestFullscreen().catch(err => console.log("Info: Menunggu klik pengguna untuk fullscreen."));
-        }
-        else if (el.webkitRequestFullscreen) {
+            el.requestFullscreen().catch(err => console.log("Menunggu aksi pengguna untuk fullscreen."));
+        } else if (el.webkitRequestFullscreen) {
             el.webkitRequestFullscreen();
+        } else if (el.msRequestFullscreen) {
+            el.msRequestFullscreen();
         }
     },
     closeFullscreen: function() {
-        if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+        if (document.exitFullscreen) {
+            document.exitFullscreen().catch(()=>{});
+        }
     }
 };
 
@@ -204,9 +204,9 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
     if(!examState.mapelTerpilih || !tokenInput) return window.customAlert("Pilih mapel dan masukkan token!", "Peringatan");
     
-    // PANGGIL FULLSCREEN SECARA LANGSUNG SAAT KLIK (SEBELUM AWAIT)
+    // PEMANGGILAN FULLSCREEN LANGSUNG SETELAH KLIK
     SecurityManager.openFullscreen();
-    
+
     const btn = document.getElementById('btn-verifikasi'); 
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memverifikasi...'; btn.disabled = true;
 
@@ -229,11 +229,9 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
         let durasiMenit = 90;
         const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
-        
         if (timeSnap.exists() && timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]) { 
             durasiMenit = timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]; 
         }
-        
         examState.durasiDetik = durasiMenit * 60;
 
         SecurityManager.startStrictExamMode();
@@ -291,21 +289,31 @@ function tampilkanSoal(idx) {
     const soal = examState.arraySoal[idx];
 
     document.getElementById('current-q-num').innerText = idx + 1;
-    document.getElementById('badge-tipe-soal').innerText = (soal.tipe_soal || 'PG').toUpperCase();
+    
+    // PEMBACAAN DATA: Sesuaikan dengan nama field dari dashboard
+    const tipeSoal = soal.tipe || soal.tipe_soal || 'PG';
+    document.getElementById('badge-tipe-soal').innerText = tipeSoal.toUpperCase();
     
     const container = document.getElementById('soal-content');
-    let htmlContent = `<p style="font-size:1.1rem; line-height:1.6; margin-bottom:20px;">${soal.teksSoal || soal.pertanyaan || ''}</p>`;
+    
+    // PEMBACAAN DATA: Teks soal menggunakan 'teks_soal'
+    const teksSoal = soal.teks_soal || soal.teksSoal || soal.pertanyaan || '';
+    let htmlContent = `<p style="font-size:1.1rem; line-height:1.6; margin-bottom:20px;">${teksSoal}</p>`;
 
-    if (!soal.tipe_soal || soal.tipe_soal === 'PG') {
-        const opsi = ['A', 'B', 'C', 'D', 'E'];
+    if (tipeSoal === 'PG') {
+        const opsiArr = ['A', 'B', 'C', 'D', 'E'];
         htmlContent += `<div style="display:flex; flex-direction:column; gap:12px;">`;
-        opsi.forEach(o => {
-            if (soal[`opsi${o}`]) {
+        
+        opsiArr.forEach(o => {
+            // PEMBACAAN DATA: Mendukung opsi berupa Object (opsi.A)
+            const teksOpsi = (soal.opsi && soal.opsi[o]) ? soal.opsi[o] : soal[`opsi${o}`];
+            
+            if (teksOpsi) {
                 const checked = examState.jawabanSiswa[soal.id] === o ? 'checked' : '';
                 htmlContent += `
                     <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer;">
                         <input type="radio" name="answer" value="${o}" ${checked} style="transform:scale(1.2);">
-                        <span><b>${o}.</b> ${soal[`opsi${o}`]}</span>
+                        <span><b>${o}.</b> ${teksOpsi}</span>
                     </label>`;
             }
         });
@@ -317,7 +325,7 @@ function tampilkanSoal(idx) {
 
     container.innerHTML = htmlContent;
 
-    if (!soal.tipe_soal || soal.tipe_soal === 'PG') {
+    if (tipeSoal === 'PG') {
         container.querySelectorAll('input[name="answer"]').forEach(radio => {
             radio.onchange = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
         });
@@ -361,9 +369,12 @@ async function selesaiUjian(isForceSubmit = false) {
     let totalSoalPG = 0;
 
     examState.arraySoal.forEach(s => {
-        if(!s.tipe_soal || s.tipe_soal === 'PG') {
+        const tipeSoal = s.tipe || s.tipe_soal || 'PG';
+        if(tipeSoal === 'PG') {
             totalSoalPG++;
-            if(examState.jawabanSiswa[s.id] === s.jawaban_benar) benar++; else salah++;
+            // PEMBACAAN DATA: Kunci jawaban disesuaikan 'kunci_jawaban'
+            const kunci = s.kunci_jawaban || s.jawaban_benar;
+            if(examState.jawabanSiswa[s.id] === kunci) benar++; else salah++;
         }
     });
     if(totalSoalPG > 0) skor = Math.round((benar / totalSoalPG) * 100);
