@@ -162,7 +162,10 @@
                                     <button onclick="window.location.hash='section-hasil'" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali"><i class="fas fa-arrow-left"></i></button>
                                     <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.15rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
                                 </div>
-                                <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-trash-alt"></i> KOSONGKAN KELAS INI</button>
+                                <div style="display: flex; gap: 10px;">
+                                    <button onclick="window.downloadExcelHasil(currentMapelDetail, currentKelasDetail)" class="btn-3d" style="background-color: #2563eb; margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-file-excel"></i> DOWNLOAD EXCEL</button>
+                                    <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-trash-alt"></i> KOSONGKAN KELAS INI</button>
+                                </div>
                             </div>
                             <div class="table-container">
                                 <table id="table-hasil">
