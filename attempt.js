@@ -120,7 +120,8 @@ const SecurityManager = {
         });
     },
     startStrictExamMode: function() {
-        this.openFullscreen();
+        // HAPUS pemanggilan this.openFullscreen() di sini karena akan bentrok dengan proses Async Firebase (User Gesture error)
+        
         document.addEventListener('visibilitychange', () => { 
             if (document.visibilityState === 'hidden' && examState.isExamActive) {
                 document.body.style.filter = "blur(25px)";
@@ -149,8 +150,13 @@ const SecurityManager = {
     },
     openFullscreen: function() {
         const el = document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        // Tambahkan .catch() agar error tidak muncul merah di console jika browser memblokirnya
+        if (el.requestFullscreen) {
+            el.requestFullscreen().catch(err => console.log("Info: Menunggu klik pengguna untuk fullscreen."));
+        }
+        else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+        }
     },
     closeFullscreen: function() {
         if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
@@ -198,7 +204,9 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
     if(!examState.mapelTerpilih || !tokenInput) return window.customAlert("Pilih mapel dan masukkan token!", "Peringatan");
     
+    // PANGGIL FULLSCREEN SECARA LANGSUNG SAAT KLIK (SEBELUM AWAIT)
     SecurityManager.openFullscreen();
+    
     const btn = document.getElementById('btn-verifikasi'); 
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memverifikasi...'; btn.disabled = true;
 
@@ -222,7 +230,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         let durasiMenit = 90;
         const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
         
-        // TYPO TELAH DIPERBAIKI DI BARIS INI:
         if (timeSnap.exists() && timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]) { 
             durasiMenit = timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]; 
         }
