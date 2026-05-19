@@ -336,3 +336,6 @@ table tbody tr:hover { background-color: #f8fafc !important; }
         padding: 8px 12px; 
     }
 }
+#modal-custom-alert, #modal-custom-confirm {
+    z-index: 99999 !important;
+}
