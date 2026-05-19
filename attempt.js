@@ -288,6 +288,11 @@ function tampilkanSoal(idx) {
     examState.currentIndex = idx;
     const soal = examState.arraySoal[idx];
 
+    // --- TAMBAHKAN BARIS INI UNTUK MENGINTIP DATA ASLI ---
+    console.log("BENTUK ASLI DATA SOAL DARI DATABASE:", soal);
+    
+    // ... (kode bawahnya biarkan sama)
+    document.getElementById('current-q-num').innerText = idx + 1;
     document.getElementById('current-q-num').innerText = idx + 1;
     
     // PEMBACAAN DATA: Sesuaikan dengan nama field dari dashboard
