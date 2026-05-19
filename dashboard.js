@@ -679,16 +679,75 @@ document.addEventListener('DOMContentLoaded', () => {
             gridMapel.innerHTML = '';
             for (let key in summaryMapel) {
                 let s = summaryMapel[key]; let rataRata = (s.totalNilai / s.count).toFixed(2);
-                gridMapel.innerHTML += `<div class="stat-card" style="cursor:pointer; border: 1px solid var(--border-color);" onclick="window.bukaDetailHasil('${s.mapel}', '${s.kelas}')"><div><p style="font-weight:bold; color:var(--secondary);">${key}</p><div style="display:flex; gap:15px; margin-top:10px;"><span style="font-size:0.85rem; color:var(--text-muted);"><i class="fas fa-users"></i> ${s.count} Siswa</span><span style="font-size:0.85rem; color:var(--success);"><i class="fas fa-chart-line"></i> Avg: ${rataRata}</span></div></div><div style="color: var(--success);"><i class="fas fa-folder-open"></i></div></div>`;
+                gridMapel.innerHTML += `
+                <div class="stat-card" style="cursor:pointer; border: 1px solid var(--border-color);" onclick="window.bukaDetailHasil('${s.mapel}', '${s.kelas}')">
+                    <div>
+                        <p style="font-weight:bold; color:var(--secondary);">${key}</p>
+                        <div style="display:flex; gap:15px; margin-top:10px;">
+                            <span style="font-size:0.85rem; color:var(--text-muted);"><i class="fas fa-users"></i> ${s.count} Siswa</span>
+                            <span style="font-size:0.85rem; color:var(--success);"><i class="fas fa-chart-line"></i> Avg: ${rataRata}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <button onclick="event.stopPropagation(); window.downloadExcelHasil('${s.mapel}', '${s.kelas}')" class="btn-3d" style="background-color: #16a34a; margin: 0; padding: 6px 10px; font-size: 0.80rem;" title="Unduh Excel"><i class="fas fa-download"></i></button>
+                        <div style="color: var(--success);"><i class="fas fa-folder-open"></i></div>
+                    </div>
+                </div>`;
             }
             if(gridMapel.innerHTML === '') gridMapel.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:var(--text-muted);">Belum ada data hasil ujian.</p>';
         } catch(e) {}
     }
 
-    window.bukaDetailHasil = (mapel, kelas) => {
+   window.bukaDetailHasil = (mapel, kelas) => {
         currentMapelDetail = mapel; currentKelasDetail = kelas;
         document.getElementById('label-mapel-detail').innerText = `HASIL: ${mapel} - KELAS ${kelas}`;
         window.location.hash = 'section-hasil-detail'; renderDetailHasil();
+    };
+
+    // --- FUNGSI BARU: GENERATE & DOWNLOAD EXCEL MASAL / PER MAPEL ---
+    window.downloadExcelHasil = (mapel, kelas) => {
+        const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === mapel && h.kelas === kelas);
+        
+        if (dataFiltered.length === 0) {
+            window.customAlert("Tidak ada data hasil ujian yang bisa diunduh untuk kelas ini.", "warning");
+            return;
+        }
+
+        // Mapping struktur data agar rapi saat dibuka di Microsoft Excel
+        const rowsForExcel = dataFiltered.map((h, index) => {
+            let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
+            let waktu = '-';
+            if (h.waktuSubmit) {
+                const dObj = new Date(h.waktuSubmit);
+                waktu = !isNaN(dObj) ? dObj.toLocaleString('id-ID') : h.waktuSubmit;
+            }
+
+            return {
+                "No": index + 1,
+                "Nama Siswa": h.nama || "Nama Tidak Terdata",
+                "NIS / Username": h.username || h.uid || "-",
+                "Mata Pelajaran": h.mataPelajaran,
+                "Kelas": h.kelas,
+                "Nilai Akhir": nilaiSiswa,
+                "Jumlah Pelanggaran": h.pelanggaran || 0,
+                "Status Ujian": h.statusPelanggaran || 'NORMAL',
+                "Waktu Submit": waktu
+            };
+        });
+
+        // Proses pembuatan spreadsheet via SheetJS
+        const worksheet = XLSX.utils.json_to_sheet(rowsForExcel);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil Ujian");
+
+        // Autowidth kolom excel secara berkala agar tidak terpotong text-nya
+        worksheet['!cols'] = [
+            {wch: 5}, {wch: 25}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 12}, {wch: 18}, {wch: 15}, {wch: 20}
+        ];
+
+        // Trigger download file ke device browser komputer / smartphone
+        const namaFileClean = `Hasil_CBT_${mapel}_${kelas}`.replace(/[^a-zA-Z0-9]/g, "_");
+        XLSX.writeFile(workbook, `${namaFileClean}.xlsx`);
     };
 
     function renderDetailHasil() {
