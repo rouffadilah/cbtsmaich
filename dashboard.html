@@ -163,7 +163,7 @@
                                     <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.15rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
                                 </div>
                                 <div style="display: flex; gap: 10px;">
-                                    <button onclick="window.downloadExcelHasil(currentMapelDetail, currentKelasDetail)" class="btn-3d" style="background-color: #2563eb; margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-file-excel"></i> DOWNLOAD EXCEL</button>
+                                    <button onclick="window.downloadExcelHasil()" class="btn-3d" style="background-color: #2563eb; margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-file-excel"></i> DOWNLOAD EXCEL</button>
                                     <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-trash-alt"></i> KOSONGKAN KELAS INI</button>
                                 </div>
                             </div>
@@ -353,7 +353,7 @@
                     <input type="number" id="edit-nilai-siswa" class="input-text" style="font-weight: 900; font-size: 1.5rem; color: var(--primary); padding: 10px 15px;">
                     <input type="hidden" id="edit-id-hasil">
                 </div>
-                <button id="btn-simpan-nilai-baru" class="btn-3d" style="background: var(--warning); margin: 0; padding: 12px 20px; font-size: 1rem;"><i class="fas fa-save"></i> Perbarui Nilai</button>
+                <button id="btn-simpan-nilai-baru" onclick="window.simpanNilaiBaru()" class="btn-3d" style="background: var(--warning); margin: 0; padding: 12px 20px; font-size: 1rem;"><i class="fas fa-save"></i> Perbarui Nilai</button>
             </div>
 
             <h4 style="margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; color: var(--secondary);"><i class="fas fa-history"></i> Riwayat Jawaban Siswa</h4>
