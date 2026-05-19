@@ -815,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
     };
 
-    // --- DAFTAR SOAL DALAM KELOLA MAPEL (HANYA PREVIEW, TANPA TOMBOL HAPUS) ---
+    // --- DAFTAR SOAL DALAM KELOLA MAPEL (HANYA PREVIEW, BERSATU DALAM 1 KOTAK) ---
     window.bukaDetailSoal = async (mapel, kelas) => {
         document.getElementById('view-summary-bank-soal').style.display = 'none'; document.getElementById('view-soal-list').style.display = 'block';
         document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
@@ -842,24 +842,38 @@ document.addEventListener('DOMContentLoaded', () => {
             let soalArr = []; snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
             soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); 
 
-            let html = '';
+            // PERUBAHAN: Membungkus semua pertanyaan dalam 1 kotak utama
+            let html = '<div style="background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">';
+            
             soalArr.forEach((s, idx) => {
+                // Menambahkan garis bawah (border-bottom) sebagai pemisah antar soal, kecuali soal terakhir
+                let borderBottom = (idx === soalArr.length - 1) ? '' : 'border-bottom: 1px solid var(--border-color);';
+                
                 html += `
-                <div style="background: white; border: 1px solid var(--border-color); padding: 15px 20px; border-radius: var(--radius-md); margin-bottom: 12px; display:flex; justify-content:space-between; align-items:flex-start; box-shadow: var(--shadow-sm);">
+                <div style="padding: 20px; display:flex; justify-content:space-between; align-items:flex-start; ${borderBottom}">
                     <div style="flex:1; padding-right:15px;">
                         <span style="font-weight:800; color:var(--primary); display:block; margin-bottom:5px;">Soal ${idx+1} <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">${s.tipe || 'PG'}</span></span>
                         <div style="color:var(--secondary); line-height:1.6; margin-bottom:10px;">${s.teks_soal}</div>
                         ${s.media_soal ? `<div style="margin-bottom:10px; font-size:0.8rem; color:var(--info); background:#eff6ff; padding:5px 10px; border-radius:4px; display:inline-block;"><i class="fas fa-paperclip"></i> Terlampir File Media (${s.media_soal.type.toUpperCase()})</div><br>` : ''}
                 `;
-                if (s.tipe === 'PG' || !s.tipe) { html += `<div style="font-size:0.85rem; background:#f0fdf4; color:#166534; padding:5px 10px; border-radius:4px; display:inline-block;">Kunci PG: <b>${s.kunci_jawaban}</b></div>`; } 
-                else if (s.tipe === 'PGK') { html += `<div style="font-size:0.85rem; background:#fef3c7; color:#92400e; padding:5px 10px; border-radius:4px; display:inline-block;">Kunci PGK: <b>${Array.isArray(s.kunci_jawaban) ? s.kunci_jawaban.join(', ') : s.kunci_jawaban}</b></div>`; } 
+                
+                // Menampilkan Kunci Jawaban
+                if (s.tipe === 'PG' || !s.tipe) { 
+                    html += `<div style="font-size:0.85rem; background:#f0fdf4; color:#166534; padding:5px 10px; border-radius:4px; display:inline-block;">Kunci PG: <b>${s.kunci_jawaban}</b></div>`; 
+                } 
+                else if (s.tipe === 'PGK') { 
+                    html += `<div style="font-size:0.85rem; background:#fef3c7; color:#92400e; padding:5px 10px; border-radius:4px; display:inline-block;">Kunci PGK: <b>${Array.isArray(s.kunci_jawaban) ? s.kunci_jawaban.join(', ') : s.kunci_jawaban}</b></div>`; 
+                } 
                 else if (s.tipe === 'Menjodohkan') {
                     html += `<div style="font-size:0.85rem; background:#eff6ff; color:#1e40af; padding:10px; border-radius:4px; display:inline-block; width:100%;"><b>Pasangan Menjodohkan:</b><br>`;
                     if(s.pasangan) { s.pasangan.forEach(p => { html += `- ${p.kiri} <i class="fas fa-arrow-right" style="margin:0 5px; opacity:0.5;"></i> <span style="color:var(--success); font-weight:bold;">${p.kanan}</span><br>`; }); }
                     html += `</div>`;
                 }
-                html += `</div></div>`; // Ditutup tanpa tombol hapus di sini
+                
+                html += `</div></div>`; // Tutup div per-soal
             });
+            
+            html += `</div>`; // Tutup div container kotak utama
             container.innerHTML = html;
         } catch(e) { container.innerHTML = '<div style="text-align:center; color:red; padding: 20px;">Gagal memuat soal</div>'; }
     };
