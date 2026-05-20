@@ -99,7 +99,6 @@ const SecurityManager = {
         });
     },
     startStrictExamMode: function() {
-        // [PERBAIKAN KEAMANAN]: Menggunakan Page Visibility API alih-alih 'blur' yang mudah diakali ekstensi
         document.addEventListener('visibilitychange', () => { 
             if (document.hidden && examState.isExamActive) {
                 document.body.style.filter = "blur(25px)";
@@ -309,11 +308,11 @@ function tampilkanSoal(idx) {
 
     renderNavigasi();
 
-    // --- TAMBAHAN LOGIKA TOMBOL PREV & NEXT DINAMIS ---
+    // LOGIKA TOMBOL NAVIGASI IKONIS DAN DINAMIS (PADA SOAL AKHIR)
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
 
-    // Pengaturan Tombol Sebelumnya (Sembunyikan di soal pertama)
+    // Pengaturan Tombol Sebelumnya
     if (examState.currentIndex === 0) {
         btnPrev.style.visibility = 'hidden';
     } else {
@@ -323,7 +322,6 @@ function tampilkanSoal(idx) {
 
     // Pengaturan Tombol Selanjutnya / Selesai
     if (examState.currentIndex === examState.arraySoal.length - 1) {
-        // Mode Selesai pada soal terakhir
         btnNext.innerHTML = '<i class="fas fa-check"></i>';
         btnNext.style.backgroundColor = 'var(--danger)'; 
         btnNext.title = 'Selesai Ujian';
@@ -340,13 +338,11 @@ function tampilkanSoal(idx) {
             }
         };
     } else {
-        // Mode Lanjut Normal
         btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>';
-        btnNext.style.backgroundColor = ''; // Reset ke warna asli
+        btnNext.style.backgroundColor = ''; 
         btnNext.title = 'Selanjutnya';
         btnNext.onclick = () => tampilkanSoal(examState.currentIndex + 1);
     }
-} // <-- Penutup function tampilkanSoal(idx)
 }
 
 document.getElementById('btn-selesai').onclick = async () => {
@@ -357,7 +353,7 @@ document.getElementById('btn-selesai').onclick = async () => {
     let infoMsg = `Anda telah menjawab ${dijawab} dari ${jumlahSoal} soal.`;
     if(adaRagu) infoMsg += `\n\n⚠️ PERINGATAN: Masih ada soal yang ditandai RAGU-RAGU!`;
 
-    if (await window.customConfirm(`${infoMsg}\n\nApakah Anda yakin ingin menyelesaikan ujian sekarang?`, "Selesai Ujian")) {
+    if (await window.customConfirm(`${infoMsg}\n\nApakah kamu yakin untuk menyelesaikan ujian ini?`, "Selesai Ujian")) {
         selesaiUjian("NORMAL");
     }
 };
@@ -367,31 +363,28 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
 
-    // Tampilan Loading
     document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><h2 style="color:var(--secondary); font-family:sans-serif;">Menyimpan Lembar Ujian Anda...</h2><p style="color:var(--text-muted);">Mohon jangan tutup jendela ini.</p></div>';
 
     let benar = 0; let salah = 0; let skor = 0;
     let totalBobotPG = 0;
     let skorDiperolehPG = 0;
 
-    // Hitung Skor Berdasarkan Bobot
     examState.arraySoal.forEach(s => {
         const tipeSoal = s.tipe || s.tipe_soal || 'PG';
-        const bobot = parseFloat(s.bobot) || 1; // Default bobot 1 jika tidak diisi
+        const bobot = parseFloat(s.bobot) || 1;
 
         if(tipeSoal === 'PG') {
             totalBobotPG += bobot;
             const kunci = s.kunci_jawaban || s.jawaban_benar;
             if(examState.jawabanSiswa[s.id] === kunci) {
                 benar++; 
-                skorDiperolehPG += bobot; // Tambahkan bobot jika benar
+                skorDiperolehPG += bobot; 
             } else {
                 salah++;
             }
         }
     });
     
-    // Konversi skor ke skala 100 berdasarkan total bobot maksimal
     if(totalBobotPG > 0) skor = Math.round((skorDiperolehPG / totalBobotPG) * 100);
 
     const payload = {
