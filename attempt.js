@@ -162,6 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch(e) { console.error(e); }
     });
+
+    // Fitur Toggle Navigasi Soal di Mobile
+    document.getElementById('btn-toggle-sidebar')?.addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar-nav');
+        sidebar.classList.toggle('open'); 
+    });
 });
 
 async function loadMapelOptions() {
@@ -251,7 +257,11 @@ function renderNavigasi() {
         const box = document.createElement('button');
         box.className = `q-box ${examState.jawabanSiswa[soal.id] ? 'filled' : ''} ${examState.raguRagu[soal.id] ? 'ragu' : ''} ${examState.currentIndex === idx ? 'active' : ''}`;
         box.innerText = idx + 1;
-        box.onclick = () => tampilkanSoal(idx);
+        box.onclick = () => {
+            tampilkanSoal(idx);
+            // Tutup sidebar di HP saat nomor diklik
+            document.getElementById('sidebar-nav').classList.remove('open');
+        };
         grid.appendChild(box);
     });
 }
