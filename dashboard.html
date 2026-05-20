@@ -77,8 +77,8 @@
                                         <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali"><i class="fas fa-arrow-left"></i></button>
                                         <h4 style="margin: 0; color: var(--secondary); font-size: 1.1rem;" id="label-mapel-edit">Mata Pelajaran</h4>
                                     </div>
-                                    <button onclick="window.bukaModalKelolaSoal(document.getElementById('filter-soal-mapel').value, document.getElementById('filter-soal-kelas').value)" class="btn-3d" style="margin: 0; background-color: var(--warning);"><i class="fas fa-edit"></i> Edit Soal</button>
-                                </div>
+                                    </div>
+
                                 <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
                                     <input type="hidden" id="filter-soal-mapel">
                                     <input type="hidden" id="filter-soal-kelas">
@@ -86,7 +86,8 @@
                                         <div style="flex: 1; min-width: 180px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--info); display: block; margin-bottom: 5px;"><i class="fas fa-calendar-alt"></i> JADWAL UJIAN</label><input type="datetime-local" id="input-jadwal-ujian" class="input-text" style="border-color: var(--info);"></div>
                                         <div style="width: 120px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> DURASI (MNT)</label><input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);"></div>
                                         <div style="width: 150px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--danger); display: block; margin-bottom: 5px;"><i class="fas fa-key"></i> TOKEN</label><input type="text" id="input-token-ujian" class="input-text" placeholder="Ketik Kode..." style="border-color: var(--danger); text-transform: uppercase;"></div>
-                                        <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--secondary);"><i class="fas fa-save"></i> Simpan</button>
+                                        
+                                        <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--success);"><i class="fas fa-check-circle"></i> Selesai & Finalisasi</button>
                                     </div>
                                 </div>
                                 <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;"></div>
