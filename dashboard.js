@@ -254,10 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSimpanNilai.disabled = true;
 
                 try {
-                    await updateDoc(doc(db, "hasil_ujian", id), {
-                        skorPG: nilaiBaru,
-                        skor: nilaiBaru
-                    });
+                    await updateDoc(doc(db, "hasil_ujian", id), { skorPG: nilaiBaru, skor: nilaiBaru });
                     
                     const hIndex = allHasilUjian.findIndex(item => item.id === id);
                     if(hIndex > -1) {
@@ -305,9 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
         catch (err) { console.error("Gagal simpan status siswa", err); }
     });
 
-    // ==========================================
-    // 4. DATA MASTER (MAPEL & KELAS)
-    // ==========================================
     let editMasterMode = false; 
 
     document.getElementById('btn-open-data-master')?.addEventListener('click', () => { 
@@ -488,79 +482,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.error("Gagal memuat data pengguna:", e); }
     }
 
-    window.hapusAkun = async (id) => {
-        if (await window.customConfirm("Hapus akun ini secara permanen?", "danger")) {
-            try { await deleteDoc(doc(db, "users", id)); await window.customAlert("Akun berhasil dihapus!", "success"); loadDataPengguna(); } 
-            catch (e) { await window.customAlert("Gagal menghapus akun.", "error"); }
-        }
-    };
-
-    window.editAkun = async (id) => {
-        const user = allUsersData.find(u => u.id === id); if (!user) return;
-        document.getElementById('edit-uid').value = id; document.getElementById('edit-nama').value = user.nama || '';
-        document.getElementById('edit-username').value = user.username || ''; document.getElementById('edit-pass').value = '';
-        
-        document.querySelectorAll('.edit-role-cb').forEach(cb => { cb.checked = false; cb.disabled = !isAdmin; });
-        let roles = Array.isArray(user.role) ? user.role : (typeof user.role === 'string' ? [user.role] : []);
-        roles.forEach(r => { let cb = document.querySelector(`.edit-role-cb[value="${r}"]`); if(cb) cb.checked = true; });
-
-        document.querySelectorAll('.edit-mapel-cb').forEach(cb => { cb.checked = false; cb.disabled = !isAdmin; });
-        if(user.mapel) { let userMapels = Array.isArray(user.mapel) ? user.mapel : [user.mapel]; userMapels.forEach(m => { let cb = document.querySelector(`.edit-mapel-cb[value="${m}"]`); if(cb) cb.checked = true; }); }
-        
-        document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = false; cb.disabled = !isAdmin; });
-        if(user.kelas && roles.includes('guru')) { let userKelasGuru = Array.isArray(user.kelas) ? user.kelas : [user.kelas]; userKelasGuru.forEach(k => { let cb = document.querySelector(`.edit-kelas-guru-cb[value="${k}"]`); if(cb) cb.checked = true; }); }
-
-        const editKelasSiswa = document.getElementById('edit-kelas-siswa'); if(editKelasSiswa) editKelasSiswa.disabled = !isAdmin;
-        if (roles.includes('siswa')) { editKelasSiswa.value = user.kelas || ''; }
-
-        toggleEditGroup(); document.getElementById('modal-edit-akun').style.display = 'flex';
-    };
-
-    document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { document.getElementById('modal-edit-akun').style.display = 'none'; });
-    document.querySelectorAll('.edit-role-cb').forEach(cb => { cb.addEventListener('change', toggleEditGroup); });
-
-    function toggleEditGroup() {
-        const isSiswa = document.querySelector('.edit-role-cb[value="siswa"]').checked;
-        const isGuru = document.querySelector('.edit-role-cb[value="guru"]').checked;
-        document.getElementById('group-edit-kelas-siswa').style.display = isSiswa ? 'block' : 'none';
-        document.getElementById('group-edit-guru').style.display = isGuru ? 'flex' : 'none';
-    }
-
-    document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
-        const uid = document.getElementById('edit-uid').value;
-        const name = document.getElementById('edit-nama').value.trim();
-        const username = document.getElementById('edit-username').value.trim();
-        const pass = document.getElementById('edit-pass').value;
-
-        const btnSave = document.getElementById('btn-save-edit-akun');
-        const originalText = btnSave.innerHTML;
-        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENYIMPAN...'; btnSave.disabled = true;
-
-        let payload = { nama: name, username: username };
-
-        if (isAdmin) {
-            let roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(cb => cb.value);
-            if(roles.length === 0) { btnSave.innerHTML = originalText; btnSave.disabled = false; return window.customAlert('Pilih minimal satu role!', 'warning'); }
-            payload.role = roles;
-            if (roles.includes('siswa')) { payload.kelas = document.getElementById('edit-kelas-siswa').value; }
-            if (roles.includes('guru') || roles.includes('admin')) {
-                payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(cb => cb.value);
-                payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(cb => cb.value);
-            }
-        }
-
-        try {
-            await updateDoc(doc(db, "users", uid), payload);
-            if (isAdmin && pass) {
-                const updateAkunAdmin = httpsCallable(functions, 'updateAkunAdmin');
-                await updateAkunAdmin({ targetUid: uid, newUsername: username, newPassword: pass });
-            }
-            await window.customAlert('Profil berhasil diperbarui!', 'success');
-            document.getElementById('modal-edit-akun').style.display = 'none'; loadDataPengguna();
-        } catch(e) { window.customAlert(`Gagal menyimpan perubahan. Error: ${e.message}`, 'error'); } 
-        finally { btnSave.innerHTML = originalText; btnSave.disabled = false; }
-    });
-
     // ==========================================
     // 6. BANK SOAL, MEDIA & PENGATURAN UJIAN
     // ==========================================
@@ -652,6 +573,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const kelas = document.getElementById('soal-kelas').value;
         const tipe = document.getElementById('soal-tipe').value;
         const teks = document.getElementById('soal-teks').value;
+        
+        // AMBIL NILAI NOMOR SOAL
+        const nomorSoal = parseInt(document.getElementById('soal-nomor').value) || 0;
 
         const btnSubmitSoal = e.target.querySelector('button[type="submit"]');
         const originalText = btnSubmitSoal.innerHTML;
@@ -661,7 +585,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileSoal = document.getElementById('soal-media').files[0];
             let mediaSoal = await uploadMediaToStorage(fileSoal, `bank_soal/${mapel}_${kelas}`);
 
-            let payload = { mataPelajaran: mapel, kelas: kelas, tipe: tipe, teks_soal: teks, createdAt: new Date() };
+            // MASUKKAN NOMOR SOAL KE PAYLOAD
+            let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: nomorSoal, tipe: tipe, teks_soal: teks, createdAt: new Date() };
             if (mediaSoal) payload.media_soal = mediaSoal;
 
             if (tipe === 'PG' || tipe === 'PGK') {
@@ -802,6 +727,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-soal-id').value = id;
         document.getElementById('soal-mapel').value = soal.mataPelajaran;
         document.getElementById('soal-kelas').value = soal.kelas;
+        
+        // SET NILAI NOMOR SOAL KE FORM SAAT EDIT
+        document.getElementById('soal-nomor').value = soal.nomor_soal || ''; 
+        
         document.getElementById('soal-tipe').value = soal.tipe || 'PG';
         document.getElementById('soal-teks').value = soal.teks_soal || '';
         
@@ -1036,30 +965,20 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.hash = 'section-hasil-detail'; renderDetailHasil();
     };
 
-
-    // ==========================================
-    // FUNGSI BARU: MENAMPILKAN POP UP DETAIL STATUS
-    // ==========================================
     window.lihatDetailStatus = (status, pelanggaran) => {
-        let title = "Detail Status Ujian";
-        let msg = "";
-        let type = "info";
+        let title = "Detail Status Ujian"; let msg = ""; let type = "info";
 
         if (status === 'NORMAL') {
-            type = "success";
-            title = "Status: NORMAL";
+            type = "success"; title = "Status: NORMAL";
             msg = `Ujian diselesaikan dengan baik oleh siswa.\n\nTotal pelanggaran terdeteksi: ${pelanggaran} kali.`;
         } else if (status === 'DISKUALIFIKASI' || status === 'DIHENTIKAN PAKSA') {
-            type = "error";
-            title = `Status: ${status}`;
+            type = "error"; title = `Status: ${status}`;
             msg = `Ujian dihentikan paksa oleh sistem keamanan CBT SMAICH.\n\nSiswa telah melakukan pelanggaran (keluar layar, pindah tab, atau screenshot) sebanyak ${pelanggaran} kali, mencapai batas maksimal yang diizinkan.`;
         } else if (status === 'WAKTU HABIS') {
-            type = "warning";
-            title = "Status: WAKTU HABIS";
+            type = "warning"; title = "Status: WAKTU HABIS";
             msg = `Durasi ujian telah habis sebelum siswa menekan tombol selesai secara mandiri.\nSistem secara otomatis mengumpulkan jawaban terakhir.\n\nTotal pelanggaran terdeteksi: ${pelanggaran} kali.`;
         } else {
-            type = "info";
-            title = `Status Ujian: ${status}`;
+            type = "info"; title = `Status Ujian: ${status}`;
             msg = `Ujian disubmit dengan status: ${status}.\n\nTotal pelanggaran terdeteksi: ${pelanggaran} kali.`;
         }
 
@@ -1077,7 +996,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             let html = '';
             dataFiltered.forEach((h, index) => {
-                
                 const namaSiswa = h.nama || "Nama Tidak Terdata";
                 const nisSiswa = h.username || h.uid || "-";
                 const nilai = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
