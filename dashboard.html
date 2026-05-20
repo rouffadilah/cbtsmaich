@@ -87,9 +87,17 @@
                                         <div style="width: 120px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--warning); display: block; margin-bottom: 5px;"><i class="fas fa-clock"></i> DURASI (MNT)</label><input type="number" id="input-waktu-ujian" class="input-text" placeholder="Cth: 90" style="border-color: var(--warning);"></div>
                                         <div style="width: 150px;"><label style="font-weight: 600; font-size: 0.8rem; color: var(--danger); display: block; margin-bottom: 5px;"><i class="fas fa-key"></i> TOKEN</label><input type="text" id="input-token-ujian" class="input-text" placeholder="Ketik Kode..." style="border-color: var(--danger); text-transform: uppercase;"></div>
                                         
-                                        <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--success);"><i class="fas fa-check-circle"></i> Selesai & Finalisasi</button>
+                                        <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--secondary);"><i class="fas fa-save"></i> Simpan</button>
+                                    </div>
+                                    
+                                    <div style="display: flex; gap: 10px; margin-top: 10px; width: 100%; padding-top: 15px; border-top: 1px dashed #cbd5e1; align-items: center; flex-wrap: wrap;">
+                                        <span style="font-size: 0.85rem; font-weight: bold; color: var(--secondary);"><i class="fas fa-file-import"></i> Input Massal:</span>
+                                        <button onclick="window.downloadTemplateExcel()" class="btn-3d btn-secondary" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: #10b981;" title="Unduh format tabel Excel untuk diisi"><i class="fas fa-file-excel"></i> Template Excel</button>
+                                        <label for="upload-excel-soal" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: var(--info); cursor: pointer;" title="Unggah file Excel yang sudah diisi"><i class="fas fa-upload"></i> Upload Excel</label>
+                                        <input type="file" id="upload-excel-soal" accept=".xlsx, .xls" style="display: none;">
                                     </div>
                                 </div>
+                                
                                 <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;"></div>
                             </div>
                         </div>
