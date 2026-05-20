@@ -308,10 +308,46 @@ function tampilkanSoal(idx) {
     cbRagu.onchange = (e) => { examState.raguRagu[soal.id] = e.target.checked; renderNavigasi(); };
 
     renderNavigasi();
-}
 
-document.getElementById('btn-prev').onclick = () => tampilkanSoal(examState.currentIndex - 1);
-document.getElementById('btn-next').onclick = () => tampilkanSoal(examState.currentIndex + 1);
+    // --- TAMBAHAN LOGIKA TOMBOL PREV & NEXT DINAMIS ---
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+
+    // Pengaturan Tombol Sebelumnya (Sembunyikan di soal pertama)
+    if (examState.currentIndex === 0) {
+        btnPrev.style.visibility = 'hidden';
+    } else {
+        btnPrev.style.visibility = 'visible';
+        btnPrev.onclick = () => tampilkanSoal(examState.currentIndex - 1);
+    }
+
+    // Pengaturan Tombol Selanjutnya / Selesai
+    if (examState.currentIndex === examState.arraySoal.length - 1) {
+        // Mode Selesai pada soal terakhir
+        btnNext.innerHTML = '<i class="fas fa-check"></i>';
+        btnNext.style.backgroundColor = 'var(--danger)'; 
+        btnNext.title = 'Selesai Ujian';
+        btnNext.onclick = async () => {
+            const jumlahSoal = examState.arraySoal.length;
+            const dijawab = Object.keys(examState.jawabanSiswa).length;
+            const adaRagu = Object.values(examState.raguRagu).includes(true);
+
+            let infoMsg = `Anda telah menjawab ${dijawab} dari ${jumlahSoal} soal.`;
+            if(adaRagu) infoMsg += `\n\n⚠️ PERINGATAN: Masih ada soal yang ditandai RAGU-RAGU!`;
+
+            if (await window.customConfirm(`${infoMsg}\n\nApakah kamu yakin untuk menyelesaikan ujian ini?`, "Selesai Ujian")) {
+                selesaiUjian("NORMAL");
+            }
+        };
+    } else {
+        // Mode Lanjut Normal
+        btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        btnNext.style.backgroundColor = ''; // Reset ke warna asli
+        btnNext.title = 'Selanjutnya';
+        btnNext.onclick = () => tampilkanSoal(examState.currentIndex + 1);
+    }
+} // <-- Penutup function tampilkanSoal(idx)
+}
 
 document.getElementById('btn-selesai').onclick = async () => {
     const jumlahSoal = examState.arraySoal.length;
