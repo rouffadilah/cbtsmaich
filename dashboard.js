@@ -474,6 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tipe = document.getElementById('soal-tipe').value;
         const teks = document.getElementById('soal-teks').value;
         const nomorSoalTarget = parseInt(document.getElementById('soal-nomor').value) || 1;
+        const bobotSoal = parseFloat(document.getElementById('soal-bobot').value) || 1; // <--- BARIS INI DITAMBAHKAN
 
         const btnSubmitSoal = e.target.querySelector('button[type="submit"]');
         const originalText = btnSubmitSoal.innerHTML;
@@ -484,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let mediaSoal = await uploadMediaToStorage(fileSoal, `bank_soal/${mapel}_${kelas}`);
 
             // updatedAt penting untuk tie-breaker (penyisipan nomor yang sama)
-            let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: nomorSoalTarget, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
+            let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: nomorSoalTarget, bobot: bobotSoal, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
             if (mediaSoal) payload.media_soal = mediaSoal;
 
             if (tipe === 'PG' || tipe === 'PGK') {
@@ -593,7 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-soal-id').value = id;
         document.getElementById('soal-mapel').value = soal.mataPelajaran;
         document.getElementById('soal-kelas').value = soal.kelas;
-        document.getElementById('soal-nomor').value = soal.nomor_soal || ''; 
+        document.getElementById('soal-nomor').value = soal.nomor_soal || '';
+        document.getElementById('soal-bobot').value = soal.bobot || 1; // <--- BARIS INI DITAMBAHKAN
         document.getElementById('soal-tipe').value = soal.tipe || 'PG';
         document.getElementById('soal-teks').value = soal.teks_soal || '';
         
@@ -685,8 +687,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <div style="padding: 20px 25px;">
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                            <span style="font-weight:800; font-size:1.1rem; color:var(--secondary);">Soal ${s.nomor_soal || (idx+1)}</span>
-                            <span style="background:#f1f5f9; color:var(--text-muted); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold; border:1px solid #e2e8f0;">${s.tipe || 'PG'}</span>
+                            <span style="font-weight:800; color:var(--primary); display:block; margin-bottom:8px;">Soal ${s.nomor_soal || (idx+1)} 
+                                <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">${s.tipe || 'PG'}</span>
+                                <span style="background:var(--warning); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">Bobot: ${s.bobot || 1}</span>
+                            </span>
                         </div>
                         
                         <div style="color:var(--text-main); line-height:1.6; font-size: 1rem; margin-bottom:15px;">${s.teks_soal}</div>
@@ -785,6 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
             {
                 "Nomor Soal": 1,
                 "Tipe Soal (PG / PGK / Essay)": "PG",
+                "Bobot Soal": 1, // <--- TAMBAHAN
                 "Teks Pertanyaan": "Siapakah presiden pertama Indonesia?",
                 "Opsi A": "Soeharto",
                 "Opsi B": "B.J. Habibie",
@@ -796,6 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
             {
                 "Nomor Soal": 2,
                 "Tipe Soal (PG / PGK / Essay)": "Essay",
+                "Bobot Soal": 1, // <--- TAMBAHAN
                 "Teks Pertanyaan": "Jelaskan dengan singkat makna Pancasila!",
                 "Opsi A": "",
                 "Opsi B": "",
@@ -854,6 +860,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         mataPelajaran: mapel,
                         kelas: kelas,
                         nomor_soal: parseInt(row["Nomor Soal"]) || 1,
+                        bobot: parseFloat(row["Bobot Soal"]) || 1, // <--- TAMBAHAN
                         tipe: tipeFormat,
                         teks_soal: String(row["Teks Pertanyaan"] || ""),
                         createdAt: new Date(timestampAwal),
