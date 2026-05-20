@@ -755,50 +755,158 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('view-summary-bank-soal').style.display = 'block'; document.getElementById('view-soal-list').style.display = 'none'; loadBankSoalSummary();
     });
 
+    // ==============================================================
+    // SIMPAN PENGATURAN (JADWAL, DURASI, TOKEN)
+    // ==============================================================
     document.getElementById('btn-simpan-pengaturan-ujian')?.addEventListener('click', async () => {
-        const mapel = document.getElementById('filter-soal-mapel').value; 
-        const kelas = document.getElementById('filter-soal-kelas').value;
-        if(!mapel || !kelas) return; 
-        const key = `${mapel}_${kelas}`;
-        
-        const waktu = document.getElementById('input-waktu-ujian').value; 
-        const jadwal = document.getElementById('input-jadwal-ujian').value; 
-        const token = document.getElementById('input-token-ujian').value.trim().toUpperCase();
+        const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
+        if(!mapel || !kelas) return; const key = `${mapel}_${kelas}`;
+        const waktu = document.getElementById('input-waktu-ujian').value; const jadwal = document.getElementById('input-jadwal-ujian').value; const token = document.getElementById('input-token-ujian').value.trim().toUpperCase();
 
-        // 1. Munculkan Modal Konfirmasi Finalisasi
-        const konfirmasi = await window.customConfirm(
-            `Apakah Anda yakin seluruh soal, jawaban, durasi, jadwal, dan token untuk mapel ${mapel} sudah final?\n\nMenyimpan ini menandakan ujian siap dilaksanakan.`, 
-            "info", 
-            "Finalisasi Soal", 
-            "Ya, Selesai & Simpan"
-        );
-        
-        if (!konfirmasi) return; // Batalkan jika guru memilih "Batal"
-
-        const btn = document.getElementById('btn-simpan-pengaturan-ujian'); 
-        const origHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memfinalisasi...'; 
-        btn.disabled = true;
+        const btn = document.getElementById('btn-simpan-pengaturan-ujian'); const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...'; btn.disabled = true;
 
         try {
-            // 2. Simpan Data Pengaturan Ujian
             if(waktu) await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: waktu }, { merge: true });
             if(jadwal) await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true });
             if(token) { await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: { code: token, active: true } }, { merge: true }); }
-            
-            await window.customAlert("Seluruh soal dan pengaturan berhasil difinalisasi!", "success"); 
-            
-            // 3. Kembali ke Halaman Tabel Daftar Bank Soal
-            document.getElementById('view-summary-bank-soal').style.display = 'block'; 
-            document.getElementById('view-soal-list').style.display = 'none'; 
+            window.customAlert("Pengaturan jadwal, durasi, dan token berhasil disimpan!", "success"); 
             loadBankSoalSummary();
-
-        } catch(e) { 
-            window.customAlert("Gagal menyimpan pengaturan.", "error"); 
-        }
+        } catch(e) { window.customAlert("Gagal menyimpan pengaturan.", "error"); }
         
-        btn.innerHTML = origHtml; 
-        btn.disabled = false;
+        btn.innerHTML = origHtml; btn.disabled = false;
+    });
+
+    // ==============================================================
+    // FITUR BARU: DOWNLOAD TEMPLATE & UPLOAD MASSAL EXCEL
+    // ==============================================================
+    window.downloadTemplateExcel = () => {
+        const templateData = [
+            {
+                "Nomor Soal": 1,
+                "Tipe Soal (PG / PGK / Essay)": "PG",
+                "Teks Pertanyaan": "Siapakah presiden pertama Indonesia?",
+                "Opsi A": "Soeharto",
+                "Opsi B": "B.J. Habibie",
+                "Opsi C": "Soekarno",
+                "Opsi D": "Joko Widodo",
+                "Opsi E": "Megawati",
+                "Kunci Jawaban": "C"
+            },
+            {
+                "Nomor Soal": 2,
+                "Tipe Soal (PG / PGK / Essay)": "Essay",
+                "Teks Pertanyaan": "Jelaskan dengan singkat makna Pancasila!",
+                "Opsi A": "",
+                "Opsi B": "",
+                "Opsi C": "",
+                "Opsi D": "",
+                "Opsi E": "",
+                "Kunci Jawaban": "Pancasila adalah dasar negara dan pandangan hidup bangsa Indonesia."
+            }
+        ];
+
+        const worksheet = XLSX.utils.json_to_sheet(templateData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Format Input Soal");
+        
+        // Lebarkan kolom agar mudah diisi oleh guru
+        worksheet['!cols'] = [ {wch: 12}, {wch: 25}, {wch: 50}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 25} ];
+
+        XLSX.writeFile(workbook, "Template_Upload_Soal_SMAICH.xlsx");
+    };
+
+    document.getElementById('upload-excel-soal')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const mapel = document.getElementById('filter-soal-mapel').value; 
+        const kelas = document.getElementById('filter-soal-kelas').value;
+        if(!mapel || !kelas) return window.customAlert("Mapel atau Kelas tidak terdeteksi!", "error");
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                // Tampilkan efek loading pada list soal saat memproses
+                const container = document.getElementById('list-soal');
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file Excel & Menyimpan data ke Server...<br><span style="font-size:0.8rem; color:var(--text-muted); font-weight:normal;">Proses ini mungkin memakan waktu beberapa detik.</span></div>';
+
+                // Parsing File Excel dengan SheetJS
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if (jsonData.length === 0) throw new Error("File Excel kosong atau tidak sesuai format!");
+
+                let updates = [];
+                let timestampAwal = new Date().getTime(); // Membantu mensortir jika nomor sama
+                
+                // Looping data Excel per baris
+                for (let row of jsonData) {
+                    let tipeRaw = String(row["Tipe Soal (PG / PGK / Essay)"] || "PG").toUpperCase().trim();
+                    let tipeFormat = tipeRaw === 'ESSAY' ? 'Essay' : (tipeRaw === 'PGK' ? 'PGK' : 'PG');
+                    
+                    timestampAwal += 10; // Increment millis agar sorting waktu aman
+
+                    let payload = {
+                        mataPelajaran: mapel,
+                        kelas: kelas,
+                        nomor_soal: parseInt(row["Nomor Soal"]) || 1,
+                        tipe: tipeFormat,
+                        teks_soal: String(row["Teks Pertanyaan"] || ""),
+                        createdAt: new Date(timestampAwal),
+                        updatedAt: new Date(timestampAwal)
+                    };
+
+                    if (tipeFormat === 'PG' || tipeFormat === 'PGK') {
+                        payload.opsi = {
+                            A: row["Opsi A"] ? String(row["Opsi A"]) : "",
+                            B: row["Opsi B"] ? String(row["Opsi B"]) : "",
+                            C: row["Opsi C"] ? String(row["Opsi C"]) : "",
+                            D: row["Opsi D"] ? String(row["Opsi D"]) : "",
+                            E: row["Opsi E"] ? String(row["Opsi E"]) : ""
+                        };
+                        
+                        let kunci = String(row["Kunci Jawaban"] || "").trim().toUpperCase();
+                        if (tipeFormat === 'PGK') {
+                            // Asumsi kunci diketik pisah koma di excel (A,B,C)
+                            payload.kunci_jawaban = kunci.split(',').map(k => k.trim()); 
+                        } else {
+                            payload.kunci_jawaban = kunci;
+                        }
+                    } else if (tipeFormat === 'Essay') {
+                        payload.kunci_jawaban = String(row["Kunci Jawaban"] || "");
+                    }
+
+                    // Tambahkan tugas simpan ke Array Promise
+                    updates.push(addDoc(collection(db, "bank_soal"), payload));
+                }
+
+                // Eksekusi Simpan Massal
+                await Promise.all(updates);
+                
+                // Panggil Auto-Renumbering agar susunannya tidak bentrok dengan soal lama
+                await normalizeUrutanSoal(mapel, kelas);
+                
+                window.customAlert(`Sukses! ${jsonData.length} Soal dari Excel berhasil diunggah dan disimpan.`, "success");
+                
+                // Refresh Tampilan List
+                window.loadDaftarSoal(mapel, kelas);
+                loadBankSoalSummary();
+
+            } catch (err) {
+                console.error(err);
+                window.customAlert("Gagal memproses file Excel: " + err.message, "error");
+                window.loadDaftarSoal(mapel, kelas); // Kembalikan ke normal list
+            }
+        };
+        
+        reader.readAsArrayBuffer(file);
+        
+        // Reset file input agar bisa upload file yang sama jika diinginkan
+        e.target.value = '';
     });
     
     // ==========================================
