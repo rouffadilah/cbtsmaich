@@ -4,10 +4,23 @@ import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc,
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
-let listMapel = []; let listKelas = []; let allUsersData = []; let allHasilUjian = []; 
-let currentMapelDetail = ""; let currentKelasDetail = "";
-let isAdmin = false; let isGuru = false; let userMapel = []; let userKelas = [];
+// ==========================================
+// 1. VARIABEL GLOBAL
+// ==========================================
+let listMapel = []; 
+let listKelas = []; 
+let allUsersData = []; 
+let allHasilUjian = []; 
+let currentMapelDetail = ""; 
+let currentKelasDetail = "";
+let isAdmin = false; 
+let isGuru = false; 
+let userMapel = []; 
+let userKelas = [];
 
+// ==========================================
+// 2. MODAL CUSTOM & NOTIFIKASI
+// ==========================================
 window.customAlert = (msg, type = 'info', title = '') => {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-custom-alert');
@@ -58,7 +71,11 @@ window.customConfirm = (msg, type = 'warning', title = 'Konfirmasi', okText = 'Y
     });
 };
 
+// ==========================================
+// 3. INISIALISASI & ROUTING UTAMA
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+
     if (!window.location.hash) { window.location.hash = 'section-beranda'; }
     window.addEventListener('popstate', function() {
         if (!window.location.hash || window.location.hash === '') { window.location.hash = 'section-beranda'; }
@@ -145,6 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ==========================================
+    // 4. DETAIL JAWABAN SISWA (NILAI MANUAL)
+    // ==========================================
     window.lihatDetailJawaban = async (hasilId) => {
         const h = allHasilUjian.find(item => item.id === hasilId);
         if (!h) return;
@@ -259,6 +279,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
+    // ==========================================
+    // 5. REGISTRASI & DATA MASTER PENGATURAN
+    // ==========================================
     async function fetchStatusReg() {
         try {
             const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
@@ -273,11 +296,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('status-reg-guru')?.addEventListener('change', async (e) => {
         try { await setDoc(doc(db, "pengaturan", "status_registrasi"), { guru_aktif: e.target.checked }, { merge: true }); } 
-        catch (err) { console.error("Gagal simpan status", err); }
+        catch (err) {}
     });
     document.getElementById('status-reg-siswa')?.addEventListener('change', async (e) => {
         try { await setDoc(doc(db, "pengaturan", "status_registrasi"), { siswa_aktif: e.target.checked }, { merge: true }); } 
-        catch (err) { console.error("Gagal simpan status", err); }
+        catch (err) {}
     });
 
     let editMasterMode = false; 
@@ -358,6 +381,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (containerKelasGuru) containerKelasGuru.innerHTML = listKelas.map(k => `<label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="edit-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
     }
 
+    // ==========================================
+    // 6. MANAJEMEN AKUN
+    // ==========================================
     async function loadDataPengguna() {
         const tbodyGuru = document.querySelector('#table-guru tbody');
         const tbodySiswa = document.querySelector('#table-siswa tbody');
@@ -395,6 +421,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.error(e); }
     }
 
+    // ==========================================
+    // 7. SUMMARY SOAL & PENGATURAN SOAL BARU
+    // ==========================================
     async function loadBankSoalSummary() {
         const tbody = document.querySelector('#table-bank-soal-summary tbody'); if(!tbody) return;
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>';
@@ -496,6 +525,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { window.bukaModalTambahSoal(); });
 
+    // ==========================================
+    // 8. LIST DETAIL SOAL & KELOLA / EDIT SOAL
+    // ==========================================
     window.bukaDetailSoal = async (mapel, kelas) => {
         document.getElementById('view-summary-bank-soal').style.display = 'none'; document.getElementById('view-soal-list').style.display = 'block';
         document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
@@ -538,6 +570,83 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('view-summary-bank-soal').style.display = 'block'; document.getElementById('view-soal-list').style.display = 'none'; loadBankSoalSummary();
     });
 
+    window.bukaModalKelolaSoal = async (mapel, kelas) => {
+        document.getElementById('modal-kelola-soal').style.display = 'flex';
+        const container = document.getElementById('list-kelola-soal');
+        container.innerHTML = '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Memuat data...</div>';
+        
+        try {
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
+            const snap = await getDocs(q);
+            if(snap.empty) { 
+                container.innerHTML = '<div style="text-align:center; padding: 20px; background: white; border-radius: 8px;">Belum ada soal. Silakan tambah soal baru.</div>'; 
+                return; 
+            }
+            
+            let soalArr = []; snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+            soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); 
+            window.tempDataSoalKelola = soalArr; 
+
+            let html = '';
+            soalArr.forEach((s, idx) => {
+                let teksPendek = (s.teks_soal || '').replace(/<[^>]*>/g, '');
+                if (teksPendek.length > 80) teksPendek = teksPendek.substring(0, 80) + '...';
+                
+                html += `
+                <div style="background: white; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex: 1; padding-right: 15px;">
+                        <span style="font-weight:bold; color:var(--primary);">Soal ${idx+1} <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${s.tipe || 'PG'}</span></span>
+                        <p style="margin:5px 0 0 0; font-size:0.9rem; color:var(--secondary);">${teksPendek}</p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="window.editDataSoal('${s.id}')" class="btn-3d" style="background:var(--warning); padding:8px 12px; margin:0;" title="Edit Soal"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.hapusSoal('${s.id}')" class="btn-3d" style="background:var(--danger); padding:8px 12px; margin:0;" title="Hapus Soal"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        } catch(e) { 
+            container.innerHTML = '<div style="text-align:center; color:red;">Gagal memuat soal</div>'; 
+        }
+    };
+
+    window.editDataSoal = (id) => {
+        const soal = window.tempDataSoalKelola.find(s => s.id === id);
+        if (!soal) return;
+        
+        document.getElementById('edit-soal-id').value = id;
+        document.getElementById('soal-mapel').value = soal.mataPelajaran;
+        document.getElementById('soal-kelas').value = soal.kelas;
+        document.getElementById('soal-tipe').value = soal.tipe || 'PG';
+        document.getElementById('soal-teks').value = soal.teks_soal || '';
+        
+        document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
+
+        if (soal.tipe === 'PG' || soal.tipe === 'PGK') {
+            ['A', 'B', 'C', 'D', 'E'].forEach(k => {
+                document.getElementById(`soal-opsi-${k}`).value = (soal.opsi && soal.opsi[k]) ? soal.opsi[k] : '';
+            });
+            if (soal.tipe === 'PG') {
+                const radio = document.querySelector(`input[name="kunci-pg"][value="${soal.kunci_jawaban}"]`);
+                if (radio) radio.checked = true;
+            } else {
+                document.querySelectorAll('.kunci-pgk').forEach(cb => {
+                    cb.checked = Array.isArray(soal.kunci_jawaban) && soal.kunci_jawaban.includes(cb.value);
+                });
+            }
+        } else if (soal.tipe === 'Essay') {
+            const fieldEssay = document.getElementById('soal-kunci-essay');
+            if (fieldEssay) fieldEssay.value = soal.kunci_jawaban || '';
+        }
+        
+        document.getElementById('modal-kelola-soal').style.display = 'none';
+        document.getElementById('title-modal-soal').innerHTML = '<i class="fas fa-edit"></i> Update Soal';
+        document.getElementById('modal-tambah-soal').style.display = 'flex';
+    };
+
+    // ==========================================
+    // 9. REKAP HASIL UJIAN & EXCEL
+    // ==========================================
     async function loadDataHasil() {
         try {
             const snap = await getDocs(collection(db, "hasil_ujian"));
@@ -589,5 +698,87 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.hapusHasil = async (id) => {
         if(await customConfirm("Hapus hasil ujian siswa ini?", "danger")) { await deleteDoc(doc(db, "hasil_ujian", id)); loadDataHasil(); renderDetailHasil(); }
+    };
+
+    window.downloadExcelHasil = async (mapel = currentMapelDetail, kelas = currentKelasDetail) => {
+        const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === mapel && h.kelas === kelas);
+        
+        if (dataFiltered.length === 0) {
+            return window.customAlert("Tidak ada data hasil ujian yang bisa diunduh untuk kelas ini.", "warning");
+        }
+
+        const btn = document.querySelector(`button[onclick*="downloadExcelHasil"]`);
+        let origText = "";
+        if (btn) {
+            origText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyiapkan Data...';
+            btn.disabled = true;
+        }
+
+        try {
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
+            const soalSnap = await getDocs(q);
+            let soalArr = [];
+            soalSnap.forEach(doc => soalArr.push({ id: doc.id, ...doc.data() }));
+            soalArr.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
+
+            const rowsForExcel = dataFiltered.map((h, index) => {
+                let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : (h.nilai || 0));
+                let waktu = h.waktuSubmit ? new Date(h.waktuSubmit).toLocaleString('id-ID') : '-';
+
+                let rowData = {
+                    "No": index + 1,
+                    "Nama Siswa": h.nama || "Nama Tidak Terdata",
+                    "NIS / Username": h.username || h.uid || "-",
+                    "Mata Pelajaran": h.mataPelajaran,
+                    "Kelas": h.kelas,
+                    "Nilai Akhir": nilaiSiswa,
+                    "Jumlah Pelanggaran": h.pelanggaran || 0,
+                    "Status Ujian": h.statusPelanggaran || 'NORMAL',
+                    "Waktu Submit": waktu
+                };
+
+                soalArr.forEach((s, idx) => {
+                    const tipe = s.tipe || 'PG';
+                    const jwbSiswa = (h.jawaban && h.jawaban[s.id]) ? h.jawaban[s.id] : '-';
+                    const jwbBenar = s.kunci_jawaban || s.jawaban_benar || '-';
+
+                    let teksBersih = (s.teks_soal || '').replace(/<[^>]*>/g, '');
+                    if (teksBersih.length > 45) teksBersih = teksBersih.substring(0, 45) + '...';
+                    
+                    const keyKolomSoal = `Soal ${idx + 1} (${tipe}): ${teksBersih}`;
+                    
+                    if (tipe === 'PG' || tipe === 'PGK') {
+                        const isBenar = Array.isArray(jwbBenar) 
+                            ? (Array.isArray(jwbSiswa) && jwbSiswa.sort().join(',') === jwbBenar.sort().join(','))
+                            : (jwbSiswa === jwbBenar);
+                        rowData[keyKolomSoal] = `${jwbSiswa} [Kunci: ${Array.isArray(jwbBenar) ? jwbBenar.join(',') : jwbBenar}] (${isBenar ? 'BENAR' : 'SALAH'})`;
+                    } else {
+                        rowData[keyKolomSoal] = jwbSiswa;
+                    }
+                });
+                return rowData;
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(rowsForExcel);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil Ujian");
+
+            let colsConfig = [{wch: 5}, {wch: 25}, {wch: 15}, {wch: 18}, {wch: 10}, {wch: 12}, {wch: 18}, {wch: 15}, {wch: 20}];
+            soalArr.forEach(() => colsConfig.push({wch: 45}));
+            worksheet['!cols'] = colsConfig;
+
+            const namaFileClean = `Hasil_CBT_${mapel}_${kelas}`.replace(/[^a-zA-Z0-9]/g, "_");
+            XLSX.writeFile(workbook, `${namaFileClean}.xlsx`);
+
+        } catch (e) {
+            console.error("Gagal generate excel:", e);
+            window.customAlert("Terjadi kesalahan sistem saat mencoba mengunduh Excel.", "error");
+        } finally {
+            if (btn) {
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+        }
     };
 });
