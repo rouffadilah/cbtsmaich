@@ -756,22 +756,51 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-simpan-pengaturan-ujian')?.addEventListener('click', async () => {
-        const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
-        if(!mapel || !kelas) return; const key = `${mapel}_${kelas}`;
-        const waktu = document.getElementById('input-waktu-ujian').value; const jadwal = document.getElementById('input-jadwal-ujian').value; const token = document.getElementById('input-token-ujian').value.trim().toUpperCase();
+        const mapel = document.getElementById('filter-soal-mapel').value; 
+        const kelas = document.getElementById('filter-soal-kelas').value;
+        if(!mapel || !kelas) return; 
+        const key = `${mapel}_${kelas}`;
+        
+        const waktu = document.getElementById('input-waktu-ujian').value; 
+        const jadwal = document.getElementById('input-jadwal-ujian').value; 
+        const token = document.getElementById('input-token-ujian').value.trim().toUpperCase();
 
-        const btn = document.getElementById('btn-simpan-pengaturan-ujian'); const origHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+        // 1. Munculkan Modal Konfirmasi Finalisasi
+        const konfirmasi = await window.customConfirm(
+            `Apakah Anda yakin seluruh soal, jawaban, durasi, jadwal, dan token untuk mapel ${mapel} sudah final?\n\nMenyimpan ini menandakan ujian siap dilaksanakan.`, 
+            "info", 
+            "Finalisasi Soal", 
+            "Ya, Selesai & Simpan"
+        );
+        
+        if (!konfirmasi) return; // Batalkan jika guru memilih "Batal"
+
+        const btn = document.getElementById('btn-simpan-pengaturan-ujian'); 
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memfinalisasi...'; 
+        btn.disabled = true;
 
         try {
+            // 2. Simpan Data Pengaturan Ujian
             if(waktu) await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: waktu }, { merge: true });
             if(jadwal) await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true });
             if(token) { await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: { code: token, active: true } }, { merge: true }); }
-            window.customAlert("Pengaturan ujian berhasil disimpan!", "success"); loadBankSoalSummary();
-        } catch(e) { window.customAlert("Gagal menyimpan pengaturan.", "error"); }
-        btn.innerHTML = origHtml; btn.disabled = false;
-    });
+            
+            await window.customAlert("Seluruh soal dan pengaturan berhasil difinalisasi!", "success"); 
+            
+            // 3. Kembali ke Halaman Tabel Daftar Bank Soal
+            document.getElementById('view-summary-bank-soal').style.display = 'block'; 
+            document.getElementById('view-soal-list').style.display = 'none'; 
+            loadBankSoalSummary();
 
+        } catch(e) { 
+            window.customAlert("Gagal menyimpan pengaturan.", "error"); 
+        }
+        
+        btn.innerHTML = origHtml; 
+        btn.disabled = false;
+    });
+    
     // ==========================================
     // 7. HASIL UJIAN (Tetap seperti sebelumnya)
     // ==========================================
