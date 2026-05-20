@@ -2,18 +2,12 @@ import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// ==========================================
-// 1. STATE MANAGEMENT (STATUS UJIAN)
-// ==========================================
 const examState = {
     student: null, mapelTerpilih: "", arraySoal: [], currentIndex: 0,
     jawabanSiswa: {}, raguRagu: {}, timerInterval: null, durasiDetik: 0,
     pelanggaran: 0, maxPelanggaran: 3, isExamActive: false
 };
 
-// ==========================================
-// 2. MODAL & UTILITIES
-// ==========================================
 window.customAlert = (msg, title = 'Informasi') => {
     return new Promise(res => {
         const modal = document.getElementById('modal-custom-alert');
@@ -37,9 +31,6 @@ window.customConfirm = (msg, title = 'Konfirmasi') => {
     });
 };
 
-// ==========================================
-// 3. WATERMARK MANAGER (PROTEKSI LAYAR)
-// ==========================================
 const WatermarkManager = {
     overlayId: 'cbt-secure-watermark',
     init: function(nama, nis) {
@@ -74,9 +65,6 @@ const WatermarkManager = {
     }
 };
 
-// ==========================================
-// 4. SECURITY MANAGER (ANTI-SCREENSHOT & BLUR)
-// ==========================================
 const SecurityManager = {
     initGlobal: function() {
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -84,13 +72,6 @@ const SecurityManager = {
             document.addEventListener(evt, e => {
                 if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
             });
-        });
-
-        window.addEventListener('blur', () => { 
-            if(examState.isExamActive) { document.body.style.filter = "blur(25px)"; }
-        });
-        window.addEventListener('focus', () => { 
-            if(examState.isExamActive) { document.body.style.filter = "none"; this.openFullscreen(); }
         });
 
         document.addEventListener('keydown', e => {
@@ -108,9 +89,7 @@ const SecurityManager = {
         });
 
         document.addEventListener('keyup', e => {
-            if (e.key === 'PrintScreen') {
-                navigator.clipboard.writeText("Aksi Ilegal Terdeteksi").catch(()=>{});
-            }
+            if (e.key === 'PrintScreen') navigator.clipboard.writeText("Aksi Ilegal Terdeteksi").catch(()=>{});
         });
 
         history.pushState(null, null, window.location.href);
@@ -120,12 +99,17 @@ const SecurityManager = {
         });
     },
     startStrictExamMode: function() {
+        // [PERBAIKAN KEAMANAN]: Menggunakan Page Visibility API alih-alih 'blur' yang mudah diakali ekstensi
         document.addEventListener('visibilitychange', () => { 
-            if (document.visibilityState === 'hidden' && examState.isExamActive) {
+            if (document.hidden && examState.isExamActive) {
                 document.body.style.filter = "blur(25px)";
-                this.handleViolation("Layar ditinggalkan atau diminimize!"); 
+                this.handleViolation("Sistem mendeteksi Anda membuka tab atau aplikasi lain!"); 
+            } else if (!document.hidden && examState.isExamActive) {
+                document.body.style.filter = "none";
+                this.openFullscreen();
             }
         });
+        
         document.addEventListener("fullscreenchange", () => {
             if (!document.fullscreenElement && examState.isExamActive) {
                 this.handleViolation("Mode Layar Penuh (Fullscreen) dimatikan!");
@@ -149,7 +133,7 @@ const SecurityManager = {
     openFullscreen: function() {
         const el = document.documentElement;
         if (el.requestFullscreen) {
-            el.requestFullscreen().catch(err => console.log("Menunggu aksi pengguna untuk fullscreen."));
+            el.requestFullscreen().catch(() => {});
         } else if (el.webkitRequestFullscreen) {
             el.webkitRequestFullscreen();
         } else if (el.msRequestFullscreen) {
@@ -163,9 +147,6 @@ const SecurityManager = {
     }
 };
 
-// ==========================================
-// 5. DATA LOADING & PROFILE AUTH
-// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     SecurityManager.initGlobal();
     onAuthStateChanged(auth, async (user) => {
@@ -194,9 +175,6 @@ async function loadMapelOptions() {
     } catch(e) {}
 }
 
-// ==========================================
-// 6. PROSES VERIFIKASI & AMBIL SOAL
-// ==========================================
 document.getElementById('btn-verifikasi').onclick = async () => {
     examState.mapelTerpilih = document.getElementById('select-mapel').value;
     const tokenInput = document.getElementById('input-token').value.toUpperCase().trim();
@@ -204,7 +182,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
     if(!examState.mapelTerpilih || !tokenInput) return window.customAlert("Pilih mapel dan masukkan token!", "Peringatan");
     
-    // PEMANGGILAN FULLSCREEN LANGSUNG SETELAH KLIK
     SecurityManager.openFullscreen();
 
     const btn = document.getElementById('btn-verifikasi'); 
@@ -252,9 +229,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     }
 };
 
-// ==========================================
-// 7. CORE ENGINE (TIMER, RENDER SOAL & NAV)
-// ==========================================
 function jalankanTimer() {
     const display = document.getElementById('timer-display');
     examState.timerInterval = setInterval(() => {
@@ -287,21 +261,13 @@ function tampilkanSoal(idx) {
     if (idx < 0 || idx >= examState.arraySoal.length) return;
     examState.currentIndex = idx;
     const soal = examState.arraySoal[idx];
-
-    // --- TAMBAHKAN BARIS INI UNTUK MENGINTIP DATA ASLI ---
-    console.log("BENTUK ASLI DATA SOAL DARI DATABASE:", soal);
     
-    // ... (kode bawahnya biarkan sama)
-    document.getElementById('current-q-num').innerText = idx + 1;
     document.getElementById('current-q-num').innerText = idx + 1;
     
-    // PEMBACAAN DATA: Sesuaikan dengan nama field dari dashboard
     const tipeSoal = soal.tipe || soal.tipe_soal || 'PG';
     document.getElementById('badge-tipe-soal').innerText = tipeSoal.toUpperCase();
     
     const container = document.getElementById('soal-content');
-    
-    // PEMBACAAN DATA: Teks soal menggunakan 'teks_soal'
     const teksSoal = soal.teks_soal || soal.teksSoal || soal.pertanyaan || '';
     let htmlContent = `<p style="font-size:1.1rem; line-height:1.6; margin-bottom:20px;">${teksSoal}</p>`;
 
@@ -310,9 +276,7 @@ function tampilkanSoal(idx) {
         htmlContent += `<div style="display:flex; flex-direction:column; gap:12px;">`;
         
         opsiArr.forEach(o => {
-            // PEMBACAAN DATA: Mendukung opsi berupa Object (opsi.A)
             const teksOpsi = (soal.opsi && soal.opsi[o]) ? soal.opsi[o] : soal[`opsi${o}`];
-            
             if (teksOpsi) {
                 const checked = examState.jawabanSiswa[soal.id] === o ? 'checked' : '';
                 htmlContent += `
@@ -349,9 +313,6 @@ function tampilkanSoal(idx) {
 document.getElementById('btn-prev').onclick = () => tampilkanSoal(examState.currentIndex - 1);
 document.getElementById('btn-next').onclick = () => tampilkanSoal(examState.currentIndex + 1);
 
-// ==========================================
-// 8. PROSES SUBMIT & SELESAI UJIAN
-// ==========================================
 document.getElementById('btn-selesai').onclick = async () => {
     const jumlahSoal = examState.arraySoal.length;
     const dijawab = Object.keys(examState.jawabanSiswa).length;
@@ -369,6 +330,9 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
+    
+    // Tampilan Loading Aman saat mengirim (Mencegah Interaksi Lanjutan)
+    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><h2 style="color:var(--secondary); font-family:sans-serif;">Menyimpan Lembar Ujian Anda...</h2><p style="color:var(--text-muted);">Mohon jangan tutup jendela ini.</p></div>';
 
     let benar = 0; let salah = 0; let skor = 0;
     let totalSoalPG = 0;
@@ -377,7 +341,6 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
         const tipeSoal = s.tipe || s.tipe_soal || 'PG';
         if(tipeSoal === 'PG') {
             totalSoalPG++;
-            // PEMBACAAN DATA: Kunci jawaban disesuaikan 'kunci_jawaban'
             const kunci = s.kunci_jawaban || s.jawaban_benar;
             if(examState.jawabanSiswa[s.id] === kunci) benar++; else salah++;
         }
@@ -399,9 +362,10 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
 
     try {
         await addDoc(collection(db, "hasil_ujian"), payload);
-        await window.customAlert("Jawaban berhasil disimpan! Anda akan diarahkan ke halaman utama.", "Sukses");
+        alert("PEMBERITAHUAN:\nJawaban Anda berhasil disimpan di server. Anda akan diarahkan kembali ke halaman utama.");
         window.location.replace("index.html");
     } catch(e) {
-        alert("Gagal menyimpan ke server. Hubungi pengawas ruangan!");
+        alert("GAGAL MENYIMPAN!\nTerjadi kesalahan koneksi. Silakan panggil pengawas ruangan.");
+        window.location.replace("index.html");
     }
 }
