@@ -461,9 +461,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     let actionButtons = '';
                     if (isAdmin && isRowAdmin && !isOwnAccount) {
                         actionButtons = `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-shield-alt"></i> Protected</span>`;
-                    } else {
+                   } else {
                         actionButtons = `<button onclick="window.editAkun('${id}')" class="btn-3d" style="background:var(--warning); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Edit Akun"><i class="fas fa-edit"></i></button>`;
-                        if (isAdmin && !isOwnAccount) { actionButtons += ` <button onclick="window.hapusAkun('${id}')" class="btn-3d" style="background:var(--danger); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Hapus Akun"><i class="fas fa-trash-alt"></i></button>`; }
+                        
+                        // HAPUS ATAU KOMENTARI BARIS DI BAWAH INI UNTUK MENGHILANGKAN TOMBOL HAPUS
+                        if (isAdmin && !isOwnAccount) { 
+                            actionButtons += ` <button onclick="window.hapusAkun('${id}')" class="btn-3d" style="background:var(--danger); margin:2px; padding:6px 10px; font-size:0.8rem;" title="Hapus Akun"><i class="fas fa-trash-alt"></i></button>`; 
+                        }
                     }
                     actionCell = `<td style="text-align:center; white-space: nowrap;">${actionButtons}</td>`;
                 } else {
