@@ -330,22 +330,33 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
-    
-    // Tampilan Loading Aman saat mengirim (Mencegah Interaksi Lanjutan)
+
+    // Tampilan Loading
     document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><h2 style="color:var(--secondary); font-family:sans-serif;">Menyimpan Lembar Ujian Anda...</h2><p style="color:var(--text-muted);">Mohon jangan tutup jendela ini.</p></div>';
 
     let benar = 0; let salah = 0; let skor = 0;
-    let totalSoalPG = 0;
+    let totalBobotPG = 0;
+    let skorDiperolehPG = 0;
 
+    // Hitung Skor Berdasarkan Bobot
     examState.arraySoal.forEach(s => {
         const tipeSoal = s.tipe || s.tipe_soal || 'PG';
+        const bobot = parseFloat(s.bobot) || 1; // Default bobot 1 jika tidak diisi
+
         if(tipeSoal === 'PG') {
-            totalSoalPG++;
+            totalBobotPG += bobot;
             const kunci = s.kunci_jawaban || s.jawaban_benar;
-            if(examState.jawabanSiswa[s.id] === kunci) benar++; else salah++;
+            if(examState.jawabanSiswa[s.id] === kunci) {
+                benar++; 
+                skorDiperolehPG += bobot; // Tambahkan bobot jika benar
+            } else {
+                salah++;
+            }
         }
     });
-    if(totalSoalPG > 0) skor = Math.round((benar / totalSoalPG) * 100);
+    
+    // Konversi skor ke skala 100 berdasarkan total bobot maksimal
+    if(totalBobotPG > 0) skor = Math.round((skorDiperolehPG / totalBobotPG) * 100);
 
     const payload = {
         uid: examState.student.uid,
