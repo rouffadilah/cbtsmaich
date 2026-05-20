@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDataPengguna() {
         const tbodyGuru = document.querySelector('#table-guru tbody');
         const tbodySiswa = document.querySelector('#table-siswa tbody');
-        let colCount = 4; 
+        let colCount = 4; // Berubah dari 5 ke 4 (kolom aksi dihilangkan)
 
         if (tbodyGuru) tbodyGuru.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Memuat data...</td></tr>`;
         if (tbodySiswa) tbodySiswa.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Memuat data...</td></tr>`;
@@ -453,8 +453,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 let roleStr = roleArray.join(', ');
                 let isSiswaAcc = roleArray.includes('siswa');
                 let isGuruAcc = roleArray.includes('guru') || roleArray.includes('admin');
-                let isOwnAccount = (id === currentUserUid);
-                let actionCell = '';
+
+                // === RENDER BARIS GURU ===
+                if (isGuruAcc) {
+                    countGuru++;
+                    let mapelStr = data.mapel ? (Array.isArray(data.mapel) ? data.mapel.join(', ') : data.mapel) : '-';
+                    let kelasStr = data.kelas ? (Array.isArray(data.kelas) ? data.kelas.join(', ') : data.kelas) : '-';
+                    
+                    let detail = `
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <span style="font-size:0.8rem; background: #f0f9ff; color: #0284c7; padding: 5px 10px; border-radius: 6px; border: 1px solid #bae6fd; width: fit-content;"><i class="fas fa-book" style="margin-right:5px;"></i> ${mapelStr}</span>
+                            <span style="font-size:0.8rem; background: #fdf4ff; color: #a21caf; padding: 5px 10px; border-radius: 6px; border: 1px solid #f5d0fe; width: fit-content;"><i class="fas fa-chalkboard" style="margin-right:5px;"></i> ${kelasStr}</span>
+                        </div>`;
+                    
+                    let badgeBg = roleArray.includes('admin') ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)' : 'linear-gradient(135deg, #38bdf8, #0284c7)';
+                    
+                    htmlGuru += `
+                    <tr>
+                        <td style="font-weight: 600; color: #475569; letter-spacing: 0.5px;">${data.username || '-'}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #f1f5f9; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0;"><i class="fas fa-user-tie"></i></div>
+                                <span style="font-weight: 700; color: var(--secondary); font-size: 0.95rem;">${data.nama || '-'}</span>
+                            </div>
+                        </td>
+                        <td><span style="background: ${badgeBg}; color:white; padding:6px 14px; border-radius:20px; font-size:0.75rem; font-weight:800; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); letter-spacing: 0.5px;">${roleStr.toUpperCase()}</span></td>
+                        <td>${detail}</td>
+                    </tr>`;
+                } 
+                
+                // === RENDER BARIS SISWA ===
+                if (isSiswaAcc) {
+                    countSiswa++;
+                    htmlSiswa += `
+                    <tr>
+                        <td style="font-weight: 600; color: #475569; letter-spacing: 0.5px;">${data.username || '-'}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #f0fdf4; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #16a34a; border: 1px solid #bbf7d0;"><i class="fas fa-user-graduate"></i></div>
+                                <span style="font-weight: 700; color: var(--secondary); font-size: 0.95rem;">${data.nama || '-'}</span>
+                            </div>
+                        </td>
+                        <td><span style="background: linear-gradient(135deg, #10b981, #047857); color:white; padding:6px 14px; border-radius:20px; font-size:0.75rem; font-weight:800; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); letter-spacing: 0.5px;">SISWA</span></td>
+                        <td><span style="background: #f8fafc; padding: 6px 12px; border-radius: 8px; font-weight: 700; color: #475569; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">${data.kelas || '-'}</span></td>
+                    </tr>`;
+                }
+            });
 
             if (tbodyGuru) tbodyGuru.innerHTML = countGuru > 0 ? htmlGuru : `<tr><td colspan="${colCount}" style="text-align:center;">Belum ada data guru.</td></tr>`;
             if (tbodySiswa) tbodySiswa.innerHTML = countSiswa > 0 ? htmlSiswa : `<tr><td colspan="${colCount}" style="text-align:center;">Belum ada data siswa.</td></tr>`;
@@ -463,6 +507,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.error("Gagal memuat data pengguna:", e); }
     }
 
+    // Sisa fungsi lain tidak diubah, tetap seperti aslinya...
+
+    // --- BAGIAN FUNGSI EDIT DAN HAPUS AKUN TETAP ADA SEBAGAI REFERENSI LOGIKA 
+    // MESKIPUN TOMBOLNYA SUDAH DIHILANGKAN DARI UI TAMPILAN ---
     window.hapusAkun = async (id) => {
         if (await window.customConfirm("Hapus akun ini secara permanen?", "danger")) {
             try { await deleteDoc(doc(db, "users", id)); await window.customAlert("Akun berhasil dihapus!", "success"); loadDataPengguna(); } 
