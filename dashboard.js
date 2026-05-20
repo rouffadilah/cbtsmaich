@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDataPengguna() {
         const tbodyGuru = document.querySelector('#table-guru tbody');
         const tbodySiswa = document.querySelector('#table-siswa tbody');
-        let colCount = 5; 
+        let colCount = 4; 
 
         if (tbodyGuru) tbodyGuru.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Memuat data...</td></tr>`;
         if (tbodySiswa) tbodySiswa.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Memuat data...</td></tr>`;
@@ -455,22 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 let isGuruAcc = roleArray.includes('guru') || roleArray.includes('admin');
                 let isOwnAccount = (id === currentUserUid);
                 let actionCell = '';
-
-                // Fitur aksi dinonaktifkan
-                actionCell = `<td style="text-align:center; color:var(--text-muted); font-size:0.8rem;">-</td>`;
-
-                if (isGuruAcc) {
-                    countGuru++;
-                    let mapelStr = data.mapel ? (Array.isArray(data.mapel) ? data.mapel.join(', ') : data.mapel) : '-';
-                    let kelasStr = data.kelas ? (Array.isArray(data.kelas) ? data.kelas.join(', ') : data.kelas) : '-';
-                    let detail = `<span style="font-size:0.8rem"><b>Mapel:</b> ${mapelStr}<br><b>Kelas:</b> ${kelasStr}</span>`;
-                    htmlGuru += `<tr><td>${data.username || '-'}</td><td>${data.nama || '-'}</td><td><span class="badge" style="background:var(--info); color:white; padding:3px 8px; border-radius:4px; font-size:0.75rem;">${roleStr.toUpperCase()}</span></td><td>${detail}</td>${actionCell}</tr>`;
-                } 
-                if (isSiswaAcc) {
-                    countSiswa++;
-                    htmlSiswa += `<tr><td>${data.username || '-'}</td><td>${data.nama || '-'}</td><td><span class="badge" style="background:var(--success); color:white; padding:3px 8px; border-radius:4px; font-size:0.75rem;">SISWA</span></td><td>${data.kelas || '-'}</td>${actionCell}</tr>`;
-                }
-            });
 
             if (tbodyGuru) tbodyGuru.innerHTML = countGuru > 0 ? htmlGuru : `<tr><td colspan="${colCount}" style="text-align:center;">Belum ada data guru.</td></tr>`;
             if (tbodySiswa) tbodySiswa.innerHTML = countSiswa > 0 ? htmlSiswa : `<tr><td colspan="${colCount}" style="text-align:center;">Belum ada data siswa.</td></tr>`;
