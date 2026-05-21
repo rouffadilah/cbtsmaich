@@ -201,6 +201,15 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
         if (tokenInput !== tokenCode) throw new Error("Token yang Anda masukkan salah!");
 
+        // --- TAMBAHKAN KODE INI UNTUK CEK KEDALUWARSA ---
+        if (typeof tokenData === 'object' && tokenData.expiredAt) {
+            const waktuSekarang = new Date().getTime();
+            if (waktuSekarang > tokenData.expiredAt) {
+                throw new Error("Token sudah kedaluwarsa (masa aktif 15 menit habis). Silakan minta guru untuk menyimpan/membuat ulang token!");
+            }
+        }
+        // ------------------------------------------------
+
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", examState.mapelTerpilih), where("kelas", "==", kelasSiswa));
         const soalSnap = await getDocs(qSoal);
         if (soalSnap.empty) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
