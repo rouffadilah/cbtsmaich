@@ -590,6 +590,21 @@ document.addEventListener('DOMContentLoaded', () => {
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id);
         if (!soal) return;
+
+        // --- TAMBAHKAN KODE INI UNTUK MEMUAT DROPDOWN MAPEL & KELAS ---
+        const mapelSelect = document.getElementById('soal-mapel');
+        const kelasSelect = document.getElementById('soal-kelas');
+
+        let allowedMapel = listMapel;
+        if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
+
+        mapelSelect.innerHTML = '<option value="" disabled>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
+        kelasSelect.innerHTML = '<option value="" disabled>-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+
+        // Mengunci dropdown agar guru tidak tidak sengaja mengubah mapel/kelas saat mengedit soal
+        mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0';
+        kelasSelect.style.pointerEvents = 'none'; kelasSelect.style.backgroundColor = '#e2e8f0';
+        // --------------------------------------------------------------
         
         document.getElementById('edit-soal-id').value = id;
         document.getElementById('soal-mapel').value = soal.mataPelajaran;
