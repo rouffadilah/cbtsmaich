@@ -276,7 +276,23 @@
                 </div>
                 
                 <div class="input-group"><label>Teks Soal</label><textarea id="soal-teks" class="input-text" rows="4" required></textarea></div>
-                <div class="input-group"><label>Media Lampiran Soal (Opsional)</label><input type="file" id="soal-media" class="input-text" accept="image/*,video/*,audio/*"></div>
+                <div class="input-group" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <label style="margin-bottom: 10px; color: var(--info);"><i class="fas fa-cloud-upload-alt"></i> Media Lampiran Soal (Opsional)</label>
+                    
+                    <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px;">
+                        <label style="font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                            <input type="radio" name="tipe_media_utama" value="file" checked onchange="document.getElementById('soal-media').style.display='block'; document.getElementById('soal-media-url').style.display='none';"> 
+                            Upload File Lokal
+                        </label>
+                        <label style="font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                            <input type="radio" name="tipe_media_utama" value="url" onchange="document.getElementById('soal-media').style.display='none'; document.getElementById('soal-media-url').style.display='block';"> 
+                            Link Google Drive
+                        </label>
+                    </div>
+                    
+                    <input type="file" id="soal-media" class="input-text" accept="image/*,video/*,audio/*">
+                    <input type="text" id="soal-media-url" class="input-text" placeholder="Paste link share Google Drive di sini..." style="display: none; border-color: var(--info);">
+                </div>
                 
                 <div id="pg-options">
                     <div class="input-group"><label>Opsi A</label><input type="text" id="soal-opsi-A" class="input-text"><input type="file" id="media-opsi-A" class="input-text" accept="image/*" style="margin-top: 5px;"><label class="kunci-pg-container" style="margin-top: 5px; display: block;"><input type="radio" name="kunci-pg" value="A"> Jadikan Kunci A</label><label class="kunci-pgk-container" style="display:none; margin-top: 5px;"><input type="checkbox" class="kunci-pgk" value="A"> Kunci A</label></div>
