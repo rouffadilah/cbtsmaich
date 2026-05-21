@@ -773,14 +773,23 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if(waktu) await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: waktu }, { merge: true });
             if(jadwal) await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true });
-            if(token) { await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: { code: token, active: true } }, { merge: true }); }
+            
+            if(token) { 
+                // --- UBAH BAGIAN INI ---
+                // Tambahkan 15 Menit (15 menit * 60 detik * 1000 milidetik) ke waktu saat ini
+                const expiredAt = new Date().getTime() + (15 * 60 * 1000); 
+                await setDoc(doc(db, "pengaturan", "token_ujian"), { 
+                    [`token_${key}`]: { code: token, active: true, expiredAt: expiredAt } 
+                }, { merge: true });
+                // -----------------------
+            }
             window.customAlert("Pengaturan jadwal, durasi, dan token berhasil disimpan!", "success"); 
             loadBankSoalSummary();
         } catch(e) { window.customAlert("Gagal menyimpan pengaturan.", "error"); }
         
         btn.innerHTML = origHtml; btn.disabled = false;
     });
-
+    
     // ==============================================================
     // FITUR BARU: DOWNLOAD TEMPLATE & UPLOAD MASSAL EXCEL
     // ==============================================================
@@ -974,6 +983,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.querySelector('#table-hasil tbody'); if (!tbody) return;
         const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail && h.kelas === currentKelasDetail);
         
+        // --- TAMBAHKAN KODE INI UNTUK MENGURUTKAN WAKTU ---
+        // Urutkan dari yang terbaru ke yang terlama (Descending)
+        // Jika ingin yang terlama di atas, ubah posisi a dan b menjadi: new Date(a.waktuSubmit) - new Date(b.waktuSubmit)
+        dataFiltered.sort((a, b) => new Date(b.waktuSubmit) - new Date(a.waktuSubmit));
+        // ---------------------------------------------------
+
         if (dataFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Belum ada data hasil ujian.</td></tr>'; } 
         else {
             let html = '';
