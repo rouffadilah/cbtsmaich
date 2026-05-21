@@ -797,27 +797,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const templateData = [
             {
                 "Nomor Soal": 1,
-                "Tipe Soal (PG / PGK / Essay)": "PG",
-                "Bobot Soal": 1, // <--- TAMBAHAN
-                "Teks Pertanyaan": "Siapakah presiden pertama Indonesia?",
-                "Opsi A": "Soeharto",
-                "Opsi B": "B.J. Habibie",
-                "Opsi C": "Soekarno",
-                "Opsi D": "Joko Widodo",
-                "Opsi E": "Megawati",
-                "Kunci Jawaban": "C"
+                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG",
+                "Bobot Soal": 10,
+                "Teks Pertanyaan": "Perhatikan gambar makhluk hidup berikut! Organisme ini berkembang biak dengan cara...",
+                "Link Media Pertanyaan (URL Gambar/Audio/Video)": "https://images.unsplash.com/photo-1544391490-4467926715f0?w=500",
+                "Opsi A": "Membelah Diri", "Link Media Opsi A (URL Gambar)": "",
+                "Opsi B": "Fragmentasi", "Link Media Opsi B (URL Gambar)": "",
+                "Opsi C": "Tunas", "Link Media Opsi C (URL Gambar)": "",
+                "Opsi D": "Sporulasi", "Link Media Opsi D (URL Gambar)": "",
+                "Opsi E": "Konjugasi", "Link Media Opsi E (URL Gambar)": "",
+                "Kunci Jawaban / Pasangan Menjodohkan": "C"
             },
             {
                 "Nomor Soal": 2,
-                "Tipe Soal (PG / PGK / Essay)": "Essay",
-                "Bobot Soal": 1, // <--- TAMBAHAN
-                "Teks Pertanyaan": "Jelaskan dengan singkat makna Pancasila!",
-                "Opsi A": "",
-                "Opsi B": "",
-                "Opsi C": "",
-                "Opsi D": "",
-                "Opsi E": "",
-                "Kunci Jawaban": "Pancasila adalah dasar negara dan pandangan hidup bangsa Indonesia."
+                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK",
+                "Bobot Soal": 15,
+                "Teks Pertanyaan": "Pilihlah gambar yang termasuk ke dalam ekosistem perairan laut!",
+                "Link Media Pertanyaan (URL Gambar/Audio/Video)": "",
+                "Opsi A": "Terumbu Karang", "Link Media Opsi A (URL Gambar)": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=200",
+                "Opsi B": "Hutan Pinus", "Link Media Opsi B (URL Gambar)": "",
+                "Opsi C": "Laut Dalam", "Link Media Opsi C (URL Gambar)": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200",
+                "Opsi D": "Padang Rumput", "Link Media Opsi D (URL Gambar)": "",
+                "Opsi E": "Pantai Pasir", "Link Media Opsi E (URL Gambar)": "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=200",
+                "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E"
+            },
+            {
+                "Nomor Soal": 3,
+                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Menjodohkan",
+                "Bobot Soal": 20,
+                "Teks Pertanyaan": "Pasangkanlah nama hardware komputer berikut dengan fungsinya yang tepat!",
+                "Link Media Pertanyaan (URL Gambar/Audio/Video)": "",
+                "Opsi A": "", "Link Media Opsi A (URL Gambar)": "",
+                "Opsi B": "", "Link Media Opsi B (URL Gambar)": "",
+                "Opsi C": "", "Link Media Opsi C (URL Gambar)": "",
+                "Opsi D": "", "Link Media Opsi D (URL Gambar)": "",
+                "Opsi E": "", "Link Media Opsi E (URL Gambar)": "",
+                "Kunci Jawaban / Pasangan Menjodohkan": "Keyboard=Input Mengetik; Monitor=Output Layar; RAM=Penyimpanan Sementara"
+            },
+            {
+                "Nomor Soal": 4,
+                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Essay",
+                "Bobot Soal": 10,
+                "Teks Pertanyaan": "Jelaskan dampak pencemaran lingkungan terhadap kelangsungan hidup biota laut!",
+                "Link Media Pertanyaan (URL Gambar/Audio/Video)": "",
+                "Opsi A": "", "Link Media Opsi A (URL Gambar)": "",
+                "Opsi B": "", "Link Media Opsi B (URL Gambar)": "",
+                "Opsi C": "", "Link Media Opsi C (URL Gambar)": "",
+                "Opsi D": "", "Link Media Opsi D (URL Gambar)": "",
+                "Opsi E": "", "Link Media Opsi E (URL Gambar)": "",
+                "Kunci Jawaban / Pasangan Menjodohkan": "Mengakibatkan kerusakan terumbu karang, kematian biota laut akibat mikroplastik, dan penurunan kualitas air laut."
             }
         ];
 
@@ -825,8 +853,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Format Input Soal");
         
-        // Lebarkan kolom agar mudah diisi oleh guru
-        worksheet['!cols'] = [ {wch: 12}, {wch: 25}, {wch: 50}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 25} ];
+        // Mengatur lebar ideal untuk 16 kolom agar rapi (Kolom A s.d P)
+        worksheet['!cols'] = [ 
+            {wch: 12}, // A: Nomor Soal
+            {wch: 25}, // B: Tipe Soal
+            {wch: 12}, // C: Bobot Soal
+            {wch: 45}, // D: Teks Pertanyaan
+            {wch: 35}, // E: Link Media Pertanyaan
+            {wch: 20}, // F: Opsi A
+            {wch: 25}, // G: Link Media Opsi A
+            {wch: 20}, // H: Opsi B
+            {wch: 25}, // I: Link Media Opsi B
+            {wch: 20}, // J: Opsi C
+            {wch: 25}, // K: Link Media Opsi C
+            {wch: 20}, // L: Opsi D
+            {wch: 25}, // M: Link Media Opsi D
+            {wch: 20}, // N: Opsi E
+            {wch: 25}, // O: Link Media Opsi E
+            {wch: 45}  // P: Kunci Jawaban / Pasangan
+        ];
 
         XLSX.writeFile(workbook, "Template_Upload_Soal_SMAICH.xlsx");
     };
@@ -842,11 +887,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
-                // Tampilkan efek loading pada list soal saat memproses
                 const container = document.getElementById('list-soal');
-                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file Excel & Menyimpan data ke Server...<br><span style="font-size:0.8rem; color:var(--text-muted); font-weight:normal;">Proses ini mungkin memakan waktu beberapa detik.</span></div>';
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file Excel & Menyimpan data ke Server...</div>';
 
-                // Parsing File Excel dengan SheetJS
                 const data = new Uint8Array(event.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
@@ -856,26 +899,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (jsonData.length === 0) throw new Error("File Excel kosong atau tidak sesuai format!");
 
                 let updates = [];
-                let timestampAwal = new Date().getTime(); // Membantu mensortir jika nomor sama
+                let timestampAwal = new Date().getTime();
                 
-                // Looping data Excel per baris
                 for (let row of jsonData) {
-                    let tipeRaw = String(row["Tipe Soal (PG / PGK / Essay)"] || "PG").toUpperCase().trim();
-                    let tipeFormat = tipeRaw === 'ESSAY' ? 'Essay' : (tipeRaw === 'PGK' ? 'PGK' : 'PG');
+                    let tipeRaw = String(row["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] || "PG").toUpperCase().trim();
+                    let tipeFormat = "PG";
+                    if (tipeRaw.includes('ESSAY')) tipeFormat = 'Essay';
+                    else if (tipeRaw.includes('PGK')) tipeFormat = 'PGK';
+                    else if (tipeRaw.includes('JODOH') || tipeRaw.includes('MENJODOHKAN')) tipeFormat = 'Menjodohkan';
                     
-                    timestampAwal += 10; // Increment millis agar sorting waktu aman
+                    timestampAwal += 10;
 
                     let payload = {
                         mataPelajaran: mapel,
                         kelas: kelas,
                         nomor_soal: parseInt(row["Nomor Soal"]) || 1,
-                        bobot: parseFloat(row["Bobot Soal"]) || 1, // <--- TAMBAHAN
+                        bobot: parseFloat(row["Bobot Soal"]) || 1,
                         tipe: tipeFormat,
                         teks_soal: String(row["Teks Pertanyaan"] || ""),
                         createdAt: new Date(timestampAwal),
                         updatedAt: new Date(timestampAwal)
                     };
 
+                    // 1. Ekstrak Link Media Pertanyaan (Jika Ada)
+                    let linkMediaPertanyaan = row["Link Media Pertanyaan (URL Gambar/Audio/Video)"] ? String(row["Link Media Pertanyaan (URL Gambar/Audio/Video)"]).trim() : "";
+                    if (linkMediaPertanyaan) {
+                        let mType = "image";
+                        if (linkMediaPertanyaan.toLowerCase().includes('.mp3') || linkMediaPertanyaan.toLowerCase().includes('.wav')) mType = "audio";
+                        else if (linkMediaPertanyaan.toLowerCase().includes('.mp4') || linkMediaPertanyaan.toLowerCase().includes('.mkv')) mType = "video";
+                        payload.media_soal = { url: linkMediaPertanyaan, type: mType };
+                    }
+
+                    // 2. Ekstrak Opsi Jawaban & Link Media Opsi (Untuk PG / PGK)
                     if (tipeFormat === 'PG' || tipeFormat === 'PGK') {
                         payload.opsi = {
                             A: row["Opsi A"] ? String(row["Opsi A"]) : "",
@@ -884,44 +939,66 @@ document.addEventListener('DOMContentLoaded', () => {
                             D: row["Opsi D"] ? String(row["Opsi D"]) : "",
                             E: row["Opsi E"] ? String(row["Opsi E"]) : ""
                         };
+
+                        // Ekstrak media opsi
+                        let opsiMediaObj = {};
+                        ['A', 'B', 'C', 'D', 'E'].forEach(k => {
+                            let linkMediaOpsi = row[`Link Media Opsi ${k} (URL Gambar)`] ? String(row[`Link Media Opsi ${k} (URL Gambar)`]).trim() : "";
+                            if (linkMediaOpsi) {
+                                opsiMediaObj[k] = { url: linkMediaOpsi, type: "image" };
+                            }
+                        });
+                        if (Object.keys(opsiMediaObj).length > 0) {
+                            payload.opsi_media = opsiMediaObj;
+                        }
                         
-                        let kunci = String(row["Kunci Jawaban"] || "").trim().toUpperCase();
+                        let kunci = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || "").trim().toUpperCase();
                         if (tipeFormat === 'PGK') {
-                            // Asumsi kunci diketik pisah koma di excel (A,B,C)
                             payload.kunci_jawaban = kunci.split(',').map(k => k.trim()); 
                         } else {
                             payload.kunci_jawaban = kunci;
                         }
-                    } else if (tipeFormat === 'Essay') {
-                        payload.kunci_jawaban = String(row["Kunci Jawaban"] || "");
+                    } 
+                    // 3. Ekstrak Format Menjodohkan (Format: Kiri=Kanan; Kiri=Kanan)
+                    else if (tipeFormat === 'Menjodohkan') {
+                        let kunciRaw = row["Kunci Jawaban / Pasangan Menjodohkan"] ? String(row["Kunci Jawaban / Pasangan Menjodohkan"]).trim() : "";
+                        let pasanganArr = [];
+                        if (kunciRaw) {
+                            let pairs = kunciRaw.split(';');
+                            pairs.forEach(p => {
+                                let splitPair = p.split('=');
+                                if (splitPair.length === 2) {
+                                    pasanganArr.push({
+                                        kiri: splitPair[0].trim(),
+                                        kanan: splitPair[1].trim()
+                                    });
+                                }
+                            });
+                        }
+                        payload.pasangan = pasanganArr;
+                    } 
+                    // 4. Ekstrak Format Essay
+                    else if (tipeFormat === 'Essay') {
+                        payload.kunci_jawaban = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || "");
                     }
 
-                    // Tambahkan tugas simpan ke Array Promise
                     updates.push(addDoc(collection(db, "bank_soal"), payload));
                 }
 
-                // Eksekusi Simpan Massal
                 await Promise.all(updates);
-                
-                // Panggil Auto-Renumbering agar susunannya tidak bentrok dengan soal lama
                 await normalizeUrutanSoal(mapel, kelas);
                 
-                window.customAlert(`Sukses! ${jsonData.length} Soal dari Excel berhasil diunggah dan disimpan.`, "success");
-                
-                // Refresh Tampilan List
+                window.customAlert(`Sukses! ${jsonData.length} Soal berhasil diunggah dari Excel lengkap dengan link medianya.`, "success");
                 window.loadDaftarSoal(mapel, kelas);
                 loadBankSoalSummary();
 
             } catch (err) {
                 console.error(err);
                 window.customAlert("Gagal memproses file Excel: " + err.message, "error");
-                window.loadDaftarSoal(mapel, kelas); // Kembalikan ke normal list
+                window.loadDaftarSoal(mapel, kelas);
             }
         };
-        
         reader.readAsArrayBuffer(file);
-        
-        // Reset file input agar bisa upload file yang sama jika diinginkan
         e.target.value = '';
     });
     
