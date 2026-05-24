@@ -4,7 +4,9 @@ import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc,
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
-// Variabel Globals
+// ==========================================
+// VARIABEL GLOBAL
+// ==========================================
 let listMapel = []; let listKelas = []; let allUsersData = []; let allHasilUjian = []; 
 let currentMapelDetail = ""; let currentKelasDetail = "";
 let isAdmin = false; let isGuru = false; let userMapel = []; let userKelas = [];
@@ -474,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tipe = document.getElementById('soal-tipe').value;
         const teks = document.getElementById('soal-teks').value;
         const nomorSoalTarget = parseInt(document.getElementById('soal-nomor').value) || 1;
-        const bobotSoal = parseFloat(document.getElementById('soal-bobot').value) || 1; // <--- BARIS INI DITAMBAHKAN
+        const bobotSoal = parseFloat(document.getElementById('soal-bobot').value) || 1;
 
         const btnSubmitSoal = e.target.querySelector('button[type="submit"]');
         const originalText = btnSubmitSoal.innerHTML;
@@ -543,7 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.loadDaftarSoal(curMapel, curKelas);
             }
             loadBankSoalSummary();
-            // Optional alert success
             window.customAlert("Soal berhasil disimpan & diurutkan!", "success");
 
         } catch(err) { window.customAlert(err.message || "Gagal menyimpan soal.", "error"); } 
@@ -591,7 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id);
         if (!soal) return;
 
-        // --- TAMBAHKAN KODE INI UNTUK MEMUAT DROPDOWN MAPEL & KELAS ---
         const mapelSelect = document.getElementById('soal-mapel');
         const kelasSelect = document.getElementById('soal-kelas');
 
@@ -601,16 +601,15 @@ document.addEventListener('DOMContentLoaded', () => {
         mapelSelect.innerHTML = '<option value="" disabled>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
         kelasSelect.innerHTML = '<option value="" disabled>-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
-        // Mengunci dropdown agar guru tidak tidak sengaja mengubah mapel/kelas saat mengedit soal
+        // Mengunci dropdown agar guru tidak sengaja mengubah mapel/kelas saat mengedit soal
         mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0';
         kelasSelect.style.pointerEvents = 'none'; kelasSelect.style.backgroundColor = '#e2e8f0';
-        // --------------------------------------------------------------
         
         document.getElementById('edit-soal-id').value = id;
         document.getElementById('soal-mapel').value = soal.mataPelajaran;
         document.getElementById('soal-kelas').value = soal.kelas;
         document.getElementById('soal-nomor').value = soal.nomor_soal || '';
-        document.getElementById('soal-bobot').value = soal.bobot || 1; // <--- BARIS INI DITAMBAHKAN
+        document.getElementById('soal-bobot').value = soal.bobot || 1; 
         document.getElementById('soal-tipe').value = soal.tipe || 'PG';
         document.getElementById('soal-teks').value = soal.teks_soal || '';
         
@@ -689,7 +688,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
             
             soalArr.forEach((s, idx) => {
-                // KARTU SOAL (BISA DIKLIK KESELURUHAN)
                 html += `
                 <div style="background: white; border: 1px solid var(--border-color); border-left: 4px solid transparent; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s ease; position: relative;"
                      onmouseover="this.style.borderLeftColor='var(--info)'; this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(-2px)'"
@@ -712,7 +710,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${s.media_soal ? `<div style="margin-bottom:15px; font-size:0.85rem; color:var(--info); background:#eff6ff; padding:8px 12px; border-radius:6px; display:inline-block;"><i class="fas fa-paperclip"></i> Terlampir File Media (${s.media_soal.type.toUpperCase()})</div><br>` : ''}
                 `;
                 
-                // RENDER OPSI JAWABAN (PREVIEW)
                 if (s.tipe === 'PG' || s.tipe === 'PGK' || !s.tipe) {
                     html += `<div style="display:flex; flex-direction:column; gap:6px;">`;
                     ['A','B','C','D','E'].forEach(o => {
@@ -738,9 +735,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (s.kunci_jawaban) { html += `<div style="font-size:0.9rem; background:#f0fdf4; border: 1px solid #bbf7d0; color:#166534; padding:15px; border-radius:8px; display:inline-block; width:100%; margin-top: 10px;"><b>Referensi Jawaban:</b><div style="margin-top: 8px; color: #15803d; line-height: 1.5;">${s.kunci_jawaban}</div></div>`; } 
                 }
                 
-                html += `</div></div>`; // Tutup padding dan card
+                html += `</div></div>`; 
                 
-                // TOMBOL SISIPKAN SETELAH SOAL INI
                 let targetNext = (s.nomor_soal || (idx+1)) + 1;
                 html += `
                 <div style="display:flex; justify-content:center; position:relative; margin: 15px 0;">
@@ -760,7 +756,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const curMapel = document.getElementById('filter-soal-mapel').value;
                 const curKelas = document.getElementById('filter-soal-kelas').value;
                 
-                // Normalisasi agar nomor kembali urut menutup yang kosong (contoh 1,3 -> 1,2)
                 await normalizeUrutanSoal(curMapel, curKelas);
                 
                 window.loadDaftarSoal(curMapel, curKelas); 
@@ -790,13 +785,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if(jadwal) await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true });
             
             if(token) { 
-                // --- UBAH BAGIAN INI ---
-                // Tambahkan 15 Menit (15 menit * 60 detik * 1000 milidetik) ke waktu saat ini
                 const expiredAt = new Date().getTime() + (15 * 60 * 1000); 
                 await setDoc(doc(db, "pengaturan", "token_ujian"), { 
                     [`token_${key}`]: { code: token, active: true, expiredAt: expiredAt } 
                 }, { merge: true });
-                // -----------------------
             }
             window.customAlert("Pengaturan jadwal, durasi, dan token berhasil disimpan!", "success"); 
             loadBankSoalSummary();
@@ -806,91 +798,146 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // ==============================================================
-    // FITUR BARU: DOWNLOAD TEMPLATE & UPLOAD MASSAL EXCEL
+    // FUNGSI INTI: PROSES UPLOAD MASSAL (DARI LOKAL & G-DRIVE)
     // ==============================================================
     window.downloadTemplateExcel = () => {
         const templateData = [
-            {
-                "Nomor Soal": 1,
-                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG",
-                "Bobot Soal": 10,
-                "Teks Pertanyaan": "Perhatikan gambar makhluk hidup berikut! Organisme ini berkembang biak dengan cara...",
-                "Link Media Pertanyaan (URL Gambar/Audio/Video)": "https://images.unsplash.com/photo-1544391490-4467926715f0?w=500",
-                "Opsi A": "Membelah Diri", "Link Media Opsi A (URL Gambar)": "",
-                "Opsi B": "Fragmentasi", "Link Media Opsi B (URL Gambar)": "",
-                "Opsi C": "Tunas", "Link Media Opsi C (URL Gambar)": "",
-                "Opsi D": "Sporulasi", "Link Media Opsi D (URL Gambar)": "",
-                "Opsi E": "Konjugasi", "Link Media Opsi E (URL Gambar)": "",
-                "Kunci Jawaban / Pasangan Menjodohkan": "C"
-            },
-            {
-                "Nomor Soal": 2,
-                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK",
-                "Bobot Soal": 15,
-                "Teks Pertanyaan": "Pilihlah gambar yang termasuk ke dalam ekosistem perairan laut!",
-                "Link Media Pertanyaan (URL Gambar/Audio/Video)": "",
-                "Opsi A": "Terumbu Karang", "Link Media Opsi A (URL Gambar)": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=200",
-                "Opsi B": "Hutan Pinus", "Link Media Opsi B (URL Gambar)": "",
-                "Opsi C": "Laut Dalam", "Link Media Opsi C (URL Gambar)": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200",
-                "Opsi D": "Padang Rumput", "Link Media Opsi D (URL Gambar)": "",
-                "Opsi E": "Pantai Pasir", "Link Media Opsi E (URL Gambar)": "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=200",
-                "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E"
-            },
-            {
-                "Nomor Soal": 3,
-                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Menjodohkan",
-                "Bobot Soal": 20,
-                "Teks Pertanyaan": "Pasangkanlah nama hardware komputer berikut dengan fungsinya yang tepat!",
-                "Link Media Pertanyaan (URL Gambar/Audio/Video)": "",
-                "Opsi A": "", "Link Media Opsi A (URL Gambar)": "",
-                "Opsi B": "", "Link Media Opsi B (URL Gambar)": "",
-                "Opsi C": "", "Link Media Opsi C (URL Gambar)": "",
-                "Opsi D": "", "Link Media Opsi D (URL Gambar)": "",
-                "Opsi E": "", "Link Media Opsi E (URL Gambar)": "",
-                "Kunci Jawaban / Pasangan Menjodohkan": "Keyboard=Input Mengetik; Monitor=Output Layar; RAM=Penyimpanan Sementara"
-            },
-            {
-                "Nomor Soal": 4,
-                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Essay",
-                "Bobot Soal": 10,
-                "Teks Pertanyaan": "Jelaskan dampak pencemaran lingkungan terhadap kelangsungan hidup biota laut!",
-                "Link Media Pertanyaan (URL Gambar/Audio/Video)": "",
-                "Opsi A": "", "Link Media Opsi A (URL Gambar)": "",
-                "Opsi B": "", "Link Media Opsi B (URL Gambar)": "",
-                "Opsi C": "", "Link Media Opsi C (URL Gambar)": "",
-                "Opsi D": "", "Link Media Opsi D (URL Gambar)": "",
-                "Opsi E": "", "Link Media Opsi E (URL Gambar)": "",
-                "Kunci Jawaban / Pasangan Menjodohkan": "Mengakibatkan kerusakan terumbu karang, kematian biota laut akibat mikroplastik, dan penurunan kualitas air laut."
-            }
+            { "Nomor Soal": 1, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Bobot Soal": 10, "Teks Pertanyaan": "Contoh Soal PG?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "A", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "B", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "C", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "D", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "E", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "C" },
+            { "Nomor Soal": 2, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Bobot Soal": 15, "Teks Pertanyaan": "Contoh Soal PGK?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Benar 1", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "Salah 1", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "Benar 2", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "Salah 2", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "Benar 3", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E" },
+            { "Nomor Soal": 3, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Menjodohkan", "Bobot Soal": 20, "Teks Pertanyaan": "Contoh Soal Menjodohkan?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "Kiri1=Kanan1; Kiri2=Kanan2" },
+            { "Nomor Soal": 4, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Essay", "Bobot Soal": 10, "Teks Pertanyaan": "Contoh Soal Essay?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "Kunci Referensi" }
         ];
 
         const worksheet = XLSX.utils.json_to_sheet(templateData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Format Input Soal");
         
-        // Mengatur lebar ideal untuk 16 kolom agar rapi (Kolom A s.d P)
-        worksheet['!cols'] = [ 
-            {wch: 12}, // A: Nomor Soal
-            {wch: 25}, // B: Tipe Soal
-            {wch: 12}, // C: Bobot Soal
-            {wch: 45}, // D: Teks Pertanyaan
-            {wch: 35}, // E: Link Media Pertanyaan
-            {wch: 20}, // F: Opsi A
-            {wch: 25}, // G: Link Media Opsi A
-            {wch: 20}, // H: Opsi B
-            {wch: 25}, // I: Link Media Opsi B
-            {wch: 20}, // J: Opsi C
-            {wch: 25}, // K: Link Media Opsi C
-            {wch: 20}, // L: Opsi D
-            {wch: 25}, // M: Link Media Opsi D
-            {wch: 20}, // N: Opsi E
-            {wch: 25}, // O: Link Media Opsi E
-            {wch: 45}  // P: Kunci Jawaban / Pasangan
-        ];
-
+        worksheet['!cols'] = [ {wch: 12}, {wch: 25}, {wch: 12}, {wch: 45}, {wch: 35}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 45} ];
         XLSX.writeFile(workbook, "Template_Upload_Soal_SMAICH.xlsx");
     };
 
+    async function prosesUploadMassal(jsonData, mapel, kelas) {
+        if (jsonData.length === 0) throw new Error("File kosong atau tidak sesuai format Template!");
+
+        let updates = [];
+        let timestampAwal = new Date().getTime();
+        
+        for (let row of jsonData) {
+            let tipeRaw = String(row["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] || "PG").toUpperCase().trim();
+            let tipeFormat = "PG";
+            if (tipeRaw.includes('ESSAY')) tipeFormat = 'Essay';
+            else if (tipeRaw.includes('PGK')) tipeFormat = 'PGK';
+            else if (tipeRaw.includes('JODOH') || tipeRaw.includes('MENJODOHKAN')) tipeFormat = 'Menjodohkan';
+            
+            timestampAwal += 10;
+
+            let payload = {
+                mataPelajaran: mapel, kelas: kelas,
+                nomor_soal: parseInt(row["Nomor Soal"]) || 1,
+                bobot: parseFloat(row["Bobot Soal"]) || 1,
+                tipe: tipeFormat,
+                teks_soal: String(row["Teks Pertanyaan"] || ""),
+                createdAt: new Date(timestampAwal),
+                updatedAt: new Date(timestampAwal)
+            };
+
+            let linkMediaPertanyaan = row["Link Media Pertanyaan (URL Gambar/Audio/Video)"] ? String(row["Link Media Pertanyaan (URL Gambar/Audio/Video)"]).trim() : "";
+            if (linkMediaPertanyaan) {
+                let mType = "image";
+                if (linkMediaPertanyaan.toLowerCase().includes('.mp3') || linkMediaPertanyaan.toLowerCase().includes('.wav')) mType = "audio";
+                else if (linkMediaPertanyaan.toLowerCase().includes('.mp4') || linkMediaPertanyaan.toLowerCase().includes('.mkv')) mType = "video";
+                payload.media_soal = { url: linkMediaPertanyaan, type: mType };
+            }
+
+            if (tipeFormat === 'PG' || tipeFormat === 'PGK') {
+                payload.opsi = {
+                    A: row["Opsi A"] ? String(row["Opsi A"]) : "", B: row["Opsi B"] ? String(row["Opsi B"]) : "",
+                    C: row["Opsi C"] ? String(row["Opsi C"]) : "", D: row["Opsi D"] ? String(row["Opsi D"]) : "",
+                    E: row["Opsi E"] ? String(row["Opsi E"]) : ""
+                };
+                let opsiMediaObj = {};
+                ['A', 'B', 'C', 'D', 'E'].forEach(k => {
+                    let linkMediaOpsi = row[`Link Media Opsi ${k} (URL Gambar)`] ? String(row[`Link Media Opsi ${k} (URL Gambar)`]).trim() : "";
+                    if (linkMediaOpsi) { opsiMediaObj[k] = { url: linkMediaOpsi, type: "image" }; }
+                });
+                if (Object.keys(opsiMediaObj).length > 0) { payload.opsi_media = opsiMediaObj; }
+                
+                let kunci = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || "").trim().toUpperCase();
+                if (tipeFormat === 'PGK') { payload.kunci_jawaban = kunci.split(',').map(k => k.trim()); } 
+                else { payload.kunci_jawaban = kunci; }
+            } 
+            else if (tipeFormat === 'Menjodohkan') {
+                let kunciRaw = row["Kunci Jawaban / Pasangan Menjodohkan"] ? String(row["Kunci Jawaban / Pasangan Menjodohkan"]).trim() : "";
+                let pasanganArr = [];
+                if (kunciRaw) {
+                    let pairs = kunciRaw.split(';');
+                    pairs.forEach(p => {
+                        let splitPair = p.split('=');
+                        if (splitPair.length === 2) { pasanganArr.push({ kiri: splitPair[0].trim(), kanan: splitPair[1].trim() }); }
+                    });
+                }
+                payload.pasangan = pasanganArr;
+            } 
+            else if (tipeFormat === 'Essay') { payload.kunci_jawaban = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || ""); }
+
+            updates.push(addDoc(collection(db, "bank_soal"), payload));
+        }
+
+        await Promise.all(updates);
+        await normalizeUrutanSoal(mapel, kelas);
+        
+        window.customAlert(`Sukses! ${jsonData.length} Soal berhasil diunggah dengan aman.`, "success");
+        window.loadDaftarSoal(mapel, kelas);
+        loadBankSoalSummary();
+    }
+
+    // A. LISTENER: IMPORT DARI GOOGLE SHEETS
+    document.getElementById('btn-import-gdrive')?.addEventListener('click', () => {
+        const mapel = document.getElementById('filter-soal-mapel').value; 
+        const kelas = document.getElementById('filter-soal-kelas').value;
+        if(!mapel || !kelas) return window.customAlert("Pilih Mapel & Kelas terlebih dahulu!", "warning");
+        document.getElementById('input-gdrive-url').value = '';
+        document.getElementById('modal-import-gdrive').style.display = 'flex';
+    });
+
+    document.getElementById('btn-proses-gdrive')?.addEventListener('click', async () => {
+        const urlInput = document.getElementById('input-gdrive-url').value.trim();
+        if (!urlInput) return window.customAlert("Masukkan link Google Sheets terlebih dahulu!", "warning");
+
+        const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (!match || !match[1]) return window.customAlert("Link tidak valid! Pastikan link tersebut disalin dari Google Sheets.", "error");
+        
+        const sheetId = match[1];
+        document.getElementById('modal-import-gdrive').style.display = 'none';
+
+        const mapel = document.getElementById('filter-soal-mapel').value; 
+        const kelas = document.getElementById('filter-soal-kelas').value;
+
+        const container = document.getElementById('list-soal');
+        container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Sedang menyedot data dari Google Drive...</div>';
+
+        try {
+            const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+            const response = await fetch(exportUrl);
+            
+            if (!response.ok) throw new Error("Akses ditolak. Pastikan Setelan Share Google Sheets Anda adalah 'Anyone with the link' (Siapa saja memiliki link).");
+
+            const csvText = await response.text();
+            if (csvText.includes('<!DOCTYPE html>')) throw new Error("Terdeteksi halaman HTML. Pastikan file dibagikan untuk publik tanpa perlu login Google.");
+
+            const workbook = XLSX.read(csvText, { type: 'string' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            await prosesUploadMassal(jsonData, mapel, kelas);
+        } catch (err) {
+            console.error(err);
+            window.customAlert("Gagal Import G-Drive: " + err.message, "error");
+            window.loadDaftarSoal(mapel, kelas);
+        }
+    });
+
+    // B. LISTENER: UPLOAD EXCEL LOKAL
     document.getElementById('upload-excel-soal')?.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -903,113 +950,17 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = async (event) => {
             try {
                 const container = document.getElementById('list-soal');
-                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file Excel & Menyimpan data ke Server...</div>';
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file Excel lokal & Menyimpan...</div>';
 
                 const data = new Uint8Array(event.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-                if (jsonData.length === 0) throw new Error("File Excel kosong atau tidak sesuai format!");
-
-                let updates = [];
-                let timestampAwal = new Date().getTime();
-                
-                for (let row of jsonData) {
-                    let tipeRaw = String(row["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] || "PG").toUpperCase().trim();
-                    let tipeFormat = "PG";
-                    if (tipeRaw.includes('ESSAY')) tipeFormat = 'Essay';
-                    else if (tipeRaw.includes('PGK')) tipeFormat = 'PGK';
-                    else if (tipeRaw.includes('JODOH') || tipeRaw.includes('MENJODOHKAN')) tipeFormat = 'Menjodohkan';
-                    
-                    timestampAwal += 10;
-
-                    let payload = {
-                        mataPelajaran: mapel,
-                        kelas: kelas,
-                        nomor_soal: parseInt(row["Nomor Soal"]) || 1,
-                        bobot: parseFloat(row["Bobot Soal"]) || 1,
-                        tipe: tipeFormat,
-                        teks_soal: String(row["Teks Pertanyaan"] || ""),
-                        createdAt: new Date(timestampAwal),
-                        updatedAt: new Date(timestampAwal)
-                    };
-
-                    // 1. Ekstrak Link Media Pertanyaan (Jika Ada)
-                    let linkMediaPertanyaan = row["Link Media Pertanyaan (URL Gambar/Audio/Video)"] ? String(row["Link Media Pertanyaan (URL Gambar/Audio/Video)"]).trim() : "";
-                    if (linkMediaPertanyaan) {
-                        let mType = "image";
-                        if (linkMediaPertanyaan.toLowerCase().includes('.mp3') || linkMediaPertanyaan.toLowerCase().includes('.wav')) mType = "audio";
-                        else if (linkMediaPertanyaan.toLowerCase().includes('.mp4') || linkMediaPertanyaan.toLowerCase().includes('.mkv')) mType = "video";
-                        payload.media_soal = { url: linkMediaPertanyaan, type: mType };
-                    }
-
-                    // 2. Ekstrak Opsi Jawaban & Link Media Opsi (Untuk PG / PGK)
-                    if (tipeFormat === 'PG' || tipeFormat === 'PGK') {
-                        payload.opsi = {
-                            A: row["Opsi A"] ? String(row["Opsi A"]) : "",
-                            B: row["Opsi B"] ? String(row["Opsi B"]) : "",
-                            C: row["Opsi C"] ? String(row["Opsi C"]) : "",
-                            D: row["Opsi D"] ? String(row["Opsi D"]) : "",
-                            E: row["Opsi E"] ? String(row["Opsi E"]) : ""
-                        };
-
-                        // Ekstrak media opsi
-                        let opsiMediaObj = {};
-                        ['A', 'B', 'C', 'D', 'E'].forEach(k => {
-                            let linkMediaOpsi = row[`Link Media Opsi ${k} (URL Gambar)`] ? String(row[`Link Media Opsi ${k} (URL Gambar)`]).trim() : "";
-                            if (linkMediaOpsi) {
-                                opsiMediaObj[k] = { url: linkMediaOpsi, type: "image" };
-                            }
-                        });
-                        if (Object.keys(opsiMediaObj).length > 0) {
-                            payload.opsi_media = opsiMediaObj;
-                        }
-                        
-                        let kunci = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || "").trim().toUpperCase();
-                        if (tipeFormat === 'PGK') {
-                            payload.kunci_jawaban = kunci.split(',').map(k => k.trim()); 
-                        } else {
-                            payload.kunci_jawaban = kunci;
-                        }
-                    } 
-                    // 3. Ekstrak Format Menjodohkan (Format: Kiri=Kanan; Kiri=Kanan)
-                    else if (tipeFormat === 'Menjodohkan') {
-                        let kunciRaw = row["Kunci Jawaban / Pasangan Menjodohkan"] ? String(row["Kunci Jawaban / Pasangan Menjodohkan"]).trim() : "";
-                        let pasanganArr = [];
-                        if (kunciRaw) {
-                            let pairs = kunciRaw.split(';');
-                            pairs.forEach(p => {
-                                let splitPair = p.split('=');
-                                if (splitPair.length === 2) {
-                                    pasanganArr.push({
-                                        kiri: splitPair[0].trim(),
-                                        kanan: splitPair[1].trim()
-                                    });
-                                }
-                            });
-                        }
-                        payload.pasangan = pasanganArr;
-                    } 
-                    // 4. Ekstrak Format Essay
-                    else if (tipeFormat === 'Essay') {
-                        payload.kunci_jawaban = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || "");
-                    }
-
-                    updates.push(addDoc(collection(db, "bank_soal"), payload));
-                }
-
-                await Promise.all(updates);
-                await normalizeUrutanSoal(mapel, kelas);
-                
-                window.customAlert(`Sukses! ${jsonData.length} Soal berhasil diunggah dari Excel lengkap dengan link medianya.`, "success");
-                window.loadDaftarSoal(mapel, kelas);
-                loadBankSoalSummary();
-
+                await prosesUploadMassal(jsonData, mapel, kelas);
             } catch (err) {
                 console.error(err);
-                window.customAlert("Gagal memproses file Excel: " + err.message, "error");
+                window.customAlert("Gagal memproses Excel lokal: " + err.message, "error");
                 window.loadDaftarSoal(mapel, kelas);
             }
         };
@@ -1018,7 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // ==========================================
-    // 7. HASIL UJIAN (Tetap seperti sebelumnya)
+    // 7. HASIL UJIAN
     // ==========================================
     async function loadDataHasil() {
         try {
@@ -1075,11 +1026,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.querySelector('#table-hasil tbody'); if (!tbody) return;
         const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail && h.kelas === currentKelasDetail);
         
-        // --- TAMBAHKAN KODE INI UNTUK MENGURUTKAN WAKTU ---
-        // Urutkan dari yang terbaru ke yang terlama (Descending)
-        // Jika ingin yang terlama di atas, ubah posisi a dan b menjadi: new Date(a.waktuSubmit) - new Date(b.waktuSubmit)
         dataFiltered.sort((a, b) => new Date(b.waktuSubmit) - new Date(a.waktuSubmit));
-        // ---------------------------------------------------
 
         if (dataFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Belum ada data hasil ujian.</td></tr>'; } 
         else {
