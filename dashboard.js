@@ -417,20 +417,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==============================================================
-    // FITUR: PINDAH MAPEL / KELAS UNTUK BANK SOAL (MASSAL)
+    // FITUR: TERAPKAN MAPEL / KELAS UNTUK BANK SOAL (MULTI-KELAS)
     // ==============================================================
     window.bukaModalPindahBankSoal = (mapelLama, kelasLama) => {
         document.getElementById('edit-bs-old-mapel').value = mapelLama;
         document.getElementById('edit-bs-old-kelas').value = kelasLama;
         
         const selMapel = document.getElementById('edit-bs-new-mapel');
-        const selKelas = document.getElementById('edit-bs-new-kelas');
+        const containerKelas = document.getElementById('edit-bs-new-kelas-container');
         
         let allowedMapel = listMapel; 
         if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
         
         selMapel.innerHTML = allowedMapel.map(m => `<option value="${m}" ${m === mapelLama ? 'selected' : ''}>${m}</option>`).join('');
-        selKelas.innerHTML = listKelas.map(k => `<option value="${k}" ${k === kelasLama ? 'selected' : ''}>${k}</option>`).join('');
+        
+        // Render sebagai Checkbox Multiple
+        containerKelas.innerHTML = listKelas.map(k => `
+            <label style="display:flex; align-items:center; gap:10px; padding: 6px 0; cursor: pointer; border-bottom: 1px dashed #e2e8f0;">
+                <input type="checkbox" class="cb-pindah-kelas" value="${k}" ${k === kelasLama ? 'checked' : ''} style="transform: scale(1.3);">
+                <span style="font-size: 0.95rem; font-weight: 600;">${k}</span>
+            </label>
+        `).join('');
         
         document.getElementById('modal-edit-bank-soal').style.display = 'flex';
     };
@@ -439,65 +446,97 @@ document.addEventListener('DOMContentLoaded', () => {
         const oldMapel = document.getElementById('edit-bs-old-mapel').value;
         const oldKelas = document.getElementById('edit-bs-old-kelas').value;
         const newMapel = document.getElementById('edit-bs-new-mapel').value;
-        const newKelas = document.getElementById('edit-bs-new-kelas').value;
+        const selectedKelas = Array.from(document.querySelectorAll('.cb-pindah-kelas:checked')).map(cb => cb.value);
 
-        if (oldMapel === newMapel && oldKelas === newKelas) {
+        if (selectedKelas.length === 0) {
+            return window.customAlert("Pilih minimal satu kelas tujuan!", "warning");
+        }
+
+        if (selectedKelas.length === 1 && selectedKelas[0] === oldKelas && newMapel === oldMapel) {
             return window.customAlert("Tidak ada perubahan Mapel atau Kelas yang dipilih.", "info");
         }
 
-        if (!(await window.customConfirm(`Anda yakin ingin memindahkan seluruh soal dari:\n${oldMapel} (Kelas ${oldKelas})\n\nKe:\n${newMapel} (Kelas ${newKelas})?`, "warning", "Konfirmasi Pindah Soal"))) {
+        if (!(await window.customConfirm(`Terapkan bank soal dari ${oldMapel} (${oldKelas}) ke kelas berikut:\n\n${selectedKelas.join(', ')}?\n\nSoal akan diduplikasi secara otomatis ke semua kelas yang dipilih.`, "warning", "Konfirmasi Terapkan Soal"))) {
             return;
         }
 
         const btn = document.getElementById('btn-simpan-pindah-bs');
         const origHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memindahkan Data...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses Data...';
         btn.disabled = true;
 
         try {
-            // 1. Pindahkan Seluruh Dokumen Soal di Koleksi bank_soal
+            // 1. Tarik semua data soal lama
             const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", oldMapel), where("kelas", "==", oldKelas));
             const snap = await getDocs(q);
-            
-            let updates = [];
-            snap.forEach(docSnap => {
-                updates.push(updateDoc(doc(db, "bank_soal", docSnap.id), {
-                    mataPelajaran: newMapel,
-                    kelas: newKelas
-                }));
-            });
-            await Promise.all(updates); 
+            let docs = [];
+            snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
 
-            // 2. Pindahkan Data Pengaturan Ujian (Waktu, Jadwal, Token)
+            let targetClasses = [...selectedKelas];
+            let promises = [];
+
+            // 2. Tarik Pengaturan Ujian Lama (Waktu, Jadwal, Token)
             const oldKey = `${oldMapel}_${oldKelas}`;
-            const newKey = `${newMapel}_${newKelas}`;
-
             const wSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
-            if (wSnap.exists() && wSnap.data()[oldKey] !== undefined) {
-                await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [newKey]: wSnap.data()[oldKey] }, { merge: true });
-                await updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [oldKey]: deleteField() });
-            }
-
             const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
-            if (jSnap.exists() && jSnap.data()[oldKey] !== undefined) {
-                await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [newKey]: jSnap.data()[oldKey] }, { merge: true });
-                await updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [oldKey]: deleteField() });
+            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            
+            let oldWaktu = wSnap.exists() ? wSnap.data()[oldKey] : undefined;
+            let oldJadwal = jSnap.exists() ? jSnap.data()[oldKey] : undefined;
+            let oldToken = tSnap.exists() ? tSnap.data()[`token_${oldKey}`] : undefined;
+
+            // 3. Logika Menghindari Redundansi Data
+            const keepOriginal = (oldMapel === newMapel && targetClasses.includes(oldKelas));
+            let primaryTarget = null;
+
+            if (!keepOriginal) {
+                // Jika sumber asli tidak diceklis lagi, "Pindahkan" dokumen aslinya ke target pertama (hemat database & ID tetap)
+                primaryTarget = targetClasses.shift(); 
+                
+                docs.forEach(d => {
+                    promises.push(updateDoc(doc(db, "bank_soal", d.id), {
+                        mataPelajaran: newMapel, kelas: primaryTarget
+                    }));
+                });
+                
+                const primaryKey = `${newMapel}_${primaryTarget}`;
+                if(oldWaktu !== undefined) promises.push(setDoc(doc(db, "pengaturan", "waktu_ujian"), { [primaryKey]: oldWaktu }, { merge: true }));
+                if(oldJadwal !== undefined) promises.push(setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [primaryKey]: oldJadwal }, { merge: true }));
+                if(oldToken !== undefined) promises.push(setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${primaryKey}`]: oldToken }, { merge: true }));
+                
+                // Hapus key lama
+                promises.push(updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
+                promises.push(updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
+                promises.push(updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${oldKey}`]: deleteField() }).catch(()=>{}));
+            } else {
+                // Jika sumber asli tetap diceklis, jangan duplikasi ke dirinya sendiri
+                targetClasses = targetClasses.filter(c => c !== oldKelas);
             }
 
-            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-            if (tSnap.exists() && tSnap.data()[`token_${oldKey}`] !== undefined) {
-                await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${newKey}`]: tSnap.data()[`token_${oldKey}`] }, { merge: true });
-                await updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${oldKey}`]: deleteField() });
-            }
+            // 4. DUPLIKASI ke Sisa Kelas yang Dipilih
+            targetClasses.forEach(tc => {
+                const tcKey = `${newMapel}_${tc}`;
+                // Duplikat soal
+                docs.forEach(d => {
+                    let newData = { ...d.data, mataPelajaran: newMapel, kelas: tc, createdAt: new Date(), updatedAt: new Date() };
+                    promises.push(addDoc(collection(db, "bank_soal"), newData));
+                });
+                // Duplikat pengaturan
+                if(oldWaktu !== undefined) promises.push(setDoc(doc(db, "pengaturan", "waktu_ujian"), { [tcKey]: oldWaktu }, { merge: true }));
+                if(oldJadwal !== undefined) promises.push(setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [tcKey]: oldJadwal }, { merge: true }));
+                if(oldToken !== undefined) promises.push(setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${tcKey}`]: oldToken }, { merge: true }));
+            });
+
+            await Promise.all(promises);
 
             document.getElementById('modal-edit-bank-soal').style.display = 'none';
-            await window.customAlert(`Berhasil memindahkan ${snap.size} soal beserta pengaturannya ke ${newMapel} - ${newKelas}.`, "success");
+            await window.customAlert(`Berhasil menerapkan ${docs.length} paket soal ke kelas:\n${selectedKelas.join(', ')}.`, "success");
             
             loadBankSoalSummary();
 
         } catch (e) {
             console.error(e);
-            window.customAlert("Terjadi kesalahan sistem saat memindahkan data.", "error");
+            window.customAlert("Terjadi kesalahan sistem saat memproses data duplikasi.", "error");
         } finally {
             btn.innerHTML = origHtml;
             btn.disabled = false;
