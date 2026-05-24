@@ -381,40 +381,114 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 6. BANK SOAL & FITUR BARU: AUTO-RENUMBERING & GOOGLE FORM UI
     // =================================================================
+    function getTingkatan(kelas) {
+        if (!kelas) return "Lainnya";
+        let k = String(kelas).toUpperCase().trim();
+        if (k.startsWith("XII")) return "XII";
+        if (k.startsWith("XI")) return "XI";
+        if (k.startsWith("X")) return "X";
+        return "Lainnya";
+    }
+
     async function loadBankSoalSummary() {
         const tbody = document.querySelector('#table-bank-soal-summary tbody'); if(!tbody) return;
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Memuat data...</td></tr>';
         try {
             const snap = await getDocs(collection(db, "bank_soal"));
             let summary = {}; let uniqueMapel = new Set(); 
+            
             snap.forEach(d => {
-                let mapel = d.data().mataPelajaran; let kelas = d.data().kelas; uniqueMapel.add(mapel); let key = `${mapel}_${kelas}`;
-                if(!summary[key]) summary[key] = { mapel, kelas, count: 0 }; summary[key].count++;
+                let mapel = d.data().mataPelajaran; let kelas = d.data().kelas; uniqueMapel.add(mapel);
+                let tingkatan = getTingkatan(kelas);
+                let key = `${mapel}_${tingkatan}`;
+                
+                if(!summary[key]) summary[key] = { mapel, tingkatan, classes: {} };
+                if(!summary[key].classes[kelas]) summary[key].classes[kelas] = 0;
+                summary[key].classes[kelas]++;
             });
+            
             let statSoalEl = document.getElementById('stat-soal'); if (statSoalEl) statSoalEl.innerText = uniqueMapel.size;
+            
             const waktuSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian")); const waktuData = waktuSnap.exists() ? waktuSnap.data() : {};
             const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian")); const jadwalData = jadwalSnap.exists() ? jadwalSnap.data() : {};
             const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian")); const tokenData = tokenSnap.exists() ? tokenSnap.data() : {};
-            let html = '';
+            
+            window.bankSoalRowCache = {};
+            let html = ''; let rowIdx = 0;
+            
             for (let key in summary) {
-                let d = summary[key]; let jadwal = jadwalData[key] ? jadwalData[key].replace('T', ' ') : '-'; let durasi = waktuData[key] ? waktuData[key] + ' Mnt' : '-';
-                let token = '-'; if(tokenData[`token_${key}`]) { token = typeof tokenData[`token_${key}`] === 'object' ? tokenData[`token_${key}`].code : tokenData[`token_${key}`]; }
+                rowIdx++;
+                let d = summary[key];
+                let classList = Object.keys(d.classes).sort();
+                if (classList.length === 0) continue;
+                
+                window.bankSoalRowCache[rowIdx] = { mapel: d.mapel, tingkatan: d.tingkatan, classData: {} };
+                
+                classList.forEach(cls => {
+                    let clsKey = `${d.mapel}_${cls}`;
+                    let jadwal = jadwalData[clsKey] ? jadwalData[clsKey].replace('T', ' ') : '-';
+                    let durasi = waktuData[clsKey] ? waktuData[clsKey] + ' Mnt' : '-';
+                    let token = '-';
+                    if(tokenData[`token_${clsKey}`]) {
+                        let tData = tokenData[`token_${clsKey}`];
+                        token = typeof tData === 'object' ? tData.code : tData;
+                    }
+                    window.bankSoalRowCache[rowIdx].classData[cls] = { jadwal, durasi, token, count: d.classes[cls] };
+                });
+                
+                let defaultClass = classList[0];
+                let defaultData = window.bankSoalRowCache[rowIdx].classData[defaultClass];
                 let isMapelGuru = isGuru && userMapel.includes(d.mapel);
                 
-                // TOMBOL KELOLA & EDIT DIPERBARUI DI SINI
+                let selectHtml = `<select onchange="window.updateBankSoalRowData(this, ${rowIdx})" class="input-text" style="padding: 4px 8px; font-size: 0.85rem; width: auto; min-width: 90px; margin: 0;">`;
+                classList.forEach(cls => { selectHtml += `<option value="${cls}">${cls}</option>`; });
+                selectHtml += `</select>`;
+                
                 let actionBtn = (isAdmin || isMapelGuru) ? 
                     `<div style="display:flex; gap:5px; justify-content:center;">
-                        <button onclick="window.bukaDetailSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
-                        <button onclick="window.bukaModalPindahBankSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Pindah Mapel/Kelas"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.bukaDetailSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
+                        <button onclick="window.bukaModalPindahBankSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan ke Kelas Lain"><i class="fas fa-edit"></i></button>
                     </div>` : 
                     `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>`;
                 
-                html += `<tr><td>${d.mapel}</td><td>${d.kelas}</td><td>${jadwal}</td><td>${durasi}</td><td style="font-weight:bold; color:var(--danger);">${token}</td><td>${d.count}</td><td style="text-align:center;">${actionBtn}</td></tr>`;
+                html += `
+                <tr id="bs-row-${rowIdx}">
+                    <td><b>${d.mapel}</b> <span style="color:var(--text-muted); font-size:0.8rem; display:block;">Tingkat ${d.tingkatan}</span></td>
+                    <td>${selectHtml}</td>
+                    <td class="cell-jadwal-${rowIdx}">${defaultData.jadwal}</td>
+                    <td class="cell-durasi-${rowIdx}">${defaultData.durasi}</td>
+                    <td class="cell-token-${rowIdx}" style="font-weight:bold; color:var(--danger);">${defaultData.token}</td>
+                    <td class="cell-count-${rowIdx}">${defaultData.count} Soal</td>
+                    <td style="text-align:center;" class="cell-action-${rowIdx}">${actionBtn}</td>
+                </tr>`;
             }
             if(html === '') html = '<tr><td colspan="7" style="text-align:center;">Tidak ada data soal.</td></tr>';
             tbody.innerHTML = html;
         } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--danger);">Gagal memuat data</td></tr>'; }
     }
+
+    window.updateBankSoalRowData = (selectEl, rowIdx) => {
+        let selectedClass = selectEl.value;
+        let cache = window.bankSoalRowCache[rowIdx];
+        if (!cache) return;
+        let data = cache.classData[selectedClass];
+        if (!data) return;
+        
+        document.querySelector(`.cell-jadwal-${rowIdx}`).innerText = data.jadwal;
+        document.querySelector(`.cell-durasi-${rowIdx}`).innerText = data.durasi;
+        document.querySelector(`.cell-token-${rowIdx}`).innerText = data.token;
+        document.querySelector(`.cell-count-${rowIdx}`).innerText = `${data.count} Soal`;
+        
+        let isMapelGuru = isGuru && userMapel.includes(cache.mapel);
+        let actionCell = document.querySelector(`.cell-action-${rowIdx}`);
+        if (isAdmin || isMapelGuru) {
+            actionCell.innerHTML = `
+                <div style="display:flex; gap:5px; justify-content:center;">
+                    <button onclick="window.bukaDetailSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
+                    <button onclick="window.bukaModalPindahBankSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan ke Kelas Lain"><i class="fas fa-edit"></i></button>
+                </div>`;
+        }
+    };
 
     // ==============================================================
     // FITUR: TERAPKAN MAPEL / KELAS UNTUK BANK SOAL (MULTI-KELAS)
@@ -431,7 +505,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         selMapel.innerHTML = allowedMapel.map(m => `<option value="${m}" ${m === mapelLama ? 'selected' : ''}>${m}</option>`).join('');
         
-        // Render sebagai Checkbox Multiple
         containerKelas.innerHTML = listKelas.map(k => `
             <label style="display:flex; align-items:center; gap:10px; padding: 6px 0; cursor: pointer; border-bottom: 1px dashed #e2e8f0;">
                 <input type="checkbox" class="cb-pindah-kelas" value="${k}" ${k === kelasLama ? 'checked' : ''} style="transform: scale(1.3);">
@@ -448,34 +521,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const newMapel = document.getElementById('edit-bs-new-mapel').value;
         const selectedKelas = Array.from(document.querySelectorAll('.cb-pindah-kelas:checked')).map(cb => cb.value);
 
-        if (selectedKelas.length === 0) {
-            return window.customAlert("Pilih minimal satu kelas tujuan!", "warning");
-        }
-
+        if (selectedKelas.length === 0) { return window.customAlert("Pilih minimal satu kelas tujuan!", "warning"); }
         if (selectedKelas.length === 1 && selectedKelas[0] === oldKelas && newMapel === oldMapel) {
             return window.customAlert("Tidak ada perubahan Mapel atau Kelas yang dipilih.", "info");
         }
 
-        if (!(await window.customConfirm(`Terapkan bank soal dari ${oldMapel} (${oldKelas}) ke kelas berikut:\n\n${selectedKelas.join(', ')}?\n\nSoal akan diduplikasi secara otomatis ke semua kelas yang dipilih.`, "warning", "Konfirmasi Terapkan Soal"))) {
-            return;
-        }
+        if (!(await window.customConfirm(`Terapkan bank soal dari ${oldMapel} (${oldKelas}) ke kelas berikut:\n\n${selectedKelas.join(', ')}?\n\nSoal akan diduplikasi secara otomatis ke semua kelas yang dipilih.`, "warning", "Konfirmasi Terapkan Soal"))) { return; }
 
-        const btn = document.getElementById('btn-simpan-pindah-bs');
-        const origHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses Data...';
-        btn.disabled = true;
+        const btn = document.getElementById('btn-simpan-pindah-bs'); const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses Data...'; btn.disabled = true;
 
         try {
-            // 1. Tarik semua data soal lama
             const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", oldMapel), where("kelas", "==", oldKelas));
-            const snap = await getDocs(q);
-            let docs = [];
-            snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
+            const snap = await getDocs(q); let docs = []; snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
 
-            let targetClasses = [...selectedKelas];
-            let promises = [];
-
-            // 2. Tarik Pengaturan Ujian Lama (Waktu, Jadwal, Token)
+            let targetClasses = [...selectedKelas]; let promises = [];
             const oldKey = `${oldMapel}_${oldKelas}`;
             const wSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
             const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
@@ -485,62 +545,43 @@ document.addEventListener('DOMContentLoaded', () => {
             let oldJadwal = jSnap.exists() ? jSnap.data()[oldKey] : undefined;
             let oldToken = tSnap.exists() ? tSnap.data()[`token_${oldKey}`] : undefined;
 
-            // 3. Logika Menghindari Redundansi Data
             const keepOriginal = (oldMapel === newMapel && targetClasses.includes(oldKelas));
             let primaryTarget = null;
 
             if (!keepOriginal) {
-                // Jika sumber asli tidak diceklis lagi, "Pindahkan" dokumen aslinya ke target pertama (hemat database & ID tetap)
                 primaryTarget = targetClasses.shift(); 
-                
-                docs.forEach(d => {
-                    promises.push(updateDoc(doc(db, "bank_soal", d.id), {
-                        mataPelajaran: newMapel, kelas: primaryTarget
-                    }));
-                });
+                docs.forEach(d => { promises.push(updateDoc(doc(db, "bank_soal", d.id), { mataPelajaran: newMapel, kelas: primaryTarget })); });
                 
                 const primaryKey = `${newMapel}_${primaryTarget}`;
                 if(oldWaktu !== undefined) promises.push(setDoc(doc(db, "pengaturan", "waktu_ujian"), { [primaryKey]: oldWaktu }, { merge: true }));
                 if(oldJadwal !== undefined) promises.push(setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [primaryKey]: oldJadwal }, { merge: true }));
                 if(oldToken !== undefined) promises.push(setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${primaryKey}`]: oldToken }, { merge: true }));
                 
-                // Hapus key lama
                 promises.push(updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
                 promises.push(updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
                 promises.push(updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${oldKey}`]: deleteField() }).catch(()=>{}));
             } else {
-                // Jika sumber asli tetap diceklis, jangan duplikasi ke dirinya sendiri
                 targetClasses = targetClasses.filter(c => c !== oldKelas);
             }
 
-            // 4. DUPLIKASI ke Sisa Kelas yang Dipilih
             targetClasses.forEach(tc => {
                 const tcKey = `${newMapel}_${tc}`;
-                // Duplikat soal
                 docs.forEach(d => {
                     let newData = { ...d.data, mataPelajaran: newMapel, kelas: tc, createdAt: new Date(), updatedAt: new Date() };
                     promises.push(addDoc(collection(db, "bank_soal"), newData));
                 });
-                // Duplikat pengaturan
                 if(oldWaktu !== undefined) promises.push(setDoc(doc(db, "pengaturan", "waktu_ujian"), { [tcKey]: oldWaktu }, { merge: true }));
                 if(oldJadwal !== undefined) promises.push(setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [tcKey]: oldJadwal }, { merge: true }));
                 if(oldToken !== undefined) promises.push(setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${tcKey}`]: oldToken }, { merge: true }));
             });
 
             await Promise.all(promises);
-
             document.getElementById('modal-edit-bank-soal').style.display = 'none';
             await window.customAlert(`Berhasil menerapkan ${docs.length} paket soal ke kelas:\n${selectedKelas.join(', ')}.`, "success");
-            
             loadBankSoalSummary();
-
         } catch (e) {
-            console.error(e);
-            window.customAlert("Terjadi kesalahan sistem saat memproses data duplikasi.", "error");
-        } finally {
-            btn.innerHTML = origHtml;
-            btn.disabled = false;
-        }
+            console.error(e); window.customAlert("Terjadi kesalahan sistem.", "error");
+        } finally { btn.innerHTML = origHtml; btn.disabled = false; }
     });
 
     document.getElementById('soal-tipe')?.addEventListener('change', (e) => {
@@ -574,12 +615,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return { url, type };
     }
 
-    // FUNGSI INTI: Normalisasi Nomor Urut Soal Otomatis
     async function normalizeUrutanSoal(mapel, kelas) {
         const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
-        const snap = await getDocs(q);
-        let soalArr = [];
-        snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+        const snap = await getDocs(q); let soalArr = []; snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
         
         soalArr.sort((a, b) => {
             if (a.nomor_soal === b.nomor_soal) {
@@ -593,26 +631,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let updates = [];
         soalArr.forEach((s, idx) => {
             let correctNum = idx + 1;
-            if (s.nomor_soal !== correctNum) {
-                updates.push(updateDoc(doc(db, "bank_soal", s.id), { nomor_soal: correctNum }));
-            }
+            if (s.nomor_soal !== correctNum) { updates.push(updateDoc(doc(db, "bank_soal", s.id), { nomor_soal: correctNum })); }
         });
-        
         if (updates.length > 0) { await Promise.all(updates); }
     }
 
-    // SUBMIT PENYIMPANAN SOAL MANUAL
     document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const mapel = document.getElementById('soal-mapel').value;
-        const kelas = document.getElementById('soal-kelas').value;
-        const tipe = document.getElementById('soal-tipe').value;
-        const teks = document.getElementById('soal-teks').value;
+        const mapel = document.getElementById('soal-mapel').value; const kelas = document.getElementById('soal-kelas').value;
+        const tipe = document.getElementById('soal-tipe').value; const teks = document.getElementById('soal-teks').value;
         const nomorSoalTarget = parseInt(document.getElementById('soal-nomor').value) || 1;
         const bobotSoal = parseFloat(document.getElementById('soal-bobot').value) || 1;
 
-        const btnSubmitSoal = e.target.querySelector('button[type="submit"]');
-        const originalText = btnSubmitSoal.innerHTML;
+        const btnSubmitSoal = e.target.querySelector('button[type="submit"]'); const originalText = btnSubmitSoal.innerHTML;
         btnSubmitSoal.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGUNGGAH & MENYIMPAN...'; btnSubmitSoal.disabled = true;
 
         try {
@@ -654,45 +685,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const editId = document.getElementById('edit-soal-id').value;
-            
-            if (editId) {
-                await updateDoc(doc(db, "bank_soal", editId), payload);
-            } else {
-                payload.createdAt = new Date();
-                await addDoc(collection(db, "bank_soal"), payload);
-            }
+            if (editId) { await updateDoc(doc(db, "bank_soal", editId), payload); } 
+            else { payload.createdAt = new Date(); await addDoc(collection(db, "bank_soal"), payload); }
 
             await normalizeUrutanSoal(mapel, kelas);
-
             document.getElementById('form-tambah-soal').reset();
             document.getElementById('edit-soal-id').value = '';
             document.getElementById('modal-tambah-soal').style.display = 'none';
 
             const curMapel = document.getElementById('filter-soal-mapel').value;
             const curKelas = document.getElementById('filter-soal-kelas').value;
-            
-            if(document.getElementById('view-soal-list').style.display === 'block') {
-                window.loadDaftarSoal(curMapel, curKelas);
-            }
+            if(document.getElementById('view-soal-list').style.display === 'block') { window.loadDaftarSoal(curMapel, curKelas); }
             loadBankSoalSummary();
             window.customAlert("Soal berhasil disimpan & diurutkan!", "success");
-
         } catch(err) { window.customAlert(err.message || "Gagal menyimpan soal.", "error"); } 
         finally { btnSubmitSoal.innerHTML = originalText; btnSubmitSoal.disabled = false; }
     });
 
     window.bukaModalTambahSoal = (mapelParams = "", kelasParams = "", targetNomor = "") => {
-        document.getElementById('edit-soal-id').value = '';
-        document.getElementById('form-tambah-soal').reset();
-        
-        const mapelSelect = document.getElementById('soal-mapel');
-        const kelasSelect = document.getElementById('soal-kelas');
-        const inputNomor = document.getElementById('soal-nomor');
-        const modalTitle = document.getElementById('title-modal-soal');
+        document.getElementById('edit-soal-id').value = ''; document.getElementById('form-tambah-soal').reset();
+        const mapelSelect = document.getElementById('soal-mapel'); const kelasSelect = document.getElementById('soal-kelas');
+        const inputNomor = document.getElementById('soal-nomor'); const modalTitle = document.getElementById('title-modal-soal');
 
-        let allowedMapel = listMapel;
-        if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
-
+        let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
         mapelSelect.innerHTML = '<option value="" disabled selected>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
         kelasSelect.innerHTML = '<option value="" disabled selected>-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
@@ -707,9 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mapelSelect.style.pointerEvents = 'auto'; mapelSelect.style.backgroundColor = '#fafafa';
             kelasSelect.style.pointerEvents = 'auto'; kelasSelect.style.backgroundColor = '#fafafa';
         }
-        
         inputNomor.value = targetNomor;
-
         document.getElementById('modal-tambah-soal').style.display = 'flex';
         document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
     };
@@ -717,15 +730,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { window.bukaModalTambahSoal(); });
 
     window.editDataSoal = (id) => {
-        const soal = window.tempDataSoalKelola.find(s => s.id === id);
-        if (!soal) return;
+        const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
+        const mapelSelect = document.getElementById('soal-mapel'); const kelasSelect = document.getElementById('soal-kelas');
 
-        const mapelSelect = document.getElementById('soal-mapel');
-        const kelasSelect = document.getElementById('soal-kelas');
-
-        let allowedMapel = listMapel;
-        if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
-
+        let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
         mapelSelect.innerHTML = '<option value="" disabled>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
         kelasSelect.innerHTML = '<option value="" disabled>-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
@@ -733,12 +741,9 @@ document.addEventListener('DOMContentLoaded', () => {
         kelasSelect.style.pointerEvents = 'none'; kelasSelect.style.backgroundColor = '#e2e8f0';
         
         document.getElementById('edit-soal-id').value = id;
-        document.getElementById('soal-mapel').value = soal.mataPelajaran;
-        document.getElementById('soal-kelas').value = soal.kelas;
-        document.getElementById('soal-nomor').value = soal.nomor_soal || '';
-        document.getElementById('soal-bobot').value = soal.bobot || 1; 
-        document.getElementById('soal-tipe').value = soal.tipe || 'PG';
-        document.getElementById('soal-teks').value = soal.teks_soal || '';
+        document.getElementById('soal-mapel').value = soal.mataPelajaran; document.getElementById('soal-kelas').value = soal.kelas;
+        document.getElementById('soal-nomor').value = soal.nomor_soal || ''; document.getElementById('soal-bobot').value = soal.bobot || 1; 
+        document.getElementById('soal-tipe').value = soal.tipe || 'PG'; document.getElementById('soal-teks').value = soal.teks_soal || '';
         
         document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
 
@@ -761,7 +766,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (soal.tipe === 'Essay') {
             const fieldEssay = document.getElementById('soal-kunci-essay'); if (fieldEssay) fieldEssay.value = soal.kunci_jawaban || '';
         }
-        
         document.getElementById('title-modal-soal').innerHTML = '<i class="fas fa-edit"></i> Update Soal';
         document.getElementById('modal-tambah-soal').style.display = 'flex';
     };
@@ -787,26 +791,18 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Memuat soal...</div>';
         try {
             const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
-            const snap = await getDocs(q);
-            
-            let soalArr = []; 
-            snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
-            soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); 
-            
-            window.tempDataSoalKelola = soalArr; 
+            const snap = await getDocs(q); let soalArr = []; snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+            soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); window.tempDataSoalKelola = soalArr; 
 
             if(soalArr.length === 0) { 
                 container.innerHTML = `
                 <div style="text-align:center; padding: 30px; background: white; border: 1px dashed var(--border-color); border-radius: 8px;">
                     Belum ada soal untuk mata pelajaran ini.<br><br>
                     <button onclick="window.bukaModalTambahSoal('${mapel}', '${kelas}', 1)" class="btn-3d" style="background:var(--success); padding:8px 20px; border-radius:20px; font-size:0.9rem; margin:0 auto;"><i class="fas fa-plus"></i> Buat Soal Pertama</button>
-                </div>`; 
-                return; 
+                </div>`; return; 
             }
 
-            let html = '';
-            
-            html += `
+            let html = `
             <div style="display:flex; justify-content:center; position:relative; margin-bottom: 15px; margin-top: 5px;">
                 <hr style="position:absolute; width:100%; top:50%; border:none; border-top:1px dashed #cbd5e1; z-index:1;">
                 <button onclick="window.bukaModalTambahSoal('${mapel}', '${kelas}', 1)" class="btn-3d" style="background:white; color:var(--success); border:1px solid var(--success); padding:4px 15px; border-radius:20px; font-size:0.8rem; z-index:2; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='var(--success)'; this.style.color='white'" onmouseout="this.style.background='white'; this.style.color='var(--success)'"><i class="fas fa-plus"></i> Sisipkan Soal di Sini</button>
@@ -818,11 +814,9 @@ document.addEventListener('DOMContentLoaded', () => {
                      onmouseover="this.style.borderLeftColor='var(--info)'; this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(-2px)'"
                      onmouseout="this.style.borderLeftColor='transparent'; this.style.boxShadow='var(--shadow-sm)'; this.style.transform='translateY(0)'"
                      onclick="window.editDataSoal('${s.id}')">
-                    
                     <div style="position:absolute; right:15px; top:15px; z-index:10;">
                         <button onclick="event.stopPropagation(); window.hapusSoal('${s.id}')" style="background:#fee2e2; color:var(--danger); border:none; width:32px; height:32px; border-radius:8px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--danger)'; this.style.color='white'" onmouseout="this.style.background='#fee2e2'; this.style.color='var(--danger)'" title="Hapus Soal"><i class="fas fa-trash-alt"></i></button>
                     </div>
-
                     <div style="padding: 20px 25px;">
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
                             <span style="font-weight:800; color:var(--primary); display:block; margin-bottom:8px;">Soal ${s.nomor_soal || (idx+1)} 
@@ -830,25 +824,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span style="background:var(--warning); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">Bobot: ${s.bobot || 1}</span>
                             </span>
                         </div>
-                        
                         <div style="color:var(--text-main); line-height:1.6; font-size: 1rem; margin-bottom:15px;">${s.teks_soal}</div>
-                        ${s.media_soal ? `<div style="margin-bottom:15px; font-size:0.85rem; color:var(--info); background:#eff6ff; padding:8px 12px; border-radius:6px; display:inline-block;"><i class="fas fa-paperclip"></i> Terlampir File Media (${s.media_soal.type.toUpperCase()})</div><br>` : ''}
-                `;
+                        ${s.media_soal ? `<div style="margin-bottom:15px; font-size:0.85rem; color:var(--info); background:#eff6ff; padding:8px 12px; border-radius:6px; display:inline-block;"><i class="fas fa-paperclip"></i> Terlampir File Media (${s.media_soal.type.toUpperCase()})</div><br>` : ''}`;
                 
                 if (s.tipe === 'PG' || s.tipe === 'PGK' || !s.tipe) {
                     html += `<div style="display:flex; flex-direction:column; gap:6px;">`;
                     ['A','B','C','D','E'].forEach(o => {
                         let teksOpsi = (s.opsi && s.opsi[o]) ? s.opsi[o] : '';
                         if(teksOpsi) {
-                            let isBenar = false;
-                            if ((s.tipe === 'PG' || !s.tipe) && s.kunci_jawaban === o) isBenar = true;
-                            if (s.tipe === 'PGK' && Array.isArray(s.kunci_jawaban) && s.kunci_jawaban.includes(o)) isBenar = true;
-                            
-                            if (isBenar) {
-                                html += `<div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; color:var(--success); font-weight:600; font-size:0.9rem;"><i class="fas fa-check-circle"></i> <span>${o}. ${teksOpsi}</span></div>`;
-                            } else {
-                                html += `<div style="display:flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid #f1f5f9; border-radius:6px; color:var(--text-muted); font-size:0.9rem;"><span style="font-weight:600; width:20px;">${o}.</span> <span>${teksOpsi}</span></div>`;
-                            }
+                            let isBenar = (s.tipe === 'PG' || !s.tipe) ? s.kunci_jawaban === o : Array.isArray(s.kunci_jawaban) && s.kunci_jawaban.includes(o);
+                            if (isBenar) { html += `<div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; color:var(--success); font-weight:600; font-size:0.9rem;"><i class="fas fa-check-circle"></i> <span>${o}. ${teksOpsi}</span></div>`; } 
+                            else { html += `<div style="display:flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid #f1f5f9; border-radius:6px; color:var(--text-muted); font-size:0.9rem;"><span style="font-weight:600; width:20px;">${o}.</span> <span>${teksOpsi}</span></div>`; }
                         }
                     });
                     html += `</div>`;
@@ -856,12 +842,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     html += `<div style="font-size:0.9rem; background:#eff6ff; border: 1px solid #bfdbfe; color:#1e40af; padding:15px; border-radius:8px; display:inline-block; width:100%;"><b>Pasangan Jawaban Benar:</b><div style="margin-top: 10px; display:flex; flex-direction:column; gap:8px;">`;
                     if(s.pasangan) { s.pasangan.forEach(p => { html += `<div style="display:flex; align-items:center; gap:10px;"><span style="flex:1; background:white; padding:10px 15px; border-radius:6px; border:1px solid #bfdbfe; color:var(--secondary);">${p.kiri}</span> <i class="fas fa-arrow-right" style="color:#60a5fa;"></i> <span style="flex:1; background:#dcfce7; padding:10px 15px; border-radius:6px; border:1px solid #bbf7d0; color:var(--success); font-weight:bold;">${p.kanan}</span></div>`; }); }
                     html += `</div></div>`;
-                } else if (s.tipe === 'Essay') {
-                    if (s.kunci_jawaban) { html += `<div style="font-size:0.9rem; background:#f0fdf4; border: 1px solid #bbf7d0; color:#166534; padding:15px; border-radius:8px; display:inline-block; width:100%; margin-top: 10px;"><b>Referensi Jawaban:</b><div style="margin-top: 8px; color: #15803d; line-height: 1.5;">${s.kunci_jawaban}</div></div>`; } 
+                } else if (s.tipe === 'Essay' && s.kunci_jawaban) {
+                    html += `<div style="font-size:0.9rem; background:#f0fdf4; border: 1px solid #bbf7d0; color:#166534; padding:15px; border-radius:8px; display:inline-block; width:100%; margin-top: 10px;"><b>Referensi Jawaban:</b><div style="margin-top: 8px; color: #15803d; line-height: 1.5;">${s.kunci_jawaban}</div></div>`;
                 }
-                
                 html += `</div></div>`; 
-                
                 let targetNext = (s.nomor_soal || (idx+1)) + 1;
                 html += `
                 <div style="display:flex; justify-content:center; position:relative; margin: 15px 0;">
@@ -869,7 +853,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button onclick="window.bukaModalTambahSoal('${mapel}', '${kelas}', ${targetNext})" class="btn-3d" style="background:white; color:var(--success); border:1px solid var(--success); padding:4px 15px; border-radius:20px; font-size:0.8rem; z-index:2; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='var(--success)'; this.style.color='white'" onmouseout="this.style.background='white'; this.style.color='var(--success)'"><i class="fas fa-plus"></i> Sisipkan Soal di Sini</button>
                 </div>`;
             });
-            
             container.innerHTML = html;
         } catch(e) { container.innerHTML = '<div style="text-align:center; color:red; padding: 20px;">Gagal memuat soal</div>'; }
     };
@@ -877,16 +860,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.hapusSoal = async (id) => {
         if(await window.customConfirm("Apakah Anda yakin ingin menghapus soal ini beserta medianya?", "danger")) {
             try { 
-                await deleteDoc(doc(db, "bank_soal", id)); 
-                const curMapel = document.getElementById('filter-soal-mapel').value;
-                const curKelas = document.getElementById('filter-soal-kelas').value;
-                
-                await normalizeUrutanSoal(curMapel, curKelas);
-                
-                window.loadDaftarSoal(curMapel, curKelas); 
-                loadBankSoalSummary(); 
-            } 
-            catch(e) { window.customAlert("Gagal menghapus soal", "error"); }
+                await deleteDoc(doc(db, "bank_soal", id)); const curMapel = document.getElementById('filter-soal-mapel').value; const curKelas = document.getElementById('filter-soal-kelas').value;
+                await normalizeUrutanSoal(curMapel, curKelas); window.loadDaftarSoal(curMapel, curKelas); loadBankSoalSummary(); 
+            } catch(e) { window.customAlert("Gagal menghapus soal", "error"); }
         }
     };
 
@@ -894,9 +870,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('view-summary-bank-soal').style.display = 'block'; document.getElementById('view-soal-list').style.display = 'none'; loadBankSoalSummary();
     });
 
-    // ==============================================================
-    // SIMPAN PENGATURAN (JADWAL, DURASI, TOKEN)
-    // ==============================================================
     document.getElementById('btn-simpan-pengaturan-ujian')?.addEventListener('click', async () => {
         const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
         if(!mapel || !kelas) return; const key = `${mapel}_${kelas}`;
@@ -908,189 +881,99 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if(waktu) await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: waktu }, { merge: true });
             if(jadwal) await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: jadwal }, { merge: true });
-            
             if(token) { 
                 const expiredAt = new Date().getTime() + (15 * 60 * 1000); 
-                await setDoc(doc(db, "pengaturan", "token_ujian"), { 
-                    [`token_${key}`]: { code: token, active: true, expiredAt: expiredAt } 
-                }, { merge: true });
+                await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: { code: token, active: true, expiredAt } }, { merge: true });
             }
-            window.customAlert("Pengaturan jadwal, durasi, dan token berhasil disimpan!", "success"); 
-            loadBankSoalSummary();
+            window.customAlert("Pengaturan jadwal, durasi, dan token berhasil disimpan!", "success"); loadBankSoalSummary();
         } catch(e) { window.customAlert("Gagal menyimpan pengaturan.", "error"); }
-        
         btn.innerHTML = origHtml; btn.disabled = false;
     });
     
-    // ==============================================================
-    // FUNGSI INTI: PROSES UPLOAD MASSAL (DARI LOKAL & G-DRIVE)
-    // ==============================================================
     window.downloadTemplateExcel = () => {
         const templateData = [
             { "Nomor Soal": 1, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Bobot Soal": 10, "Teks Pertanyaan": "Contoh Soal PG?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "A", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "B", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "C", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "D", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "E", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "C" },
-            { "Nomor Soal": 2, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Bobot Soal": 15, "Teks Pertanyaan": "Contoh Soal PGK?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Benar 1", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "Salah 1", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "Benar 2", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "Salah 2", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "Benar 3", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E" },
-            { "Nomor Soal": 3, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Menjodohkan", "Bobot Soal": 20, "Teks Pertanyaan": "Contoh Soal Menjodohkan?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "Kiri1=Kanan1; Kiri2=Kanan2" },
-            { "Nomor Soal": 4, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Essay", "Bobot Soal": 10, "Teks Pertanyaan": "Contoh Soal Essay?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "Kunci Referensi" }
+            { "Nomor Soal": 2, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Bobot Soal": 15, "Teks Pertanyaan": "Contoh Soal PGK?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Benar 1", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "Salah 1", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "Benar 2", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "Salah 2", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "Benar 3", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E" }
         ];
-
-        const worksheet = XLSX.utils.json_to_sheet(templateData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Format Input Soal");
-        
+        const worksheet = XLSX.utils.json_to_sheet(templateData); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "Format Input Soal");
         worksheet['!cols'] = [ {wch: 12}, {wch: 25}, {wch: 12}, {wch: 45}, {wch: 35}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 45} ];
         XLSX.writeFile(workbook, "Template_Upload_Soal_SMAICH.xlsx");
     };
 
     async function prosesUploadMassal(jsonData, mapel, kelas) {
         if (jsonData.length === 0) throw new Error("File kosong atau tidak sesuai format Template!");
-
-        let updates = [];
-        let timestampAwal = new Date().getTime();
+        let updates = []; let timestampAwal = new Date().getTime();
         
         for (let row of jsonData) {
             let tipeRaw = String(row["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] || "PG").toUpperCase().trim();
-            let tipeFormat = "PG";
-            if (tipeRaw.includes('ESSAY')) tipeFormat = 'Essay';
-            else if (tipeRaw.includes('PGK')) tipeFormat = 'PGK';
-            else if (tipeRaw.includes('JODOH') || tipeRaw.includes('MENJODOHKAN')) tipeFormat = 'Menjodohkan';
-            
+            let tipeFormat = "PG"; if (tipeRaw.includes('ESSAY')) tipeFormat = 'Essay'; else if (tipeRaw.includes('PGK')) tipeFormat = 'PGK'; else if (tipeRaw.includes('JODOH') || tipeRaw.includes('MENJODOHKAN')) tipeFormat = 'Menjodohkan';
             timestampAwal += 10;
 
-            let payload = {
-                mataPelajaran: mapel, kelas: kelas,
-                nomor_soal: parseInt(row["Nomor Soal"]) || 1,
-                bobot: parseFloat(row["Bobot Soal"]) || 1,
-                tipe: tipeFormat,
-                teks_soal: String(row["Teks Pertanyaan"] || ""),
-                createdAt: new Date(timestampAwal),
-                updatedAt: new Date(timestampAwal)
-            };
-
+            let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: parseInt(row["Nomor Soal"]) || 1, bobot: parseFloat(row["Bobot Soal"]) || 1, tipe: tipeFormat, teks_soal: String(row["Teks Pertanyaan"] || ""), createdAt: new Date(timestampAwal), updatedAt: new Date(timestampAwal) };
             let linkMediaPertanyaan = row["Link Media Pertanyaan (URL Gambar/Audio/Video)"] ? String(row["Link Media Pertanyaan (URL Gambar/Audio/Video)"]).trim() : "";
             if (linkMediaPertanyaan) {
-                let mType = "image";
-                if (linkMediaPertanyaan.toLowerCase().includes('.mp3') || linkMediaPertanyaan.toLowerCase().includes('.wav')) mType = "audio";
-                else if (linkMediaPertanyaan.toLowerCase().includes('.mp4') || linkMediaPertanyaan.toLowerCase().includes('.mkv')) mType = "video";
+                let mType = "image"; if (linkMediaPertanyaan.toLowerCase().includes('.mp3') || linkMediaPertanyaan.toLowerCase().includes('.wav')) mType = "audio"; else if (linkMediaPertanyaan.toLowerCase().includes('.mp4') || linkMediaPertanyaan.toLowerCase().includes('.mkv')) mType = "video";
                 payload.media_soal = { url: linkMediaPertanyaan, type: mType };
             }
 
             if (tipeFormat === 'PG' || tipeFormat === 'PGK') {
-                payload.opsi = {
-                    A: row["Opsi A"] ? String(row["Opsi A"]) : "", B: row["Opsi B"] ? String(row["Opsi B"]) : "",
-                    C: row["Opsi C"] ? String(row["Opsi C"]) : "", D: row["Opsi D"] ? String(row["Opsi D"]) : "",
-                    E: row["Opsi E"] ? String(row["Opsi E"]) : ""
-                };
-                let opsiMediaObj = {};
-                ['A', 'B', 'C', 'D', 'E'].forEach(k => {
-                    let linkMediaOpsi = row[`Link Media Opsi ${k} (URL Gambar)`] ? String(row[`Link Media Opsi ${k} (URL Gambar)`]).trim() : "";
-                    if (linkMediaOpsi) { opsiMediaObj[k] = { url: linkMediaOpsi, type: "image" }; }
-                });
+                payload.opsi = { A: row["Opsi A"] ? String(row["Opsi A"]) : "", B: row["Opsi B"] ? String(row["Opsi B"]) : "", C: row["Opsi C"] ? String(row["Opsi C"]) : "", D: row["Opsi D"] ? String(row["Opsi D"]) : "", E: row["Opsi E"] ? String(row["Opsi E"]) : "" };
+                let opsiMediaObj = {}; ['A', 'B', 'C', 'D', 'E'].forEach(k => { let linkMediaOpsi = row[`Link Media Opsi ${k} (URL Gambar)`] ? String(row[`Link Media Opsi ${k} (URL Gambar)`]).trim() : ""; if (linkMediaOpsi) { opsiMediaObj[k] = { url: linkMediaOpsi, type: "image" }; } });
                 if (Object.keys(opsiMediaObj).length > 0) { payload.opsi_media = opsiMediaObj; }
-                
                 let kunci = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || "").trim().toUpperCase();
-                if (tipeFormat === 'PGK') { payload.kunci_jawaban = kunci.split(',').map(k => k.trim()); } 
-                else { payload.kunci_jawaban = kunci; }
-            } 
-            else if (tipeFormat === 'Menjodohkan') {
-                let kunciRaw = row["Kunci Jawaban / Pasangan Menjodohkan"] ? String(row["Kunci Jawaban / Pasangan Menjodohkan"]).trim() : "";
-                let pasanganArr = [];
-                if (kunciRaw) {
-                    let pairs = kunciRaw.split(';');
-                    pairs.forEach(p => {
-                        let splitPair = p.split('=');
-                        if (splitPair.length === 2) { pasanganArr.push({ kiri: splitPair[0].trim(), kanan: splitPair[1].trim() }); }
-                    });
-                }
+                if (tipeFormat === 'PGK') { payload.kunci_jawaban = kunci.split(',').map(k => k.trim()); } else { payload.kunci_jawaban = kunci; }
+            } else if (tipeFormat === 'Menjodohkan') {
+                let kunciRaw = row["Kunci Jawaban / Pasangan Menjodohkan"] ? String(row["Kunci Jawaban / Pasangan Menjodohkan"]).trim() : ""; let pasanganArr = [];
+                if (kunciRaw) { kunciRaw.split(';').forEach(p => { let splitPair = p.split('='); if (splitPair.length === 2) { pasanganArr.push({ kiri: splitPair[0].trim(), kanan: splitPair[1].trim() }); } }); }
                 payload.pasangan = pasanganArr;
-            } 
-            else if (tipeFormat === 'Essay') { payload.kunci_jawaban = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || ""); }
-
+            } else if (tipeFormat === 'Essay') { payload.kunci_jawaban = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || ""); }
             updates.push(addDoc(collection(db, "bank_soal"), payload));
         }
-
-        await Promise.all(updates);
-        await normalizeUrutanSoal(mapel, kelas);
-        
+        await Promise.all(updates); await normalizeUrutanSoal(mapel, kelas);
         window.customAlert(`Sukses! ${jsonData.length} Soal berhasil diunggah dengan aman.`, "success");
-        window.loadDaftarSoal(mapel, kelas);
-        loadBankSoalSummary();
+        window.loadDaftarSoal(mapel, kelas); loadBankSoalSummary();
     }
 
-    // A. LISTENER: IMPORT DARI GOOGLE SHEETS
     document.getElementById('btn-import-gdrive')?.addEventListener('click', () => {
-        const mapel = document.getElementById('filter-soal-mapel').value; 
-        const kelas = document.getElementById('filter-soal-kelas').value;
+        const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
         if(!mapel || !kelas) return window.customAlert("Pilih Mapel & Kelas terlebih dahulu!", "warning");
-        document.getElementById('input-gdrive-url').value = '';
-        document.getElementById('modal-import-gdrive').style.display = 'flex';
+        document.getElementById('input-gdrive-url').value = ''; document.getElementById('modal-import-gdrive').style.display = 'flex';
     });
 
     document.getElementById('btn-proses-gdrive')?.addEventListener('click', async () => {
-        const urlInput = document.getElementById('input-gdrive-url').value.trim();
-        if (!urlInput) return window.customAlert("Masukkan link Google Sheets terlebih dahulu!", "warning");
-
-        const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        if (!match || !match[1]) return window.customAlert("Link tidak valid! Pastikan link tersebut disalin dari Google Sheets.", "error");
+        const urlInput = document.getElementById('input-gdrive-url').value.trim(); if (!urlInput) return window.customAlert("Masukkan link Google Sheets terlebih dahulu!", "warning");
+        const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/); if (!match || !match[1]) return window.customAlert("Link tidak valid!", "error");
         
-        const sheetId = match[1];
-        document.getElementById('modal-import-gdrive').style.display = 'none';
-
-        const mapel = document.getElementById('filter-soal-mapel').value; 
-        const kelas = document.getElementById('filter-soal-kelas').value;
-
+        const sheetId = match[1]; document.getElementById('modal-import-gdrive').style.display = 'none';
+        const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
         const container = document.getElementById('list-soal');
         container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Sedang menyedot data dari Google Drive...</div>';
 
         try {
-            const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
-            const response = await fetch(exportUrl);
-            
-            if (!response.ok) throw new Error("Akses ditolak. Pastikan Setelan Share Google Sheets Anda adalah 'Anyone with the link' (Siapa saja memiliki link).");
+            const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`; const response = await fetch(exportUrl);
+            if (!response.ok) throw new Error("Akses ditolak. Pastikan dibagikan publik (Anyone with the link).");
+            const csvText = await response.text(); if (csvText.includes('<!DOCTYPE html>')) throw new Error("Terdeteksi HTML. Set publik tanpa login.");
 
-            const csvText = await response.text();
-            if (csvText.includes('<!DOCTYPE html>')) throw new Error("Terdeteksi halaman HTML. Pastikan file dibagikan untuk publik tanpa perlu login Google.");
-
-            const workbook = XLSX.read(csvText, { type: 'string' });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-            await prosesUploadMassal(jsonData, mapel, kelas);
-        } catch (err) {
-            console.error(err);
-            window.customAlert("Gagal Import G-Drive: " + err.message, "error");
-            window.loadDaftarSoal(mapel, kelas);
-        }
+            const workbook = XLSX.read(csvText, { type: 'string' }); const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet); await prosesUploadMassal(jsonData, mapel, kelas);
+        } catch (err) { window.customAlert("Gagal Import G-Drive: " + err.message, "error"); window.loadDaftarSoal(mapel, kelas); }
     });
 
-    // B. LISTENER: UPLOAD EXCEL LOKAL
     document.getElementById('upload-excel-soal')?.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const mapel = document.getElementById('filter-soal-mapel').value; 
-        const kelas = document.getElementById('filter-soal-kelas').value;
+        const file = e.target.files[0]; if (!file) return;
+        const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
         if(!mapel || !kelas) return window.customAlert("Mapel atau Kelas tidak terdeteksi!", "error");
 
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
-                const container = document.getElementById('list-soal');
-                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file Excel lokal & Menyimpan...</div>';
-
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
+                const container = document.getElementById('list-soal'); container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file Excel lokal & Menyimpan...</div>';
+                const data = new Uint8Array(event.target.result); const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]]; const jsonData = XLSX.utils.sheet_to_json(worksheet);
                 await prosesUploadMassal(jsonData, mapel, kelas);
-            } catch (err) {
-                console.error(err);
-                window.customAlert("Gagal memproses Excel lokal: " + err.message, "error");
-                window.loadDaftarSoal(mapel, kelas);
-            }
+            } catch (err) { window.customAlert("Gagal memproses Excel: " + err.message, "error"); window.loadDaftarSoal(mapel, kelas); }
         };
-        reader.readAsArrayBuffer(file);
-        e.target.value = '';
+        reader.readAsArrayBuffer(file); e.target.value = '';
     });
     
     // ==========================================
@@ -1104,6 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const gridMapel = document.getElementById('grid-mapel-hasil'); if(!gridMapel) return;
             let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
             let summaryMapel = {};
+            
             allHasilUjian.forEach(h => {
                 if (allowedMapel.includes(h.mataPelajaran)) {
                     let key = `${h.mataPelajaran} - Kelas ${h.kelas}`;
@@ -1136,13 +1020,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e) {}
     }
 
-   window.bukaDetailHasil = (mapel, kelas) => { currentMapelDetail = mapel; currentKelasDetail = kelas; document.getElementById('label-mapel-detail').innerText = `HASIL: ${mapel} - KELAS ${kelas}`; window.location.hash = 'section-hasil-detail'; renderDetailHasil(); };
+    window.bukaDetailHasil = (mapel, kelas) => { currentMapelDetail = mapel; currentKelasDetail = kelas; document.getElementById('label-mapel-detail').innerText = `HASIL: ${mapel} - KELAS ${kelas}`; window.location.hash = 'section-hasil-detail'; renderDetailHasil(); };
 
     window.lihatDetailStatus = (status, pelanggaran) => {
         let title = "Detail Status Ujian"; let msg = ""; let type = "info";
         if (status === 'NORMAL') { type = "success"; title = "Status: NORMAL"; msg = `Ujian diselesaikan dengan baik oleh siswa.\n\nTotal pelanggaran terdeteksi: ${pelanggaran} kali.`; } 
-        else if (status === 'DISKUALIFIKASI' || status === 'DIHENTIKAN PAKSA') { type = "error"; title = `Status: ${status}`; msg = `Ujian dihentikan paksa oleh sistem keamanan CBT SMAICH.\n\nSiswa telah melakukan pelanggaran sebanyak ${pelanggaran} kali.`; } 
-        else if (status === 'WAKTU HABIS') { type = "warning"; title = "Status: WAKTU HABIS"; msg = `Durasi ujian telah habis.\nSistem otomatis mengumpulkan jawaban terakhir.\n\nTotal pelanggaran terdeteksi: ${pelanggaran} kali.`; } 
+        else if (status === 'DISKUALIFIKASI' || status === 'DIHENTIKAN PAKSA') { type = "error"; title = `Status: ${status}`; msg = `Ujian dihentikan paksa oleh sistem keamanan CBT.\n\nSiswa telah melakukan pelanggaran sebanyak ${pelanggaran} kali.`; } 
+        else if (status === 'WAKTU HABIS') { type = "warning"; title = "Status: WAKTU HABIS"; msg = `Durasi ujian telah habis.\nSistem otomatis mengumpulkan jawaban terakhir.`; } 
         else { type = "info"; title = `Status Ujian: ${status}`; msg = `Ujian disubmit dengan status: ${status}.\n\nTotal pelanggaran terdeteksi: ${pelanggaran} kali.`; }
         window.customAlert(msg, type, title);
     };
@@ -1150,7 +1034,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderDetailHasil() {
         const tbody = document.querySelector('#table-hasil tbody'); if (!tbody) return;
         const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail && h.kelas === currentKelasDetail);
-        
         dataFiltered.sort((a, b) => new Date(b.waktuSubmit) - new Date(a.waktuSubmit));
 
         if (dataFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Belum ada data hasil ujian.</td></tr>'; } 
@@ -1161,9 +1044,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nilai = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
                 const jmlPelanggaran = h.pelanggaran || 0; const status = h.statusPelanggaran || 'NORMAL';
                 
-                let warnaStatus = '#10b981'; 
-                if (status === 'DISKUALIFIKASI' || status === 'DIHENTIKAN PAKSA') warnaStatus = '#ef4444'; else if (status === 'WAKTU HABIS') warnaStatus = '#f59e0b';
-                
+                let warnaStatus = '#10b981'; if (status === 'DISKUALIFIKASI' || status === 'DIHENTIKAN PAKSA') warnaStatus = '#ef4444'; else if (status === 'WAKTU HABIS') warnaStatus = '#f59e0b';
                 let waktu = '-'; if (h.waktuSubmit) { const dateObj = new Date(h.waktuSubmit); waktu = !isNaN(dateObj) ? dateObj.toLocaleString('id-ID', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : h.waktuSubmit; }
                 
                 html += `<tr>
@@ -1182,8 +1063,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.downloadExcelHasil = async (mapel = currentMapelDetail, kelas = currentKelasDetail) => {
         const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === mapel && h.kelas === kelas);
-        if (dataFiltered.length === 0) { window.customAlert("Tidak ada data hasil ujian yang bisa diunduh untuk kelas ini.", "warning"); return; }
-
+        if (dataFiltered.length === 0) { window.customAlert("Tidak ada data hasil ujian.", "warning"); return; }
         const btn = document.querySelector(`button[onclick="window.downloadExcelHasil()"]`) || document.querySelector(`button[onclick*="downloadExcelHasil('${mapel}'"]`);
         let origText = ""; if (btn) { origText = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghubungkan Bank Soal...'; btn.disabled = true; }
 
@@ -1194,7 +1074,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const rowsForExcel = dataFiltered.map((h, index) => {
                 let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
                 let waktu = '-'; if (h.waktuSubmit) { const dObj = new Date(h.waktuSubmit); waktu = !isNaN(dObj) ? dObj.toLocaleString('id-ID') : h.waktuSubmit; }
-
                 let rowData = { "No": index + 1, "Nama Siswa": h.nama || "Nama Tidak Terdata", "NIS / Username": h.username || h.uid || "-", "Mata Pelajaran": h.mataPelajaran, "Kelas": h.kelas, "Nilai Akhir": nilaiSiswa, "Jumlah Pelanggaran": h.pelanggaran || 0, "Status Ujian": h.statusPelanggaran || 'NORMAL', "Waktu Submit": waktu };
 
                 soalArr.forEach((s, idx) => {
@@ -1212,16 +1091,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const worksheet = XLSX.utils.json_to_sheet(rowsForExcel); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "Analisis Hasil Ujian");
             let colsConfig = [ {wch: 5}, {wch: 25}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 12}, {wch: 18}, {wch: 15}, {wch: 20} ];
             soalArr.forEach(() => { colsConfig.push({wch: 45}); }); worksheet['!cols'] = colsConfig;
-
-            const namaFileClean = `Hasil_Lengkap_CBT_${mapel}_${kelas}`.replace(/[^a-zA-Z0-9]/g, "_"); XLSX.writeFile(workbook, `${namaFileClean}.xlsx`);
-        } catch (e) { console.error("Gagal generate excel lengkap:", e); window.customAlert("Terjadi kesalahan sistem saat mencoba merekap data jawaban ke excel.", "error"); } finally { if (btn) { btn.innerHTML = origText; btn.disabled = false; } }
+            XLSX.writeFile(workbook, `Hasil_Lengkap_CBT_${mapel}_${kelas}.xlsx`);
+        } catch (e) { window.customAlert("Terjadi kesalahan sistem rekap.", "error"); } finally { if (btn) { btn.innerHTML = origText; btn.disabled = false; } }
     };
 
     window.hapusHasil = async (id) => { if(await customConfirm("Hapus hasil ujian siswa ini?", "danger")) { await deleteDoc(doc(db, "hasil_ujian", id)); loadDataHasil(); renderDetailHasil(); } };
 
     document.getElementById('btn-hapus-semua-hasil')?.addEventListener('click', async () => {
         if (!currentMapelDetail || !currentKelasDetail) return;
-        if (await window.customConfirm(`Hapus SEMUA data hasil ujian untuk mapel ${currentMapelDetail} di Kelas ${currentKelasDetail}? Tindakan ini tidak bisa dibatalkan.`, "danger", "Kosongkan Data")) {
+        if (await window.customConfirm(`Hapus SEMUA data hasil ujian untuk mapel ${currentMapelDetail} di Kelas ${currentKelasDetail}?`, "danger", "Kosongkan Data")) {
             const btnHapusAll = document.getElementById('btn-hapus-semua-hasil'); const origText = btnHapusAll.innerHTML;
             btnHapusAll.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghapus Massal...'; btnHapusAll.disabled = true;
             try {
