@@ -364,22 +364,23 @@
     <div id="modal-edit-bank-soal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
         <div class="modal-content" style="background: white; width: 450px; max-width: 90%; padding: 35px 25px; border-radius: 10px;">
             <span class="close-btn" onclick="document.getElementById('modal-edit-bank-soal').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
-            <h3 style="margin-top: 0; margin-bottom: 20px; color: var(--secondary);"><i class="fas fa-exchange-alt"></i> Pindah Mapel / Kelas</h3>
+            <h3 style="margin-top: 0; margin-bottom: 20px; color: var(--secondary);"><i class="fas fa-copy"></i> Terapkan ke Kelas Lain</h3>
             
             <input type="hidden" id="edit-bs-old-mapel">
             <input type="hidden" id="edit-bs-old-kelas">
             
             <div class="input-group">
-                <label>Pindah ke Mata Pelajaran</label>
+                <label>Mata Pelajaran</label>
                 <select id="edit-bs-new-mapel" class="input-text"></select>
             </div>
             <div class="input-group">
-                <label>Pindah ke Kelas</label>
-                <select id="edit-bs-new-kelas" class="input-text"></select>
+                <label>Pilih Kelas Sasaran (Bisa lebih dari satu)</label>
+                <div id="edit-bs-new-kelas-container" class="checkbox-container" style="max-height: 180px; border-color: var(--primary); padding: 15px;">
+                    </div>
             </div>
             
             <div style="background: #fffbeb; color: #b45309; padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; border: 1px solid #fde68a;">
-                <i class="fas fa-exclamation-triangle"></i> <b>Perhatian:</b> Tindakan ini akan memindahkan <b>seluruh soal</b> beserta jadwal dan token dari paket ini ke Mapel dan Kelas yang baru.
+                <i class="fas fa-info-circle"></i> <b>Info:</b> Fitur ini akan menduplikasi seluruh soal beserta jadwal & token ke semua kelas yang Anda centang.
             </div>
 
             <button id="btn-simpan-pindah-bs" class="btn-3d" style="width: 100%; background-color: var(--warning);"><i class="fas fa-save"></i> Terapkan Perubahan</button>
