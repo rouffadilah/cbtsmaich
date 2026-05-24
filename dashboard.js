@@ -1,6 +1,6 @@
 import { auth, db, storage, functions } from './firebase-config.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
@@ -400,13 +400,109 @@ document.addEventListener('DOMContentLoaded', () => {
                 let d = summary[key]; let jadwal = jadwalData[key] ? jadwalData[key].replace('T', ' ') : '-'; let durasi = waktuData[key] ? waktuData[key] + ' Mnt' : '-';
                 let token = '-'; if(tokenData[`token_${key}`]) { token = typeof tokenData[`token_${key}`] === 'object' ? tokenData[`token_${key}`].code : tokenData[`token_${key}`]; }
                 let isMapelGuru = isGuru && userMapel.includes(d.mapel);
-                let actionBtn = (isAdmin || isMapelGuru) ? `<button onclick="window.bukaDetailSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>` : `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>`;
+                
+                // TOMBOL KELOLA & EDIT DIPERBARUI DI SINI
+                let actionBtn = (isAdmin || isMapelGuru) ? 
+                    `<div style="display:flex; gap:5px; justify-content:center;">
+                        <button onclick="window.bukaDetailSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
+                        <button onclick="window.bukaModalPindahBankSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Pindah Mapel/Kelas"><i class="fas fa-edit"></i></button>
+                    </div>` : 
+                    `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>`;
+                
                 html += `<tr><td>${d.mapel}</td><td>${d.kelas}</td><td>${jadwal}</td><td>${durasi}</td><td style="font-weight:bold; color:var(--danger);">${token}</td><td>${d.count}</td><td style="text-align:center;">${actionBtn}</td></tr>`;
             }
             if(html === '') html = '<tr><td colspan="7" style="text-align:center;">Tidak ada data soal.</td></tr>';
             tbody.innerHTML = html;
         } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--danger);">Gagal memuat data</td></tr>'; }
     }
+
+    // ==============================================================
+    // FITUR: PINDAH MAPEL / KELAS UNTUK BANK SOAL (MASSAL)
+    // ==============================================================
+    window.bukaModalPindahBankSoal = (mapelLama, kelasLama) => {
+        document.getElementById('edit-bs-old-mapel').value = mapelLama;
+        document.getElementById('edit-bs-old-kelas').value = kelasLama;
+        
+        const selMapel = document.getElementById('edit-bs-new-mapel');
+        const selKelas = document.getElementById('edit-bs-new-kelas');
+        
+        let allowedMapel = listMapel; 
+        if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
+        
+        selMapel.innerHTML = allowedMapel.map(m => `<option value="${m}" ${m === mapelLama ? 'selected' : ''}>${m}</option>`).join('');
+        selKelas.innerHTML = listKelas.map(k => `<option value="${k}" ${k === kelasLama ? 'selected' : ''}>${k}</option>`).join('');
+        
+        document.getElementById('modal-edit-bank-soal').style.display = 'flex';
+    };
+
+    document.getElementById('btn-simpan-pindah-bs')?.addEventListener('click', async () => {
+        const oldMapel = document.getElementById('edit-bs-old-mapel').value;
+        const oldKelas = document.getElementById('edit-bs-old-kelas').value;
+        const newMapel = document.getElementById('edit-bs-new-mapel').value;
+        const newKelas = document.getElementById('edit-bs-new-kelas').value;
+
+        if (oldMapel === newMapel && oldKelas === newKelas) {
+            return window.customAlert("Tidak ada perubahan Mapel atau Kelas yang dipilih.", "info");
+        }
+
+        if (!(await window.customConfirm(`Anda yakin ingin memindahkan seluruh soal dari:\n${oldMapel} (Kelas ${oldKelas})\n\nKe:\n${newMapel} (Kelas ${newKelas})?`, "warning", "Konfirmasi Pindah Soal"))) {
+            return;
+        }
+
+        const btn = document.getElementById('btn-simpan-pindah-bs');
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memindahkan Data...';
+        btn.disabled = true;
+
+        try {
+            // 1. Pindahkan Seluruh Dokumen Soal di Koleksi bank_soal
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", oldMapel), where("kelas", "==", oldKelas));
+            const snap = await getDocs(q);
+            
+            let updates = [];
+            snap.forEach(docSnap => {
+                updates.push(updateDoc(doc(db, "bank_soal", docSnap.id), {
+                    mataPelajaran: newMapel,
+                    kelas: newKelas
+                }));
+            });
+            await Promise.all(updates); 
+
+            // 2. Pindahkan Data Pengaturan Ujian (Waktu, Jadwal, Token)
+            const oldKey = `${oldMapel}_${oldKelas}`;
+            const newKey = `${newMapel}_${newKelas}`;
+
+            const wSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
+            if (wSnap.exists() && wSnap.data()[oldKey] !== undefined) {
+                await setDoc(doc(db, "pengaturan", "waktu_ujian"), { [newKey]: wSnap.data()[oldKey] }, { merge: true });
+                await updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [oldKey]: deleteField() });
+            }
+
+            const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
+            if (jSnap.exists() && jSnap.data()[oldKey] !== undefined) {
+                await setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [newKey]: jSnap.data()[oldKey] }, { merge: true });
+                await updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [oldKey]: deleteField() });
+            }
+
+            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            if (tSnap.exists() && tSnap.data()[`token_${oldKey}`] !== undefined) {
+                await setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${newKey}`]: tSnap.data()[`token_${oldKey}`] }, { merge: true });
+                await updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${oldKey}`]: deleteField() });
+            }
+
+            document.getElementById('modal-edit-bank-soal').style.display = 'none';
+            await window.customAlert(`Berhasil memindahkan ${snap.size} soal beserta pengaturannya ke ${newMapel} - ${newKelas}.`, "success");
+            
+            loadBankSoalSummary();
+
+        } catch (e) {
+            console.error(e);
+            window.customAlert("Terjadi kesalahan sistem saat memindahkan data.", "error");
+        } finally {
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
+        }
+    });
 
     document.getElementById('soal-tipe')?.addEventListener('change', (e) => {
         const val = e.target.value;
@@ -446,7 +542,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let soalArr = [];
         snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
         
-        // Urutkan berdasarkan nomor_soal. Jika kembar, data yang paling baru diubah/dibuat diutamakan (naik)
         soalArr.sort((a, b) => {
             if (a.nomor_soal === b.nomor_soal) {
                 let timeA = a.updatedAt || a.createdAt; timeA = timeA ? (timeA.toMillis ? timeA.toMillis() : new Date(timeA).getTime()) : 0;
@@ -456,7 +551,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return (a.nomor_soal || 0) - (b.nomor_soal || 0);
         });
 
-        // Tulis ulang urutan ke database
         let updates = [];
         soalArr.forEach((s, idx) => {
             let correctNum = idx + 1;
@@ -468,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (updates.length > 0) { await Promise.all(updates); }
     }
 
-    // SUBMIT PENYIMPANAN SOAL
+    // SUBMIT PENYIMPANAN SOAL MANUAL
     document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const mapel = document.getElementById('soal-mapel').value;
@@ -486,7 +580,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileSoal = document.getElementById('soal-media').files[0];
             let mediaSoal = await uploadMediaToStorage(fileSoal, `bank_soal/${mapel}_${kelas}`);
 
-            // updatedAt penting untuk tie-breaker (penyisipan nomor yang sama)
             let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: nomorSoalTarget, bobot: bobotSoal, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
             if (mediaSoal) payload.media_soal = mediaSoal;
 
@@ -530,14 +623,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 await addDoc(collection(db, "bank_soal"), payload);
             }
 
-            // Jalankan penomoran otomatis
             await normalizeUrutanSoal(mapel, kelas);
 
             document.getElementById('form-tambah-soal').reset();
             document.getElementById('edit-soal-id').value = '';
             document.getElementById('modal-tambah-soal').style.display = 'none';
 
-            // Refresh UI
             const curMapel = document.getElementById('filter-soal-mapel').value;
             const curKelas = document.getElementById('filter-soal-kelas').value;
             
@@ -578,7 +669,6 @@ document.addEventListener('DOMContentLoaded', () => {
             kelasSelect.style.pointerEvents = 'auto'; kelasSelect.style.backgroundColor = '#fafafa';
         }
         
-        // Auto-fill nomor yang disisipkan
         inputNomor.value = targetNomor;
 
         document.getElementById('modal-tambah-soal').style.display = 'flex';
@@ -587,7 +677,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { window.bukaModalTambahSoal(); });
 
-    // SET KETIKA KARTU SOAL DIKLIK -> BUKA FORM EDIT
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id);
         if (!soal) return;
@@ -601,7 +690,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mapelSelect.innerHTML = '<option value="" disabled>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
         kelasSelect.innerHTML = '<option value="" disabled>-- Pilih Kelas --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 
-        // Mengunci dropdown agar guru tidak sengaja mengubah mapel/kelas saat mengedit soal
         mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0';
         kelasSelect.style.pointerEvents = 'none'; kelasSelect.style.backgroundColor = '#e2e8f0';
         
@@ -639,7 +727,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
     };
 
-    // RENDER UI "GOOGLE FORMS" DI DAFTAR SOAL
     window.bukaDetailSoal = async (mapel, kelas) => {
         document.getElementById('view-summary-bank-soal').style.display = 'none'; document.getElementById('view-soal-list').style.display = 'block';
         document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
@@ -680,7 +767,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let html = '';
             
-            // TOMBOL SISIPKAN PERTAMA KALI (ATAS SENDIRI)
             html += `
             <div style="display:flex; justify-content:center; position:relative; margin-bottom: 15px; margin-top: 5px;">
                 <hr style="position:absolute; width:100%; top:50%; border:none; border-top:1px dashed #cbd5e1; z-index:1;">
