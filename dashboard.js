@@ -448,6 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `<div style="display:flex; gap:5px; justify-content:center;">
                         <button onclick="window.bukaDetailSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
                         <button onclick="window.bukaModalPindahBankSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan ke Kelas Lain"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.hapusBankSoalKeseluruhan('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Seluruh Soal & Data Mapel Ini"><i class="fas fa-trash-alt"></i></button>
                     </div>` : 
                     `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>`;
                 
@@ -486,7 +487,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="display:flex; gap:5px; justify-content:center;">
                     <button onclick="window.bukaDetailSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
                     <button onclick="window.bukaModalPindahBankSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan ke Kelas Lain"><i class="fas fa-edit"></i></button>
+                    <button onclick="window.hapusBankSoalKeseluruhan('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Seluruh Soal & Data Mapel Ini"><i class="fas fa-trash-alt"></i></button>
                 </div>`;
+        }
+    };
+
+    // ==============================================================
+    // FITUR: HAPUS BANK SOAL SECARA KESELURUHAN (PER MAPEL & KELAS)
+    // ==============================================================
+    window.hapusBankSoalKeseluruhan = async (mapel, kelas) => {
+        if (!(await window.customConfirm(`PENGHAPUSAN PERMANEN!\n\nApakah Anda YAKIN ingin menghapus seluruh soal, jadwal, dan token untuk mapel "${mapel}" di kelas "${kelas}"?\n\nTindakan ini tidak dapat dibatalkan!`, "danger", "Konfirmasi Hapus Total"))) { 
+            return; 
+        }
+
+        const btnHtmlOriginal = event.currentTarget.innerHTML;
+        const btn = event.currentTarget;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; 
+        btn.disabled = true;
+
+        try {
+            // 1. Ambil dan Hapus Semua Soal dari Firestore
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
+            const snap = await getDocs(q);
+            
+            const deletePromises = [];
+            snap.forEach(d => {
+                deletePromises.push(deleteDoc(doc(db, "bank_soal", d.id)));
+            });
+            await Promise.all(deletePromises);
+
+            // 2. Hapus Konfigurasi (Waktu, Jadwal, Token)
+            const key = `${mapel}_${kelas}`;
+            await updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: deleteField() }).catch(()=>{});
+            await updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: deleteField() }).catch(()=>{});
+            await updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: deleteField() }).catch(()=>{});
+
+            await window.customAlert(`Berhasil menghapus ${snap.size} soal beserta pengaturan ujian untuk ${mapel} - ${kelas}.`, "success");
+            
+            // Render ulang tabel
+            loadBankSoalSummary();
+        } catch (e) {
+            console.error(e);
+            window.customAlert("Terjadi kesalahan saat menghapus data. Pastikan koneksi internet stabil.", "error");
+        } finally {
+            if(btn) { btn.innerHTML = btnHtmlOriginal; btn.disabled = false; }
         }
     };
 
