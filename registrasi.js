@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             btnSubmit.disabled = false;
             btnSubmit.style.opacity = '1';
-            btnSubmit.innerHTML = 'DAFTAR'; // Diubah
+            btnSubmit.innerHTML = 'DAFTAR MANUAL'; 
             warningBox.style.display = 'none';
         }
     }
@@ -77,10 +77,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const groupKelasGuru = document.getElementById("group-kelas-guru");
         const inputKelasSiswa = document.getElementById("reg-kelas-siswa");
         const inputUsername = document.getElementById("reg-username");
+        const lblRoleMassal = document.getElementById("lbl-role-massal");
 
         if (role === 'guru') {
             regTitle.innerText = "REGISTRASI GURU";
             usernameLabel.innerText = "ID Guru";
+            lblRoleMassal.innerText = "Guru";
             boxGuru.classList.add('active');
             boxSiswa.classList.remove('active');
             
@@ -95,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             regTitle.innerText = "REGISTRASI SISWA";
             usernameLabel.innerText = "Nomor Peserta / NIS";
+            lblRoleMassal.innerText = "Siswa";
             boxSiswa.classList.add('active');
             boxGuru.classList.remove('active');
             
@@ -115,6 +118,111 @@ document.addEventListener("DOMContentLoaded", () => {
 
     fetchRegStatus();
 
+    // ====================================================
+    // FITUR BARU: DOWNLOAD TEMPLATE & IMPORT EXCEL MASSAL
+    // ====================================================
+    document.getElementById('btn-download-template')?.addEventListener('click', () => {
+        const role = roleInput.value;
+        let templateData = [];
+        let filename = "";
+
+        if (role === 'siswa') {
+            templateData = [
+                { "Nama Lengkap": "Ahmad Fulan", "NIS": "1029384756", "Password": "password123", "Kelas": "X-1" },
+                { "Nama Lengkap": "Budi Santoso", "NIS": "1029384757", "Password": "password123", "Kelas": "X-2" }
+            ];
+            filename = "Template_Registrasi_Siswa.xlsx";
+        } else {
+            templateData = [
+                { "Nama Lengkap": "Pak Guru Budi", "ID Guru": "E24H6-223", "Password": "password123", "Mata Pelajaran (Pisahkan koma)": "Informatika, Jaringan", "Kelas Ajar (Pisahkan koma)": "X-1, X-2, XI-1" }
+            ];
+            filename = "Template_Registrasi_Guru.xlsx";
+        }
+
+        const worksheet = XLSX.utils.json_to_sheet(templateData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data Registrasi");
+        XLSX.writeFile(workbook, filename);
+    });
+
+    document.getElementById('upload-massal')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const role = roleInput.value;
+        if (role === 'siswa' && !statusRegSiswa) return alert("Pendaftaran Massal Siswa sedang ditutup!");
+        if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Massal Guru sedang ditutup!");
+
+        if (!confirm(`TINDAKAN OTOMATIS: Anda yakin ingin mengimpor dan mendaftarkan banyak akun ${role.toUpperCase()} sekaligus dari file Excel ini?`)) {
+            e.target.value = ''; return;
+        }
+
+        const statusLabel = document.getElementById('mass-upload-status');
+        statusLabel.style.display = 'block';
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if (jsonData.length === 0) throw new Error("Data Excel tidak ditemukan / kosong!");
+
+                let successCount = 0; let errorCount = 0;
+
+                for (let row of jsonData) {
+                    let nama = row['Nama Lengkap'] ? String(row['Nama Lengkap']).trim() : '';
+                    let username = '';
+                    
+                    if (role === 'siswa') username = row['NIS'] ? String(row['NIS']).trim() : '';
+                    else username = row['ID Guru'] ? String(row['ID Guru']).trim() : '';
+                    
+                    username = username.replace(/\s+/g, '').toUpperCase();
+                    let password = row['Password'] ? String(row['Password']) : '123456';
+
+                    if (!nama || !username) { errorCount++; continue; }
+
+                    let payload = { nama, username, createdAt: serverTimestamp(), role: [role] };
+                    
+                    if (role === 'siswa') {
+                        payload.kelas = row['Kelas'] ? String(row['Kelas']).trim() : '';
+                    } else {
+                        payload.mapel = row['Mata Pelajaran (Pisahkan koma)'] ? String(row['Mata Pelajaran (Pisahkan koma)']).split(',').map(s=>s.trim()) : [];
+                        payload.kelas = row['Kelas Ajar (Pisahkan koma)'] ? String(row['Kelas Ajar (Pisahkan koma)']).split(',').map(s=>s.trim()) : [];
+                    }
+
+                    const dummyEmail = `${username}@cbt.smaich.id`;
+
+                    try {
+                        const userCred = await createUserWithEmailAndPassword(auth, dummyEmail, password);
+                        await updateProfile(userCred.user, { displayName: nama });
+                        await setDoc(doc(db, "users", userCred.user.uid), payload);
+                        successCount++;
+                    } catch(err) {
+                        console.error("Gagal mendaftarkan:", username, err);
+                        errorCount++;
+                    }
+                    // Delay singkat agar sistem Auth Firebase tidak mendeteksi spamming
+                    await new Promise(r => setTimeout(r, 400));
+                }
+
+                alert(`REGISTRASI MASSAL SELESAI!\n\nBerhasil Dibuat: ${successCount} Akun\nGagal/Terlewat: ${errorCount} Akun\n\nSistem akan kembali ke halaman login. (Catatan: Admin dapat masuk menggunakan salah satu akun yang baru dibuat atau akun lama)`);
+                window.location.href = "index.html";
+
+            } catch (error) {
+                alert("Gagal memproses file Excel: " + error.message);
+                statusLabel.style.display = 'none';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        e.target.value = '';
+    });
+
+    // ====================================================
+    // PENDAFTARAN MANUAL
+    // ====================================================
     registerForm?.addEventListener("submit", async (e) => {
         e.preventDefault(); 
         const role = roleInput.value;
@@ -162,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-cb:checked')).map(cb => cb.value);
                 
                 if (mapelTerpilih.length === 0 || kelasTerpilih.length === 0) {
-                    btnSubmit.innerHTML = "DAFTAR";
+                    btnSubmit.innerHTML = "DAFTAR MANUAL";
                     btnSubmit.disabled = false;
                     return alert("Pendaftaran ditolak: Silakan centang minimal 1 Mata Pelajaran dan 1 Kelas Ajar!");
                 }
@@ -186,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (error.code === 'auth/weak-password') msg = "Password minimal 6 karakter!";
             
             alert(msg);
-            btnSubmit.innerHTML = "DAFTAR";
+            btnSubmit.innerHTML = "DAFTAR MANUAL";
             btnSubmit.disabled = false;
         }
     });
