@@ -2,7 +2,6 @@ import { auth, db, storage, functions } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 // ==========================================
 // VARIABEL GLOBAL
@@ -173,16 +172,23 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-detail-jawaban').style.display = 'flex';
 
         try {
-            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", h.mataPelajaran), where("kelas", "==", h.kelas));
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", h.mataPelajaran));
             const snap = await getDocs(q);
             
-            if(snap.empty) { 
+            let soalArr = []; 
+            snap.forEach(doc => {
+                let data = doc.data();
+                let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
+                if (arrKelas.includes(h.kelas)) {
+                    soalArr.push({id: doc.id, ...data});
+                }
+            });
+            
+            if(soalArr.length === 0) { 
                 container.innerHTML = '<div style="text-align:center; color:var(--danger); padding: 20px; background: white; border-radius: 8px;">Soal ujian tidak ditemukan di database. (Mungkin sudah dihapus)</div>'; 
                 return; 
             }
 
-            let soalArr = []; 
-            snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
             soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); 
 
             let html = '';
@@ -379,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // 6. BANK SOAL & FITUR BARU: AUTO-RENUMBERING & GOOGLE FORM UI
+    // 6. BANK SOAL & FITUR BARU: ARRAY CLASS SHARING
     // =================================================================
     function getTingkatan(kelas) {
         if (!kelas) return "Lainnya";
@@ -398,13 +404,20 @@ document.addEventListener('DOMContentLoaded', () => {
             let summary = {}; let uniqueMapel = new Set(); 
             
             snap.forEach(d => {
-                let mapel = d.data().mataPelajaran; let kelas = d.data().kelas; uniqueMapel.add(mapel);
-                let tingkatan = getTingkatan(kelas);
-                let key = `${mapel}_${tingkatan}`;
+                let mapel = d.data().mataPelajaran; 
+                let kelasData = d.data().kelas; 
+                let kelasArray = Array.isArray(kelasData) ? kelasData : [kelasData];
                 
-                if(!summary[key]) summary[key] = { mapel, tingkatan, classes: {} };
-                if(!summary[key].classes[kelas]) summary[key].classes[kelas] = 0;
-                summary[key].classes[kelas]++;
+                uniqueMapel.add(mapel);
+                
+                kelasArray.forEach(kelas => {
+                    let tingkatan = getTingkatan(kelas);
+                    let key = `${mapel}_${tingkatan}`;
+                    
+                    if(!summary[key]) summary[key] = { mapel, tingkatan, classes: {} };
+                    if(!summary[key].classes[kelas]) summary[key].classes[kelas] = 0;
+                    summary[key].classes[kelas]++;
+                });
             });
             
             let statSoalEl = document.getElementById('stat-soal'); if (statSoalEl) statSoalEl.innerText = uniqueMapel.size;
@@ -447,8 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 let actionBtn = (isAdmin || isMapelGuru) ? 
                     `<div style="display:flex; gap:5px; justify-content:center;">
                         <button onclick="window.bukaDetailSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
-                        <button onclick="window.bukaModalPindahBankSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan ke Kelas Lain"><i class="fas fa-edit"></i></button>
-                        <button onclick="window.hapusBankSoalKeseluruhan('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Seluruh Soal & Data Mapel Ini"><i class="fas fa-trash-alt"></i></button>
+                        <button onclick="window.bukaModalPindahBankSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan Akses ke Kelas Lain"><i class="fas fa-share-alt"></i></button>
+                        <button onclick="window.hapusBankSoalKeseluruhan('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Mapel dari Kelas Ini"><i class="fas fa-trash-alt"></i></button>
                     </div>` : 
                     `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>`;
                 
@@ -486,14 +499,14 @@ document.addEventListener('DOMContentLoaded', () => {
             actionCell.innerHTML = `
                 <div style="display:flex; gap:5px; justify-content:center;">
                     <button onclick="window.bukaDetailSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
-                    <button onclick="window.bukaModalPindahBankSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan ke Kelas Lain"><i class="fas fa-edit"></i></button>
-                    <button onclick="window.hapusBankSoalKeseluruhan('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Seluruh Soal & Data Mapel Ini"><i class="fas fa-trash-alt"></i></button>
+                    <button onclick="window.bukaModalPindahBankSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan Akses ke Kelas Lain"><i class="fas fa-share-alt"></i></button>
+                    <button onclick="window.hapusBankSoalKeseluruhan('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Mapel dari Kelas Ini"><i class="fas fa-trash-alt"></i></button>
                 </div>`;
         }
     };
 
     window.hapusBankSoalKeseluruhan = async (mapel, kelas) => {
-        if (!(await window.customConfirm(`PENGHAPUSAN PERMANEN!\n\nApakah Anda YAKIN ingin menghapus seluruh soal, jadwal, dan token untuk mapel "${mapel}" di kelas "${kelas}"?\n\nTindakan ini tidak dapat dibatalkan!`, "danger", "Konfirmasi Hapus Total"))) { 
+        if (!(await window.customConfirm(`PENGHAPUSAN MAPEL DI KELAS ${kelas}!\n\nApakah Anda YAKIN ingin menghapus soal, jadwal, dan token untuk mapel "${mapel}" khusus di kelas "${kelas}" ini?\n\n(Jika soal ini digunakan kelas lain, kelas lain tidak akan terpengaruh)`, "danger", "Konfirmasi Hapus"))) { 
             return; 
         }
 
@@ -503,19 +516,31 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
             const snap = await getDocs(q);
             
-            const deletePromises = [];
-            snap.forEach(d => { deletePromises.push(deleteDoc(doc(db, "bank_soal", d.id))); });
-            await Promise.all(deletePromises);
+            const updatePromises = [];
+            snap.forEach(d => {
+                let data = d.data();
+                let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
+                
+                if (arrKelas.includes(kelas)) {
+                    let remainingKelas = arrKelas.filter(k => k !== kelas);
+                    if (remainingKelas.length === 0) {
+                        updatePromises.push(deleteDoc(doc(db, "bank_soal", d.id)));
+                    } else {
+                        updatePromises.push(updateDoc(doc(db, "bank_soal", d.id), { kelas: remainingKelas }));
+                    }
+                }
+            });
+            await Promise.all(updatePromises);
 
             const key = `${mapel}_${kelas}`;
             await updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: deleteField() }).catch(()=>{});
             await updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: deleteField() }).catch(()=>{});
             await updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: deleteField() }).catch(()=>{});
 
-            await window.customAlert(`Berhasil menghapus ${snap.size} soal beserta pengaturan ujian untuk ${mapel} - ${kelas}.`, "success");
+            await window.customAlert(`Berhasil menghapus data soal beserta pengaturan ujian untuk ${mapel} - ${kelas}.`, "success");
             loadBankSoalSummary();
         } catch (e) {
             console.error(e); window.customAlert("Terjadi kesalahan saat menghapus data.", "error");
@@ -524,6 +549,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ==============================================================
+    // FITUR BARU: TERAPKAN AKSES KE KELAS LAIN (TANPA DUPLIKASI SOAL)
+    // ==============================================================
     window.bukaModalPindahBankSoal = (mapelLama, kelasLama) => {
         document.getElementById('edit-bs-old-mapel').value = mapelLama;
         document.getElementById('edit-bs-old-kelas').value = kelasLama;
@@ -552,19 +580,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const newMapel = document.getElementById('edit-bs-new-mapel').value;
         const selectedKelas = Array.from(document.querySelectorAll('.cb-pindah-kelas:checked')).map(cb => cb.value);
 
-        if (selectedKelas.length === 0) { return window.customAlert("Pilih minimal satu kelas tujuan!", "warning"); }
-        if (selectedKelas.length === 1 && selectedKelas[0] === oldKelas && newMapel === oldMapel) { return window.customAlert("Tidak ada perubahan yang dipilih.", "info"); }
+        if (selectedKelas.length === 0) { return window.customAlert("Pilih minimal satu kelas sasaran!", "warning"); }
 
-        if (!(await window.customConfirm(`Terapkan bank soal dari ${oldMapel} (${oldKelas}) ke kelas berikut:\n\n${selectedKelas.join(', ')}?`, "warning"))) { return; }
+        if (!(await window.customConfirm(`Terapkan soal ${oldMapel} ini agar dapat diakses oleh kelas-kelas berikut:\n\n${selectedKelas.join(', ')}?\n\n(Sistem tidak akan menduplikasi soal, melainkan membagikan aksesnya)`, "warning", "Konfirmasi Distribusi"))) { return; }
 
         const btn = document.getElementById('btn-simpan-pindah-bs'); const origHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses Data...'; btn.disabled = true;
 
         try {
-            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", oldMapel), where("kelas", "==", oldKelas));
-            const snap = await getDocs(q); let docs = []; snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", oldMapel));
+            const snap = await getDocs(q); 
+            
+            let promises = [];
+            
+            snap.forEach(d => {
+                let data = d.data();
+                let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
+                
+                if(arrKelas.includes(oldKelas)) {
+                    // Filter out oldKelas in case it was unchecked by user
+                    let baseKelas = arrKelas.filter(k => k !== oldKelas); 
+                    // Combine with all selected classes
+                    let combinedKelas = [...new Set([...baseKelas, ...selectedKelas])];
+                    
+                    let updateData = { kelas: combinedKelas };
+                    if (newMapel !== oldMapel) updateData.mataPelajaran = newMapel;
+                    promises.push(updateDoc(doc(db, "bank_soal", d.id), updateData));
+                }
+            });
 
-            let targetClasses = [...selectedKelas]; let promises = [];
+            // Setingan waktu, jadwal, token dicopy ke kelas-kelas sasaran
             const oldKey = `${oldMapel}_${oldKelas}`;
             const wSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
             const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
@@ -574,39 +619,23 @@ document.addEventListener('DOMContentLoaded', () => {
             let oldJadwal = jSnap.exists() ? jSnap.data()[oldKey] : undefined;
             let oldToken = tSnap.exists() ? tSnap.data()[`token_${oldKey}`] : undefined;
 
-            const keepOriginal = (oldMapel === newMapel && targetClasses.includes(oldKelas));
-            let primaryTarget = null;
-
-            if (!keepOriginal) {
-                primaryTarget = targetClasses.shift(); 
-                docs.forEach(d => { promises.push(updateDoc(doc(db, "bank_soal", d.id), { mataPelajaran: newMapel, kelas: primaryTarget })); });
-                
-                const primaryKey = `${newMapel}_${primaryTarget}`;
-                if(oldWaktu !== undefined) promises.push(setDoc(doc(db, "pengaturan", "waktu_ujian"), { [primaryKey]: oldWaktu }, { merge: true }));
-                if(oldJadwal !== undefined) promises.push(setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [primaryKey]: oldJadwal }, { merge: true }));
-                if(oldToken !== undefined) promises.push(setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${primaryKey}`]: oldToken }, { merge: true }));
-                
-                promises.push(updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
-                promises.push(updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
-                promises.push(updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${oldKey}`]: deleteField() }).catch(()=>{}));
-            } else {
-                targetClasses = targetClasses.filter(c => c !== oldKelas);
-            }
-
-            targetClasses.forEach(tc => {
+            selectedKelas.forEach(tc => {
                 const tcKey = `${newMapel}_${tc}`;
-                docs.forEach(d => {
-                    let newData = { ...d.data, mataPelajaran: newMapel, kelas: tc, createdAt: new Date(), updatedAt: new Date() };
-                    promises.push(addDoc(collection(db, "bank_soal"), newData));
-                });
                 if(oldWaktu !== undefined) promises.push(setDoc(doc(db, "pengaturan", "waktu_ujian"), { [tcKey]: oldWaktu }, { merge: true }));
                 if(oldJadwal !== undefined) promises.push(setDoc(doc(db, "pengaturan", "jadwal_ujian"), { [tcKey]: oldJadwal }, { merge: true }));
                 if(oldToken !== undefined) promises.push(setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${tcKey}`]: oldToken }, { merge: true }));
             });
 
+            // Jika oldKelas ternyata TIDAK dicentang, artinya konfigurasi ujian di kelas tsb dihapus
+            if (!selectedKelas.includes(oldKelas) && oldMapel === newMapel) {
+                 promises.push(updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
+                 promises.push(updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
+                 promises.push(updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${oldKey}`]: deleteField() }).catch(()=>{}));
+            }
+
             await Promise.all(promises);
             document.getElementById('modal-edit-bank-soal').style.display = 'none';
-            await window.customAlert(`Berhasil menerapkan paket soal ke kelas sasaran.`, "success");
+            await window.customAlert(`Berhasil membagikan akses paket soal ke kelas sasaran (tanpa menduplikasi soal).`, "success");
             loadBankSoalSummary();
         } catch (e) {
             console.error(e); window.customAlert("Terjadi kesalahan sistem.", "error");
@@ -618,7 +647,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const pgOpts = document.getElementById('pg-options'); const menjodohkanOpts = document.getElementById('menjodohkan-options'); const essayOpts = document.getElementById('essay-options'); 
         const kunciPg = document.querySelectorAll('.kunci-pg-container'); const kunciPgk = document.querySelectorAll('.kunci-pgk-container');
         
-        // Membersihkan form menjodohkan agar tidak mengganggu validasi required HTML5
         if (val !== 'Menjodohkan') { document.getElementById('pasangan-container').innerHTML = ''; }
         
         if (val === 'PG' || val === 'PGK') {
@@ -649,8 +677,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function normalizeUrutanSoal(mapel, kelas) {
-        const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
-        const snap = await getDocs(q); let soalArr = []; snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+        const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
+        const snap = await getDocs(q); 
+        let soalArr = []; 
+        snap.forEach(doc => {
+            let data = doc.data();
+            let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
+            if (arrKelas.includes(kelas)) {
+                soalArr.push({id: doc.id, ...data});
+            }
+        });
         
         soalArr.sort((a, b) => {
             if (a.nomor_soal === b.nomor_soal) {
@@ -688,7 +724,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let mediaSoal = null;
             const tipeMediaUtama = document.querySelector('input[name="tipe_media_utama"]:checked')?.value || 'file';
             
-            // Proses Upload Media Utama berdasarkan pilihan (File vs URL Drive)
             if (tipeMediaUtama === 'file') {
                 const fileSoal = document.getElementById('soal-media').files[0];
                 if (fileSoal) { mediaSoal = await uploadMediaToStorage(fileSoal, `bank_soal/${mapel}_${kelas}`); }
@@ -701,8 +736,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     mediaSoal = { url: urlVal, type: mType };
                 }
             }
-
-            let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: nomorSoalTarget, bobot: bobotSoal, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
+            
+            // Format array pada kolom kelas
+            let payload = { mataPelajaran: mapel, kelas: [kelas], nomor_soal: nomorSoalTarget, bobot: bobotSoal, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
             if (mediaSoal) payload.media_soal = mediaSoal;
 
             if (tipe === 'PG' || tipe === 'PGK') {
@@ -758,11 +794,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-soal-id').value = ''; 
         document.getElementById('form-tambah-soal').reset();
         
-        // Reset tampilan opsi media ke default
         document.getElementById('soal-media').style.display = 'block';
         document.getElementById('soal-media-url').style.display = 'none';
         
-        // Tampilkan Menu Import Massal di Pop-Up (jika input baru)
         document.getElementById('section-import-massal').style.display = 'block';
         document.getElementById('divider-import-manual').style.display = 'flex';
 
@@ -789,13 +823,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
     };
 
-    // Binding event klik tombol Input Soal di Menu Utama
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { window.bukaModalTambahSoal(); });
 
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
         
-        // Sembunyikan Menu Import Massal saat mode Edit Soal Satuan
         document.getElementById('section-import-massal').style.display = 'none';
         document.getElementById('divider-import-manual').style.display = 'none';
 
@@ -809,7 +841,12 @@ document.addEventListener('DOMContentLoaded', () => {
         kelasSelect.style.pointerEvents = 'none'; kelasSelect.style.backgroundColor = '#e2e8f0';
         
         document.getElementById('edit-soal-id').value = id;
-        document.getElementById('soal-mapel').value = soal.mataPelajaran; document.getElementById('soal-kelas').value = soal.kelas;
+        document.getElementById('soal-mapel').value = soal.mataPelajaran; 
+        
+        // Handling untuk tampilan kelas jika array
+        let klsDisplay = Array.isArray(soal.kelas) ? soal.kelas[0] : soal.kelas;
+        document.getElementById('soal-kelas').value = klsDisplay; 
+        
         document.getElementById('soal-nomor').value = soal.nomor_soal || ''; document.getElementById('soal-bobot').value = soal.bobot || 1; 
         document.getElementById('soal-tipe').value = soal.tipe || 'PG'; document.getElementById('soal-teks').value = soal.teks_soal || '';
         
@@ -858,14 +895,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('list-soal');
         container.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Memuat soal...</div>';
         try {
-            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
-            const snap = await getDocs(q); let soalArr = []; snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
+            const snap = await getDocs(q); 
+            
+            let soalArr = []; 
+            snap.forEach(doc => {
+                let data = doc.data();
+                let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
+                if (arrKelas.includes(kelas)) {
+                    soalArr.push({id: doc.id, ...data});
+                }
+            });
+            
             soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); window.tempDataSoalKelola = soalArr; 
 
             if(soalArr.length === 0) { 
                 container.innerHTML = `
                 <div style="text-align:center; padding: 30px; background: white; border: 1px dashed var(--border-color); border-radius: 8px;">
-                    Belum ada soal untuk mata pelajaran ini.<br><br>
+                    Belum ada soal untuk mata pelajaran ini di kelas ${kelas}.<br><br>
                     <button onclick="window.bukaModalTambahSoal('${mapel}', '${kelas}', 1)" class="btn-3d" style="background:var(--success); padding:8px 20px; border-radius:20px; font-size:0.9rem; margin:0 auto;"><i class="fas fa-plus"></i> Buat Soal Pertama</button>
                 </div>`; return; 
             }
@@ -877,6 +924,11 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
             
             soalArr.forEach((s, idx) => {
+                let badgeMultikelas = '';
+                if(Array.isArray(s.kelas) && s.kelas.length > 1) {
+                    badgeMultikelas = `<span style="background:#f1f5f9; color:var(--secondary); border: 1px solid #cbd5e1; padding:2px 6px; border-radius:4px; font-size:0.65rem; margin-left:5px;" title="Soal ini digunakan oleh ${s.kelas.length} kelas"><i class="fas fa-share-alt"></i> Dipakai Multi Kelas</span>`;
+                }
+
                 html += `
                 <div style="background: white; border: 1px solid var(--border-color); border-left: 4px solid transparent; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s ease; position: relative;"
                      onmouseover="this.style.borderLeftColor='var(--info)'; this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(-2px)'"
@@ -890,6 +942,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span style="font-weight:800; color:var(--primary); display:block; margin-bottom:8px;">Soal ${s.nomor_soal || (idx+1)} 
                                 <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">${s.tipe || 'PG'}</span>
                                 <span style="background:var(--warning); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">Bobot: ${s.bobot || 1}</span>
+                                ${badgeMultikelas}
                             </span>
                         </div>
                         <div style="color:var(--text-main); line-height:1.6; font-size: 1rem; margin-bottom:15px;">${s.teks_soal}</div>
@@ -980,7 +1033,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let tipeFormat = "PG"; if (tipeRaw.includes('ESSAY')) tipeFormat = 'Essay'; else if (tipeRaw.includes('PGK')) tipeFormat = 'PGK'; else if (tipeRaw.includes('JODOH') || tipeRaw.includes('MENJODOHKAN')) tipeFormat = 'Menjodohkan';
             timestampAwal += 10;
 
-            let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: parseInt(row["Nomor Soal"]) || 1, bobot: parseFloat(row["Bobot Soal"]) || 1, tipe: tipeFormat, teks_soal: String(row["Teks Pertanyaan"] || ""), createdAt: new Date(timestampAwal), updatedAt: new Date(timestampAwal) };
+            // Kelas disimpan sebagai array dari awal
+            let payload = { mataPelajaran: mapel, kelas: [kelas], nomor_soal: parseInt(row["Nomor Soal"]) || 1, bobot: parseFloat(row["Bobot Soal"]) || 1, tipe: tipeFormat, teks_soal: String(row["Teks Pertanyaan"] || ""), createdAt: new Date(timestampAwal), updatedAt: new Date(timestampAwal) };
             let linkMediaPertanyaan = row["Link Media Pertanyaan (URL Gambar/Audio/Video)"] ? String(row["Link Media Pertanyaan (URL Gambar/Audio/Video)"]).trim() : "";
             if (linkMediaPertanyaan) {
                 let mType = "image"; if (linkMediaPertanyaan.toLowerCase().includes('.mp3') || linkMediaPertanyaan.toLowerCase().includes('.wav')) mType = "audio"; else if (linkMediaPertanyaan.toLowerCase().includes('.mp4') || linkMediaPertanyaan.toLowerCase().includes('.mkv')) mType = "video";
@@ -1159,8 +1213,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let origText = ""; if (btn) { origText = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghubungkan Bank Soal...'; btn.disabled = true; }
 
         try {
-            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas)); const soalSnap = await getDocs(q); let soalArr = [];
-            soalSnap.forEach(doc => soalArr.push({ id: doc.id, ...doc.data() })); soalArr.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
+            const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel)); 
+            const soalSnap = await getDocs(q); 
+            
+            let soalArr = [];
+            soalSnap.forEach(doc => {
+                let data = doc.data();
+                let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
+                if (arrKelas.includes(kelas)) {
+                    soalArr.push({ id: doc.id, ...data });
+                }
+            }); 
+            soalArr.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
 
             const rowsForExcel = dataFiltered.map((h, index) => {
                 let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
