@@ -492,9 +492,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ==============================================================
-    // FITUR: HAPUS BANK SOAL SECARA KESELURUHAN (PER MAPEL & KELAS)
-    // ==============================================================
     window.hapusBankSoalKeseluruhan = async (mapel, kelas) => {
         if (!(await window.customConfirm(`PENGHAPUSAN PERMANEN!\n\nApakah Anda YAKIN ingin menghapus seluruh soal, jadwal, dan token untuk mapel "${mapel}" di kelas "${kelas}"?\n\nTindakan ini tidak dapat dibatalkan!`, "danger", "Konfirmasi Hapus Total"))) { 
             return; 
@@ -506,37 +503,27 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            // 1. Ambil dan Hapus Semua Soal dari Firestore
             const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel), where("kelas", "==", kelas));
             const snap = await getDocs(q);
             
             const deletePromises = [];
-            snap.forEach(d => {
-                deletePromises.push(deleteDoc(doc(db, "bank_soal", d.id)));
-            });
+            snap.forEach(d => { deletePromises.push(deleteDoc(doc(db, "bank_soal", d.id))); });
             await Promise.all(deletePromises);
 
-            // 2. Hapus Konfigurasi (Waktu, Jadwal, Token)
             const key = `${mapel}_${kelas}`;
             await updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: deleteField() }).catch(()=>{});
             await updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: deleteField() }).catch(()=>{});
             await updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: deleteField() }).catch(()=>{});
 
             await window.customAlert(`Berhasil menghapus ${snap.size} soal beserta pengaturan ujian untuk ${mapel} - ${kelas}.`, "success");
-            
-            // Render ulang tabel
             loadBankSoalSummary();
         } catch (e) {
-            console.error(e);
-            window.customAlert("Terjadi kesalahan saat menghapus data. Pastikan koneksi internet stabil.", "error");
+            console.error(e); window.customAlert("Terjadi kesalahan saat menghapus data.", "error");
         } finally {
             if(btn) { btn.innerHTML = btnHtmlOriginal; btn.disabled = false; }
         }
     };
 
-    // ==============================================================
-    // FITUR: TERAPKAN MAPEL / KELAS UNTUK BANK SOAL (MULTI-KELAS)
-    // ==============================================================
     window.bukaModalPindahBankSoal = (mapelLama, kelasLama) => {
         document.getElementById('edit-bs-old-mapel').value = mapelLama;
         document.getElementById('edit-bs-old-kelas').value = kelasLama;
@@ -566,11 +553,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedKelas = Array.from(document.querySelectorAll('.cb-pindah-kelas:checked')).map(cb => cb.value);
 
         if (selectedKelas.length === 0) { return window.customAlert("Pilih minimal satu kelas tujuan!", "warning"); }
-        if (selectedKelas.length === 1 && selectedKelas[0] === oldKelas && newMapel === oldMapel) {
-            return window.customAlert("Tidak ada perubahan Mapel atau Kelas yang dipilih.", "info");
-        }
+        if (selectedKelas.length === 1 && selectedKelas[0] === oldKelas && newMapel === oldMapel) { return window.customAlert("Tidak ada perubahan yang dipilih.", "info"); }
 
-        if (!(await window.customConfirm(`Terapkan bank soal dari ${oldMapel} (${oldKelas}) ke kelas berikut:\n\n${selectedKelas.join(', ')}?\n\nSoal akan diduplikasi secara otomatis ke semua kelas yang dipilih.`, "warning", "Konfirmasi Terapkan Soal"))) { return; }
+        if (!(await window.customConfirm(`Terapkan bank soal dari ${oldMapel} (${oldKelas}) ke kelas berikut:\n\n${selectedKelas.join(', ')}?`, "warning"))) { return; }
 
         const btn = document.getElementById('btn-simpan-pindah-bs'); const origHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses Data...'; btn.disabled = true;
@@ -621,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await Promise.all(promises);
             document.getElementById('modal-edit-bank-soal').style.display = 'none';
-            await window.customAlert(`Berhasil menerapkan ${docs.length} paket soal ke kelas:\n${selectedKelas.join(', ')}.`, "success");
+            await window.customAlert(`Berhasil menerapkan paket soal ke kelas sasaran.`, "success");
             loadBankSoalSummary();
         } catch (e) {
             console.error(e); window.customAlert("Terjadi kesalahan sistem.", "error");
@@ -632,6 +617,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const val = e.target.value;
         const pgOpts = document.getElementById('pg-options'); const menjodohkanOpts = document.getElementById('menjodohkan-options'); const essayOpts = document.getElementById('essay-options'); 
         const kunciPg = document.querySelectorAll('.kunci-pg-container'); const kunciPgk = document.querySelectorAll('.kunci-pgk-container');
+        
+        // Membersihkan form menjodohkan agar tidak mengganggu validasi required HTML5
+        if (val !== 'Menjodohkan') { document.getElementById('pasangan-container').innerHTML = ''; }
+        
         if (val === 'PG' || val === 'PGK') {
             pgOpts.style.display = 'block'; menjodohkanOpts.style.display = 'none'; if(essayOpts) essayOpts.style.display = 'none';
             kunciPg.forEach(c => c.style.display = (val === 'PG') ? 'inline-block' : 'none'); kunciPgk.forEach(c => c.style.display = (val === 'PGK') ? 'inline-block' : 'none');
@@ -682,17 +671,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const mapel = document.getElementById('soal-mapel').value; const kelas = document.getElementById('soal-kelas').value;
-        const tipe = document.getElementById('soal-tipe').value; const teks = document.getElementById('soal-teks').value;
+        const mapel = document.getElementById('soal-mapel').value; 
+        const kelas = document.getElementById('soal-kelas').value;
+        const tipe = document.getElementById('soal-tipe').value; 
+        const teks = document.getElementById('soal-teks').value;
         const nomorSoalTarget = parseInt(document.getElementById('soal-nomor').value) || 1;
         const bobotSoal = parseFloat(document.getElementById('soal-bobot').value) || 1;
 
-        const btnSubmitSoal = e.target.querySelector('button[type="submit"]'); const originalText = btnSubmitSoal.innerHTML;
+        if(!mapel || !kelas) return window.customAlert("Silakan pilih Mata Pelajaran dan Kelas terlebih dahulu!", "warning");
+
+        const btnSubmitSoal = e.target.querySelector('button[type="submit"]'); 
+        const originalText = btnSubmitSoal.innerHTML;
         btnSubmitSoal.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGUNGGAH & MENYIMPAN...'; btnSubmitSoal.disabled = true;
 
         try {
-            const fileSoal = document.getElementById('soal-media').files[0];
-            let mediaSoal = await uploadMediaToStorage(fileSoal, `bank_soal/${mapel}_${kelas}`);
+            let mediaSoal = null;
+            const tipeMediaUtama = document.querySelector('input[name="tipe_media_utama"]:checked')?.value || 'file';
+            
+            // Proses Upload Media Utama berdasarkan pilihan (File vs URL Drive)
+            if (tipeMediaUtama === 'file') {
+                const fileSoal = document.getElementById('soal-media').files[0];
+                if (fileSoal) { mediaSoal = await uploadMediaToStorage(fileSoal, `bank_soal/${mapel}_${kelas}`); }
+            } else if (tipeMediaUtama === 'url') {
+                const urlVal = document.getElementById('soal-media-url').value.trim();
+                if (urlVal) {
+                    let mType = 'image';
+                    if (urlVal.toLowerCase().includes('.mp4') || urlVal.toLowerCase().includes('drive')) mType = 'video';
+                    if (urlVal.toLowerCase().includes('.mp3')) mType = 'audio';
+                    mediaSoal = { url: urlVal, type: mType };
+                }
+            }
 
             let payload = { mataPelajaran: mapel, kelas: kelas, nomor_soal: nomorSoalTarget, bobot: bobotSoal, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
             if (mediaSoal) payload.media_soal = mediaSoal;
@@ -721,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let kiri = item.querySelector('.m-kiri').value.trim(); let kanan = item.querySelector('.m-kanan').value.trim();
                     if (kiri && kanan) pasangan.push({ kiri, kanan });
                 });
-                if (pasangan.length === 0) throw new Error("Masukkan minimal satu pasangan!");
+                if (pasangan.length === 0) throw new Error("Masukkan minimal satu pasangan untuk soal tipe Menjodohkan!");
                 payload.pasangan = pasangan;
             } else if (tipe === 'Essay') {
                 const kunciEssay = document.getElementById('soal-kunci-essay').value.trim();
@@ -747,9 +755,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.bukaModalTambahSoal = (mapelParams = "", kelasParams = "", targetNomor = "") => {
-        document.getElementById('edit-soal-id').value = ''; document.getElementById('form-tambah-soal').reset();
+        document.getElementById('edit-soal-id').value = ''; 
+        document.getElementById('form-tambah-soal').reset();
         
-        // Tampilkan Menu Import Massal di Pop-Up
+        // Reset tampilan opsi media ke default
+        document.getElementById('soal-media').style.display = 'block';
+        document.getElementById('soal-media-url').style.display = 'none';
+        
+        // Tampilkan Menu Import Massal di Pop-Up (jika input baru)
         document.getElementById('section-import-massal').style.display = 'block';
         document.getElementById('divider-import-manual').style.display = 'flex';
 
@@ -766,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0';
             kelasSelect.style.pointerEvents = 'none'; kelasSelect.style.backgroundColor = '#e2e8f0';
         } else {
-            modalTitle.innerHTML = '<i class="fas fa-file-import"></i> Input Soal (Buat Mapel Baru)';
+            modalTitle.innerHTML = '<i class="fas fa-file-import"></i> Input Soal Baru';
             mapelSelect.value = ""; kelasSelect.value = "";
             mapelSelect.style.pointerEvents = 'auto'; mapelSelect.style.backgroundColor = '#fafafa';
             kelasSelect.style.pointerEvents = 'auto'; kelasSelect.style.backgroundColor = '#fafafa';
@@ -775,6 +788,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
         document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
     };
+
+    // Binding event klik tombol Input Soal di Menu Utama
+    document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { window.bukaModalTambahSoal(); });
 
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
@@ -942,6 +958,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = origHtml; btn.disabled = false;
     });
     
+    // =======================================================
+    // FUNGSI IMPORT MASSAL EXCEL / G-DRIVE
+    // =======================================================
     window.downloadTemplateExcel = () => {
         const templateData = [
             { "Nomor Soal": 1, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Bobot Soal": 10, "Teks Pertanyaan": "Contoh Soal PG?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "A", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "B", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "C", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "D", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "E", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "C" },
@@ -990,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-import-gdrive')?.addEventListener('click', () => {
         const mapel = document.getElementById('soal-mapel').value; 
         const kelas = document.getElementById('soal-kelas').value;
-        if(!mapel || !kelas) return window.customAlert("Pilih Mata Pelajaran & Kelas di form bawah terlebih dahulu!", "warning");
+        if(!mapel || !kelas) return window.customAlert("Silakan Pilih Mata Pelajaran & Kelas di form bawah terlebih dahulu untuk menentukan letak mapel!", "warning");
         document.getElementById('input-gdrive-url').value = ''; document.getElementById('modal-import-gdrive').style.display = 'flex';
     });
 
@@ -1028,7 +1047,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if(!mapel || !kelas) { 
             e.target.value = ''; 
-            return window.customAlert("Pilih Mata Pelajaran dan Kelas di form bawah terlebih dahulu!", "error"); 
+            return window.customAlert("Silakan Pilih Mata Pelajaran dan Kelas di form bawah terlebih dahulu untuk menentukan letak mapel!", "error"); 
         }
 
         document.getElementById('modal-tambah-soal').style.display = 'none';
