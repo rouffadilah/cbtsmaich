@@ -201,21 +201,27 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
         if (tokenInput !== tokenCode) throw new Error("Token yang Anda masukkan salah!");
 
-        // --- TAMBAHKAN KODE INI UNTUK CEK KEDALUWARSA ---
         if (typeof tokenData === 'object' && tokenData.expiredAt) {
             const waktuSekarang = new Date().getTime();
             if (waktuSekarang > tokenData.expiredAt) {
                 throw new Error("Token sudah kedaluwarsa (masa aktif 15 menit habis). Silakan minta guru untuk menyimpan/membuat ulang token!");
             }
         }
-        // ------------------------------------------------
 
-        const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", examState.mapelTerpilih), where("kelas", "==", kelasSiswa));
+        // AMBIL SOAL BERDASARKAN MAPEL LALU FILTER KELAS (ARRAY)
+        const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", examState.mapelTerpilih));
         const soalSnap = await getDocs(qSoal);
-        if (soalSnap.empty) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
-
+        
         examState.arraySoal = [];
-        soalSnap.forEach(d => examState.arraySoal.push({id: d.id, ...d.data()}));
+        soalSnap.forEach(d => {
+            let data = d.data();
+            let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
+            if (arrKelas.includes(kelasSiswa)) {
+                examState.arraySoal.push({id: d.id, ...data});
+            }
+        });
+
+        if (examState.arraySoal.length === 0) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
         examState.arraySoal.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
 
         let durasiMenit = 90;
@@ -268,7 +274,6 @@ function renderNavigasi() {
         box.innerText = idx + 1;
         box.onclick = () => {
             tampilkanSoal(idx);
-            // Tutup sidebar di HP saat nomor diklik
             document.getElementById('sidebar-nav').classList.remove('open');
         };
         grid.appendChild(box);
@@ -327,11 +332,9 @@ function tampilkanSoal(idx) {
 
     renderNavigasi();
 
-    // LOGIKA TOMBOL NAVIGASI IKONIS DAN DINAMIS (PADA SOAL AKHIR)
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
 
-    // Pengaturan Tombol Sebelumnya
     if (examState.currentIndex === 0) {
         btnPrev.style.visibility = 'hidden';
     } else {
@@ -339,7 +342,6 @@ function tampilkanSoal(idx) {
         btnPrev.onclick = () => tampilkanSoal(examState.currentIndex - 1);
     }
 
-    // Pengaturan Tombol Selanjutnya / Selesai
     if (examState.currentIndex === examState.arraySoal.length - 1) {
         btnNext.innerHTML = '<i class="fas fa-check"></i>';
         btnNext.style.backgroundColor = 'var(--danger)'; 
