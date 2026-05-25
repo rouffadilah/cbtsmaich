@@ -748,6 +748,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.bukaModalTambahSoal = (mapelParams = "", kelasParams = "", targetNomor = "") => {
         document.getElementById('edit-soal-id').value = ''; document.getElementById('form-tambah-soal').reset();
+        
+        // Tampilkan Menu Import Massal di Pop-Up
+        document.getElementById('section-import-massal').style.display = 'block';
+        document.getElementById('divider-import-manual').style.display = 'flex';
+
         const mapelSelect = document.getElementById('soal-mapel'); const kelasSelect = document.getElementById('soal-kelas');
         const inputNomor = document.getElementById('soal-nomor'); const modalTitle = document.getElementById('title-modal-soal');
 
@@ -771,10 +776,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
     };
 
-    document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { window.bukaModalTambahSoal(); });
-
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
+        
+        // Sembunyikan Menu Import Massal saat mode Edit Soal Satuan
+        document.getElementById('section-import-massal').style.display = 'none';
+        document.getElementById('divider-import-manual').style.display = 'none';
+
         const mapelSelect = document.getElementById('soal-mapel'); const kelasSelect = document.getElementById('soal-kelas');
 
         let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
@@ -975,12 +983,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         await Promise.all(updates); await normalizeUrutanSoal(mapel, kelas);
         window.customAlert(`Sukses! ${jsonData.length} Soal berhasil diunggah dengan aman.`, "success");
-        window.loadDaftarSoal(mapel, kelas); loadBankSoalSummary();
+        window.bukaDetailSoal(mapel, kelas);
+        loadBankSoalSummary();
     }
 
     document.getElementById('btn-import-gdrive')?.addEventListener('click', () => {
-        const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
-        if(!mapel || !kelas) return window.customAlert("Pilih Mapel & Kelas terlebih dahulu!", "warning");
+        const mapel = document.getElementById('soal-mapel').value; 
+        const kelas = document.getElementById('soal-kelas').value;
+        if(!mapel || !kelas) return window.customAlert("Pilih Mata Pelajaran & Kelas di form bawah terlebih dahulu!", "warning");
         document.getElementById('input-gdrive-url').value = ''; document.getElementById('modal-import-gdrive').style.display = 'flex';
     });
 
@@ -989,7 +999,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/); if (!match || !match[1]) return window.customAlert("Link tidak valid!", "error");
         
         const sheetId = match[1]; document.getElementById('modal-import-gdrive').style.display = 'none';
-        const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
+        
+        const mapel = document.getElementById('soal-mapel').value; 
+        const kelas = document.getElementById('soal-kelas').value;
+        
+        document.getElementById('modal-tambah-soal').style.display = 'none';
+        document.getElementById('view-summary-bank-soal').style.display = 'none';
+        document.getElementById('view-soal-list').style.display = 'block';
+        document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
+
         const container = document.getElementById('list-soal');
         container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Sedang menyedot data dari Google Drive...</div>';
 
@@ -1000,13 +1018,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const workbook = XLSX.read(csvText, { type: 'string' }); const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(worksheet); await prosesUploadMassal(jsonData, mapel, kelas);
-        } catch (err) { window.customAlert("Gagal Import G-Drive: " + err.message, "error"); window.loadDaftarSoal(mapel, kelas); }
+        } catch (err) { window.customAlert("Gagal Import G-Drive: " + err.message, "error"); window.bukaDetailSoal(mapel, kelas); }
     });
 
     document.getElementById('upload-excel-soal')?.addEventListener('change', async (e) => {
         const file = e.target.files[0]; if (!file) return;
-        const mapel = document.getElementById('filter-soal-mapel').value; const kelas = document.getElementById('filter-soal-kelas').value;
-        if(!mapel || !kelas) return window.customAlert("Mapel atau Kelas tidak terdeteksi!", "error");
+        const mapel = document.getElementById('soal-mapel').value; 
+        const kelas = document.getElementById('soal-kelas').value;
+        
+        if(!mapel || !kelas) { 
+            e.target.value = ''; 
+            return window.customAlert("Pilih Mata Pelajaran dan Kelas di form bawah terlebih dahulu!", "error"); 
+        }
+
+        document.getElementById('modal-tambah-soal').style.display = 'none';
+        document.getElementById('view-summary-bank-soal').style.display = 'none';
+        document.getElementById('view-soal-list').style.display = 'block';
+        document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
 
         const reader = new FileReader();
         reader.onload = async (event) => {
@@ -1015,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = new Uint8Array(event.target.result); const workbook = XLSX.read(data, { type: 'array' });
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]]; const jsonData = XLSX.utils.sheet_to_json(worksheet);
                 await prosesUploadMassal(jsonData, mapel, kelas);
-            } catch (err) { window.customAlert("Gagal memproses Excel: " + err.message, "error"); window.loadDaftarSoal(mapel, kelas); }
+            } catch (err) { window.customAlert("Gagal memproses Excel: " + err.message, "error"); window.bukaDetailSoal(mapel, kelas); }
         };
         reader.readAsArrayBuffer(file); e.target.value = '';
     });
