@@ -7,6 +7,7 @@
     <title>Registrasi - CBT SMA ICH</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* --- KEAMANAN GLOBAL: ANTI COPAS, AI, & CETAK --- */
         body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -32,6 +33,16 @@
                 </div>
             </div>
 
+            <div id="mass-upload-box" style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <p style="margin-top:0; font-size:0.85rem; color: var(--success); font-weight:bold;"><i class="fas fa-file-excel"></i> Registrasi Massal (<span id="lbl-role-massal">Siswa</span>)</p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" id="btn-download-template" class="btn-3d btn-secondary" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: #10b981;" title="Unduh Format Excel"><i class="fas fa-download"></i> Template</button>
+                    <label for="upload-massal" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: var(--info); cursor: pointer;" title="Upload File Excel"><i class="fas fa-upload"></i> Upload</label>
+                    <input type="file" id="upload-massal" accept=".xlsx, .xls" style="display: none;">
+                </div>
+                <p id="mass-upload-status" style="margin-bottom:0; margin-top:10px; font-size:0.8rem; color:var(--warning); display:none;"><i class="fas fa-spinner fa-spin"></i> Sedang memproses akun secara otomatis... Mohon tunggu!</p>
+            </div>
+
             <div id="reg-warning" style="display: none; background: #fee2e2; color: var(--danger); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f87171; text-align: center; font-weight: bold; font-size: 0.9rem;">
                 <i class="fas fa-lock"></i> Pendaftaran saat ini sedang ditutup.
             </div>
@@ -46,7 +57,7 @@
                 <div class="input-group"><label>Password</label><input type="password" id="reg-password" class="input-text" placeholder="Minimal 6 karakter" required></div>
                 <div class="input-group"><label>Konfirmasi Password</label><input type="password" id="reg-confirm-password" class="input-text" placeholder="Ketik ulang password" required></div>
                 
-                <button type="submit" class="btn-3d" id="btn-submit">DAFTAR</button>
+                <button type="submit" class="btn-3d" id="btn-submit">DAFTAR MANUAL</button>
                 
                 <div style="margin-top: 20px; font-size: 0.9rem;">Sudah punya akun? <a href="index.html">Masuk di sini</a></div>
             </form>
@@ -56,14 +67,39 @@
     </div>
 
     <script>
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        ['copy', 'cut', 'paste', 'selectstart'].forEach(evt => document.addEventListener(evt, event => { if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } }));
-        document.addEventListener('keydown', event => {
-            if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { event.preventDefault(); }
+        function isStaff() {
+            try {
+                let roles = JSON.parse(localStorage.getItem("userRole") || "[]");
+                return roles.includes("admin") || roles.includes("guru");
+            } catch(e) { return false; }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if(isStaff()) {
+                document.body.style.userSelect = "auto";
+                document.body.style.webkitUserSelect = "auto";
+                document.body.style.mozUserSelect = "auto";
+                document.body.style.msUserSelect = "auto";
+            }
         });
-        window.addEventListener('blur', () => { document.body.style.filter = "blur(15px)"; });
-        window.addEventListener('focus', () => { document.body.style.filter = "none"; });
+
+        document.addEventListener('contextmenu', event => { if(!isStaff()) event.preventDefault(); });
+        ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => document.addEventListener(evt, event => { 
+            if (!isStaff() && event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } 
+        }));
+        
+        document.addEventListener('keydown', event => {
+            if(!isStaff()) {
+                if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { 
+                    event.preventDefault(); 
+                }
+            }
+        });
+        
+        window.addEventListener('blur', () => { if(!isStaff()) document.body.style.filter = "blur(15px)"; });
+        window.addEventListener('focus', () => { if(!isStaff()) document.body.style.filter = "none"; });
     </script>
+
     <script type="module" src="registrasi.js"></script>
 </body>
 </html>
