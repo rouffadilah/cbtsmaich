@@ -360,29 +360,66 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. MANAJEMEN PENGGUNA (EDIT & HAPUS AKUN)
     // ==========================================
     async function loadDataPengguna() {
-        const tbodyGuru = document.querySelector('#table-guru tbody'); const tbodySiswa = document.querySelector('#table-siswa tbody');
-        if (tbodyGuru) tbodyGuru.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>`;
-        if (tbodySiswa) tbodySiswa.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>`;
+        const tbodyGuru = document.querySelector('#table-guru tbody'); 
+        const tbodySiswa = document.querySelector('#table-siswa tbody');
+        
+        // Tampilkan header Aksi jika Admin
+        if (isAdmin) {
+            document.getElementById('th-aksi-guru').style.display = 'table-cell';
+            document.getElementById('th-aksi-siswa').style.display = 'table-cell';
+        }
+
         try {
             const snap = await getDocs(collection(db, "users"));
-            let countSiswa = 0; let countGuru = 0; let htmlGuru = ''; let htmlSiswa = '';
-            allUsersData = []; 
+            let htmlGuru = ''; let htmlSiswa = '';
+            
             snap.forEach(d => {
-                const data = d.data(); const id = d.id; allUsersData.push({ id, ...data });
+                const data = d.data(); const id = d.id;
                 let roleArray = typeof data.role === 'string' ? [data.role] : (Array.isArray(data.role) ? data.role : []);
+                
+                // Tombol Aksi
+                let btnAksi = isAdmin ? `
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="window.bukaModalEditAkun('${id}')" class="btn-3d" style="background:var(--info); padding:5px 10px;"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.hapusAkun('${id}')" class="btn-3d" style="background:var(--danger); padding:5px 10px;"><i class="fas fa-trash-alt"></i></button>
+                    </div>` : '';
+
                 if (roleArray.includes('guru') || roleArray.includes('admin')) {
-                    countGuru++; let mapelStr = data.mapel ? (Array.isArray(data.mapel) ? data.mapel.join(', ') : data.mapel) : '-'; let kelasStr = data.kelas ? (Array.isArray(data.kelas) ? data.kelas.join(', ') : data.kelas) : '-';
-                    htmlGuru += `<tr><td>${data.username || '-'}</td><td><b>${data.nama || '-'}</b></td><td>${roleArray.join(', ').toUpperCase()}</td><td><div style="font-size:0.8rem;">M: ${mapelStr}<br>K: ${kelasStr}</div></td></tr>`;
-                } 
-                if (roleArray.includes('siswa')) {
-                    countSiswa++; htmlSiswa += `<tr><td>${data.username || '-'}</td><td><b>${data.nama || '-'}</b></td><td>SISWA</td><td>${data.kelas || '-'}</td></tr>`;
+                    let mapelStr = data.mapel ? (Array.isArray(data.mapel) ? data.mapel.join(', ') : data.mapel) : '-';
+                    htmlGuru += `<tr><td>${data.username}</td><td>${data.nama}</td><td>${roleArray.join(', ')}</td><td>${mapelStr}</td><td>${btnAksi}</td></tr>`;
+                } else if (roleArray.includes('siswa')) {
+                    htmlSiswa += `<tr><td>${data.username}</td><td>${data.nama}</td><td>SISWA</td><td>${data.kelas || '-'}</td><td>${btnAksi}</td></tr>`;
                 }
             });
-            if (tbodyGuru) tbodyGuru.innerHTML = countGuru > 0 ? htmlGuru : `<tr><td colspan="4" style="text-align:center;">Belum ada data guru.</td></tr>`;
-            if (tbodySiswa) tbodySiswa.innerHTML = countSiswa > 0 ? htmlSiswa : `<tr><td colspan="4" style="text-align:center;">Belum ada data siswa.</td></tr>`;
-            let statSiswaEl = document.getElementById('stat-siswa'); if (statSiswaEl) statSiswaEl.innerText = countSiswa + countGuru;
+            tbodyGuru.innerHTML = htmlGuru;
+            tbodySiswa.innerHTML = htmlSiswa;
         } catch (e) { console.error(e); }
     }
+
+    // Fungsi Hapus
+    window.hapusAkun = async (uid) => {
+        if(await window.customConfirm("Yakin ingin menghapus akun ini?", "danger")) {
+            // Catatan: Anda perlu menggunakan Firebase Admin SDK di backend/cloud functions 
+            // untuk menghapus user dari Authentication. 
+            // Untuk sementara, hapus data di Firestore:
+            await deleteDoc(doc(db, "users", uid));
+            loadDataPengguna();
+            window.customAlert("Data akun berhasil dihapus dari database!", "success");
+        }
+    };
+
+    // Fungsi Buka Modal Edit (Asumsi Anda sudah punya modal id="modal-edit-akun")
+    window.bukaModalEditAkun = async (uid) => {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if(!userDoc.exists()) return;
+        const data = userDoc.data();
+        
+        document.getElementById('edit-uid').value = uid;
+        document.getElementById('edit-nama').value = data.nama;
+        document.getElementById('edit-username').value = data.username;
+        // Tampilkan modal
+        document.getElementById('modal-edit-akun').style.display = 'flex';
+    };
 
     // =================================================================
     // 6. BANK SOAL & FITUR BARU: GROUP BY MAPEL & TINGKAT
