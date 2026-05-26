@@ -426,10 +426,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadDataMaster() {
         try {
-            const docSnap = await getDoc(doc(db, "pengaturan", "data_akademik"));
-            if (docSnap.exists()) { listMapel = docSnap.data().list_mapel || []; listKelas = docSnap.data().list_kelas || []; }
-            renderTableMaster(); populateSemuaDropdown(); loadBankSoalSummary();
-        } catch (e) {}
+            // 1. Ambil data master pusat yang sudah ada saat ini
+            const docRef = doc(db, "pengaturan", "data_akademik");
+            const docSnap = await getDoc(docRef);
+            
+            let currentMapel = [];
+            let currentKelas = [];
+            
+            if (docSnap.exists()) {
+                currentMapel = docSnap.data().list_mapel || [];
+                currentKelas = docSnap.data().list_kelas || [];
+            }
+
+            // 2. OTOMATISASI: Scan seluruh data dari koleksi "users"
+            const usersSnap = await getDocs(collection(db, "users"));
+            let masterBerubah = false;
+
+            usersSnap.forEach((uDoc) => {
+                const uData = uDoc.data();
+                
+                // Ambil data mapel dari akun guru jika belum ada di master data
+                if (uData.mapel) {
+                    const mapelArr = Array.isArray(uData.mapel) ? uData.mapel : [uData.mapel];
+                    mapelArr.forEach(m => {
+                        const mTrim = String(m).trim();
+                        if (mTrim && !currentMapel.includes(mTrim)) {
+                            currentMapel.push(mTrim);
+                            masterBerubah = true;
+                        }
+                    });
+                }
+
+                // Ambil data kelas dari akun siswa/guru jika belum ada di master data
+                if (uData.kelas) {
+                    const kelasArr = Array.isArray(uData.kelas) ? uData.kelas : [uData.kelas];
+                    kelasArr.forEach(k => {
+                        const kTrim = String(k).trim();
+                        if (kTrim && !currentKelas.includes(kTrim)) {
+                            currentKelas.push(kTrim);
+                            masterBerubah = true;
+                        }
+                    });
+                }
+            });
+
+            // 3. Jika ditemukan mapel atau kelas baru di akun pengguna, simpan otomatis ke database
+            if (masterBerubah) {
+                await setDoc(docRef, {
+                    list_mapel: currentMapel,
+                    list_kelas: currentKelas
+                }, { merge: true });
+            }
+
+            // 4. Masukkan ke variabel global dashboard agar dapat dirender oleh UI
+            listMapel = currentMapel;
+            listKelas = currentKelas;
+
+            // 5. Perbarui tampilan UI komponen dashboard
+            renderTableMaster(); 
+            populateSemuaDropdown(); 
+            loadBankSoalSummary();
+        } catch (e) {
+            console.error("Gagal sinkronisasi otomatis data master:", e);
+        }
     }
 
     document.getElementById('btn-add-master')?.addEventListener('click', async () => {
