@@ -77,7 +77,7 @@
                                         <button id="btn-back-mapel-list" class="btn-3d btn-secondary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Kembali"><i class="fas fa-arrow-left"></i></button>
                                         <h4 style="margin: 0; color: var(--secondary); font-size: 1.1rem;" id="label-mapel-edit">Mata Pelajaran</h4>
                                     </div>
-                                    </div>
+                                </div>
 
                                 <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: var(--radius-md);">
                                     <input type="hidden" id="filter-soal-mapel">
@@ -125,12 +125,7 @@
                                         <label class="switch"><input type="checkbox" id="status-reg-guru"><span class="slider"></span></label>
                                     </div>
                                 </div>
-                                <div style="margin-bottom: 20px; background: #f1f5f9; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px;">
-                                    <label style="font-weight: 600; font-size: 0.9rem;"><i class="fas fa-filter"></i> Filter Kelas:</label>
-                                    <select id="filter-kelas-pengguna" class="input-text" style="width: auto; min-width: 150px;">
-                                        <option value="all">Semua Kelas</option>
-                                        </select>
-                                </div>
+                                
                                 <div class="table-container" style="margin-bottom: 30px;">
                                     <table id="table-guru">
                                         <thead>
@@ -139,11 +134,20 @@
                                                 <th>Nama</th>
                                                 <th>Role</th>
                                                 <th>Detail Data</th>
-                                                <th id="th-aksi-guru" style="display:none;">Aksi</th> </tr>
+                                                <th id="th-aksi-guru" style="display:none;">Aksi</th> 
+                                            </tr>
+                                            <tr id="row-filter-guru" style="background: #f8fafc;">
+                                                <th style="padding: 8px !important;"><input type="text" id="search-guru-id" class="input-text" placeholder="Cari ID..." style="font-size: 0.8rem; padding: 6px;"></th>
+                                                <th style="padding: 8px !important;"><input type="text" id="search-guru-nama" class="input-text" placeholder="Cari Nama..." style="font-size: 0.8rem; padding: 6px;"></th>
+                                                <th style="padding: 8px !important;"><input type="text" id="search-guru-role" class="input-text" placeholder="Cari Role..." style="font-size: 0.8rem; padding: 6px;"></th>
+                                                <th style="padding: 8px !important;"><input type="text" id="search-guru-detail" class="input-text" placeholder="Cari Detail..." style="font-size: 0.8rem; padding: 6px;"></th>
+                                                <th id="th-filter-aksi-guru" style="display:none; padding: 8px !important;"></th>
+                                            </tr>
                                         </thead>
                                         <tbody></tbody>
                                     </table>
                                 </div>
+
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                     <h4 style="margin: 0; color: var(--success); font-size: 1.05rem;"><i class="fas fa-user-graduate"></i> Akun Siswa</h4>
                                     <div id="wrap-reg-siswa" style="display: flex; align-items: center; gap: 10px;">
@@ -151,6 +155,14 @@
                                         <label class="switch"><input type="checkbox" id="status-reg-siswa"><span class="slider"></span></label>
                                     </div>
                                 </div>
+
+                                <div style="margin-bottom: 20px; background: #f1f5f9; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px;">
+                                    <label style="font-weight: 600; font-size: 0.9rem;"><i class="fas fa-filter"></i> Filter Cepat Kelas:</label>
+                                    <select id="filter-kelas-pengguna" class="input-text" style="width: auto; min-width: 150px;">
+                                        <option value="all">Semua Kelas</option>
+                                    </select>
+                                </div>
+
                                 <div class="table-container">
                                     <table id="table-siswa">
                                         <thead>
@@ -159,7 +171,15 @@
                                                 <th>Nama</th>
                                                 <th>Role</th>
                                                 <th>Kelas</th>
-                                                <th id="th-aksi-siswa" style="display:none;">Aksi</th></tr>
+                                                <th id="th-aksi-siswa" style="display:none;">Aksi</th>
+                                            </tr>
+                                            <tr id="row-filter-siswa" style="background: #f8fafc;">
+                                                <th style="padding: 8px !important;"><input type="text" id="search-siswa-nis" class="input-text" placeholder="Cari NIS..." style="font-size: 0.8rem; padding: 6px;"></th>
+                                                <th style="padding: 8px !important;"><input type="text" id="search-siswa-nama" class="input-text" placeholder="Cari Nama..." style="font-size: 0.8rem; padding: 6px;"></th>
+                                                <th style="padding: 8px !important;"><input type="text" id="search-siswa-role" class="input-text" placeholder="Cari Role..." style="font-size: 0.8rem; padding: 6px;"></th>
+                                                <th style="padding: 8px !important;"><input type="text" id="search-siswa-kelas" class="input-text" placeholder="Cari Kelas..." style="font-size: 0.8rem; padding: 6px;"></th>
+                                                <th id="th-filter-aksi-siswa" style="display:none; padding: 8px !important;"></th>
+                                            </tr>
                                         </thead>
                                         <tbody></tbody>
                                     </table>
@@ -371,20 +391,20 @@
     </div>
 
     <div id="modal-import-gdrive" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
-    <div class="modal-content" style="background: white; width: 500px; max-width: 90%; padding: 35px 25px; border-radius: 10px;">
-        <span class="close-btn" onclick="document.getElementById('modal-import-gdrive').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
-        <h3 style="margin-top: 0; color: var(--secondary);"><i class="fab fa-google-drive" style="color: #f59e0b;"></i> Import dari Google Sheets</h3>
-        
-        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-            <p style="font-size: 0.85rem; color: #b45309; margin: 0;"><b>PENTING:</b> Pastikan akses link Google Sheets Anda sudah diatur ke <b>"Siapa saja yang memiliki link"</b> (<i>Anyone with the link</i>) agar sistem dapat membacanya.</p>
-        </div>
+        <div class="modal-content" style="background: white; width: 500px; max-width: 90%; padding: 35px 25px; border-radius: 10px;">
+            <span class="close-btn" onclick="document.getElementById('modal-import-gdrive').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-top: 0; color: var(--secondary);"><i class="fab fa-google-drive" style="color: #f59e0b;"></i> Import dari Google Sheets</h3>
+            
+            <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="font-size: 0.85rem; color: #b45309; margin: 0;"><b>PENTING:</b> Pastikan akses link Google Sheets Anda sudah diatur ke <b>"Siapa saja yang memiliki link"</b> (<i>Anyone with the link</i>) agar sistem dapat membacanya.</p>
+            </div>
 
-        <div class="input-group">
-            <label>Paste Link Google Sheets Di Sini</label>
-            <input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/spreadsheets/d/....">
+            <div class="input-group">
+                <label>Paste Link Google Sheets Di Sini</label>
+                <input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/spreadsheets/d/....">
+            </div>
+            <button id="btn-proses-gdrive" class="btn-3d" style="width: 100%; background: var(--success);"><i class="fas fa-cloud-download-alt"></i> Proses & Upload Soal</button>
         </div>
-        <button id="btn-proses-gdrive" class="btn-3d" style="width: 100%; background: var(--success);"><i class="fas fa-cloud-download-alt"></i> Proses & Upload Soal</button>
-    </div>
     </div>
 
     <div id="modal-edit-bank-soal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
@@ -401,8 +421,7 @@
             </div>
             <div class="input-group">
                 <label>Pilih Kelas Sasaran (Bisa lebih dari satu)</label>
-                <div id="edit-bs-new-kelas-container" class="checkbox-container" style="max-height: 180px; border-color: var(--primary); padding: 15px;">
-                    </div>
+                <div id="edit-bs-new-kelas-container" class="checkbox-container" style="max-height: 180px; border-color: var(--primary); padding: 15px;"></div>
             </div>
             
             <div style="background: #fffbeb; color: #b45309; padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; border: 1px solid #fde68a;">
