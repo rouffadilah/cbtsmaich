@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!window.location.hash || window.location.hash === '') { window.location.hash = 'section-beranda'; }
     });
 
-    // Filter Kelas Listener untuk Daftar Pengguna
+    // Filter Dropdown Cepat Kelas Listener (Khusus Siswa)
     const filterKelas = document.getElementById('filter-kelas-pengguna');
     if (filterKelas) {
         filterKelas.addEventListener('change', () => {
@@ -92,6 +92,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Input Per-Kolom Listener untuk Tabel Guru
+    const filterGuruInputs = ['search-guru-id', 'search-guru-nama', 'search-guru-role', 'search-guru-detail'];
+    filterGuruInputs.forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => {
+            if (typeof renderTablePengguna === 'function') renderTablePengguna();
+        });
+    });
+
+    // Input Per-Kolom Listener untuk Tabel Siswa
+    const filterSiswaInputs = ['search-siswa-nis', 'search-siswa-nama', 'search-siswa-role', 'search-siswa-kelas'];
+    filterSiswaInputs.forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => {
+            if (typeof renderTablePengguna === 'function') renderTablePengguna();
+        });
+    });
 
     // Ambil Data Sesi (Session) User
     try { 
@@ -412,7 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. MANAJEMEN PENGGUNA (AKSES & PENGGUNA)
     // ==========================================
 
-    // Fungsi untuk mengambil data dari Firestore
     window.loadDataPengguna = async () => {
         try {
             const querySnapshot = await getDocs(collection(db, "users"));
@@ -424,13 +439,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 allUsersData.push(data);
             });
 
-            // Update UI untuk Angka Jumlah Pengguna di Dashboard
             const elStatSiswa = document.getElementById("stat-siswa");
             if (elStatSiswa) {
                 elStatSiswa.innerText = allUsersData.length;
             }
 
-            // Panggil fungsi render tabel setelah data ditarik
             if (typeof window.renderTablePengguna === "function") {
                 window.renderTablePengguna();
             }
@@ -439,23 +452,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Fungsi untuk menampilkan data ke dalam Tabel UI
     window.renderTablePengguna = () => {
         const tbodyGuru = document.querySelector("#table-guru tbody");
         const tbodySiswa = document.querySelector("#table-siswa tbody");
         
         if (!tbodyGuru || !tbodySiswa) return;
 
-        // Logika Filter Berdasarkan Kelas (Khusus Siswa)
+        // Ambil nilai filter kolom Guru
+        const filterGId = (document.getElementById('search-guru-id')?.value || '').toLowerCase();
+        const filterGNama = (document.getElementById('search-guru-nama')?.value || '').toLowerCase();
+        const filterGRole = (document.getElementById('search-guru-role')?.value || '').toLowerCase();
+        const filterGDetail = (document.getElementById('search-guru-detail')?.value || '').toLowerCase();
+
+        // Ambil nilai filter kolom & Dropdown Siswa
         const filterKelasEl = document.getElementById("filter-kelas-pengguna");
         const filterKelas = filterKelasEl ? filterKelasEl.value : "all";
+        const filterSNis = (document.getElementById('search-siswa-nis')?.value || '').toLowerCase();
+        const filterSNama = (document.getElementById('search-siswa-nama')?.value || '').toLowerCase();
+        const filterSRole = (document.getElementById('search-siswa-role')?.value || '').toLowerCase();
+        const filterSKelas = (document.getElementById('search-siswa-kelas')?.value || '').toLowerCase();
         
         let htmlGuru = '';
         let htmlSiswa = '';
         let countGuru = 0;
         let countSiswa = 0;
 
-        allUsersData.forEach((user, index) => {
+        allUsersData.forEach((user) => {
             const roles = Array.isArray(user.role) ? user.role : [user.role];
             const roleDisplay = roles.join(", ");
             const kelas = Array.isArray(user.kelas) ? user.kelas.join(", ") : (user.kelas || "-");
@@ -463,23 +485,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const btnHapus = isAdmin ? `<button onclick="hapusPengguna('${user.uid}')" class="btn-exit-modern" style="padding: 4px 10px; font-size: 0.8rem; margin: auto;"><i class="fas fa-trash"></i> Hapus</button>` : '-';
 
-            // Render untuk Tabel Guru / Admin
+            // Logika Rendering & Filtering Tabel Guru
             if (roles.includes("guru") || roles.includes("admin")) {
-                countGuru++;
-                htmlGuru += `
-                    <tr>
-                        <td><strong>${user.username || "-"}</strong></td>
-                        <td>${user.nama || "-"}</td>
-                        <td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${roleDisplay}</span></td>
-                        <td><small><b>Mapel:</b> ${mapel}<br><b>Kelas:</b> ${kelas}</small></td>
-                        ${isAdmin ? `<td>${btnHapus}</td>` : ''}
-                    </tr>
-                `;
+                const usernameStr = (user.username || "").toLowerCase();
+                const namaStr = (user.nama || "").toLowerCase();
+                const detailStr = `${mapel} ${kelas}`.toLowerCase();
+
+                const matchId = usernameStr.includes(filterGId);
+                const matchNama = namaStr.includes(filterGNama);
+                const matchRole = roleDisplay.toLowerCase().includes(filterGRole);
+                const matchDetail = detailStr.includes(filterGDetail);
+
+                if (matchId && matchNama && matchRole && matchDetail) {
+                    countGuru++;
+                    htmlGuru += `
+                        <tr>
+                            <td><strong>${user.username || "-"}</strong></td>
+                            <td>${user.nama || "-"}</td>
+                            <td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${roleDisplay}</span></td>
+                            <td><small><b>Mapel:</b> ${mapel}<br><b>Kelas:</b> ${kelas}</small></td>
+                            ${isAdmin ? `<td>${btnHapus}</td>` : ''}
+                        </tr>
+                    `;
+                }
             } 
-            // Render untuk Tabel Siswa (dengan Filter Kelas)
+            // Logika Rendering & Filtering Tabel Siswa
             else if (roles.includes("siswa")) {
                 const kelasArr = Array.isArray(user.kelas) ? user.kelas : [user.kelas];
-                if (filterKelas === "all" || filterKelas === "" || kelasArr.includes(filterKelas)) {
+                const usernameStr = (user.username || "").toLowerCase();
+                const namaStr = (user.nama || "").toLowerCase();
+                const kelasStr = kelas.toLowerCase();
+
+                const matchDropdownKelas = (filterKelas === "all" || filterKelas === "" || kelasArr.includes(filterKelas));
+                const matchNis = usernameStr.includes(filterSNis);
+                const matchNama = namaStr.includes(filterSNama);
+                const matchRole = roleDisplay.toLowerCase().includes(filterSRole);
+                const matchKelas = kelasStr.includes(filterSKelas);
+
+                if (matchDropdownKelas && matchNis && matchNama && matchRole && matchKelas) {
                     countSiswa++;
                     htmlSiswa += `
                         <tr>
@@ -494,30 +537,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Jika data kosong
-        if (countGuru === 0) htmlGuru = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px;">Belum ada data guru.</td></tr>`;
-        if (countSiswa === 0) htmlSiswa = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px;">Belum ada data siswa.</td></tr>`;
+        if (countGuru === 0) htmlGuru = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada data guru yang cocok.</td></tr>`;
+        if (countSiswa === 0) htmlSiswa = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada data siswa yang cocok.</td></tr>`;
 
-        // Masukkan HTML ke dalam tabel
         tbodyGuru.innerHTML = htmlGuru;
         tbodySiswa.innerHTML = htmlSiswa;
 
-        // Tampilkan Header Kolom 'Aksi' hanya jika user adalah Admin
+        // Sinkronisasi Visibilitas Kolom Aksi
         const thAksiGuru = document.getElementById('th-aksi-guru');
+        const thFilterAksiGuru = document.getElementById('th-filter-aksi-guru');
         const thAksiSiswa = document.getElementById('th-aksi-siswa');
+        const thFilterAksiSiswa = document.getElementById('th-filter-aksi-siswa');
+        
         if (thAksiGuru) thAksiGuru.style.display = isAdmin ? 'table-cell' : 'none';
+        if (thFilterAksiGuru) thFilterAksiGuru.style.display = isAdmin ? 'table-cell' : 'none';
         if (thAksiSiswa) thAksiSiswa.style.display = isAdmin ? 'table-cell' : 'none';
+        if (thFilterAksiSiswa) thFilterAksiSiswa.style.display = isAdmin ? 'table-cell' : 'none';
     };
 
-    // Fungsi Hapus Pengguna
     window.hapusPengguna = async (uid) => {
-        if(await window.customConfirm("Yakin ingin menghapus akun ini?", "danger")) {
+        if(await window.customConfirm("Apakah Anda yakin ingin menghapus pengguna ini secara permanen?", "danger", "Hapus Pengguna", "Ya, Hapus!")) {
             try {
                 await deleteDoc(doc(db, "users", uid));
                 loadDataPengguna();
                 window.customAlert("Data akun berhasil dihapus dari database!", "success");
             } catch (error) {
-                window.customAlert(`Gagal menghapus pengguna. Pesan Error: ${error.message}`, "error", "Gagal");
+                window.customAlert(`Gagal menghapus pengguna. Error: ${error.message}`, "error", "Gagal");
             }
         }
     };
@@ -559,7 +604,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 uniqueMapel.add(mapel);
                 
-                // Group berdasarkan Mapel dan Tingkatan
                 kelasArray.forEach(cls => {
                     let tingkatan = getTingkatan(cls);
                     let key = `${mapel}_${tingkatan}`;
@@ -583,7 +627,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 rowIdx++;
                 let d = summary[key];
                 
-                // Urutkan List Kelas di Dropdown
                 let classList = Object.keys(d.classes).sort();
                 if (classList.length === 0) continue;
                 
@@ -701,9 +744,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ==============================================================
-    // FITUR BARU: TERAPKAN AKSES KE KELAS LAIN (TANPA DUPLIKASI SOAL)
-    // ==============================================================
     window.bukaModalPindahBankSoal = (mapelLama, kelasLama) => {
         document.getElementById('edit-bs-old-mapel').value = mapelLama;
         document.getElementById('edit-bs-old-kelas').value = kelasLama;
@@ -783,7 +823,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await Promise.all(promises);
             document.getElementById('modal-edit-bank-soal').style.display = 'none';
-            await window.customAlert(`Berhasil membagikan akses paket soal ke kelas sasaran (tanpa menduplikasi soal).`, "success");
+            await window.customAlert("Berhasil membagikan akses paket soal ke kelas sasaran (tanpa menduplikasi soal).", "success");
             loadBankSoalSummary();
         } catch (e) {
             console.error(e); window.customAlert("Terjadi kesalahan sistem.", "error");
@@ -885,7 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Format array pada kolom kelas agar terpisah
             let payload = { mataPelajaran: mapel, kelas: [kelas], nomor_soal: nomorSoalTarget, bobot: bobotSoal, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
             if (mediaSoal) payload.media_soal = mediaSoal;
 
@@ -970,8 +1009,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
         document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
     };
-
-    document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { window.bukaModalTambahSoal(); });
 
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
