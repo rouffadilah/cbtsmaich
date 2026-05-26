@@ -286,42 +286,56 @@
 
     <div id="modal-tambah-soal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px);">
     <div class="modal-content" style="background: white; width: 740px; max-width: 96%; max-height: 92vh; overflow: hidden; border-radius: 18px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display:flex; flex-direction:column;">
-        <!-- Header Sticky -->
-        <div style="padding: 20px 26px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background: linear-gradient(to right, #ffffff, #f8fafc);">
-            <div style="display:flex; align-items:center; gap:14px;">
-                <div style="width:44px; height:44px; background:var(--primary-light); color:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fas fa-pen-to-square"></i></div>
+        <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background: linear-gradient(to right, #ffffff, #f8fafc);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px; height:40px; background:var(--primary-light); color:var(--primary); border-radius:10px; display:flex; align-items:center; justify-content:center;"><i class="fas fa-pen-to-square"></i></div>
                 <div>
-                    <h3 id="title-modal-soal" style="margin:0; font-size:1.2rem; font-weight:700; color:var(--secondary);">Input Soal Baru</h3>
-                    <p style="margin:3px 0 0; font-size:0.82rem; color:var(--text-muted);">Buat soal yang rapi dan mudah dibaca siswa</p>
+                    <h3 id="title-modal-soal" style="margin:0; font-size:1.15rem; font-weight:700; color:var(--secondary);">Input Soal Baru</h3>
+                    <p style="margin:2px 0 0; font-size:0.8rem; color:var(--text-muted);">Buat soal yang rapi dan mudah dibaca siswa</p>
                 </div>
             </div>
-            <button onclick="document.getElementById('modal-tambah-soal').style.display='none'" style="background:#f1f5f9; border:none; width:36px; height:36px; border-radius:10px; cursor:pointer; color:var(--text-muted); font-size:1.2rem; transition:var(--transition);" onmouseover="this.style.background='#fee2e2'; this.style.color='var(--danger)'" onmouseout="this.style.background='#f1f5f9'; this.style.color='var(--text-muted)'">&times;</button>
+            <button onclick="document.getElementById('modal-tambah-soal').style.display='none'" style="background:#f8fafc; border:none; width:34px; height:34px; border-radius:8px; cursor:pointer; color:var(--text-muted); font-size:1.1rem;">&times;</button>
         </div>
 
-        <!-- Body Scrollable -->
-        <form id="form-tambah-soal" style="padding: 24px 26px; overflow-y:auto; flex:1;">
+        <form id="form-tambah-soal" style="padding: 22px 24px; overflow-y:auto; flex:1;">
             <input type="hidden" id="edit-soal-id">
 
-            <!-- Metadata Grid -->
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:18px;">
+            <!-- Mapel & Kelas -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;">
                 <div class="input-group" style="margin:0;">
-                    <label style="display:flex; align-items:center; gap:6px;"><i class="fas fa-book" style="color:var(--info);"></i> Mata Pelajaran</label>
-                    <select id="soal-mapel" class="input-text" required style="background:white;"></select>
+                    <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--secondary);"><i class="fas fa-book" style="color:#3b82f6;"></i> Mata Pelajaran</label>
+                    <select id="soal-mapel" class="input-text" required style="background:white; padding:11px 14px;"></select>
                 </div>
                 <div class="input-group" style="margin:0;">
-                    <label style="display:flex; align-items:center; gap:6px;"><i class="fas fa-users" style="color:var(--info);"></i> Kelas</label>
-                    <select id="soal-kelas" class="input-text" required style="background:white;"></select>
+                    <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--secondary);"><i class="fas fa-users" style="color:#3b82f6;"></i> Kelas</label>
+                    <select id="soal-kelas" class="input-text" required style="background:white; padding:11px 14px;"></select>
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 90px 1fr 110px; gap:14px; margin-bottom:24px;">
+            <!-- INPUT CEPAT MASSAL - PINDAH KE SINI -->
+            <div id="section-import-massal" style="background: #f0fdf4; border: 1.5px dashed #86efac; border-radius:12px; padding:14px 16px; margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:7px; color:#166534; font-weight:700; font-size:0.88rem;"><i class="fas fa-bolt"></i> Input Cepat Massal</div>
+                    <span style="font-size:0.7rem; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:6px; font-weight:600;">Hemat waktu</span>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:8px;">
+                    <button type="button" onclick="window.downloadTemplate('excel')" class="btn-3d" style="background:#047857; padding:9px; font-size:0.8rem; border-radius:8px; box-shadow:none; justify-content:center;"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button type="button" onclick="window.downloadTemplate('word')" class="btn-3d" style="background:#1d4ed8; padding:9px; font-size:0.8rem; border-radius:8px; box-shadow:none; justify-content:center;"><i class="fas fa-file-word"></i> Word</button>
+                    <button type="button" id="btn-import-link" class="btn-3d" style="background:#b45309; padding:9px; font-size:0.8rem; border-radius:8px; box-shadow:none; justify-content:center;"><i class="fab fa-google-drive"></i> Link Drive</button>
+                    <label for="upload-excel-soal" class="btn-3d" style="background:#0f172a; padding:9px; font-size:0.8rem; border-radius:8px; cursor:pointer; margin:0; box-shadow:none; justify-content:center;"><i class="fas fa-upload"></i> Upload</label>
+                    <input type="file" id="upload-excel-soal" accept=".xlsx,.xls,.docx" style="display:none;">
+                </div>
+            </div>
+
+            <!-- No, Tipe, Bobot -->
+            <div style="display:grid; grid-template-columns: 80px 1fr 100px; gap:12px; margin-bottom:20px;">
                 <div class="input-group" style="margin:0;">
-                    <label>No</label>
-                    <input type="number" id="soal-nomor" class="input-text" placeholder="1" min="1" required style="text-align:center; font-weight:700; font-size:1.05rem;">
+                    <label style="font-weight:600;">No</label>
+                    <input type="number" id="soal-nomor" class="input-text" placeholder="1" min="1" required style="text-align:center; font-weight:700; font-size:1.05rem; padding:10px;">
                 </div>
                 <div class="input-group" style="margin:0;">
-                    <label>Tipe Soal</label>
-                    <select id="soal-tipe" class="input-text" required>
+                    <label style="font-weight:600;">Tipe Soal</label>
+                    <select id="soal-tipe" class="input-text" required style="padding:10px;">
                         <option value="PG">Pilihan Ganda</option>
                         <option value="PGK">Pilihan Ganda Kompleks</option>
                         <option value="Menjodohkan">Menjodohkan</option>
@@ -329,146 +343,115 @@
                     </select>
                 </div>
                 <div class="input-group" style="margin:0;">
-                    <label>Bobot</label>
-                    <input type="number" id="soal-bobot" class="input-text" value="1" min="1" style="text-align:center; font-weight:700; color:var(--warning); border-color:#fde68a; background:#fffbeb;">
+                    <label style="font-weight:600;">Bobot</label>
+                    <input type="number" id="soal-bobot" class="input-text" value="1" min="1" style="text-align:center; font-weight:700; color:#d97706; background:#fffbeb; border-color:#fde68a; padding:10px;">
                 </div>
             </div>
 
-            <!-- Import Massal Card -->
-            <div id="section-import-massal" style="background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border: 1.5px dashed #6ee7b7; border-radius:14px; padding:18px 20px; margin-bottom:24px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-                    <div style="display:flex; align-items:center; gap:8px; color:#065f46; font-weight:700; font-size:0.9rem;"><i class="fas fa-bolt"></i> Input Cepat Massal</div>
-                    <span style="font-size:0.72rem; color:#047857; background:#d1fae5; padding:3px 8px; border-radius:6px;">Hemat waktu</span>
+            <div id="divider-import-manual" style="display:flex; align-items:center; gap:10px; margin:22px 0;">
+                <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+                <span style="font-size:0.72rem; font-weight:700; color:#64748b; background:#f1f5f9; padding:4px 12px; border-radius:20px;">INPUT MANUAL</span>
+                <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+            </div>
+
+            <div class="input-group" style="margin-bottom:16px;">
+                <label style="display:flex; align-items:center; gap:6px; font-weight:700; color:var(--secondary);"><i class="fas fa-align-left" style="color:#10b981;"></i> Pertanyaan</label>
+                <textarea id="soal-teks" class="input-text" rows="4" placeholder="Tulis pertanyaan dengan jelas..." required style="min-height:100px; font-size:0.98rem; line-height:1.6; background:white;"></textarea>
+            </div>
+
+            <div class="input-group" style="background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:14px; margin-bottom:18px;">
+                <label style="font-weight:600; margin-bottom:8px; display:block; font-size:0.88rem;"><i class="fas fa-paperclip" style="color:#0ea5e9;"></i> Media (opsional)</label>
+                <div style="display:flex; gap:16px; margin-bottom:8px;">
+                    <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; cursor:pointer;"><input type="radio" name="tipe_media_utama" value="file" checked onchange="document.getElementById('soal-media').style.display='block'; document.getElementById('soal-media-url').style.display='none';"> Upload</label>
+                    <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; cursor:pointer;"><input type="radio" name="tipe_media_utama" value="url" onchange="document.getElementById('soal-media').style.display='none'; document.getElementById('soal-media-url').style.display='block';"> Drive</label>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <button type="button" onclick="window.downloadTemplate('excel')" class="btn-3d" style="background:#059669; padding:9px 14px; font-size:0.82rem; border-radius:10px; box-shadow:none;"><i class="fas fa-file-excel"></i> Excel</button>
-                    <button type="button" onclick="window.downloadTemplate('word')" class="btn-3d" style="background:#2563eb; padding:9px 14px; font-size:0.82rem; border-radius:10px; box-shadow:none;"><i class="fas fa-file-word"></i> Word</button>
-                    <button type="button" id="btn-import-link" class="btn-3d" style="background:#d97706; padding:9px 14px; font-size:0.82rem; border-radius:10px; box-shadow:none;"><i class="fab fa-google-drive"></i> Link Drive</button>
-                    <label for="upload-excel-soal" class="btn-3d" style="background:var(--secondary); padding:9px 14px; font-size:0.82rem; border-radius:10px; cursor:pointer; margin:0; box-shadow:none;"><i class="fas fa-upload"></i> Upload</label>
-                    <input type="file" id="upload-excel-soal" accept=".xlsx,.xls,.docx" style="display:none;">
-                </div>
+                <input type="file" id="soal-media" class="input-text" accept="image/*,video/*,audio/*" style="background:white; padding:8px; font-size:0.85rem;">
+                <input type="text" id="soal-media-url" class="input-text" placeholder="https://drive.google.com/..." style="display:none; background:white; font-size:0.85rem;">
             </div>
 
-            <div id="divider-import-manual" style="display:flex; align-items:center; gap:12px; margin:26px 0;">
-                <div style="flex:1; height:1px; background:linear-gradient(to right, transparent, #e2e8f0, transparent);"></div>
-                <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); letter-spacing:0.8px; background:#f8fafc; padding:4px 12px; border-radius:20px; border:1px solid var(--border-color);">INPUT MANUAL</span>
-                <div style="flex:1; height:1px; background:linear-gradient(to right, transparent, #e2e8f0, transparent);"></div>
-            </div>
-
-            <!-- Teks Soal -->
-            <div class="input-group" style="margin-bottom:18px;">
-                <label style="display:flex; align-items:center; gap:6px; font-weight:700;"><i class="fas fa-align-left" style="color:var(--primary);"></i> Pertanyaan</label>
-                <textarea id="soal-teks" class="input-text" rows="4" placeholder="Tulis pertanyaan dengan jelas..." required style="min-height:110px; font-size:1rem; line-height:1.65; background:white; resize:vertical;"></textarea>
-            </div>
-
-            <!-- Media -->
-            <div class="input-group" style="background:#f8fafc; border:1.5px solid var(--border-color); border-radius:12px; padding:16px; margin-bottom:22px;">
-                <label style="font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:6px; color:var(--secondary);"><i class="fas fa-image" style="color:var(--info);"></i> Media Lampiran <span style="font-weight:400; color:var(--text-muted); font-size:0.8rem;">(opsional)</span></label>
-                <div style="display:flex; gap:18px; margin-bottom:12px;">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.88rem; font-weight:500;"><input type="radio" name="tipe_media_utama" value="file" checked onchange="document.getElementById('soal-media').style.display='block'; document.getElementById('soal-media-url').style.display='none';"> Upload File</label>
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.88rem; font-weight:500;"><input type="radio" name="tipe_media_utama" value="url" onchange="document.getElementById('soal-media').style.display='none'; document.getElementById('soal-media-url').style.display='block';"> Link Drive</label>
-                </div>
-                <input type="file" id="soal-media" class="input-text" accept="image/*,video/*,audio/*" style="background:white; padding:10px;">
-                <input type="text" id="soal-media-url" class="input-text" placeholder="https://drive.google.com/..." style="display:none; background:white;">
-            </div>
-
-            <!-- Opsi Jawaban -->
             <div id="opsi-container">
-                <!-- PG Options -->
                 <div id="pg-options" style="display:none;">
-                    <label style="font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:6px; color:var(--secondary);"><i class="fas fa-list-ol" style="color:var(--primary);"></i> Opsi Jawaban</label>
-                    
-                    <div style="display:flex; flex-direction:column; gap:12px;">
-                        <!-- Template for A-E -->
-                        <div class="opsi-item" style="background:white; border:1.5px solid var(--border-color); border-radius:12px; padding:14px; transition:var(--transition);">
-                            <div style="display:flex; gap:12px; align-items:flex-start;">
-                                <div style="width:32px; height:32px; background:var(--primary-light); color:var(--primary); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0; margin-top:2px;">A</div>
+                    <label style="font-weight:700; margin-bottom:10px; display:block; font-size:0.9rem;"><i class="fas fa-list-ol" style="color:#10b981;"></i> Opsi Jawaban</label>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                            <div style="display:flex; gap:10px;">
+                                <div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">A</div>
                                 <div style="flex:1;">
-                                    <input type="text" id="soal-opsi-A" class="input-text" placeholder="Teks opsi A..." style="margin-bottom:8px; background:#fafafa;">
-                                    <input type="file" id="media-opsi-A" accept="image/*" style="width:100%; font-size:0.8rem; color:var(--text-muted);">
-                                    <div style="display:flex; gap:14px; margin-top:8px;">
-                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--success); font-weight:600;"><input type="radio" name="kunci-pg" value="A"> Jadikan kunci</label>
-                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--info); font-weight:600;"><input type="checkbox" class="kunci-pgk" value="A"> Centang jika benar</label>
+                                    <input type="text" id="soal-opsi-A" class="input-text" placeholder="Opsi A..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <input type="file" id="media-opsi-A" accept="image/*" style="flex:1; font-size:0.75rem;">
+                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="A"> Kunci</label>
+                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="A"> Benar</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="opsi-item" style="background:white; border:1.5px solid var(--border-color); border-radius:12px; padding:14px;">
-                            <div style="display:flex; gap:12px; align-items:flex-start;">
-                                <div style="width:32px; height:32px; background:var(--primary-light); color:var(--primary); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0; margin-top:2px;">B</div>
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                            <div style="display:flex; gap:10px;">
+                                <div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">B</div>
                                 <div style="flex:1;">
-                                    <input type="text" id="soal-opsi-B" class="input-text" placeholder="Teks opsi B..." style="margin-bottom:8px; background:#fafafa;">
-                                    <input type="file" id="media-opsi-B" accept="image/*" style="width:100%; font-size:0.8rem; color:var(--text-muted);">
-                                    <div style="display:flex; gap:14px; margin-top:8px;">
-                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--success); font-weight:600;"><input type="radio" name="kunci-pg" value="B"> Jadikan kunci</label>
-                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--info); font-weight:600;"><input type="checkbox" class="kunci-pgk" value="B"> Centang jika benar</label>
+                                    <input type="text" id="soal-opsi-B" class="input-text" placeholder="Opsi B..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <input type="file" id="media-opsi-B" accept="image/*" style="flex:1; font-size:0.75rem;">
+                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="B"> Kunci</label>
+                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="B"> Benar</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="opsi-item" style="background:white; border:1.5px solid var(--border-color); border-radius:12px; padding:14px;">
-                            <div style="display:flex; gap:12px; align-items:flex-start;">
-                                <div style="width:32px; height:32px; background:var(--primary-light); color:var(--primary); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0; margin-top:2px;">C</div>
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                            <div style="display:flex; gap:10px;">
+                                <div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">C</div>
                                 <div style="flex:1;">
-                                    <input type="text" id="soal-opsi-C" class="input-text" placeholder="Teks opsi C..." style="margin-bottom:8px; background:#fafafa;">
-                                    <input type="file" id="media-opsi-C" accept="image/*" style="width:100%; font-size:0.8rem; color:var(--text-muted);">
-                                    <div style="display:flex; gap:14px; margin-top:8px;">
-                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--success); font-weight:600;"><input type="radio" name="kunci-pg" value="C"> Jadikan kunci</label>
-                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--info); font-weight:600;"><input type="checkbox" class="kunci-pgk" value="C"> Centang jika benar</label>
+                                    <input type="text" id="soal-opsi-C" class="input-text" placeholder="Opsi C..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <input type="file" id="media-opsi-C" accept="image/*" style="flex:1; font-size:0.75rem;">
+                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="C"> Kunci</label>
+                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="C"> Benar</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="opsi-item" style="background:white; border:1.5px solid var(--border-color); border-radius:12px; padding:14px;">
-                            <div style="display:flex; gap:12px; align-items:flex-start;">
-                                <div style="width:32px; height:32px; background:var(--primary-light); color:var(--primary); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0; margin-top:2px;">D</div>
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                            <div style="display:flex; gap:10px;">
+                                <div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">D</div>
                                 <div style="flex:1;">
-                                    <input type="text" id="soal-opsi-D" class="input-text" placeholder="Teks opsi D..." style="margin-bottom:8px; background:#fafafa;">
-                                    <input type="file" id="media-opsi-D" accept="image/*" style="width:100%; font-size:0.8rem; color:var(--text-muted);">
-                                    <div style="display:flex; gap:14px; margin-top:8px;">
-                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--success); font-weight:600;"><input type="radio" name="kunci-pg" value="D"> Jadikan kunci</label>
-                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--info); font-weight:600;"><input type="checkbox" class="kunci-pgk" value="D"> Centang jika benar</label>
+                                    <input type="text" id="soal-opsi-D" class="input-text" placeholder="Opsi D..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <input type="file" id="media-opsi-D" accept="image/*" style="flex:1; font-size:0.75rem;">
+                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="D"> Kunci</label>
+                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="D"> Benar</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="opsi-item" style="background:white; border:1.5px solid var(--border-color); border-radius:12px; padding:14px;">
-                            <div style="display:flex; gap:12px; align-items:flex-start;">
-                                <div style="width:32px; height:32px; background:#f1f5f9; color:var(--text-muted); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0; margin-top:2px;">E</div>
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                            <div style="display:flex; gap:10px;">
+                                <div style="width:28px; height:28px; background:#f8fafc; color:#64748b; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">E</div>
                                 <div style="flex:1;">
-                                    <input type="text" id="soal-opsi-E" class="input-text" placeholder="Teks opsi E (opsional)..." style="margin-bottom:8px; background:#fafafa;">
-                                    <input type="file" id="media-opsi-E" accept="image/*" style="width:100%; font-size:0.8rem; color:var(--text-muted);">
-                                    <div style="display:flex; gap:14px; margin-top:8px;">
-                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--success); font-weight:600;"><input type="radio" name="kunci-pg" value="E"> Jadikan kunci</label>
-                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:var(--info); font-weight:600;"><input type="checkbox" class="kunci-pgk" value="E"> Centang jika benar</label>
+                                    <input type="text" id="soal-opsi-E" class="input-text" placeholder="Opsi E..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <input type="file" id="media-opsi-E" accept="image/*" style="flex:1; font-size:0.75rem;">
+                                        <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="E"> Kunci</label>
+                                        <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="E"> Benar</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Menjodohkan -->
                 <div id="menjodohkan-options" style="display:none;">
-                    <label style="font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:6px;"><i class="fas fa-arrows-alt-h" style="color:var(--warning);"></i> Pasangan Menjodohkan</label>
-                    <div id="pasangan-container" style="display:flex; flex-direction:column; gap:10px;"></div>
-                    <button type="button" id="btn-tambah-pasangan" class="btn-3d btn-secondary" style="margin-top:12px; padding:9px 16px; font-size:0.85rem; background:var(--secondary);"><i class="fas fa-plus"></i> Tambah Pasangan</button>
+                    <label style="font-weight:700; margin-bottom:8px; display:block;"><i class="fas fa-link" style="color:#f59e0b;"></i> Pasangan</label>
+                    <div id="pasangan-container" style="display:flex; flex-direction:column; gap:8px;"></div>
+                    <button type="button" id="btn-tambah-pasangan" class="btn-3d btn-secondary" style="margin-top:10px; padding:8px 12px; font-size:0.8rem;"><i class="fas fa-plus"></i> Tambah</button>
                 </div>
-
-                <!-- Essay -->
                 <div id="essay-options" style="display:none;">
-                    <div class="input-group">
-                        <label style="display:flex; align-items:center; gap:6px;"><i class="fas fa-lightbulb" style="color:var(--warning);"></i> Kunci Jawaban / Rubrik</label>
-                        <textarea id="soal-kunci-essay" class="input-text" rows="3" placeholder="Tulis panduan penilaian (opsional)..."></textarea>
-                    </div>
+                    <div class="input-group"><label>Kunci / Rubrik</label><textarea id="soal-kunci-essay" class="input-text" rows="2" placeholder="Opsional..."></textarea></div>
                 </div>
             </div>
 
-            <button type="submit" class="btn-3d" style="width:100%; margin-top:28px; padding:15px; font-size:1.02rem; font-weight:700; background:linear-gradient(135deg, var(--primary) 0%, #059669 100%); box-shadow:0 8px 20px rgba(16,185,129,0.25); border-radius:12px;"><i class="fas fa-check-circle"></i> Simpan Soal</button>
+            <button type="submit" class="btn-3d" style="width:100%; margin-top:24px; padding:13px; font-size:0.98rem; font-weight:700; background:linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius:10px;"><i class="fas fa-save"></i> Simpan Soal</button>
         </form>
     </div>
 </div>
