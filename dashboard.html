@@ -290,38 +290,62 @@
             <h3 id="title-modal-soal" style="margin-top: 0;">Tambah Soal</h3>
             <form id="form-tambah-soal">
                 <input type="hidden" id="edit-soal-id">
-                
-                <div id="section-import-massal" style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                    <p style="margin:0 0 10px 0; font-size:0.85rem; color: var(--success); font-weight:bold;"><i class="fas fa-file-excel"></i> Input Massal</p>
-                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-                        <button type="button" onclick="window.downloadTemplate('excel')" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.75rem; background: #10b981;">Template Excel</button>
-                        <button type="button" onclick="window.downloadTemplate('word')" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.75rem; background: #2563eb;">Template Word</button>
-                        <button type="button" id="btn-import-link" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.75rem; background: #f59e0b;">Import Link</button>
-                        <label for="upload-excel-soal" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.75rem; background: var(--info); cursor: pointer;">Upload Lokal</label>
-                        <input type="file" id="upload-excel-soal" accept=".xlsx, .xls, .csv, .docx" style="display: none;">
+            
+                <!-- 1. Metadata Soal -->
+                <div class="modal-form-grid">
+                    <div class="input-group" style="grid-column: span 3;">
+                        <label>Mata Pelajaran</label>
+                        <select id="soal-mapel" class="input-text"></select>
+                    </div>
+                    <div class="input-group" style="grid-column: span 3;">
+                        <label>Kelas</label>
+                        <select id="soal-kelas" class="input-text"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>No. Soal</label>
+                        <input type="number" id="soal-nomor" class="input-text" placeholder="1">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>Tipe Soal</label>
+                        <select id="soal-tipe" class="input-text">
+                            <option value="PG">Pilihan Ganda</option>
+                            <option value="PGK">Pilihan Ganda Kompleks</option>
+                            <option value="Menjodohkan">Menjodohkan</option>
+                            <option value="Essay">Essay</option>
+                        </select>
                     </div>
                 </div>
             
-                <div class="form-grid">
-                    <div class="input-group"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text" required></select></div>
-                    <div class="input-group"><label>Kelas</label><select id="soal-kelas" class="input-text" required></select></div>
-                    <div class="input-group"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text" required></div>
+                <!-- 2. Input Massal (Card Terpisah) -->
+                <div id="section-import-massal" class="mass-input-card">
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" onclick="window.downloadTemplate('excel')" class="btn-3d" style="background: #10b981; font-size: 0.7rem;">Template Excel</button>
+                        <button type="button" onclick="window.downloadTemplate('word')" class="btn-3d" style="background: #2563eb; font-size: 0.7rem;">Template Word</button>
+                        <button type="button" id="btn-import-link" class="btn-3d" style="background: #f59e0b; font-size: 0.7rem;">Import Link</button>
+                        <label for="upload-excel-soal" class="btn-3d" style="background: var(--info); font-size: 0.7rem; cursor: pointer; margin:0;">Upload Lokal</label>
+                    </div>
                 </div>
             
-                <div class="form-grid">
-                    <div class="input-group" style="grid-column: span 2;"><label>Tipe Soal</label><select id="soal-tipe" class="input-text" required></select></div>
-                    <div class="input-group"><label>Bobot</label><input type="number" id="soal-bobot" class="input-text" value="1" required></div>
+                <!-- 3. Input Manual -->
+                <span class="modal-section-title">Detail Soal</span>
+                <div class="input-group">
+                    <label>Teks Soal</label>
+                    <textarea id="soal-teks" class="input-text" rows="4" placeholder="Masukkan teks pertanyaan..."></textarea>
                 </div>
-            
-                <div class="input-group"><label>Teks Soal</label><textarea id="soal-teks" class="input-text" rows="3" required></textarea></div>
                 
-                <div id="opsi-container" style="border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 10px;">
-                    <div id="pg-options" style="display: none;">...</div>
-                    <div id="menjodohkan-options" style="display: none;">...</div>
-                    <div id="essay-options" style="display: none;">...</div>
+                <div class="input-group">
+                    <label>Bobot Nilai</label>
+                    <input type="number" id="soal-bobot" class="input-text" value="1">
                 </div>
             
-                <button type="submit" class="btn-3d" style="width: 100%; margin-top: 20px;">Simpan Soal</button>
+                <!-- Kontainer Opsi (Dinamis dari JS) -->
+                <div id="opsi-container">
+                    <div id="pg-options" style="display: none;"></div>
+                    <div id="menjodohkan-options" style="display: none;"></div>
+                    <div id="essay-options" style="display: none;"></div>
+                </div>
+            
+                <button type="submit" class="btn-3d" style="width: 100%; margin-top: 25px; padding: 15px;">Simpan Soal</button>
             </form>
                 <div id="section-import-massal" style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px; border-radius: 8px; margin: 15px 0;">
                     <p style="text-align:center; font-weight:bold; color: var(--success);">Input Massal</p>
