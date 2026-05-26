@@ -90,15 +90,6 @@
                                         <button id="btn-simpan-pengaturan-ujian" class="btn-3d" style="background: var(--secondary);"><i class="fas fa-save"></i> Simpan</button>
                                     </div>
                                     
-                                    <div style="display: flex; gap: 10px; margin-top: 10px; width: 100%; padding-top: 15px; border-top: 1px dashed #cbd5e1; align-items: center; flex-wrap: wrap;">
-                                        <span style="font-size: 0.85rem; font-weight: bold; color: var(--secondary);"><i class="fas fa-file-import"></i> Input Massal:</span>
-                                        <button onclick="window.downloadTemplateExcel()" class="btn-3d btn-secondary" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: #10b981;" title="Unduh format tabel Excel"><i class="fas fa-file-excel"></i> Template</button>
-                                        
-                                        <button id="btn-import-gdrive" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: #f59e0b;" title="Import Otomatis dari Link Google Sheets"><i class="fab fa-google-drive"></i> Import G-Sheets</button>
-                                        
-                                        <label for="upload-excel-soal" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: var(--info); cursor: pointer;" title="Unggah file Excel lokal (.xlsx)"><i class="fas fa-upload"></i> Upload Lokal</label>
-                                        <input type="file" id="upload-excel-soal" accept=".xlsx, .xls, .csv" style="display: none;">
-                                    </div>
                                 </div>
                                 
                                 <div id="list-soal" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;"></div>
@@ -299,6 +290,23 @@
                     <div class="input-group" style="flex: 1; min-width: 200px;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text" required></select></div>
                     <div class="input-group" style="flex: 1; min-width: 150px;"><label>Kelas</label><select id="soal-kelas" class="input-text" required></select></div>
                     <div class="input-group" style="width: 120px;"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text" placeholder="Cth: 1" required style="border-color: var(--primary); font-weight: bold; text-align: center;"></div>
+                </div>
+
+                <div id="section-import-massal" style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center;">
+                    <p style="margin-top:0; font-size:0.85rem; color: var(--success); font-weight:bold;"><i class="fas fa-file-excel"></i> Input Massal (Otomatis)</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" onclick="window.downloadTemplateExcel()" class="btn-3d btn-secondary" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: #10b981;" title="Unduh format tabel Excel"><i class="fas fa-download"></i> Template</button>
+                        <button type="button" id="btn-import-gdrive" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: #f59e0b;" title="Import Otomatis dari Link Google Sheets"><i class="fab fa-google-drive"></i> Import G-Sheets</button>
+                        <label for="upload-excel-soal" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: var(--info); cursor: pointer;" title="Unggah file Excel lokal (.xlsx)"><i class="fas fa-upload"></i> Upload Lokal</label>
+                        <input type="file" id="upload-excel-soal" accept=".xlsx, .xls, .csv" style="display: none;">
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; margin-bottom: 0;">Pilih <b>Mata Pelajaran</b> & <b>Kelas</b> di atas terlebih dahulu sebelum Upload.</p>
+                </div>
+                
+                <div id="divider-import-manual" style="display: flex; align-items: center; text-align: center; margin: 20px 0;">
+                    <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
+                    <span style="padding: 0 15px; color: var(--text-muted); font-size: 0.85rem; font-weight: bold;">ATAU INPUT MANUAL</span>
+                    <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
                 </div>
 
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
