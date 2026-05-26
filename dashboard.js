@@ -415,9 +415,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let editMasterMode = false; 
     document.getElementById('btn-open-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'flex'; editMasterMode = false; renderTableMaster(); });
+    
+    // --- TOMBOL INPUT SOAL ---
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => {
         window.bukaModalTambahSoal();
     });
+
     document.getElementById('close-modal-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'none'; });
     document.getElementById('btn-edit-master-mode')?.addEventListener('click', () => { 
         editMasterMode = !editMasterMode;
@@ -1171,9 +1174,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('soal-media').style.display = 'block';
         document.getElementById('soal-media-url').style.display = 'none';
         
-        document.getElementById('section-import-massal').style.display = 'block';
-        document.getElementById('divider-import-manual').style.display = 'flex';
-
         const mapelSelect = document.getElementById('soal-mapel'); const kelasSelect = document.getElementById('soal-kelas');
         const inputNomor = document.getElementById('soal-nomor'); const modalTitle = document.getElementById('title-modal-soal');
 
@@ -1200,9 +1200,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
         
-        document.getElementById('section-import-massal').style.display = 'none';
-        document.getElementById('divider-import-manual').style.display = 'none';
-
         const mapelSelect = document.getElementById('soal-mapel'); const kelasSelect = document.getElementById('soal-kelas');
 
         let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
