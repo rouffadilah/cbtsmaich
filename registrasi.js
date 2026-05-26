@@ -172,6 +172,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let successCount = 0; let errorCount = 0;
 
+                // --- 1. AMBIL DATA MASTER YANG SUDAH ADA SAAT INI ---
+                const akademikSnap = await getDoc(doc(db, "pengaturan", "data_akademik"));
+                let masterMapel = [];
+                let masterKelas = [];
+                if (akademikSnap.exists()) {
+                    masterMapel = akademikSnap.data().list_mapel || [];
+                    masterKelas = akademikSnap.data().list_kelas || [];
+                }
+                let dataMasterBerubah = false;
+
                 for (let row of jsonData) {
                     let nama = row['Nama Lengkap'] ? String(row['Nama Lengkap']).trim() : '';
                     let username = '';
@@ -188,9 +198,35 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     if (role === 'siswa') {
                         payload.kelas = row['Kelas'] ? String(row['Kelas']).trim() : '';
+                        
+                        // Otomatis deteksi Kelas baru dari Siswa
+                        if (payload.kelas && !masterKelas.includes(payload.kelas)) {
+                            masterKelas.push(payload.kelas);
+                            dataMasterBerubah = true;
+                        }
                     } else {
                         payload.mapel = row['Mata Pelajaran (Pisahkan koma)'] ? String(row['Mata Pelajaran (Pisahkan koma)']).split(',').map(s=>s.trim()) : [];
                         payload.kelas = row['Kelas Ajar (Pisahkan koma)'] ? String(row['Kelas Ajar (Pisahkan koma)']).split(',').map(s=>s.trim()) : [];
+                    }
+
+                    // --- 2. CEK & UPDATE ARRAY MAPEL BARU (JIKA ADA) ---
+                    if (payload.mapel && payload.mapel.length > 0) {
+                        payload.mapel.forEach(m => {
+                            if (m && !masterMapel.includes(m)) {
+                                masterMapel.push(m);
+                                dataMasterBerubah = true;
+                            }
+                        });
+                    }
+
+                    // --- 3. CEK & UPDATE ARRAY KELAS AJAR BARU DARI GURU (JIKA ADA) ---
+                    if (payload.kelas && Array.isArray(payload.kelas)) {
+                        payload.kelas.forEach(k => {
+                            if (k && !masterKelas.includes(k)) {
+                                masterKelas.push(k);
+                                dataMasterBerubah = true;
+                            }
+                        });
                     }
 
                     const dummyEmail = `${username}@cbt.smaich.id`;
@@ -204,11 +240,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         console.error("Gagal mendaftarkan:", username, err);
                         errorCount++;
                     }
-                    // Delay singkat agar sistem Auth Firebase tidak mendeteksi spamming
                     await new Promise(r => setTimeout(r, 400));
                 }
 
-                alert(`REGISTRASI MASSAL SELESAI!\n\nBerhasil Dibuat: ${successCount} Akun\nGagal/Terlewat: ${errorCount} Akun\n\nSistem akan kembali ke halaman login. (Catatan: Admin dapat masuk menggunakan salah satu akun yang baru dibuat atau akun lama)`);
+                // --- 4. SIMPAN PERUBAHAN MAPEL/KELAS BARU KE DATABASE ---
+                if (dataMasterBerubah) {
+                    await setDoc(doc(db, "pengaturan", "data_akademik"), {
+                        list_mapel: masterMapel,
+                        list_kelas: masterKelas
+                    }, { merge: true });
+                }
+
+                alert(`REGISTRASI MASSAL SELESAI!\n\nBerhasil Dibuat: ${successCount} Akun\nGagal/Terlewat: ${errorCount} Akun\n\nSistem otomatis memperbarui Data Master jika ditemukan Mapel/Kelas baru.`);
                 window.location.href = "index.html";
 
             } catch (error) {
