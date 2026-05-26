@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.renderTablePengguna = () => {
+window.renderTablePengguna = () => {
         const tbodyGuru = document.querySelector("#table-guru tbody");
         const tbodySiswa = document.querySelector("#table-siswa tbody");
         
@@ -624,7 +624,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const kelas = Array.isArray(user.kelas) ? user.kelas.join(", ") : (user.kelas || "-");
             const mapel = Array.isArray(user.mapel) ? user.mapel.join(", ") : (user.mapel || "-");
 
-            // KODE BARU: Tombol Edit & Tombol Hapus (Hanya icon)
             const actionButtons = isAdmin ? `
                 <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
                     <button onclick="window.bukaModalEditAkun('${user.uid}')" class="btn-3d" style="background-color: var(--info); padding: 6px 12px; font-size: 0.85rem; margin: 0; min-width: auto;" title="Edit Pengguna">
@@ -667,7 +666,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const namaStr = (user.nama || "").toLowerCase();
                 const kelasStr = kelas.toLowerCase();
 
-                const matchDropdownKelas = (filterDropdownKelas === "all" || filterDropdownKelas === "" || kelasArr.includes(filterDropdownKelas));
+                // PERBAIKAN: Gunakan variabel 'filterKelas' yang benar
+                const matchDropdownKelas = (filterKelas === "all" || filterKelas === "" || kelasArr.includes(filterKelas));
                 const matchNis = usernameStr.includes(filterSNis);
                 const matchNama = namaStr.includes(filterSNama);
                 const matchRole = roleDisplay.toLowerCase().includes(filterSRole);
@@ -705,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (thAksiSiswa) thAksiSiswa.style.display = isAdmin ? 'table-cell' : 'none';
         if (thFilterAksiSiswa) thFilterAksiSiswa.style.display = isAdmin ? 'table-cell' : 'none';
     };
-
+    
     window.hapusPengguna = async (uid) => {
         if(await window.customConfirm("Apakah Anda yakin ingin menghapus akun pengguna ini secara permanen?", "danger", "Hapus Pengguna", "Ya, Hapus!")) {
             try {
