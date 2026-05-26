@@ -74,7 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('popstate', function() {
         if (!window.location.hash || window.location.hash === '') { window.location.hash = 'section-beranda'; }
     });
-
+// Tambahkan ini di dalam DOMContentLoaded
+document.getElementById('filter-kelas-pengguna')?.addEventListener('change', () => {
+    renderTablePengguna(); // Fungsi baru untuk merender tabel dengan filter
+});
     try { 
         let userRoles = JSON.parse(localStorage.getItem("userRole") || "[]"); 
         userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]"); 
@@ -359,42 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 5. MANAJEMEN PENGGUNA (EDIT & HAPUS AKUN)
     // ==========================================
-    async function loadDataPengguna() {
-        const tbodyGuru = document.querySelector('#table-guru tbody'); 
-        const tbodySiswa = document.querySelector('#table-siswa tbody');
-        
-        // Tampilkan header Aksi jika Admin
-        if (isAdmin) {
-            document.getElementById('th-aksi-guru').style.display = 'table-cell';
-            document.getElementById('th-aksi-siswa').style.display = 'table-cell';
-        }
-
-        try {
-            const snap = await getDocs(collection(db, "users"));
-            let htmlGuru = ''; let htmlSiswa = '';
-            
-            snap.forEach(d => {
-                const data = d.data(); const id = d.id;
-                let roleArray = typeof data.role === 'string' ? [data.role] : (Array.isArray(data.role) ? data.role : []);
-                
-                // Tombol Aksi
-                let btnAksi = isAdmin ? `
-                    <div style="display: flex; gap: 5px;">
-                        <button onclick="window.bukaModalEditAkun('${id}')" class="btn-3d" style="background:var(--info); padding:5px 10px;"><i class="fas fa-edit"></i></button>
-                        <button onclick="window.hapusAkun('${id}')" class="btn-3d" style="background:var(--danger); padding:5px 10px;"><i class="fas fa-trash-alt"></i></button>
-                    </div>` : '';
-
-                if (roleArray.includes('guru') || roleArray.includes('admin')) {
-                    let mapelStr = data.mapel ? (Array.isArray(data.mapel) ? data.mapel.join(', ') : data.mapel) : '-';
-                    htmlGuru += `<tr><td>${data.username}</td><td>${data.nama}</td><td>${roleArray.join(', ')}</td><td>${mapelStr}</td><td>${btnAksi}</td></tr>`;
-                } else if (roleArray.includes('siswa')) {
-                    htmlSiswa += `<tr><td>${data.username}</td><td>${data.nama}</td><td>SISWA</td><td>${data.kelas || '-'}</td><td>${btnAksi}</td></tr>`;
-                }
-            });
-            tbodyGuru.innerHTML = htmlGuru;
-            tbodySiswa.innerHTML = htmlSiswa;
-        } catch (e) { console.error(e); }
-    }
+    let allUsersData = [];
 
     // Fungsi Hapus
     window.hapusAkun = async (uid) => {
