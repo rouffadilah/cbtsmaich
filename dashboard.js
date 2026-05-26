@@ -1768,3 +1768,133 @@ window.downloadDaftarPengguna = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Daftar Pengguna");
     XLSX.writeFile(wb, "Daftar_Pengguna_SMAICH.xlsx");
 };
+
+
+// === PREVIEW SOAL MODERN UNTUK GURU ===
+window.previewSoal = (id) => {
+    const s = window.tempDataSoalKelola.find(x => x.id === id);
+    if(!s) return;
+    
+    document.getElementById('preview-title').innerText = `Soal ${s.nomor_soal || ''} - ${s.tipe || 'PG'}`;
+    document.getElementById('preview-subtitle').innerText = `${s.mataPelajaran} • ${s.kelas?.join(', ')} • ${s.bobot || 1} poin`;
+    
+    let html = `<div style="margin-bottom:22px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; background:#f0f9ff; color:#0369a1; padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:600; margin-bottom:14px; border:1px solid #bae6fd;">
+            <i class="fas fa-user-graduate"></i> Tampilan Siswa
+        </div>
+        <div style="font-size:1.08rem; line-height:1.75; color:#0f172a; font-weight:500;">${s.teks_soal || ''}</div>
+    </div>`;
+    
+    if(s.media_soal && s.media_soal.url){
+        const url = s.media_soal.url;
+        const type = s.media_soal.type || 'image';
+        if(type === 'image' || url.match(/\.(jpg|jpeg|png|gif|webp)/i)){
+            html += `<div style="margin:20px 0; text-align:center;"><img src="${url}" style="max-width:100%; max-height:320px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>`;
+        } else if(type === 'video'){
+            html += `<div style="margin:20px 0;"><video src="${url}" controls style="width:100%; max-height:360px; border-radius:12px; background:#000;"></video></div>`;
+        }
+    }
+    
+    if(s.tipe === 'PG' || s.tipe === 'PGK'){
+        html += '<div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">';
+        ['A','B','C','D','E'].forEach(k => {
+            if(s.opsi && s.opsi[k]){
+                const isCorrect = s.tipe === 'PG' ? s.kunci_jawaban === k : (Array.isArray(s.kunci_jawaban) && s.kunci_jawaban.includes(k));
+                html += `<div style="display:flex; align-items:flex-start; gap:14px; padding:14px 16px; border:1.5px solid ${isCorrect ? '#86efac' : '#e2e8f0'}; border-radius:12px; background:${isCorrect ? '#f0fdf4' : 'white'}; transition:all 0.2s;">
+                    <div style="width:32px; height:32px; background:${isCorrect ? '#10b981' : '#f1f5f9'}; color:${isCorrect ? 'white' : '#475569'}; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0;">${k}</div>
+                    <div style="flex:1; padding-top:2px;">
+                        <div style="color:#1e293b; line-height:1.6;">${s.opsi[k]}</div>
+                        ${s.opsi_media && s.opsi_media[k] ? `<img src="${s.opsi_media[k]}" style="max-width:180px; margin-top:8px; border-radius:8px; border:1px solid #e2e8f0;">` : ''}
+                    </div>
+                    ${isCorrect ? '<div style="color:#10b981; font-size:1.1rem;"><i class="fas fa-check-circle"></i></div>' : ''}
+                </div>`;
+            }
+        });
+        html += '</div>';
+    } else if(s.tipe === 'Menjodohkan'){
+        html += '<div style="margin-top:20px; padding:16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; color:#92400e; font-size:0.9rem;"><i class="fas fa-link"></i> Soal Menjodohkan - siswa akan memasangkan jawaban di aplikasi</div>';
+    } else if(s.tipe === 'Essay'){
+        html += `<div style="margin-top:24px;">
+            <label style="display:block; font-weight:600; margin-bottom:8px; color:#475569; font-size:0.9rem;">Jawaban siswa:</label>
+            <div style="min-height:120px; border:1.5px dashed #cbd5e1; border-radius:10px; background:#f8fafc;"></div>
+            ${s.kunci_jawaban ? `<div style="margin-top:16px; padding:12px; background:#f0f9ff; border-left:3px solid #0ea5e9; border-radius:6px;"><strong style="font-size:0.85rem; color:#0369a1;">Kunci/Rubrik:</strong><div style="margin-top:4px; color:#0c4a6e; font-size:0.9rem;">${s.kunci_jawaban}</div></div>` : ''}
+        </div>`;
+    }
+    
+    document.getElementById('preview-content').innerHTML = html;
+    document.getElementById('modal-preview-soal').style.display = 'flex';
+};
+
+
+// === DARK MODE UNTUK PREVIEW ===
+window.togglePreviewDark = () => {
+    const content = document.getElementById('preview-content');
+    const modal = document.getElementById('modal-preview-soal');
+    const btn = document.getElementById('btn-dark-toggle');
+    const isDark = content.dataset.dark === '1';
+    
+    if(!isDark){
+        // Aktifkan dark
+        content.dataset.dark = '1';
+        content.style.background = '#0f172a';
+        content.style.borderColor = '#334155';
+        content.style.color = '#e2e8f0';
+        modal.querySelector('[style*="background:#f8fafc"]').style.background = '#020617';
+        btn.innerHTML = '<i class="fas fa-sun" style="font-size:0.9rem;"></i>';
+        btn.style.background = '#1e293b';
+        btn.style.color = '#fbbf24';
+        btn.style.borderColor = '#334155';
+        
+        // Update semua elemen di dalam preview
+        content.querySelectorAll('div').forEach(el => {
+            const style = el.getAttribute('style') || '';
+            if(style.includes('color:#0f172a') || style.includes('color:#1e293b')){
+                el.style.color = '#e2e8f0';
+            }
+            if(style.includes('background:white') && !style.includes('border')){
+                el.style.background = '#1e293b';
+                el.style.borderColor = '#334155';
+            }
+            if(style.includes('background:#f8fafc')){
+                el.style.background = '#0f172a';
+            }
+            if(style.includes('border:1.5px solid #e2e8f0')){
+                el.style.borderColor = '#334155';
+                el.style.background = '#1e293b';
+            }
+            if(style.includes('background:#f0f9ff')){
+                el.style.background = '#1e293b';
+                el.style.borderColor = '#334155';
+            }
+        });
+    } else {
+        // Kembali ke light
+        content.dataset.dark = '0';
+        content.style.background = 'white';
+        content.style.borderColor = '#e2e8f0';
+        content.style.color = '';
+        modal.querySelector('[style*="background:#020617"]').style.background = '#f8fafc';
+        btn.innerHTML = '<i class="fas fa-moon" style="font-size:0.9rem;"></i>';
+        btn.style.background = '#f1f5f9';
+        btn.style.color = '#475569';
+        btn.style.borderColor = '#e2e8f0';
+        // Reload preview untuk reset style
+        const currentId = window.tempDataSoalKelola.find(s => document.getElementById('preview-title').innerText.includes(s.nomor_soal))?.id;
+        if(currentId) window.previewSoal(currentId);
+    }
+};
+
+// Update previewSoal untuk reset dark mode setiap buka
+const originalPreview = window.previewSoal;
+window.previewSoal = (id) => {
+    originalPreview(id);
+    // Reset ke light mode setiap buka baru
+    const content = document.getElementById('preview-content');
+    content.dataset.dark = '0';
+    const btn = document.getElementById('btn-dark-toggle');
+    if(btn){
+        btn.innerHTML = '<i class="fas fa-moon" style="font-size:0.9rem;"></i>';
+        btn.style.background = '#f1f5f9';
+        btn.style.color = '#475569';
+    }
+};
