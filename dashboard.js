@@ -1394,14 +1394,14 @@ window.renderTablePengguna = () => {
     // =======================================================
     // FUNGSI IMPORT MASSAL EXCEL / G-DRIVE / LOKAL WORD
     // =======================================================
-    window.downloadTemplateExcel = () => {
-        const templateData = [
-            { "Nomor Soal": 1, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Bobot Soal": 10, "Teks Pertanyaan": "Contoh Soal PG?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "A", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "B", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "C", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "D", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "E", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "C" },
-            { "Nomor Soal": 2, "Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Bobot Soal": 15, "Teks Pertanyaan": "Contoh Soal PGK?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Benar 1", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "Salah 1", "Link Media Opsi B (URL Gambar)": "", "Opsi C": "Benar 2", "Link Media Opsi C (URL Gambar)": "", "Opsi D": "Salah 2", "Link Media Opsi D (URL Gambar)": "", "Opsi E": "Benar 3", "Link Media Opsi E (URL Gambar)": "", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E" }
-        ];
-        const worksheet = XLSX.utils.json_to_sheet(templateData); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "Format Input Soal");
-        worksheet['!cols'] = [ {wch: 12}, {wch: 25}, {wch: 12}, {wch: 45}, {wch: 35}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 45} ];
-        XLSX.writeFile(workbook, "Template_Upload_Soal_SMAICH.xlsx");
+    window.downloadTemplate = (format) => {
+        if (format === 'excel') {
+            const templateData = [{"Nomor Soal": 1, "Tipe Soal": "PG", "Bobot": 10, "Pertanyaan": "Contoh Soal", "Opsi A": "A", "Opsi B": "B", "Opsi C": "C", "Opsi D": "D", "Opsi E": "E", "Kunci": "A"}];
+            const ws = XLSX.utils.json_to_sheet(templateData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Template");
+            XLSX.writeFile(wb, "Template_Soal_Excel.xlsx");
+        } else {
+            window.open('https://docs.google.com/document/d/1R1pVq0b0sjUaWar5kDp6Qu1GlwtL0RVuBHlgLb4owaI/export?format=docx', '_blank');
+        }
     };
 
     function parseDocTextToJSON(text) {
@@ -1755,3 +1755,15 @@ window.renderTablePengguna = () => {
     });
 
 });
+
+window.downloadDaftarPengguna = () => {
+    const data = allUsersData.map(u => ({
+        "Nama": u.nama,
+        "Username": u.username,
+        "Role": Array.isArray(u.role) ? u.role.join(', ') : u.role,
+        "Kelas/Mapel": Array.isArray(u.kelas) ? u.kelas.join(', ') : (u.kelas || "-")
+    }));
+    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Daftar Pengguna");
+    XLSX.writeFile(wb, "Daftar_Pengguna_SMAICH.xlsx");
+};
