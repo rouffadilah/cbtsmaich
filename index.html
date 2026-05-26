@@ -9,38 +9,78 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
     <style>
-        /* Proteksi Global */
-        body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
-        input, textarea, select { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
-        @media print { body { display: none !important; } }
+        /* --- KEAMANAN GLOBAL: ANTI COPAS, AI, & CETAK --- */
+        body { 
+            -webkit-user-select: none; 
+            -moz-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
+            -webkit-touch-callout: none;
+        }
+        input, textarea, select { 
+            -webkit-user-select: auto !important; 
+            -ms-user-select: auto !important; 
+            user-select: auto !important; 
+        }
+        @media print { 
+            body { display: none !important; } 
+        }
     </style>
 </head>
 <body class="login-page-bg">
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <img src="logo-smaich.png" alt="Logo" class="main-logo" onerror="this.src='https://via.placeholder.com/100?text=CBT'">
-                <h2>LOGIN CBT</h2>
+                <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
+                <h2 id="portal-title">CBT-SMAICH</h2>
                 <p>SMA ISLAM CIKAL HARAPAN I BSD</p>
             </div>
+
             <form id="login-form">
-                <div class="input-group"><label>NIS / ID Guru</label><input type="text" id="username" class="input-text" placeholder="Masukkan Username/NIS" required></div>
-                <div class="input-group"><label>Password</label><input type="password" id="password" class="input-text" placeholder="Masukkan Password" required></div>
-                <button type="submit" class="btn-3d" id="btn-submit">MASUK</button>
-                <div style="margin-top: 20px; font-size: 0.9rem;">Belum punya akun? <a href="registrasi.html">Daftar di sini</a></div>
+                <div class="input-group">
+                    <label>Username / NIS / NIP</label>
+                    <input type="text" id="username" class="input-text" placeholder="Masukkan ID Anda" required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" class="input-text" placeholder="Masukkan Password" required>
+                </div>
+                
+                <button type="submit" class="btn-3d" id="btn-submit">
+                    <i class="fas fa-sign-in-alt"></i> MASUK
+                </button>
+            
+                <a href="javascript:void(0)" id="btn-install-app" style="display: none; margin-top: 20px; text-align: center; color: var(--info); font-weight: bold; text-decoration: none; width: 100%; transition: opacity 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                    <i class="fas fa-download"></i> Instal CBT
+                </a>
+            
+                <div style="margin-top: 20px; font-size: 0.9rem; text-align: center;">
+                    Belum punya akun? <a href="registrasi.html" style="color: var(--primary); font-weight: bold; text-decoration: none;">Daftar di sini</a>
+                </div>
             </form>
-            <button id="btn-install-app" class="btn-3d" style="display:none; background:var(--info); margin-top:15px; width:100%;"><i class="fas fa-download"></i> Pasang Aplikasi</button>
+            
+            <div class="login-footer" style="margin-top: 20px; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+                &copy; 2026 IT Support SMAICH. All rights reserved.
+            </div>
         </div>
     </div>
 
     <script>
-        // SCRIPT KEAMANAN PINTAR
         function isStaff() {
             try {
                 let roles = JSON.parse(localStorage.getItem("userRole") || "[]");
                 return roles.includes("admin") || roles.includes("guru");
             } catch(e) { return false; }
         }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if(isStaff()) {
+                document.body.style.userSelect = "auto";
+                document.body.style.webkitUserSelect = "auto";
+                document.body.style.mozUserSelect = "auto";
+                document.body.style.msUserSelect = "auto";
+            }
+        });
 
         document.addEventListener('contextmenu', event => { if(!isStaff()) event.preventDefault(); });
         ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => document.addEventListener(evt, event => { 
@@ -64,5 +104,10 @@
         installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { installBtn.style.display = 'none'; } deferredPrompt = null; } });
     </script>
     <script type="module" src="index.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Gagal: ', err)); });
+      }
+    </script>
 </body>
 </html>
