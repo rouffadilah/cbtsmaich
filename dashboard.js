@@ -1311,3 +1311,117 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
+
+// ==========================================
+// 4. MANAJEMEN PENGGUNA (AKSES & PENGGUNA)
+// ==========================================
+
+// Fungsi untuk mengambil data dari Firestore
+window.loadDataPengguna = async () => {
+    try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        allUsersData = [];
+        let totalAdmin = 0, totalGuru = 0, totalSiswa = 0;
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            data.uid = doc.id;
+            allUsersData.push(data);
+
+            // Hitung jumlah masing-masing role (hak akses)
+            const roles = Array.isArray(data.role) ? data.role : [data.role];
+            if (roles.includes("admin")) totalAdmin++;
+            if (roles.includes("guru")) totalGuru++;
+            if (roles.includes("siswa")) totalSiswa++;
+        });
+
+        // Update UI (Angka Jumlah Pengguna di Dashboard)
+        const elTotalSiswa = document.getElementById("total-siswa");
+        const elTotalGuru = document.getElementById("total-guru");
+        const elTotalAdmin = document.getElementById("total-admin");
+        const elTotalPengguna = document.getElementById("total-pengguna");
+
+        if (elTotalSiswa) elTotalSiswa.innerText = totalSiswa;
+        if (elTotalGuru) elTotalGuru.innerText = totalGuru;
+        if (elTotalAdmin) elTotalAdmin.innerText = totalAdmin;
+        if (elTotalPengguna) elTotalPengguna.innerText = allUsersData.length;
+
+        // Panggil fungsi render tabel setelah data ditarik
+        if (typeof window.renderTablePengguna === "function") {
+            window.renderTablePengguna();
+        }
+    } catch (error) {
+        console.error("Gagal memuat data pengguna:", error);
+    }
+};
+
+// Fungsi untuk menampilkan data ke dalam Tabel UI
+window.renderTablePengguna = () => {
+    const tableBody = document.getElementById("table-body-pengguna");
+    if (!tableBody) return;
+
+    // Logika Filter Berdasarkan Kelas (Jika Ada)
+    const filterKelasEl = document.getElementById("filter-kelas-pengguna");
+    const filterKelas = filterKelasEl ? filterKelasEl.value : "Semua";
+    
+    let filteredUsers = allUsersData.filter(user => {
+        const roles = Array.isArray(user.role) ? user.role : [user.role];
+        // Jangan tampilkan jika role tidak dikenali
+        return roles.includes("siswa") || roles.includes("guru") || roles.includes("admin");
+    });
+
+    if (filterKelas !== "Semua" && filterKelas !== "") {
+        filteredUsers = filteredUsers.filter(user => {
+            const kelasArr = Array.isArray(user.kelas) ? user.kelas : [user.kelas];
+            return kelasArr.includes(filterKelas);
+        });
+    }
+
+    // Kosongkan isi tabel sebelum diisi ulang
+    tableBody.innerHTML = "";
+
+    // Jika data kosong
+    if (filteredUsers.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">Belum ada data pengguna / tidak ditemukan.</td></tr>`;
+        return;
+    }
+
+    // Looping data dan masukkan ke tabel
+    filteredUsers.forEach((user, index) => {
+        const role = Array.isArray(user.role) ? user.role.join(", ") : (user.role || "-");
+        const kelas = Array.isArray(user.kelas) ? user.kelas.join(", ") : (user.kelas || "-");
+        const mapel = Array.isArray(user.mapel) ? user.mapel.join(", ") : (user.mapel || "-");
+
+        tableBody.innerHTML += `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${user.nama || "-"}</strong><br><small style="color: var(--text-muted);">${user.username || "-"}</small></td>
+                <td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${role}</span></td>
+                <td>${kelas}</td>
+                <td><span style="font-size: 0.85rem; color: var(--text-muted);">${mapel}</span></td>
+                <td>
+                    ${isAdmin ? `
+                    <button onclick="hapusPengguna('${user.uid}')" class="btn-exit-modern" style="padding: 4px 10px; font-size: 0.8rem; margin: auto;">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                    ` : '-'}
+                </td>
+            </tr>
+        `;
+    });
+};
+
+// Fungsi untuk menghapus pengguna dari tabel dan database
+window.hapusPengguna = async (uid) => {
+    if (await customConfirm("Apakah Anda yakin ingin menghapus pengguna ini secara permanen?", "danger", "Hapus Pengguna", "Ya, Hapus!")) {
+        try {
+            await deleteDoc(doc(db, "users", uid));
+            await customAlert("Pengguna berhasil dihapus!", "success", "Berhasil");
+            // Muat ulang data agar tabel ter-update
+            window.loadDataPengguna();
+        } catch (error) {
+            console.error("Gagal menghapus pengguna:", error);
+            await customAlert(`Gagal menghapus pengguna. Pesan Error: ${error.message}`, "error", "Gagal");
+        }
+    }
+};
