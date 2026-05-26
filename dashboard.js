@@ -667,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const namaStr = (user.nama || "").toLowerCase();
                 const kelasStr = kelas.toLowerCase();
 
-                const matchDropdownKelas = (filterKelas === "all" || filterKelas === "" || kelasArr.includes(filterKelas));
+                const matchDropdownKelas = (filterDropdownKelas === "all" || filterDropdownKelas === "" || kelasArr.includes(filterDropdownKelas));
                 const matchNis = usernameStr.includes(filterSNis);
                 const matchNama = namaStr.includes(filterSNama);
                 const matchRole = roleDisplay.toLowerCase().includes(filterSRole);
@@ -1392,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // =======================================================
-    // FUNGSI IMPORT MASSAL EXCEL / G-DRIVE
+    // FUNGSI IMPORT MASSAL EXCEL / G-DRIVE / LOKAL WORD
     // =======================================================
     window.downloadTemplateExcel = () => {
         const templateData = [
@@ -1497,7 +1497,15 @@ document.addEventListener('DOMContentLoaded', () => {
         loadBankSoalSummary();
     }
 
-    document.getElementById('btn-import-gdrive')?.addEventListener('click', async () => {
+    document.getElementById('btn-import-gdrive')?.addEventListener('click', () => {
+        const mapel = document.getElementById('soal-mapel').value; 
+        const kelas = document.getElementById('soal-kelas').value;
+        if(!mapel || !kelas) return window.customAlert("Silakan Pilih Mata Pelajaran & Kelas di form bawah terlebih dahulu untuk menentukan letak mapel!", "warning");
+        document.getElementById('input-gdrive-url').value = ''; 
+        document.getElementById('modal-import-gdrive').style.display = 'flex';
+    });
+
+    document.getElementById('btn-proses-gdrive')?.addEventListener('click', async () => {
         const urlInput = document.getElementById('input-gdrive-url').value.trim(); 
         if (!urlInput) return window.customAlert("Masukkan link Google Sheets/Docs terlebih dahulu!", "warning");
         const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/); 
@@ -1542,7 +1550,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const jsonData = XLSX.utils.sheet_to_json(worksheet); 
                 await prosesUploadMassal(jsonData, mapel, kelas);
             }
-        } catch (err) { window.customAlert("Gagal Import G-Drive: " + err.message, "error"); window.bukaDetailSoal(mapel, kelas); }
+        } catch (err) { 
+            window.customAlert("Gagal Import G-Drive: " + err.message, "error"); 
+            window.bukaDetailSoal(mapel, kelas); 
+        }
     });
 
     document.getElementById('upload-excel-soal')?.addEventListener('change', async (e) => {
