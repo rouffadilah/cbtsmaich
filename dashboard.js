@@ -1202,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
         document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
     };
-    
+
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
         
@@ -1404,6 +1404,64 @@ document.addEventListener('DOMContentLoaded', () => {
         XLSX.writeFile(workbook, "Template_Upload_Soal_SMAICH.xlsx");
     };
 
+    function parseDocTextToJSON(text) {
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        const jsonData = [];
+        
+        let currentTipe = 'PG'; 
+        let currentSoal = null;
+        let nomorPG = 1; let nomorEssay = 1;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            
+            // Deteksi Judul Bagian
+            if (line.match(/^[A-Z]\.\s*(Pilihan Ganda|PG)/i)) { currentTipe = 'PG'; continue; }
+            if (line.match(/^[A-Z]\.\s*(Esai|Essay|Uraian)/i)) { currentTipe = 'Essay'; continue; }
+
+            // Deteksi Nomor Soal
+            const questionMatch = line.match(/^(\d+)\.\s*(.*)/);
+            if (questionMatch) {
+                if (currentSoal) jsonData.push(currentSoal);
+                currentSoal = {
+                    "Tipe Soal (PG / PGK / Menjodohkan / Essay)": currentTipe,
+                    "Nomor Soal": currentTipe === 'PG' ? nomorPG++ : nomorEssay++,
+                    "Bobot Soal": currentTipe === 'PG' ? 1 : 5, 
+                    "Teks Pertanyaan": questionMatch[2],
+                    "Kunci Jawaban / Pasangan Menjodohkan": ""
+                };
+                continue;
+            }
+
+            // Deteksi Opsi Jawaban (A., B., - A., - B.)
+            const optionMatch = line.match(/^-?\s*([A-Ea-e])\.\s*(.*)/);
+            if (optionMatch && currentSoal && currentSoal["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] === 'PG') {
+                currentSoal[`Opsi ${optionMatch[1].toUpperCase()}`] = optionMatch[2];
+                continue;
+            }
+
+            // Deteksi Kunci Jawaban jika disertakan (Contoh: Kunci: A)
+            const kunciMatch = line.match(/^(?:Kunci|Jawaban|Kunci Jawaban)\s*:\s*(.*)/i);
+            if (kunciMatch && currentSoal) {
+                currentSoal["Kunci Jawaban / Pasangan Menjodohkan"] = kunciMatch[1].trim().toUpperCase();
+                continue;
+            }
+
+            // Gabungkan teks untuk pertanyaan multi-baris
+            if (currentSoal) {
+                let hasOptions = currentSoal['Opsi A'] || currentSoal['Opsi B'];
+                if (!hasOptions) {
+                    currentSoal["Teks Pertanyaan"] += '\n' + line;
+                } else {
+                    let lastOpt = ['E', 'D', 'C', 'B', 'A'].find(o => currentSoal[`Opsi ${o}`]);
+                    if (lastOpt) currentSoal[`Opsi ${lastOpt}`] += '\n' + line;
+                }
+            }
+        }
+        if (currentSoal) jsonData.push(currentSoal);
+        return jsonData;
+    }
+
     async function prosesUploadMassal(jsonData, mapel, kelas) {
         if (jsonData.length === 0) throw new Error("File kosong atau tidak sesuai format Template!");
         let updates = []; let timestampAwal = new Date().getTime();
@@ -1439,18 +1497,15 @@ document.addEventListener('DOMContentLoaded', () => {
         loadBankSoalSummary();
     }
 
-    document.getElementById('btn-import-gdrive')?.addEventListener('click', () => {
-        const mapel = document.getElementById('soal-mapel').value; 
-        const kelas = document.getElementById('soal-kelas').value;
-        if(!mapel || !kelas) return window.customAlert("Silakan Pilih Mata Pelajaran & Kelas di form bawah terlebih dahulu untuk menentukan letak mapel!", "warning");
-        document.getElementById('input-gdrive-url').value = ''; document.getElementById('modal-import-gdrive').style.display = 'flex';
-    });
-
-    document.getElementById('btn-proses-gdrive')?.addEventListener('click', async () => {
-        const urlInput = document.getElementById('input-gdrive-url').value.trim(); if (!urlInput) return window.customAlert("Masukkan link Google Sheets terlebih dahulu!", "warning");
-        const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/); if (!match || !match[1]) return window.customAlert("Link tidak valid!", "error");
+    document.getElementById('btn-import-gdrive')?.addEventListener('click', async () => {
+        const urlInput = document.getElementById('input-gdrive-url').value.trim(); 
+        if (!urlInput) return window.customAlert("Masukkan link Google Sheets/Docs terlebih dahulu!", "warning");
+        const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/); 
+        if (!match || !match[1]) return window.customAlert("Link tidak valid!", "error");
         
-        const sheetId = match[1]; document.getElementById('modal-import-gdrive').style.display = 'none';
+        const fileId = match[1]; 
+        const isDocs = urlInput.includes('/document/d/');
+        document.getElementById('modal-import-gdrive').style.display = 'none';
         
         const mapel = document.getElementById('soal-mapel').value; 
         const kelas = document.getElementById('soal-kelas').value;
@@ -1464,12 +1519,29 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Sedang menyedot data dari Google Drive...</div>';
 
         try {
-            const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`; const response = await fetch(exportUrl);
-            if (!response.ok) throw new Error("Akses ditolak. Pastikan dibagikan publik (Anyone with the link).");
-            const csvText = await response.text(); if (csvText.includes('<!DOCTYPE html>')) throw new Error("Terdeteksi HTML. Set publik tanpa login.");
+            if (isDocs) {
+                // Proses Jika Google Docs
+                const exportUrl = `https://docs.google.com/document/d/${fileId}/export?format=txt`; 
+                const response = await fetch(exportUrl);
+                if (!response.ok) throw new Error("Akses ditolak. Pastikan dibagikan publik (Anyone with the link).");
+                const textData = await response.text(); 
+                if (textData.includes('<!DOCTYPE html>')) throw new Error("Terdeteksi HTML. Set publik tanpa login.");
+                
+                const jsonData = parseDocTextToJSON(textData);
+                await prosesUploadMassal(jsonData, mapel, kelas);
+            } else {
+                // Proses Jika Google Sheets
+                const exportUrl = `https://docs.google.com/spreadsheets/d/${fileId}/gviz/tq?tqx=out:csv`; 
+                const response = await fetch(exportUrl);
+                if (!response.ok) throw new Error("Akses ditolak. Pastikan dibagikan publik (Anyone with the link).");
+                const csvText = await response.text(); 
+                if (csvText.includes('<!DOCTYPE html>')) throw new Error("Terdeteksi HTML. Set publik tanpa login.");
 
-            const workbook = XLSX.read(csvText, { type: 'string' }); const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet); await prosesUploadMassal(jsonData, mapel, kelas);
+                const workbook = XLSX.read(csvText, { type: 'string' }); 
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet); 
+                await prosesUploadMassal(jsonData, mapel, kelas);
+            }
         } catch (err) { window.customAlert("Gagal Import G-Drive: " + err.message, "error"); window.bukaDetailSoal(mapel, kelas); }
     });
 
@@ -1488,16 +1560,42 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('view-soal-list').style.display = 'block';
         document.getElementById('label-mapel-edit').innerText = `${mapel} - ${kelas}`;
 
+        const container = document.getElementById('list-soal'); 
+        container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file lokal & Menyimpan...</div>';
+
         const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const container = document.getElementById('list-soal'); container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--info); font-weight:bold;"><i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom:15px;"></i><br>Membaca file Excel lokal & Menyimpan...</div>';
-                const data = new Uint8Array(event.target.result); const workbook = XLSX.read(data, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]]; const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                await prosesUploadMassal(jsonData, mapel, kelas);
-            } catch (err) { window.customAlert("Gagal memproses Excel: " + err.message, "error"); window.bukaDetailSoal(mapel, kelas); }
-        };
-        reader.readAsArrayBuffer(file); e.target.value = '';
+        
+        if (file.name.endsWith('.docx')) {
+            // EKSTRAK FILE MS WORD (.DOCX)
+            reader.onload = async (event) => {
+                try {
+                    const arrayBuffer = event.target.result;
+                    mammoth.extractRawText({arrayBuffer: arrayBuffer})
+                        .then(async function(result) {
+                            const text = result.value; 
+                            const jsonData = parseDocTextToJSON(text);
+                            await prosesUploadMassal(jsonData, mapel, kelas);
+                        })
+                        .catch(function(err) {
+                            window.customAlert("Gagal membaca Word: " + err.message, "error"); window.bukaDetailSoal(mapel, kelas);
+                        });
+                } catch (err) { window.customAlert("Error: " + err.message, "error"); window.bukaDetailSoal(mapel, kelas); }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            // EKSTRAK EXCEL / CSV LOKAL
+            reader.onload = async (event) => {
+                try {
+                    const data = new Uint8Array(event.target.result); 
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]]; 
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    await prosesUploadMassal(jsonData, mapel, kelas);
+                } catch (err) { window.customAlert("Gagal memproses file: " + err.message, "error"); window.bukaDetailSoal(mapel, kelas); }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        e.target.value = '';
     });
     
     // ==========================================
