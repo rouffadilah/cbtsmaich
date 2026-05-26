@@ -1174,6 +1174,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('soal-media').style.display = 'block';
         document.getElementById('soal-media-url').style.display = 'none';
         
+        // Tampilkan Opsi Massal
+        const secMassal = document.getElementById('section-import-massal');
+        const divManual = document.getElementById('divider-import-manual');
+        if (secMassal) secMassal.style.display = 'block';
+        if (divManual) divManual.style.display = 'flex';
+
         const mapelSelect = document.getElementById('soal-mapel'); const kelasSelect = document.getElementById('soal-kelas');
         const inputNomor = document.getElementById('soal-nomor'); const modalTitle = document.getElementById('title-modal-soal');
 
@@ -1196,10 +1202,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-tambah-soal').style.display = 'flex';
         document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
     };
-
+    
     window.editDataSoal = (id) => {
         const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
         
+        // Sembunyikan Opsi Massal saat mengedit 1 soal
+        const secMassal = document.getElementById('section-import-massal');
+        const divManual = document.getElementById('divider-import-manual');
+        if (secMassal) secMassal.style.display = 'none';
+        if (divManual) divManual.style.display = 'none';
+
         const mapelSelect = document.getElementById('soal-mapel'); const kelasSelect = document.getElementById('soal-kelas');
 
         let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
