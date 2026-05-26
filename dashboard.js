@@ -4,14 +4,21 @@ import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc,
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
 // ==========================================
-// VARIABEL GLOBAL
+// 1. VARIABEL GLOBAL
 // ==========================================
-let listMapel = []; let listKelas = []; let allUsersData = []; let allHasilUjian = []; 
-let currentMapelDetail = ""; let currentKelasDetail = "";
-let isAdmin = false; let isGuru = false; let userMapel = []; let userKelas = [];
+let listMapel = []; 
+let listKelas = []; 
+let allUsersData = []; 
+let allHasilUjian = []; 
+let currentMapelDetail = ""; 
+let currentKelasDetail = "";
+let isAdmin = false; 
+let isGuru = false; 
+let userMapel = []; 
+let userKelas = [];
 
 // ==========================================
-// 1. MODAL CUSTOM & NOTIFIKASI
+// 2. MODAL CUSTOM & NOTIFIKASI
 // ==========================================
 window.customAlert = (msg, type = 'info', title = '') => {
     return new Promise((resolve) => {
@@ -66,29 +73,41 @@ window.customConfirm = (msg, type = 'warning', title = 'Konfirmasi', okText = 'Y
 };
 
 // ==========================================
-// 2. LOGIKA UTAMA DASHBOARD & AUTHENTIKASI
+// 3. INISIALISASI HALAMAN (DOM) & AUTENTIKASI
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Manajemen Hash (URL)
     if (!window.location.hash) { window.location.hash = 'section-beranda'; }
     window.addEventListener('popstate', function() {
         if (!window.location.hash || window.location.hash === '') { window.location.hash = 'section-beranda'; }
     });
-// Tambahkan ini di dalam DOMContentLoaded
-document.getElementById('filter-kelas-pengguna')?.addEventListener('change', () => {
-    renderTablePengguna(); // Fungsi baru untuk merender tabel dengan filter
-});
+
+    // Filter Kelas Listener (Ini yang sebelumnya error dan menyebabkan crash)
+    const filterKelas = document.getElementById('filter-kelas-pengguna');
+    if (filterKelas) {
+        filterKelas.addEventListener('change', () => {
+            if (typeof renderTablePengguna === 'function') {
+                renderTablePengguna(); 
+            }
+        });
+    }
+
+    // Ambil Data Sesi (Session) User
     try { 
         let userRoles = JSON.parse(localStorage.getItem("userRole") || "[]"); 
         userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]"); 
         userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]"); 
         isAdmin = userRoles.includes("admin"); 
         isGuru = userRoles.includes("guru");
-    } catch (e) {}
+    } catch (e) {
+        console.warn("Gagal parsing local storage:", e);
+    }
 
+    // Routing Content Section
     function handleRouting() {
         let hash = window.location.hash.substring(1) || 'section-beranda';
-        if (hash === 'section-pengaturan') hash = 'section-beranda';
+        if (hash === 'section-pengaturan' && !isAdmin) hash = 'section-beranda';
         
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -113,18 +132,23 @@ document.getElementById('filter-kelas-pengguna')?.addEventListener('change', () 
 
     window.addEventListener('hashchange', handleRouting);
 
+    // Cek Status Autentikasi Pengguna
     onAuthStateChanged(auth, async (user) => {
-        if (!user || (!isAdmin && !isGuru)) { window.location.href = "index.html"; return; }
+        if (!user || (!isAdmin && !isGuru)) { window.location.replace("index.html"); return; }
         
         let finalDisplayName = user.displayName;
         if (!finalDisplayName) { 
-            try { const userDoc = await getDoc(doc(db, "users", user.uid)); if (userDoc.exists()) finalDisplayName = userDoc.data().nama; } catch(e) {} 
+            try { 
+                const userDoc = await getDoc(doc(db, "users", user.uid)); 
+                if (userDoc.exists()) finalDisplayName = userDoc.data().nama; 
+            } catch(e) {} 
         }
         finalDisplayName = finalDisplayName || "Pengguna";
 
         const greetingText = document.getElementById('greeting-text'); 
         if (greetingText) greetingText.innerHTML = `Assalamu'alaikum, <span style="display: inline-block;">${finalDisplayName}! 🙏</span>`;
 
+        // Hak Akses UI (Guru vs Admin)
         if (!isAdmin) {
             const btnMaster = document.getElementById('btn-open-data-master'); if (btnMaster) btnMaster.style.display = 'none';
             const btnAddUser = document.getElementById('btn-open-manajemen'); if (btnAddUser) btnAddUser.style.display = 'none';
@@ -132,30 +156,48 @@ document.getElementById('filter-kelas-pengguna')?.addEventListener('change', () 
             const wrapRegSiswa = document.getElementById('wrap-reg-siswa'); if (wrapRegSiswa) wrapRegSiswa.style.display = 'none';
             const btnHapusAll = document.getElementById('btn-hapus-semua-hasil'); if (btnHapusAll) btnHapusAll.style.display = 'none';
         } else {
-            fetchStatusReg();
+            if(typeof fetchStatusReg === "function") fetchStatusReg();
         }
 
+        // Jalankan Routing
         handleRouting(); 
-        loadDataMaster(); 
-        loadDataHasil(); 
-        loadDataPengguna(); 
+        
+        // Panggil Fungsi Load Data Utama
+        if(typeof loadDataMaster === "function") loadDataMaster(); 
+        if(typeof loadDataHasil === "function") loadDataHasil(); 
+        if(typeof loadDataPengguna === "function") loadDataPengguna(); 
     });
 
-    document.getElementById('btn-logout').onclick = async () => { 
-        if (await customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { await signOut(auth); localStorage.clear(); window.location.href = "index.html"; } 
-    };
+    // Event Logout
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.onclick = async () => { 
+            if (await customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { 
+                await signOut(auth); 
+                localStorage.clear(); 
+                window.location.replace("index.html"); 
+            } 
+        };
+    }
 
+    // Toggle Accordion / Dropdown Table
     document.addEventListener('click', (e) => {
         const header = e.target.closest('.toggle-accordion');
         if (!header) return;
         const targetId = header.getAttribute('data-target');
         const target = document.getElementById(targetId);
         const icon = header.querySelector('.toggle-icon');
+        
         if (!target) return;
+        
         if (target.style.display === 'none' || target.style.display === '') {
-            target.style.display = 'block'; if (icon) icon.style.transform = 'rotate(180deg)'; header.style.background = '#f8fafc';
+            target.style.display = 'block'; 
+            if (icon) icon.style.transform = 'rotate(180deg)'; 
+            header.style.background = '#f8fafc';
         } else {
-            target.style.display = 'none'; if (icon) icon.style.transform = 'rotate(0deg)'; header.style.background = '#ffffff';
+            target.style.display = 'none'; 
+            if (icon) icon.style.transform = 'rotate(0deg)'; 
+            header.style.background = '#ffffff';
         }
     });
 
