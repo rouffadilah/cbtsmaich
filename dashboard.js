@@ -415,6 +415,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let editMasterMode = false; 
     document.getElementById('btn-open-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'flex'; editMasterMode = false; renderTableMaster(); });
+    document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => {
+        window.bukaModalTambahSoal();
+    });
     document.getElementById('close-modal-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'none'; });
     document.getElementById('btn-edit-master-mode')?.addEventListener('click', () => { 
         editMasterMode = !editMasterMode;
