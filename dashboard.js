@@ -499,6 +499,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 allUsersData.push(data);
             });
 
+            // --- PROSES PENGURUTAN ABJAD (SORTING) ---
+            allUsersData.sort((a, b) => {
+                const namaA = (a.nama || "").toLowerCase();
+                const namaB = (b.nama || "").toLowerCase();
+                
+                // Urutkan berdasarkan Nama terlebih dahulu
+                if (namaA < namaB) return -1;
+                if (namaA > namaB) return 1;
+                
+                // Jika namanya sama, urutkan berdasarkan Username (NIS/NIP)
+                const idA = (a.username || "").toLowerCase();
+                const idB = (b.username || "").toLowerCase();
+                return idA.localeCompare(idB);
+            });
+            // ----------------------------------------
+
             const elStatSiswa = document.getElementById("stat-siswa");
             if (elStatSiswa) {
                 elStatSiswa.innerText = allUsersData.length;
