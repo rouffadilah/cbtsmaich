@@ -313,14 +313,15 @@
                     </div>
                 </div>
 
-                <div id="section-import-massal" style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center;">
-                    <p style="margin-top:0; font-size:0.85rem; color: var(--success); font-weight:bold;"><i class="fas fa-file-excel"></i> Input Massal (Otomatis)</p>
-                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                        <button type="button" onclick="window.downloadTemplateExcel()" class="btn-3d btn-secondary" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: #10b981;" title="Unduh format tabel Excel"><i class="fas fa-download"></i> Template</button>
-                        <button type="button" id="btn-import-gdrive" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: #f59e0b;" title="Import Otomatis dari Link Google Sheets"><i class="fab fa-google-drive"></i> Import G-Sheets</button>
-                        <label for="upload-excel-soal" class="btn-3d" style="margin:0; padding: 6px 12px; font-size: 0.8rem; background-color: var(--info); cursor: pointer;" title="Unggah file Excel lokal (.xlsx)"><i class="fas fa-upload"></i> Upload Lokal</label>
-                        <input type="file" id="upload-excel-soal" accept=".xlsx, .xls, .csv" style="display: none;">
+                <div id="section-import-massal" style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <p style="text-align:center; font-weight:bold; color: var(--success);">Input Massal</p>
+                    <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" onclick="window.downloadTemplate('excel')" class="btn-3d" style="background: #10b981; font-size: 0.7rem;">Excel</button>
+                        <button type="button" onclick="window.downloadTemplate('word')" class="btn-3d" style="background: #2563eb; font-size: 0.7rem;">Word</button>
+                        <button type="button" id="btn-import-link" class="btn-3d" style="background: #f59e0b; font-size: 0.7rem;">Import Link</button>
+                        <label for="upload-excel-soal" class="btn-3d" style="background: var(--info); font-size: 0.7rem; cursor: pointer;">Upload Lokal</label>
                     </div>
+                </div>
                     <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; margin-bottom: 0;">Pilih <b>Mata Pelajaran</b> & <b>Kelas</b> di atas terlebih dahulu sebelum Upload.</p>
                 </div>
                 
