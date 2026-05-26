@@ -109,6 +109,66 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Logika UI Untuk Modal Edit Akun
+    document.querySelectorAll('.edit-role-cb').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
+            document.getElementById('group-edit-guru').style.display = selectedRoles.includes('guru') ? 'flex' : 'none';
+            document.getElementById('group-edit-kelas-siswa').style.display = selectedRoles.includes('siswa') ? 'block' : 'none';
+        });
+    });
+
+    document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => {
+        document.getElementById('modal-edit-akun').style.display = 'none';
+    });
+
+    document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
+        const uid = document.getElementById('edit-uid').value;
+        if(!uid) return;
+
+        const btn = document.getElementById('btn-save-edit-akun');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+        btn.disabled = true;
+
+        try {
+            const newNama = document.getElementById('edit-nama').value.trim();
+            const newUsername = document.getElementById('edit-username').value.trim().toUpperCase();
+            const newPass = document.getElementById('edit-pass').value;
+            const roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
+
+            if(!newNama || !newUsername || roles.length === 0) {
+                throw new Error("Nama, Username, dan Role harus diisi!");
+            }
+
+            let payload = { nama: newNama, username: newUsername, role: roles };
+
+            if (roles.includes('siswa')) {
+                payload.kelas = [document.getElementById('edit-kelas-siswa').value];
+            } else if (roles.includes('guru')) {
+                payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(el => el.value);
+                payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(el => el.value);
+            }
+
+            await updateDoc(doc(db, "users", uid), payload);
+
+            if(newPass) {
+                window.customAlert("Data profil diperbarui!\n\nCatatan: Update password tidak dapat diterapkan otomatis dari halaman ini. Gunakan konsol Admin Firebase untuk reset password.", "warning", "Info Pembaruan");
+            } else {
+                window.customAlert("Data akun berhasil diperbarui!", "success");
+            }
+
+            document.getElementById('modal-edit-akun').style.display = 'none';
+            loadDataPengguna();
+        } catch (error) {
+            console.error(error);
+            window.customAlert("Gagal menyimpan: " + error.message, "error");
+        } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        }
+    });
+
     // Ambil Data Sesi (Session) User
     try { 
         let userRoles = JSON.parse(localStorage.getItem("userRole") || "[]"); 
@@ -483,7 +543,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const kelas = Array.isArray(user.kelas) ? user.kelas.join(", ") : (user.kelas || "-");
             const mapel = Array.isArray(user.mapel) ? user.mapel.join(", ") : (user.mapel || "-");
 
-            const btnHapus = isAdmin ? `<button onclick="hapusPengguna('${user.uid}')" class="btn-exit-modern" style="padding: 4px 10px; font-size: 0.8rem; margin: auto;"><i class="fas fa-trash"></i> Hapus</button>` : '-';
+            // KODE BARU: Tombol Edit & Tombol Hapus (Hanya icon)
+            const actionButtons = isAdmin ? `
+                <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                    <button onclick="window.bukaModalEditAkun('${user.uid}')" class="btn-3d" style="background-color: var(--info); padding: 6px 12px; font-size: 0.85rem; margin: 0; min-width: auto;" title="Edit Pengguna">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="hapusPengguna('${user.uid}')" class="btn-exit-modern" style="padding: 6px 12px; font-size: 0.85rem; margin: 0; min-width: auto;" title="Hapus Pengguna">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            ` : '-';
 
             // Logika Rendering & Filtering Tabel Guru
             if (roles.includes("guru") || roles.includes("admin")) {
@@ -504,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td>${user.nama || "-"}</td>
                             <td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${roleDisplay}</span></td>
                             <td><small><b>Mapel:</b> ${mapel}<br><b>Kelas:</b> ${kelas}</small></td>
-                            ${isAdmin ? `<td>${btnHapus}</td>` : ''}
+                            ${isAdmin ? `<td style="text-align:center;">${actionButtons}</td>` : ''}
                         </tr>
                     `;
                 }
@@ -530,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td>${user.nama || "-"}</td>
                             <td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${roleDisplay}</span></td>
                             <td>${kelas}</td>
-                            ${isAdmin ? `<td>${btnHapus}</td>` : ''}
+                            ${isAdmin ? `<td style="text-align:center;">${actionButtons}</td>` : ''}
                         </tr>
                     `;
                 }
@@ -556,7 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.hapusPengguna = async (uid) => {
-        if(await window.customConfirm("Apakah Anda yakin ingin menghapus pengguna ini secara permanen?", "danger", "Hapus Pengguna", "Ya, Hapus!")) {
+        if(await window.customConfirm("Apakah Anda yakin ingin menghapus akun pengguna ini secara permanen?", "danger", "Hapus Pengguna", "Ya, Hapus!")) {
             try {
                 await deleteDoc(doc(db, "users", uid));
                 loadDataPengguna();
@@ -568,14 +638,53 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.bukaModalEditAkun = async (uid) => {
-        const userDoc = await getDoc(doc(db, "users", uid));
-        if(!userDoc.exists()) return;
-        const data = userDoc.data();
-        
-        document.getElementById('edit-uid').value = uid;
-        document.getElementById('edit-nama').value = data.nama;
-        document.getElementById('edit-username').value = data.username;
-        document.getElementById('modal-edit-akun').style.display = 'flex';
+        try {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            if(!userDoc.exists()) return;
+            const data = userDoc.data();
+            
+            // Set Form Text & Input Biasa
+            document.getElementById('edit-uid').value = uid;
+            document.getElementById('edit-nama').value = data.nama || '';
+            document.getElementById('edit-username').value = data.username || '';
+            document.getElementById('edit-pass').value = ''; 
+            
+            // Set Checkbox Roles
+            const roles = Array.isArray(data.role) ? data.role : [data.role];
+            document.querySelectorAll('.edit-role-cb').forEach(cb => {
+                cb.checked = roles.includes(cb.value);
+            });
+
+            // Tampilkan/Sembunyikan Menu berdasarkan Role
+            const isGuruEdit = roles.includes('guru');
+            const isSiswaEdit = roles.includes('siswa');
+            
+            document.getElementById('group-edit-guru').style.display = isGuruEdit ? 'flex' : 'none';
+            document.getElementById('group-edit-kelas-siswa').style.display = isSiswaEdit ? 'block' : 'none';
+
+            // Checkbox/Select Kelas & Mapel
+            if (isSiswaEdit) {
+                const klsSiswa = Array.isArray(data.kelas) ? data.kelas[0] : data.kelas;
+                document.getElementById('edit-kelas-siswa').value = klsSiswa || '';
+            }
+
+            if (isGuruEdit) {
+                const mapelArr = Array.isArray(data.mapel) ? data.mapel : [];
+                document.querySelectorAll('.edit-mapel-cb').forEach(cb => { 
+                    cb.checked = mapelArr.includes(cb.value); 
+                });
+
+                const kelasArr = Array.isArray(data.kelas) ? data.kelas : [];
+                document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { 
+                    cb.checked = kelasArr.includes(cb.value); 
+                });
+            }
+            
+            // Buka Modal Edit Akun
+            document.getElementById('modal-edit-akun').style.display = 'flex';
+        } catch(e) {
+            console.error(e);
+        }
     };
 
     // =================================================================
@@ -823,7 +932,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await Promise.all(promises);
             document.getElementById('modal-edit-bank-soal').style.display = 'none';
-            await window.customAlert("Berhasil membagikan akses paket soal ke kelas sasaran (tanpa menduplikasi soal).", "success");
+            await window.customAlert(`Berhasil membagikan akses paket soal ke kelas sasaran (tanpa menduplikasi soal).`, "success");
             loadBankSoalSummary();
         } catch (e) {
             console.error(e); window.customAlert("Terjadi kesalahan sistem.", "error");
