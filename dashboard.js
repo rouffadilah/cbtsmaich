@@ -1761,9 +1761,10 @@ window.downloadDaftarPengguna = () => {
         "Nama": u.nama,
         "Username": u.username,
         "Role": Array.isArray(u.role) ? u.role.join(', ') : u.role,
-        "Kelas/Mapel": Array.isArray(u.kelas) ? u.kelas.join(', ') : (u.kelas || "-")
+        "Kelas": Array.isArray(u.kelas) ? u.kelas.join(', ') : (u.kelas || "-")
     }));
-    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data); 
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Daftar Pengguna");
     XLSX.writeFile(wb, "Daftar_Pengguna_SMAICH.xlsx");
 };
