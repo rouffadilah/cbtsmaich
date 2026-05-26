@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // 6. BANK SOAL & FITUR BARU: ARRAY CLASS SHARING
+    // 6. BANK SOAL & FITUR BARU: MANAJEMEN KELAS INDEPENDEN 
     // =================================================================
     function getTingkatan(kelas) {
         if (!kelas) return "Lainnya";
@@ -396,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return "Lainnya";
     }
 
+    // PEMBARUAN: Menampilkan Mapel & Kelas sebagai Baris yang Terpisah (Independent)
     async function loadBankSoalSummary() {
         const tbody = document.querySelector('#table-bank-soal-summary tbody'); if(!tbody) return;
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Memuat data...</td></tr>';
@@ -412,11 +413,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 kelasArray.forEach(kelas => {
                     let tingkatan = getTingkatan(kelas);
-                    let key = `${mapel}_${tingkatan}`;
+                    let key = `${mapel}_${kelas}`; // Unik per Mapel & Kelas
                     
-                    if(!summary[key]) summary[key] = { mapel, tingkatan, classes: {} };
-                    if(!summary[key].classes[kelas]) summary[key].classes[kelas] = 0;
-                    summary[key].classes[kelas]++;
+                    if(!summary[key]) summary[key] = { mapel, kelas, tingkatan, count: 0 };
+                    summary[key].count++;
                 });
             });
             
@@ -426,84 +426,50 @@ document.addEventListener('DOMContentLoaded', () => {
             const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian")); const jadwalData = jadwalSnap.exists() ? jadwalSnap.data() : {};
             const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian")); const tokenData = tokenSnap.exists() ? tokenSnap.data() : {};
             
-            window.bankSoalRowCache = {};
-            let html = ''; let rowIdx = 0;
+            let html = '';
             
-            for (let key in summary) {
-                rowIdx++;
-                let d = summary[key];
-                let classList = Object.keys(d.classes).sort();
-                if (classList.length === 0) continue;
+            // Urutkan berdasarkan Mapel lalu Kelas
+            let summaryArray = Object.values(summary).sort((a, b) => {
+                if (a.mapel === b.mapel) return a.kelas.localeCompare(b.kelas);
+                return a.mapel.localeCompare(b.mapel);
+            });
+
+            summaryArray.forEach(d => {
+                let clsKey = `${d.mapel}_${d.kelas}`;
+                let jadwal = jadwalData[clsKey] ? jadwalData[clsKey].replace('T', ' ') : '-';
+                let durasi = waktuData[clsKey] ? waktuData[clsKey] + ' Mnt' : '-';
+                let token = '-';
+                if(tokenData[`token_${clsKey}`]) {
+                    let tData = tokenData[`token_${clsKey}`];
+                    token = typeof tData === 'object' ? tData.code : tData;
+                }
                 
-                window.bankSoalRowCache[rowIdx] = { mapel: d.mapel, tingkatan: d.tingkatan, classData: {} };
-                
-                classList.forEach(cls => {
-                    let clsKey = `${d.mapel}_${cls}`;
-                    let jadwal = jadwalData[clsKey] ? jadwalData[clsKey].replace('T', ' ') : '-';
-                    let durasi = waktuData[clsKey] ? waktuData[clsKey] + ' Mnt' : '-';
-                    let token = '-';
-                    if(tokenData[`token_${clsKey}`]) {
-                        let tData = tokenData[`token_${clsKey}`];
-                        token = typeof tData === 'object' ? tData.code : tData;
-                    }
-                    window.bankSoalRowCache[rowIdx].classData[cls] = { jadwal, durasi, token, count: d.classes[cls] };
-                });
-                
-                let defaultClass = classList[0];
-                let defaultData = window.bankSoalRowCache[rowIdx].classData[defaultClass];
                 let isMapelGuru = isGuru && userMapel.includes(d.mapel);
-                
-                let selectHtml = `<select onchange="window.updateBankSoalRowData(this, ${rowIdx})" class="input-text" style="padding: 4px 8px; font-size: 0.85rem; width: auto; min-width: 90px; margin: 0;">`;
-                classList.forEach(cls => { selectHtml += `<option value="${cls}">${cls}</option>`; });
-                selectHtml += `</select>`;
                 
                 let actionBtn = (isAdmin || isMapelGuru) ? 
                     `<div style="display:flex; gap:5px; justify-content:center;">
-                        <button onclick="window.bukaDetailSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
-                        <button onclick="window.bukaModalPindahBankSoal('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan Akses ke Kelas Lain"><i class="fas fa-share-alt"></i></button>
-                        <button onclick="window.hapusBankSoalKeseluruhan('${d.mapel}', '${defaultClass}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Mapel dari Kelas Ini"><i class="fas fa-trash-alt"></i></button>
+                        <button onclick="window.bukaDetailSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
+                        <button onclick="window.bukaModalPindahBankSoal('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan Akses ke Kelas Lain"><i class="fas fa-share-alt"></i></button>
+                        <button onclick="window.hapusBankSoalKeseluruhan('${d.mapel}', '${d.kelas}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Mapel dari Kelas Ini"><i class="fas fa-trash-alt"></i></button>
                     </div>` : 
                     `<span style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>`;
                 
                 html += `
-                <tr id="bs-row-${rowIdx}">
-                    <td><b>${d.mapel}</b> <span style="color:var(--text-muted); font-size:0.8rem; display:block;">Tingkat ${d.tingkatan}</span></td>
-                    <td>${selectHtml}</td>
-                    <td class="cell-jadwal-${rowIdx}">${defaultData.jadwal}</td>
-                    <td class="cell-durasi-${rowIdx}">${defaultData.durasi}</td>
-                    <td class="cell-token-${rowIdx}" style="font-weight:bold; color:var(--danger);">${defaultData.token}</td>
-                    <td class="cell-count-${rowIdx}">${defaultData.count} Soal</td>
-                    <td style="text-align:center;" class="cell-action-${rowIdx}">${actionBtn}</td>
+                <tr>
+                    <td><b>${d.mapel}</b></td>
+                    <td style="font-weight:600; color:var(--secondary);">${d.kelas} <br><span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">Tingkat ${d.tingkatan}</span></td>
+                    <td>${jadwal}</td>
+                    <td>${durasi}</td>
+                    <td style="font-weight:bold; color:var(--danger);">${token}</td>
+                    <td>${d.count} Soal</td>
+                    <td style="text-align:center;">${actionBtn}</td>
                 </tr>`;
-            }
+            });
+
             if(html === '') html = '<tr><td colspan="7" style="text-align:center;">Tidak ada data soal.</td></tr>';
             tbody.innerHTML = html;
         } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--danger);">Gagal memuat data</td></tr>'; }
     }
-
-    window.updateBankSoalRowData = (selectEl, rowIdx) => {
-        let selectedClass = selectEl.value;
-        let cache = window.bankSoalRowCache[rowIdx];
-        if (!cache) return;
-        let data = cache.classData[selectedClass];
-        if (!data) return;
-        
-        document.querySelector(`.cell-jadwal-${rowIdx}`).innerText = data.jadwal;
-        document.querySelector(`.cell-durasi-${rowIdx}`).innerText = data.durasi;
-        document.querySelector(`.cell-token-${rowIdx}`).innerText = data.token;
-        document.querySelector(`.cell-count-${rowIdx}`).innerText = `${data.count} Soal`;
-        
-        let isMapelGuru = isGuru && userMapel.includes(cache.mapel);
-        let actionCell = document.querySelector(`.cell-action-${rowIdx}`);
-        if (isAdmin || isMapelGuru) {
-            actionCell.innerHTML = `
-                <div style="display:flex; gap:5px; justify-content:center;">
-                    <button onclick="window.bukaDetailSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--info); padding:5px 15px; font-size:0.85rem;"><i class="fas fa-cog"></i> Kelola</button>
-                    <button onclick="window.bukaModalPindahBankSoal('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--warning); padding:5px 12px; font-size:0.85rem;" title="Terapkan Akses ke Kelas Lain"><i class="fas fa-share-alt"></i></button>
-                    <button onclick="window.hapusBankSoalKeseluruhan('${cache.mapel}', '${selectedClass}')" class="btn-3d" style="background:var(--danger); padding:5px 12px; font-size:0.85rem;" title="Hapus Mapel dari Kelas Ini"><i class="fas fa-trash-alt"></i></button>
-                </div>`;
-        }
-    };
 
     window.hapusBankSoalKeseluruhan = async (mapel, kelas) => {
         if (!(await window.customConfirm(`PENGHAPUSAN MAPEL DI KELAS ${kelas}!\n\nApakah Anda YAKIN ingin menghapus soal, jadwal, dan token untuk mapel "${mapel}" khusus di kelas "${kelas}" ini?\n\n(Jika soal ini digunakan kelas lain, kelas lain tidak akan terpengaruh)`, "danger", "Konfirmasi Hapus"))) { 
@@ -598,9 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
                 
                 if(arrKelas.includes(oldKelas)) {
-                    // Filter out oldKelas in case it was unchecked by user
                     let baseKelas = arrKelas.filter(k => k !== oldKelas); 
-                    // Combine with all selected classes
                     let combinedKelas = [...new Set([...baseKelas, ...selectedKelas])];
                     
                     let updateData = { kelas: combinedKelas };
@@ -609,7 +573,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Setingan waktu, jadwal, token dicopy ke kelas-kelas sasaran
             const oldKey = `${oldMapel}_${oldKelas}`;
             const wSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
             const jSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
@@ -626,7 +589,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(oldToken !== undefined) promises.push(setDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${tcKey}`]: oldToken }, { merge: true }));
             });
 
-            // Jika oldKelas ternyata TIDAK dicentang, artinya konfigurasi ujian di kelas tsb dihapus
             if (!selectedKelas.includes(oldKelas) && oldMapel === newMapel) {
                  promises.push(updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
                  promises.push(updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [oldKey]: deleteField() }).catch(()=>{}));
@@ -737,7 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Format array pada kolom kelas
+            // Format array pada kolom kelas agar terpisah
             let payload = { mataPelajaran: mapel, kelas: [kelas], nomor_soal: nomorSoalTarget, bobot: bobotSoal, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
             if (mediaSoal) payload.media_soal = mediaSoal;
 
@@ -843,7 +805,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-soal-id').value = id;
         document.getElementById('soal-mapel').value = soal.mataPelajaran; 
         
-        // Handling untuk tampilan kelas jika array
         let klsDisplay = Array.isArray(soal.kelas) ? soal.kelas[0] : soal.kelas;
         document.getElementById('soal-kelas').value = klsDisplay; 
         
@@ -1033,7 +994,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let tipeFormat = "PG"; if (tipeRaw.includes('ESSAY')) tipeFormat = 'Essay'; else if (tipeRaw.includes('PGK')) tipeFormat = 'PGK'; else if (tipeRaw.includes('JODOH') || tipeRaw.includes('MENJODOHKAN')) tipeFormat = 'Menjodohkan';
             timestampAwal += 10;
 
-            // Kelas disimpan sebagai array dari awal
             let payload = { mataPelajaran: mapel, kelas: [kelas], nomor_soal: parseInt(row["Nomor Soal"]) || 1, bobot: parseFloat(row["Bobot Soal"]) || 1, tipe: tipeFormat, teks_soal: String(row["Teks Pertanyaan"] || ""), createdAt: new Date(timestampAwal), updatedAt: new Date(timestampAwal) };
             let linkMediaPertanyaan = row["Link Media Pertanyaan (URL Gambar/Audio/Video)"] ? String(row["Link Media Pertanyaan (URL Gambar/Audio/Video)"]).trim() : "";
             if (linkMediaPertanyaan) {
