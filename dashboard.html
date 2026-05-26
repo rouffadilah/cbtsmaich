@@ -169,6 +169,10 @@
                                     </table>
                                 </div>
                             </div>
+                            <!-- Tambahkan di bawah tabel-siswa -->
+                            <button onclick="window.downloadDaftarPengguna()" class="btn-3d" style="background-color: #059669; margin-top: 15px;">
+                                <i class="fas fa-file-download"></i> Download Daftar Pengguna
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -286,10 +290,27 @@
             <form id="form-tambah-soal">
                 <input type="hidden" id="edit-soal-id">
                 
+                <!-- Ganti bagian dalam form-tambah-soal dengan kode ini -->
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <div class="input-group" style="flex: 1; min-width: 200px;"><label>Mata Pelajaran</label><select id="soal-mapel" class="input-text" required></select></div>
                     <div class="input-group" style="flex: 1; min-width: 150px;"><label>Kelas</label><select id="soal-kelas" class="input-text" required></select></div>
-                    <div class="input-group" style="width: 120px;"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text" placeholder="Cth: 1" required style="border-color: var(--primary); font-weight: bold; text-align: center;"></div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="input-group" style="width: 100px;"><label>No. Soal</label><input type="number" id="soal-nomor" class="input-text" required style="border-color: var(--primary); font-weight: bold; text-align: center;"></div>
+                    <div class="input-group" style="flex: 1; min-width: 200px;">
+                        <label>Tipe Soal</label>
+                        <select id="soal-tipe" class="input-text" required>
+                            <option value="PG">Pilihan Ganda</option>
+                            <option value="PGK">Pilihan Ganda Kompleks</option>
+                            <option value="Menjodohkan">Menjodohkan</option>
+                            <option value="Essay">Essay</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="width: 100px;">
+                        <label>Bobot</label>
+                        <input type="number" id="soal-bobot" class="input-text" required style="border-color: var(--warning); font-weight: bold; text-align: center;" value="1">
+                    </div>
                 </div>
 
                 <div id="section-import-massal" style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center;">
