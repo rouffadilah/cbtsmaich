@@ -339,3 +339,16 @@ table tbody tr:hover { background-color: #f8fafc !important; }
 #modal-custom-alert, #modal-custom-confirm {
     z-index: 99999 !important;
 }
+/* Perbaikan layout modal form */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+.form-full { grid-column: span 3; }
+
+@media screen and (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-full { grid-column: span 1; }
+}
