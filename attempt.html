@@ -30,20 +30,11 @@
         .warning-box { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: left; }
         
         #exam-workspace { display: none; height: 100vh; flex-direction: column; overflow: hidden; background: var(--bg-main); }
-        .exam-body { display: flex; flex: 1; overflow: hidden; max-width: 1400px; margin: 0 auto; width: 100%; }
+        .exam-body { display: flex; flex: 1; overflow: hidden; max-width: 1400px; margin: 0 auto; width: 100%; position: relative; }
         .question-area { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; background: white; border-right: 1px solid var(--border-color); }
         .sidebar-area { width: 320px; background: #f8fafc; padding: 25px; display: flex; flex-direction: column; overflow-y: auto; }
         .nav-bottom-container { display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 20px; gap: 10px; margin-top: auto; }
         
-        @media screen and (max-width: 1024px) {
-            body, html { overflow: hidden !important; height: 100% !important; }
-            .pre-exam-container { align-items: flex-start; padding: 15px; overflow-y: auto; height: 100dvh; }
-            #exam-workspace { height: 100dvh !important; }
-            .question-area { padding: 20px 15px; border: none; }
-            .nav-bottom-container button { width: 60px; justify-content: center; }
-            .nav-bottom-container label { flex: 1; white-space: nowrap; justify-content: center; }
-        }
-
         /* --- KOTAK NAVIGASI SOAL --- */
         .q-box {
             background-color: #ffffff;
@@ -57,32 +48,32 @@
             transition: all 0.2s ease;
             text-align: center;
         }
-        
-        .q-box:hover {
-            background-color: #f1f5f9;
-            border-color: #94a3b8;
-        }
+        .q-box:hover { background-color: #f1f5f9; border-color: #94a3b8; }
+        .q-box.filled { background-color: #10b981; border-color: #059669; color: #ffffff; }
+        .q-box.ragu { background-color: #f59e0b !important; border-color: #d97706 !important; color: #ffffff !important; }
+        .q-box.active { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
 
-        /* 1. Soal Sudah Dijawab (Hijau) */
-        .q-box.filled {
-            background-color: #10b981;
-            border-color: #059669;
-            color: #ffffff;
+        /* --- RESPONSIVITAS MOBILE --- */
+        @media screen and (max-width: 1024px) {
+            body, html { overflow: hidden !important; height: 100% !important; }
+            .pre-exam-container { align-items: flex-start; padding: 15px; overflow-y: auto; height: 100dvh; }
+            #exam-workspace { height: 100dvh !important; }
+            
+            /* Beri ruang di bawah agar soal tidak tertutup tombol fixed */
+            .question-area { padding: 20px 15px 90px 15px !important; border: none; } 
+            
+            /* Buat navigasi bawah nempel di dasar layar */
+            .nav-bottom-container { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 12px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 100; margin: 0; }
+            .nav-bottom-container button { width: 60px; justify-content: center; }
+            .nav-bottom-container label { flex: 1; white-space: nowrap; justify-content: center; }
+            
+            /* Hilangkan tombol nav di header yang bikin sesak */
+            .btn-toggle-nav { display: none !important; } 
+            
+            /* Tampilkan Tombol Floating & Tombol Tutup */
+            #btn-fab-nav { display: flex !important; } 
+            #btn-close-sidebar { display: block !important; }
         }
-
-        /* 2. Ragu-ragu (Kuning/Orange) - Memprioritaskan warna ragu meski sudah dijawab */
-        .q-box.ragu {
-            background-color: #f59e0b !important;
-            border-color: #d97706 !important;
-            color: #ffffff !important;
-        }
-
-        /* 3. Soal Sedang Dibuka (Border Biru / Shadow) */
-        .q-box.active {
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-        }
-        
     </style>
 </head>
 <body>
@@ -122,6 +113,11 @@
     </div>
 
     <div id="exam-workspace">
+        
+        <button id="btn-fab-nav" style="display: none; position: fixed; bottom: 85px; right: 20px; z-index: 990; background: var(--info); color: white; border: none; width: 55px; height: 55px; border-radius: 50%; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; transition: 0.2s;">
+            <i class="fas fa-th-large"></i>
+        </button>
+
         <div class="exam-header" style="display:flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: white; border-bottom: 1px solid var(--border-color);">
             <div>
                 <h3 style="margin: 0; font-size: 1.1rem; color: var(--secondary);" id="exam-mapel-title">MATA PELAJARAN</h3>
@@ -146,7 +142,8 @@
                     <span id="badge-tipe-soal" style="background: var(--info); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">PG</span>
                 </div>
                 <div id="soal-content">
-                    </div>
+                </div>
+                
                 <div class="nav-bottom-container">
                     <button class="btn-3d btn-secondary" id="btn-prev" title="Sebelumnya"><i class="fas fa-chevron-left"></i></button>
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold; color: var(--warning);">
@@ -156,8 +153,13 @@
                 </div>
             </div>
 
+            <div id="overlay-sidebar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:998; backdrop-filter:blur(3px);"></div>
+            
             <div class="sidebar-area" id="sidebar-nav">
-                <h4 style="margin: 0 0 15px 0;">Navigasi Soal</h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0;">Navigasi Soal</h4>
+                    <button id="btn-close-sidebar" style="display:none; background:none; border:none; font-size:1.5rem; color:var(--text-muted); cursor:pointer;"><i class="fas fa-times"></i></button>
+                </div>
                 <div id="nav-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 20px;">
                 </div>
                 <button id="btn-selesai" class="btn-3d" style="background-color: var(--danger); margin-top: 15px; width: 100%;"><i class="fas fa-flag-checkered"></i> SELESAI UJIAN</button>
