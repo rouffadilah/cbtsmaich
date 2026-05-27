@@ -164,10 +164,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Fitur Toggle Navigasi Soal di Mobile
-    document.getElementById('btn-toggle-sidebar')?.addEventListener('click', () => {
+    const toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar-nav');
-        sidebar.classList.toggle('open'); 
-    });
+        const overlay = document.getElementById('overlay-sidebar');
+        if (sidebar) {
+            sidebar.classList.toggle('open'); 
+            if(overlay) {
+                overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+            }
+        }
+    };
+
+    document.getElementById('btn-toggle-sidebar')?.addEventListener('click', toggleSidebar);
+    document.getElementById('btn-fab-nav')?.addEventListener('click', toggleSidebar);
+    document.getElementById('overlay-sidebar')?.addEventListener('click', toggleSidebar);
+    document.getElementById('btn-close-sidebar')?.addEventListener('click', toggleSidebar);
 });
 
 async function loadMapelOptions() {
@@ -274,7 +285,10 @@ function renderNavigasi() {
         box.innerText = idx + 1;
         box.onclick = () => {
             tampilkanSoal(idx);
-            document.getElementById('sidebar-nav').classList.remove('open');
+            const sidebar = document.getElementById('sidebar-nav');
+            if (sidebar) sidebar.classList.remove('open');
+            const overlay = document.getElementById('overlay-sidebar');
+            if (overlay) overlay.style.display = 'none';
         };
         grid.appendChild(box);
     });
