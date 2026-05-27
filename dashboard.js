@@ -895,17 +895,25 @@ window.prosesUploadMassal = async (jsonData, mapel, kelas) => {
 
 window.loadDataHasil = async () => {
     try {
-        const snap = await getDocs(collection(db, "hasil_ujian")); document.getElementById('stat-ujian').innerText = snap.size;
-        allHasilUjian = []; snap.forEach(d => allHasilUjian.push({ id: d.id, ...d.data() }));
+        const snap = await getDocs(collection(db, "hasil_ujian")); 
+        document.getElementById('stat-ujian').innerText = snap.size;
+        allHasilUjian = []; 
+        snap.forEach(d => allHasilUjian.push({ id: d.id, ...d.data() }));
 
-        const gridMapel = document.getElementById('grid-mapel-hasil'); if(!gridMapel) return;
-        let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
+        const gridMapel = document.getElementById('grid-mapel-hasil'); 
+        if(!gridMapel) return;
+
+        // LOGIKA PERBAIKAN: Admin bisa melihat semua, Guru hanya mapelnya
         let summaryMapel = {};
         
         allHasilUjian.forEach(h => {
-            if (allowedMapel.includes(h.mataPelajaran)) {
+            // Admin lolos seleksi, Guru dicek apakah mapelnya ada di daftar mapel mereka
+            const isAuthorized = isAdmin || (isGuru && userMapel.includes(h.mataPelajaran));
+            
+            if (isAuthorized) {
                 let key = `${h.mataPelajaran} - Kelas ${h.kelas}`;
                 if(!summaryMapel[key]) summaryMapel[key] = { mapel: h.mataPelajaran, kelas: h.kelas, count: 0, avg: 0, totalNilai: 0 };
+                
                 summaryMapel[key].count++; 
                 let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : (h.nilai || 0));
                 summaryMapel[key].totalNilai += nilaiSiswa;
@@ -914,15 +922,27 @@ window.loadDataHasil = async () => {
 
         gridMapel.innerHTML = '';
         for (let key in summaryMapel) {
-            let s = summaryMapel[key]; let rataRata = (s.totalNilai / s.count).toFixed(2);
+            let s = summaryMapel[key]; 
+            let rataRata = s.count > 0 ? (s.totalNilai / s.count).toFixed(2) : "0.00";
             gridMapel.innerHTML += `
             <div class="stat-card" style="cursor:pointer; border: 1px solid var(--border-color);" onclick="window.bukaDetailHasil('${s.mapel}', '${s.kelas}')">
-                <div><p style="font-weight:bold; color:var(--secondary);">${key}</p><div style="display:flex; gap:15px; margin-top:10px;"><span style="font-size:0.85rem; color:var(--text-muted);"><i class="fas fa-users"></i> ${s.count} Siswa</span><span style="font-size:0.85rem; color:var(--success);"><i class="fas fa-chart-line"></i> Avg: ${rataRata}</span></div></div>
-                <div style="display: flex; gap: 12px; align-items: center;"><button onclick="event.stopPropagation(); window.downloadExcelHasil('${s.mapel}', '${s.kelas}')" class="btn-3d" style="background-color: #16a34a; margin: 0; padding: 6px 10px; font-size: 0.80rem;" title="Unduh Excel"><i class="fas fa-download"></i></button><div style="color: var(--success);"><i class="fas fa-folder-open"></i></div></div>
+                <div>
+                    <p style="font-weight:bold; color:var(--secondary);">${key}</p>
+                    <div style="display:flex; gap:15px; margin-top:10px;">
+                        <span style="font-size:0.85rem; color:var(--text-muted);"><i class="fas fa-users"></i> ${s.count} Siswa</span>
+                        <span style="font-size:0.85rem; color:var(--success);"><i class="fas fa-chart-line"></i> Avg: ${rataRata}</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <button onclick="event.stopPropagation(); window.downloadExcelHasil('${s.mapel}', '${s.kelas}')" class="btn-3d" style="background-color: #16a34a; margin: 0; padding: 6px 10px; font-size: 0.80rem;" title="Unduh Excel"><i class="fas fa-download"></i></button>
+                    <div style="color: var(--success);"><i class="fas fa-folder-open"></i></div>
+                </div>
             </div>`;
         }
-        if(gridMapel.innerHTML === '') gridMapel.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:var(--text-muted);">Belum ada data hasil ujian.</p>';
-    } catch(e) {}
+        if(gridMapel.innerHTML === '') gridMapel.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:var(--text-muted);">Tidak ada data hasil ujian yang ditemukan untuk akses Anda.</p>';
+    } catch(e) {
+        console.error("Gagal memuat hasil ujian:", e);
+    }
 };
 
 window.bukaDetailHasil = (mapel, kelas) => { currentMapelDetail = mapel; currentKelasDetail = kelas; document.getElementById('label-mapel-detail').innerText = `HASIL: ${mapel} - KELAS ${kelas}`; window.location.hash = 'section-hasil-detail'; window.renderDetailHasil(); };
