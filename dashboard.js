@@ -398,19 +398,21 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
             if (regSnap.exists()) {
-                const sSiswa = document.getElementById('status-reg-siswa'); 
-                const sGuru = document.getElementById('status-reg-guru');
-                if (sSiswa) sSiswa.checked = regSnap.data().siswa_aktif !== false;
-                if (sGuru) sGuru.checked = regSnap.data().guru_aktif !== false;
+                const sUtama = document.getElementById('status-reg-utama');
+                if (sUtama) {
+                    const siswaAktif = regSnap.data().siswa_aktif !== false;
+                    const guruAktif = regSnap.data().guru_aktif !== false;
+                    // Jika keduanya aktif, anggap registrasi terbuka
+                    sUtama.checked = siswaAktif && guruAktif;
+                }
             }
         } catch (e) {}
     }
 
-    document.getElementById('status-reg-guru')?.addEventListener('change', async (e) => {
-        try { await setDoc(doc(db, "pengaturan", "status_registrasi"), { guru_aktif: e.target.checked }, { merge: true }); } catch (err) {}
-    });
-    document.getElementById('status-reg-siswa')?.addEventListener('change', async (e) => {
-        try { await setDoc(doc(db, "pengaturan", "status_registrasi"), { siswa_aktif: e.target.checked }, { merge: true }); } catch (err) {}
+    document.getElementById('status-reg-utama')?.addEventListener('change', async (e) => {
+        try { 
+            await setDoc(doc(db, "pengaturan", "status_registrasi"), { guru_aktif: e.target.checked, siswa_aktif: e.target.checked }, { merge: true }); 
+        } catch (err) {}
     });
 
     let editMasterMode = false; 
