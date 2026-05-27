@@ -54,9 +54,8 @@
 
                 <div id="section-soal" class="content-section">
                     <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                        <div class="toggle-accordion" data-target="container-bank-soal" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                        <div style="padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
                             <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-file-alt"></i> Bank Soal & Token</h3>
-                            <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                         </div>
                         <div id="container-bank-soal" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                             <div id="view-summary-bank-soal">
@@ -101,12 +100,11 @@
                 <div id="section-pengguna" class="content-section">
                     <div id="admin-manajemen-pengguna">
                         <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                            <div class="toggle-accordion" data-target="container-daftar-pengguna" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
+                            <div style="padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
                                 <div style="display: flex; align-items: center; gap: 15px;">
                                     <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-list"></i> Daftar Pengguna</h3>
-                                    <button id="btn-open-manajemen" class="btn-3d" style="padding: 6px 15px; font-size: 0.85rem; margin: 0; background-color: var(--success);" onclick="event.stopPropagation(); window.location.href='registrasi.html';" title="Tambah Akun"><i class="fas fa-user-plus"></i></button>
+                                    <button id="btn-open-manajemen" class="btn-3d" style="padding: 6px 15px; font-size: 0.85rem; margin: 0; background-color: var(--success);" onclick="window.location.href='registrasi.html';" title="Tambah Akun"><i class="fas fa-user-plus"></i></button>
                                 </div>
-                                <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                             </div>
                             <div id="container-daftar-pengguna" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -181,9 +179,8 @@
                 <div id="section-hasil" class="content-section">
                     <div id="hasil-summary-view">
                         <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
-                            <div class="toggle-accordion" data-target="container-rekap-hasil" style="padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                            <div style="padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
                                 <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian</h3>
-                                <i class="fas fa-chevron-down toggle-icon" style="transform: rotate(180deg); color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                             </div>
                             <div id="container-rekap-hasil" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                                 <div class="stats-grid" id="grid-mapel-hasil"></div>
@@ -300,7 +297,6 @@
         <form id="form-tambah-soal" style="padding: 22px 24px; overflow-y:auto; flex:1;">
             <input type="hidden" id="edit-soal-id">
 
-            <!-- Mapel & Kelas -->
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;">
                 <div class="input-group" style="margin:0;">
                     <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--secondary);"><i class="fas fa-book" style="color:#3b82f6;"></i> Mata Pelajaran</label>
@@ -312,16 +308,14 @@
                 </div>
             </div>
 
-            <!-- INPUT CEPAT MASSAL - PINDAH KE SINI -->
             <div id="section-import-massal" style="background: #f0fdf4; border: 1.5px dashed #86efac; border-radius:12px; padding:14px 16px; margin-bottom:18px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="display:flex; align-items:center; gap:7px; color:#166534; font-weight:700; font-size:0.88rem;"><i class="fas fa-bolt"></i> Input Cepat Massal</div>
-                    <span style="font-size:0.7rem; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:6px; font-weight:600;">Hemat waktu</span>
+                    <div style="display:flex; align-items:center; gap:7px; color:#166534; font-weight:700; font-size:0.88rem;"><i class="fas fa-bolt"></i> Input Massal</div>
                 </div>
                 <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:8px;">
                     <button type="button" onclick="window.downloadTemplate('excel')" class="btn-3d" style="background:#047857; padding:9px; font-size:0.8rem; border-radius:8px; box-shadow:none; justify-content:center;"><i class="fas fa-file-excel"></i> Excel</button>
                     <button type="button" onclick="window.downloadTemplate('word')" class="btn-3d" style="background:#1d4ed8; padding:9px; font-size:0.8rem; border-radius:8px; box-shadow:none; justify-content:center;"><i class="fas fa-file-word"></i> Word</button>
-                    <button type="button" id="btn-import-link" class="btn-3d" style="background:#b45309; padding:9px; font-size:0.8rem; border-radius:8px; box-shadow:none; justify-content:center;"><i class="fab fa-google-drive"></i> Link Drive</button>
+                    <button type="button" id="btn-import-gdrive" class="btn-3d" style="background:#b45309; padding:9px; font-size:0.8rem; border-radius:8px; box-shadow:none; justify-content:center;"><i class="fas fa-link"></i> Link Soal</button>
                     <label for="upload-excel-soal" class="btn-3d" style="background:#0f172a; padding:9px; font-size:0.8rem; border-radius:8px; cursor:pointer; margin:0; box-shadow:none; justify-content:center;"><i class="fas fa-upload"></i> Upload</label>
                     <input type="file" id="upload-excel-soal" accept=".xlsx,.xls,.docx" style="display:none;">
                 </div>
@@ -333,7 +327,6 @@
                 <div style="flex:1; height:1px; background:#e2e8f0;"></div>
             </div>
 
-            <!-- No, Tipe, Bobot -->
             <div style="display:grid; grid-template-columns: 80px 1fr 100px; gap:12px; margin-bottom:20px;">
                 <div class="input-group" style="margin:0;">
                     <label style="font-weight:600;">No</label>
@@ -484,15 +477,15 @@
     <div id="modal-import-gdrive" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
         <div class="modal-content" style="background: white; width: 500px; max-width: 90%; padding: 35px 25px; border-radius: 10px;">
             <span class="close-btn" onclick="document.getElementById('modal-import-gdrive').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
-            <h3 style="margin-top: 0; color: var(--secondary);"><i class="fab fa-google-drive" style="color: #f59e0b;"></i> Import dari Google Sheets</h3>
+            <h3 style="margin-top: 0; color: var(--secondary);"><i class="fas fa-link" style="color: #f59e0b;"></i> Import dari Link Soal</h3>
             
             <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-                <p style="font-size: 0.85rem; color: #b45309; margin: 0;"><b>PENTING:</b> Pastikan akses link Google Sheets Anda sudah diatur ke <b>"Siapa saja yang memiliki link"</b> (<i>Anyone with the link</i>) agar sistem dapat membacanya.</p>
+                <p style="font-size: 0.85rem; color: #b45309; margin: 0;"><b>PENTING:</b> Mendukung format link <b>Google Docs</b> maupun <b>Google Sheets</b>. Pastikan akses link sudah diatur ke <b>"Siapa saja yang memiliki link"</b> (<i>Anyone with the link</i>) agar sistem dapat membacanya.</p>
             </div>
 
             <div class="input-group">
-                <label>Paste Link Google Sheets Di Sini</label>
-                <input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/spreadsheets/d/....">
+                <label>Paste Link Soal Di Sini</label>
+                <input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/document/d/.... atau spreadsheets/d/....">
             </div>
             <button id="btn-proses-gdrive" class="btn-3d" style="width: 100%; background: var(--success);"><i class="fas fa-cloud-download-alt"></i> Proses & Upload Soal</button>
         </div>
@@ -558,7 +551,6 @@
     </script>
     <script type="module" src="dashboard.js"></script>
 
-    <!-- Modal Preview Soal Modern -->
     <div id="modal-preview-soal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; align-items:center; justify-content:center; z-index:10001; background:rgba(15,23,42,0.8); backdrop-filter:blur(6px);">
         <div style="background:white; width:880px; max-width:96%; max-height:90vh; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
             <div style="padding:16px 22px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(to right, #f8fafc, #ffffff);">
