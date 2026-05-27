@@ -41,19 +41,13 @@
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card" id="menu-pengguna" onclick="window.location.hash='section-pengguna'">
-                            <div><p>Akses & Pengguna</p><h3 id="stat-siswa">0</h3></div><div style="color: var(--info);"><i class="fas fa-users"></i></div>
+                            <div><p>Akses Pengguna</p><h3 id="stat-siswa">0</h3></div><div style="color: var(--info);"><i class="fas fa-users"></i></div>
                         </div>
                         <div class="stat-card" onclick="window.location.hash='section-soal'">
                             <div><p>Bank Soal & Token</p><h3 id="stat-soal">0</h3></div><div style="color: var(--warning);"><i class="fas fa-file-alt"></i></div>
                         </div>
                         <div class="stat-card" onclick="window.location.hash='section-hasil'">
-                            <div><p>Capaian Siswa</p><h3 id="stat-ujian">0</h3></div><div style="color: var(--success);"><i class="fas fa-chart-bar"></i></div>
-                        </div>
-                        
-                        <!-- KARTU MODE SISWA BARU -->
-                        <div class="stat-card" id="btn-mode-siswa" style="border: 2px dashed var(--info); cursor: pointer; background: #f0f9ff;">
-                            <div><p>Uji Coba Sistem</p><h3 style="font-size: 1.4rem; margin-top:5px; color: var(--info);">Mode Siswa</h3></div>
-                            <div style="color: var(--info);"><i class="fas fa-laptop-code"></i></div>
+                            <div><p>Capaian Murid</p><h3 id="stat-ujian">0</h3></div><div style="color: var(--success);"><i class="fas fa-chart-bar"></i></div>
                         </div>
                     </div>
                 </div>
@@ -186,7 +180,7 @@
                     <div id="hasil-summary-view">
                         <div class="card" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
                             <div style="padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-                                <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-chart-bar"></i> Rekap Hasil Ujian</h3>
+                                <h3 style="margin: 0; font-size: 1.15rem; color: var(--secondary);"><i class="fas fa-chart-bar"></i> Capaian Murid</h3>
                             </div>
                             <div id="container-rekap-hasil" style="display: block; padding: 25px; background: #ffffff; border-top: 1px solid #f1f5f9;">
                                 <div class="stats-grid" id="grid-mapel-hasil"></div>
@@ -303,6 +297,7 @@
         <form id="form-tambah-soal" style="padding: 22px 24px; overflow-y:auto; flex:1;">
             <input type="hidden" id="edit-soal-id">
 
+            <!-- Mapel & Kelas -->
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;">
                 <div class="input-group" style="margin:0;">
                     <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--secondary);"><i class="fas fa-book" style="color:#3b82f6;"></i> Mata Pelajaran</label>
@@ -314,6 +309,7 @@
                 </div>
             </div>
 
+            <!-- INPUT MASSAL -->
             <div id="section-import-massal" style="background: #f0fdf4; border: 1.5px dashed #86efac; border-radius:12px; padding:14px 16px; margin-bottom:18px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div style="display:flex; align-items:center; gap:7px; color:#166534; font-weight:700; font-size:0.88rem;"><i class="fas fa-bolt"></i> Input Massal</div>
@@ -327,12 +323,14 @@
                 </div>
             </div>
 
+            <!-- PINDAHKAN DIVIDER INPUT MANUAL KE SINI -->
             <div id="divider-import-manual" style="display:flex; align-items:center; gap:10px; margin:22px 0;">
                 <div style="flex:1; height:1px; background:#e2e8f0;"></div>
                 <span style="font-size:0.72rem; font-weight:700; color:#64748b; background:#f1f5f9; padding:4px 12px; border-radius:20px;">INPUT MANUAL</span>
                 <div style="flex:1; height:1px; background:#e2e8f0;"></div>
             </div>
 
+            <!-- No, Tipe, Bobot -->
             <div style="display:grid; grid-template-columns: 80px 1fr 100px; gap:12px; margin-bottom:20px;">
                 <div class="input-group" style="margin:0;">
                     <label style="font-weight:600;">No</label>
@@ -557,6 +555,7 @@
     </script>
     <script type="module" src="dashboard.js"></script>
 
+    <!-- Modal Preview Soal Modern -->
     <div id="modal-preview-soal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; align-items:center; justify-content:center; z-index:10001; background:rgba(15,23,42,0.8); backdrop-filter:blur(6px);">
         <div style="background:white; width:880px; max-width:96%; max-height:90vh; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
             <div style="padding:16px 22px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(to right, #f8fafc, #ffffff);">
@@ -581,19 +580,6 @@
             </div>
         </div>
     </div>
-    <!-- MODAL SIMULASI MODE SISWA -->
-        <div id="modal-simulasi-siswa" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
-            <div class="modal-content" style="background: white; width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-radius: 10px;">
-                <span class="close-btn" onclick="document.getElementById('modal-simulasi-siswa').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
-                <i class="fas fa-user-graduate fa-3x" style="color: var(--info); margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px;">Simulasi Mode Siswa</h3>
-                <p style="margin-bottom: 20px; color: #475569; font-size: 0.9rem;">Pilih kelas sasaran untuk menguji coba ujian (melihat soal & token) sebagai siswa dari kelas tersebut.</p>
-                <div class="input-group" style="text-align: left;">
-                    <label>Pilih Kelas Uji Coba</label>
-                    <select id="simulasi-kelas" class="input-text"></select>
-                </div>
-                <button id="btn-mulai-simulasi" class="btn-3d" style="width: 100%; background: var(--info);"><i class="fas fa-play"></i> Mulai Simulasi Ujian</button>
-            </div>
-        </div>
+
 </body>
 </html>
