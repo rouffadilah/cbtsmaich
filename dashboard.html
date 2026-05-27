@@ -49,6 +49,12 @@
                         <div class="stat-card" onclick="window.location.hash='section-hasil'">
                             <div><p>Capaian Siswa</p><h3 id="stat-ujian">0</h3></div><div style="color: var(--success);"><i class="fas fa-chart-bar"></i></div>
                         </div>
+                        
+                        <!-- KARTU MODE SISWA BARU -->
+                        <div class="stat-card" id="btn-mode-siswa" style="border: 2px dashed var(--info); cursor: pointer; background: #f0f9ff;">
+                            <div><p>Uji Coba Sistem</p><h3 style="font-size: 1.4rem; margin-top:5px; color: var(--info);">Mode Siswa</h3></div>
+                            <div style="color: var(--info);"><i class="fas fa-laptop-code"></i></div>
+                        </div>
                     </div>
                 </div>
 
@@ -575,6 +581,19 @@
             </div>
         </div>
     </div>
-
+    <!-- MODAL SIMULASI MODE SISWA -->
+        <div id="modal-simulasi-siswa" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
+            <div class="modal-content" style="background: white; width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-radius: 10px;">
+                <span class="close-btn" onclick="document.getElementById('modal-simulasi-siswa').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
+                <i class="fas fa-user-graduate fa-3x" style="color: var(--info); margin-bottom: 15px;"></i>
+                <h3 style="margin-bottom: 10px;">Simulasi Mode Siswa</h3>
+                <p style="margin-bottom: 20px; color: #475569; font-size: 0.9rem;">Pilih kelas sasaran untuk menguji coba ujian (melihat soal & token) sebagai siswa dari kelas tersebut.</p>
+                <div class="input-group" style="text-align: left;">
+                    <label>Pilih Kelas Uji Coba</label>
+                    <select id="simulasi-kelas" class="input-text"></select>
+                </div>
+                <button id="btn-mulai-simulasi" class="btn-3d" style="width: 100%; background: var(--info);"><i class="fas fa-play"></i> Mulai Simulasi Ujian</button>
+            </div>
+        </div>
 </body>
 </html>
