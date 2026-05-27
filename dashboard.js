@@ -1898,3 +1898,44 @@ window.previewSoal = (id) => {
         btn.style.color = '#475569';
     }
 };
+
+// ==========================================
+    // FITUR SIMULASI MODE SISWA (UNTUK ADMIN/GURU)
+    // ==========================================
+    document.getElementById('btn-mode-siswa')?.addEventListener('click', () => {
+        const selectKelas = document.getElementById('simulasi-kelas');
+        
+        // Memasukkan daftar kelas dari Data Master ke dropdown
+        selectKelas.innerHTML = listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+        
+        // Membuka modal
+        document.getElementById('modal-simulasi-siswa').style.display = 'flex';
+    });
+
+    document.getElementById('btn-mulai-simulasi')?.addEventListener('click', async () => {
+        const kelasTarget = document.getElementById('simulasi-kelas').value;
+        if(!kelasTarget) return window.customAlert("Pilih kelas terlebih dahulu!", "warning");
+        
+        const btn = document.getElementById('btn-mulai-simulasi');
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mempersiapkan...';
+        btn.disabled = true;
+
+        try {
+            const user = auth.currentUser;
+            if(user) {
+                // Update profil database Admin/Guru agar terbaca memiliki kelas target
+                await updateDoc(doc(db, "users", user.uid), {
+                    kelas: [kelasTarget]
+                });
+                
+                // Arahkan ke halaman ujian
+                window.location.href = "attempt.html";
+            }
+        } catch(e) {
+            console.error(e);
+            window.customAlert("Gagal memulai simulasi. Periksa koneksi Anda.", "error");
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
+        }
+    });
