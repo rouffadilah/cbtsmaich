@@ -29,9 +29,19 @@
 </head>
 <body class="login-page-bg">
     <script>
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark-mode');
-        }
+        (function() {
+            const currentHour = new Date().getHours();
+            const isNightTime = currentHour >= 18 || currentHour < 6;
+            const savedTheme = localStorage.getItem('theme');
+            
+            if (savedTheme === 'dark' || (!savedTheme && isNightTime)) {
+                document.body.classList.add('dark-mode');
+                if (!savedTheme) localStorage.setItem('theme', 'dark'); 
+            } else if (savedTheme === 'light' || (!savedTheme && !isNightTime)) {
+                document.body.classList.remove('dark-mode');
+                if (!savedTheme) localStorage.setItem('theme', 'light');
+            }
+        })();
     </script>
 
     <button id="btn-login-dark-mode" class="btn-icon" title="Mode Gelap/Terang" style="position: absolute; top: 20px; right: 20px; font-size: 1.4rem; color: var(--text-muted); border: none; background: transparent; cursor: pointer; padding: 5px; transition: 0.3s; z-index: 1000;">
@@ -95,8 +105,7 @@
             const darkModeBtn = document.getElementById('btn-login-dark-mode');
             const iconDarkMode = darkModeBtn?.querySelector('i');
             
-            // Atur ikon awal berdasarkan status tema aktif
-            if (localStorage.getItem('theme') === 'dark' && iconDarkMode) {
+            if (document.body.classList.contains('dark-mode') && iconDarkMode) {
                 iconDarkMode.classList.replace('fa-moon', 'fa-sun');
             }
 
@@ -104,7 +113,6 @@
                 document.body.classList.toggle('dark-mode');
                 const isDark = document.body.classList.contains('dark-mode');
                 
-                // Simpan pilihan ke localStorage agar dibaca halaman lain
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
                 
                 if (isDark) {
