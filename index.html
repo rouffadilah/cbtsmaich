@@ -28,6 +28,13 @@
     </style>
 </head>
 <body class="login-page-bg">
+    <!-- Script Inline Pengecekan Tema Global -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
