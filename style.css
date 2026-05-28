@@ -412,30 +412,42 @@ body.dark-mode [style*="background: #fee2e2"] {
 }
 
 
+
 /* =========================================
-   DARK MODE UNTUK HALAMAN UJIAN (ATTEMPT)
+   DARK MODE UNTUK HALAMAN UJIAN (ATTEMPT) - SEMPURNA
 ========================================= */
+
+/* 1. Layout Utama & Panel */
 body.dark-mode .pre-exam-card,
 body.dark-mode .question-area,
 body.dark-mode .exam-header,
+body.dark-mode .sidebar-area,
 body.dark-mode .nav-bottom-container {
-    background-color: var(--card-bg) !important;
+    background: #1e293b !important; /* Latar Kartu / Slate 800 */
+    background-color: #1e293b !important;
     color: var(--text-main) !important;
     border-color: var(--border-color) !important;
 }
 
-body.dark-mode .sidebar-area {
-    background-color: #0f172a !important; /* Slate 900 untuk sidebar */
-    border-left: 1px solid var(--border-color) !important;
-}
-
-body.dark-mode .sidebar-area h4 {
+/* 2. Teks & Heading dalam Ujian */
+body.dark-mode .exam-header h3,
+body.dark-mode .exam-header p,
+body.dark-mode .sidebar-area h4,
+body.dark-mode .question-area span {
     color: var(--text-main) !important;
 }
 
-/* Kotak nomor navigasi soal */
+body.dark-mode #exam-mapel-title {
+    color: #f8fafc !important;
+}
+
+body.dark-mode #exam-student-name {
+    color: #94a3b8 !important;
+}
+
+/* 3. Kotak Nomor Navigasi Soal (.q-box) */
 body.dark-mode .q-box {
-    background-color: #1e293b !important;
+    background-color: #0f172a !important; /* Slate 900 untuk kontras dari sidebar */
     border-color: #334155 !important;
     color: #cbd5e1 !important;
 }
@@ -455,57 +467,73 @@ body.dark-mode .q-box.ragu {
 }
 body.dark-mode .q-box.active {
     border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4) !important;
 }
 
-/* Opsi jawaban teks / radio label */
+/* 4. Opsi Jawaban Teks / Radio (.option-label) */
 body.dark-mode .option-label {
-    background-color: #1e293b !important;
+    background-color: #0f172a !important; /* Latar gelap pekat */
     border-color: #334155 !important;
-    color: var(--text-main) !important;
+    color: #f8fafc !important;
 }
 body.dark-mode .option-label:hover {
-    background-color: #283548 !important;
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
 }
 body.dark-mode .option-label.selected {
-    background-color: #064e3b !important;
+    background-color: #064e3b !important; /* Emerald 900 */
     border-color: #10b981 !important;
 }
 body.dark-mode .option-label input:checked + span {
-    color: #34d399 !important;
+    color: #34d399 !important; /* Emerald 300 */
 }
 
-/* Soal Menjodohkan (kontainer pasangan kiri-kanan) */
+/* 5. Soal Menjodohkan & Essay */
 body.dark-mode [style*="background:#f8fafc"],
 body.dark-mode [style*="background: #f8fafc"] {
     background-color: #0f172a !important;
     border-color: #334155 !important;
+    color: #f8fafc !important;
 }
 body.dark-mode .select-jodoh,
-body.dark-mode select.select-jodoh {
-    background-color: #1e293b !important;
-    color: var(--text-main) !important;
-    border-color: #334155 !important;
-}
-
-/* Esai Textarea */
+body.dark-mode select.select-jodoh,
 body.dark-mode #essay-ans {
-    background-color: #0f172a !important;
-    color: var(--text-main) !important;
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
     border-color: #334155 !important;
 }
+body.dark-mode .select-jodoh option {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
 
-/* Kotak peringatan keamanan pre-exam */
+/* 6. Kotak Peringatan Pre-Exam (Warning Box) */
 body.dark-mode .warning-box {
-    background-color: #1e1b4b !important; /* Indigo gelap */
-    color: #c7d2fe !important;
+    background-color: #1e1b4b !important; /* Indigo 900 */
+    color: #c7d2fe !important; /* Indigo 200 */
     border-color: #312e81 !important;
 }
 
-/* Input teks non-aktif (seperti Kelas siswa) */
+/* 7. Input Disabled (Kelas Siswa, Token) */
 body.dark-mode input:disabled,
-body.dark-mode input[style*="background: #e2e8f0"] {
-    background-color: #334155 !important;
-    color: #cbd5e1 !important;
-    border-color: #475569 !important;
+body.dark-mode input[style*="background: #e2e8f0"],
+body.dark-mode input[style*="background:#e2e8f0"] {
+    background-color: #0f172a !important;
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+}
+
+/* 8. Watermark Keamanan (Penting agar tidak mengganggu) */
+body.dark-mode #cbt-secure-watermark {
+    filter: invert(1) brightness(1.5);
+    opacity: 0.05 !important; /* Dibuat sangat tipis di dark mode */
+}
+
+/* 9. Tombol Navigasi Mobile */
+@media screen and (max-width: 1024px) {
+    body.dark-mode .nav-bottom-container {
+        background-color: #1e293b !important;
+        border-top-color: #334155 !important;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.4) !important;
+    }
 }
