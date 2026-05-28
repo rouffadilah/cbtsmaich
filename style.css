@@ -78,7 +78,7 @@ img { max-width: 100%; height: auto; display: block; }
 .checkbox-container label { word-break: break-word; white-space: normal; display: block; margin-bottom: 5px; cursor: pointer; }
 
 /* =========================================
-   4. DASHBOARD & MODERN HEADER (OVERRIDE)
+   4. DASHBOARD & MODERN HEADER
 ========================================= */
 .app-layout { display: flex; flex-direction: column !important; height: 100vh; overflow: hidden; width: 100%; background-color: var(--bg-main); }
 .main-wrapper { width: 100%; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
@@ -118,9 +118,12 @@ table td { padding: 16px 20px !important; border-bottom: 1px solid #f1f5f9 !impo
 table tbody tr { transition: background-color 0.2s ease; }
 table tbody tr:hover { background-color: #f8fafc !important; }
 
-/* Skeleton Loader */
-@keyframes pulse-skeleton { 0% { background-color: #f1f5f9; } 50% { background-color: #e2e8f0; } 100% { background-color: #f1f5f9; } }
-.skeleton-box { height: 18px; border-radius: 6px; animation: pulse-skeleton 1.5s infinite; margin-bottom: 8px; }
+/* =========================================
+   PERBAIKAN TABEL RESPONSIVE MOBILE
+========================================= */
+#table-bank-soal-summary {
+    min-width: 850px !important;
+}
 
 /* =========================================
    5. MODAL (POP-UP)
@@ -157,13 +160,22 @@ table tbody tr:hover { background-color: #f8fafc !important; }
     align-items: center;
     background: #ffffff;
 }
-.option-label:hover { border-color: #cbd5e1; background: #f8fafc; }
+
+.option-label:hover { 
+    border-color: #cbd5e1; 
+    background: #f8fafc; 
+}
+
 .option-label.selected { 
     border-color: var(--primary); 
     background: #ecfdf5; 
     box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);
 }
-.option-label input:checked + span { color: var(--primary); font-weight: 800; }
+
+.option-label input:checked + span { 
+    color: var(--primary); 
+    font-weight: 800; 
+}
 
 .exam-header { 
     background: #ffffff; 
@@ -178,8 +190,13 @@ table tbody tr:hover { background-color: #f8fafc !important; }
     border-bottom: 1px solid var(--border-color);
 }
 
+.btn-toggle-nav {
+    display: none; 
+}
+
 @media screen and (max-width: 1024px) {
     .exam-header { padding: 12px 15px; }
+    
     .btn-toggle-nav {
         display: flex;
         align-items: center;
@@ -192,6 +209,7 @@ table tbody tr:hover { background-color: #f8fafc !important; }
         font-weight: bold;
         cursor: pointer;
     }
+
     .sidebar-area {
         position: fixed;
         right: -100%; 
@@ -208,12 +226,9 @@ table tbody tr:hover { background-color: #f8fafc !important; }
         padding: 20px !important;
         border: none !important;
     }
+
     .sidebar-area.open { right: 0; }
-    .q-grid {
-        display: grid !important;
-        grid-template-columns: repeat(5, 1fr) !important;
-        overflow: visible !important;
-    }
+    .q-grid { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; overflow: visible !important; }
     #btn-finish { margin-top: 20px !important; padding: 15px !important; }
 }
 
@@ -234,18 +249,7 @@ table tbody tr:hover { background-color: #f8fafc !important; }
    12. MODERN EXIT BUTTON & UI UTILS
 ========================================= */
 .btn-exit-modern {
-    background: transparent;
-    color: var(--danger);
-    border: 1.5px solid var(--danger);
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: var(--transition);
+    background: transparent; color: var(--danger); border: 1.5px solid var(--danger); padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: var(--transition);
 }
 .btn-exit-modern:hover { background: #fef2f2; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15); transform: translateY(-1px); }
 
@@ -257,12 +261,16 @@ table tbody tr:hover { background-color: #f8fafc !important; }
 #modal-custom-alert, #modal-custom-confirm { z-index: 99999 !important; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 15px; }
 .form-full { grid-column: span 3; }
-@media screen and (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .form-full { grid-column: span 1; } }
 
+@media screen and (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-full { grid-column: span 1; }
+}
+
+/* UI Tabel & Input */
 .ghost-input { border: 1px solid transparent; background: transparent; padding: 8px 10px; width: 100%; border-radius: 6px; transition: all 0.2s; font-family: inherit; color: var(--text-main); font-size: 0.9rem; }
 .ghost-input:hover { border-color: #cbd5e1; background: #f8fafc; }
 .ghost-input:focus { border-color: var(--primary); background: #ffffff; outline: none; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
-
 .btn-icon { background: transparent; color: var(--info); border: none; font-size: 1.1rem; padding: 6px 8px; cursor: pointer; transition: 0.2s; border-radius: 6px; }
 .btn-icon:hover { background: #eff6ff; transform: scale(1.1); }
 .text-danger { color: var(--danger) !important; }
@@ -270,278 +278,79 @@ table tbody tr:hover { background-color: #f8fafc !important; }
 .text-warning { color: var(--warning) !important; }
 .text-warning:hover { background: #fffbeb !important; color: #d97706 !important; }
 
-
 /* =========================================
-   MODE GELAP GLOBAL (DARK MODE - INTEGRASI SEAMLESS)
+   MODE GELAP GLOBAL (DARK MODE)
 ========================================= */
 body.dark-mode {
     --bg-main: #0f172a;        /* Slate 900 */
     --card-bg: #1e293b;        /* Slate 800 */
-    --text-main: #f8fafc;      /* Putih terang */
-    --text-muted: #94a3b8;     /* Abu-abu */
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
     --secondary: #e2e8f0;      
     --secondary-hover: #ffffff;
-    --border-color: #334155;   /* Slate 700 */
+    --border-color: #334155;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.7);
 }
 
-/* 1. Komponen Struktural, Header, dan Modal */
-body.dark-mode .app-header, 
-body.dark-mode .modal-content {
-    background: var(--card-bg) !important;
-}
-
-/* 2. Pengaturan Kartu Elegan & Premium */
-body.dark-mode .card, 
-body.dark-mode .stat-card, 
-body.dark-mode .table-container {
-    background-color: #1e293b !important;
-    border: 1px solid #334155 !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
-}
-body.dark-mode .stat-card:hover {
-    background-color: #283548 !important;
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6) !important;
-}
-body.dark-mode .stat-card p,
-body.dark-mode .stat-card span { 
-    color: #94a3b8 !important; 
-} 
-body.dark-mode .stat-card h3,
-body.dark-mode .stat-card strong { 
-    color: #f8fafc !important; 
-}
-
-/* 3. Penyesuaian Input Form, Dropdown & Kontainer Konten */
-body.dark-mode input.input-text, 
-body.dark-mode select.input-text, 
-body.dark-mode textarea.input-text,
-body.dark-mode .dropdown-check-content,
-body.dark-mode .checkbox-container {
-    background-color: #0f172a !important;
-    color: #f8fafc !important;
-    border-color: #334155 !important;
-}
+body.dark-mode .app-header, body.dark-mode .modal-content { background: var(--card-bg) !important; }
+body.dark-mode .card, body.dark-mode .stat-card, body.dark-mode .table-container { background-color: #1e293b !important; border: 1px solid #334155 !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important; }
+body.dark-mode .stat-card:hover { background-color: #283548 !important; transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6) !important; }
+body.dark-mode .stat-card p, body.dark-mode .stat-card span { color: #94a3b8 !important; } 
+body.dark-mode .stat-card h3, body.dark-mode .stat-card strong { color: #f8fafc !important; }
+body.dark-mode input.input-text, body.dark-mode select.input-text, body.dark-mode textarea.input-text, body.dark-mode .dropdown-check-content, body.dark-mode .checkbox-container { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
 body.dark-mode .ghost-input:focus { background-color: #0f172a !important; }
-
-/* 4. Penyesuaian Komponen Tabel */
 body.dark-mode table th { color: #cbd5e1; border-bottom-color: #334155 !important; }
 body.dark-mode table td { color: #f1f5f9; border-bottom-color: #1e293b !important; }
 body.dark-mode table tbody tr:hover { background-color: #334155 !important; }
-
-/* 5. Perbaikan Badge / Label Role di Akses Pengguna */
-body.dark-mode span[style*="background: #e2e8f0"],
-body.dark-mode span[style*="background:#e2e8f0"] {
-    background-color: #334155 !important;
-    color: #f8fafc !important;
-}
-
-/* 6. Pembersihan Gradien Terang di Header Modal Form */
-body.dark-mode [style*="linear-gradient(to right, #ffffff, #f8fafc)"],
-body.dark-mode [style*="linear-gradient(to right, #f8fafc, #ffffff)"] {
-    background: #1e293b !important;
-    border-bottom: 1px solid #334155 !important;
-}
-
-/* 7. Penyesuaian Kontainer Form Import Massal */
-body.dark-mode #section-import-massal {
-    background-color: #064e3b !important; /* Emerald 900 */
-    border-color: #047857 !important; /* Emerald 700 */
-}
-body.dark-mode #section-import-massal div[style*="color:#166534"] {
-    color: #6ee7b7 !important;
-}
-
-/* 8. CSS HACK / OVERRIDE: Memaksa Gaya Inline Putih JS Menjadi Gelap */
-body.dark-mode [style*="background:white"], 
-body.dark-mode [style*="background: white"], 
-body.dark-mode [style*="background:#ffffff"], 
-body.dark-mode [style*="background: #ffffff"], 
-body.dark-mode [style*="background-color: white"],
-body.dark-mode [style*="background: #f8fafc"],
-body.dark-mode [style*="background:#f8fafc"] {
-    background-color: var(--card-bg) !important;
-    color: var(--text-main) !important;
-    border-color: var(--border-color) !important;
-}
-
-/* 9. Tipografi, Tip & Tombol Utility */
+body.dark-mode span[style*="background: #e2e8f0"], body.dark-mode span[style*="background:#e2e8f0"] { background-color: #334155 !important; color: #f8fafc !important; }
+body.dark-mode [style*="linear-gradient(to right, #ffffff, #f8fafc)"], body.dark-mode [style*="linear-gradient(to right, #f8fafc, #ffffff)"] { background: #1e293b !important; border-bottom: 1px solid #334155 !important; }
+body.dark-mode #section-import-massal { background-color: #064e3b !important; border-color: #047857 !important; }
+body.dark-mode #section-import-massal div[style*="color:#166534"] { color: #6ee7b7 !important; }
+body.dark-mode [style*="background:white"], body.dark-mode [style*="background: white"], body.dark-mode [style*="background:#ffffff"], body.dark-mode [style*="background: #ffffff"], body.dark-mode [style*="background-color: white"], body.dark-mode [style*="background: #f8fafc"], body.dark-mode [style*="background:#f8fafc"] { background-color: var(--card-bg) !important; color: var(--text-main) !important; border-color: var(--border-color) !important; }
 body.dark-mode h2, body.dark-mode h3, body.dark-mode h4 { color: var(--secondary) !important; }
 body.dark-mode .btn-secondary { background: #334155; }
 body.dark-mode .btn-secondary:hover { background: #475569; }
 body.dark-mode .text-danger:hover { background: #450a0a !important; color: #f87171 !important; }
 
-
-/* =========================================
-   DARK MODE UNTUK HALAMAN LOGIN & REGISTRASI
-========================================= */
-body.dark-mode.login-page-bg {
-    background: #0f172a !important; 
-}
-body.dark-mode .login-card {
-    background-color: #1e293b !important;
-    border: 1px solid #334155 !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
-}
-body.dark-mode .role-box {
-    background-color: #0f172a !important;
-    border-color: #334155 !important;
-}
-body.dark-mode .role-box span, 
-body.dark-mode .role-box i {
-    color: #94a3b8 !important;
-}
-body.dark-mode .role-box:hover {
-    background-color: #1e293b !important;
-}
-body.dark-mode .role-box.active {
-    background-color: #064e3b !important;
-    border-color: #10b981 !important;
-}
-body.dark-mode .role-box.active span, 
-body.dark-mode .role-box.active i {
-    color: #34d399 !important;
-}
-body.dark-mode [style*="background: #fee2e2"] {
-    background-color: #450a0a !important;
-    border-color: #7f1d1d !important;
-    color: #fca5a5 !important;
-}
-
-
+/* Mode Gelap Halaman Login / Registrasi */
+body.dark-mode.login-page-bg { background: #0f172a !important; }
+body.dark-mode .login-card { background-color: #1e293b !important; border: 1px solid #334155 !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important; }
+body.dark-mode .role-box { background-color: #0f172a !important; border-color: #334155 !important; }
+body.dark-mode .role-box span, body.dark-mode .role-box i { color: #94a3b8 !important; }
+body.dark-mode .role-box:hover { background-color: #1e293b !important; }
+body.dark-mode .role-box.active { background-color: #064e3b !important; border-color: #10b981 !important; }
+body.dark-mode .role-box.active span, body.dark-mode .role-box.active i { color: #34d399 !important; }
+body.dark-mode [style*="background: #fee2e2"] { background-color: #450a0a !important; border-color: #7f1d1d !important; color: #fca5a5 !important; }
 
 /* =========================================
    DARK MODE UNTUK HALAMAN UJIAN (ATTEMPT) - SEMPURNA
 ========================================= */
+body.dark-mode .pre-exam-card, body.dark-mode .question-area, body.dark-mode .exam-header, body.dark-mode .sidebar-area, body.dark-mode .nav-bottom-container {
+    background: #1e293b !important; background-color: #1e293b !important; color: var(--text-main) !important; border-color: var(--border-color) !important;
+}
+body.dark-mode .exam-header h3, body.dark-mode .exam-header p, body.dark-mode .sidebar-area h4, body.dark-mode .question-area span { color: var(--text-main) !important; }
+body.dark-mode #exam-mapel-title { color: #f8fafc !important; }
+body.dark-mode #exam-student-name { color: #94a3b8 !important; }
 
-/* 1. Layout Utama & Panel */
-body.dark-mode .pre-exam-card,
-body.dark-mode .question-area,
-body.dark-mode .exam-header,
-body.dark-mode .sidebar-area,
-body.dark-mode .nav-bottom-container {
-    background: #1e293b !important; /* Latar Kartu / Slate 800 */
-    background-color: #1e293b !important;
-    color: var(--text-main) !important;
-    border-color: var(--border-color) !important;
-}
+body.dark-mode .q-box { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+body.dark-mode .q-box:hover { background-color: #334155 !important; color: #ffffff !important; }
+body.dark-mode .q-box.filled { background-color: #10b981 !important; border-color: #059669 !important; color: #ffffff !important; }
+body.dark-mode .q-box.ragu { background-color: #f59e0b !important; border-color: #d97706 !important; color: #ffffff !important; }
+body.dark-mode .q-box.active { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4) !important; }
 
-/* 2. Teks & Heading dalam Ujian */
-body.dark-mode .exam-header h3,
-body.dark-mode .exam-header p,
-body.dark-mode .sidebar-area h4,
-body.dark-mode .question-area span {
-    color: var(--text-main) !important;
-}
+body.dark-mode .option-label { background-color: #0f172a !important; border-color: #334155 !important; color: #f8fafc !important; }
+body.dark-mode .option-label:hover { background-color: #1e293b !important; border-color: #475569 !important; }
+body.dark-mode .option-label.selected { background-color: #064e3b !important; border-color: #10b981 !important; }
+body.dark-mode .option-label input:checked + span { color: #34d399 !important; }
 
-body.dark-mode #exam-mapel-title {
-    color: #f8fafc !important;
-}
+body.dark-mode .select-jodoh, body.dark-mode select.select-jodoh, body.dark-mode #essay-ans { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; }
+body.dark-mode .select-jodoh option { background-color: #1e293b !important; color: #f8fafc !important; }
+body.dark-mode .warning-box { background-color: #1e1b4b !important; color: #c7d2fe !important; border-color: #312e81 !important; }
+body.dark-mode input:disabled, body.dark-mode input[style*="background: #e2e8f0"], body.dark-mode input[style*="background:#e2e8f0"] { background-color: #0f172a !important; color: #94a3b8 !important; border-color: #334155 !important; }
+body.dark-mode #cbt-secure-watermark { filter: invert(1) brightness(1.5); opacity: 0.05 !important; }
 
-body.dark-mode #exam-student-name {
-    color: #94a3b8 !important;
-}
-
-/* 3. Kotak Nomor Navigasi Soal (.q-box) */
-body.dark-mode .q-box {
-    background-color: #0f172a !important; /* Slate 900 untuk kontras dari sidebar */
-    border-color: #334155 !important;
-    color: #cbd5e1 !important;
-}
-body.dark-mode .q-box:hover {
-    background-color: #334155 !important;
-    color: #ffffff !important;
-}
-body.dark-mode .q-box.filled {
-    background-color: #10b981 !important;
-    border-color: #059669 !important;
-    color: #ffffff !important;
-}
-body.dark-mode .q-box.ragu {
-    background-color: #f59e0b !important;
-    border-color: #d97706 !important;
-    color: #ffffff !important;
-}
-body.dark-mode .q-box.active {
-    border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4) !important;
-}
-
-/* 4. Opsi Jawaban Teks / Radio (.option-label) */
-body.dark-mode .option-label {
-    background-color: #0f172a !important; /* Latar gelap pekat */
-    border-color: #334155 !important;
-    color: #f8fafc !important;
-}
-body.dark-mode .option-label:hover {
-    background-color: #1e293b !important;
-    border-color: #475569 !important;
-}
-body.dark-mode .option-label.selected {
-    background-color: #064e3b !important; /* Emerald 900 */
-    border-color: #10b981 !important;
-}
-body.dark-mode .option-label input:checked + span {
-    color: #34d399 !important; /* Emerald 300 */
-}
-
-/* 5. Soal Menjodohkan & Essay */
-body.dark-mode [style*="background:#f8fafc"],
-body.dark-mode [style*="background: #f8fafc"] {
-    background-color: #0f172a !important;
-    border-color: #334155 !important;
-    color: #f8fafc !important;
-}
-body.dark-mode .select-jodoh,
-body.dark-mode select.select-jodoh,
-body.dark-mode #essay-ans {
-    background-color: #1e293b !important;
-    color: #f8fafc !important;
-    border-color: #334155 !important;
-}
-body.dark-mode .select-jodoh option {
-    background-color: #1e293b !important;
-    color: #f8fafc !important;
-}
-
-/* 6. Kotak Peringatan Pre-Exam (Warning Box) */
-body.dark-mode .warning-box {
-    background-color: #1e1b4b !important; /* Indigo 900 */
-    color: #c7d2fe !important; /* Indigo 200 */
-    border-color: #312e81 !important;
-}
-
-/* 7. Input Disabled (Kelas Siswa, Token) */
-body.dark-mode input:disabled,
-body.dark-mode input[style*="background: #e2e8f0"],
-body.dark-mode input[style*="background:#e2e8f0"] {
-    background-color: #0f172a !important;
-    color: #94a3b8 !important;
-    border-color: #334155 !important;
-}
-
-/* 8. Watermark Keamanan (Penting agar tidak mengganggu) */
-body.dark-mode #cbt-secure-watermark {
-    filter: invert(1) brightness(1.5);
-    opacity: 0.05 !important; /* Dibuat sangat tipis di dark mode */
-}
-
-/* 9. Tombol Navigasi Mobile */
 @media screen and (max-width: 1024px) {
-    body.dark-mode .nav-bottom-container {
-        background-color: #1e293b !important;
-        border-top-color: #334155 !important;
-        box-shadow: 0 -4px 15px rgba(0,0,0,0.4) !important;
-    }
-}
-
-/* =========================================
-   PERBAIKAN TABEL RESPONSIVE MOBILE
-========================================= */
-/* Mencegah input di tabel Bank Soal terpotong (squished) di layar HP */
-#table-bank-soal-summary {
-    min-width: 850px !important;
+    body.dark-mode .nav-bottom-container { background-color: #1e293b !important; border-top-color: #334155 !important; box-shadow: 0 -4px 15px rgba(0,0,0,0.4) !important; }
 }
