@@ -3,6 +3,10 @@ import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstat
 import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+    // --- CEK DARK MODE ---
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
     const registerForm = document.getElementById("register-form");
     const btnSubmit = document.getElementById("btn-submit");
     const boxSiswa = document.getElementById("select-siswa");
