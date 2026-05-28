@@ -128,14 +128,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const darkModeBtn = document.getElementById('btn-global-dark-mode');
     const iconDarkMode = darkModeBtn?.querySelector('i');
     
-    if (localStorage.getItem('theme') === 'dark' && iconDarkMode) {
+    // Periksa status classList body langsung (dikendalikan oleh auto-theme inline script)
+    if (document.body.classList.contains('dark-mode') && iconDarkMode) {
         iconDarkMode.classList.replace('fa-moon', 'fa-sun');
     }
 
     darkModeBtn?.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
+        
+        // Memaksa override dari otomatis ke preferensi manual pengguna
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        
         if (isDark) {
             iconDarkMode?.classList.replace('fa-moon', 'fa-sun');
         } else {
