@@ -78,6 +78,33 @@
 </head>
 <body>
     <script>
+        function enforceFullscreen() {
+            const docEl = document.documentElement;
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+            
+            if (!isFullscreen) {
+                if (docEl.requestFullscreen) { 
+                    docEl.requestFullscreen().catch(() => window.focus()); 
+                } else if (docEl.webkitRequestFullscreen) { 
+                    docEl.webkitRequestFullscreen(); // Safari
+                } else if (docEl.msRequestFullscreen) { 
+                    docEl.msRequestFullscreen(); // IE11/Edge Lama
+                }
+            }
+        }
+
+        // Memicu fullscreen pada interaksi pertama (Klik, Sentuh, atau Ketik)
+        const triggerEvents = ['click', 'touchstart', 'keydown'];
+        const activateFullscreen = () => {
+            enforceFullscreen();
+            // Hapus event listener setelah berhasil agar tidak memberatkan browser
+            triggerEvents.forEach(evt => document.removeEventListener(evt, activateFullscreen));
+        };
+
+        triggerEvents.forEach(evt => {
+            document.addEventListener(evt, activateFullscreen);
+        });
+        
         (function() {
             const currentHour = new Date().getHours();
             const isNightTime = currentHour >= 18 || currentHour < 6;
