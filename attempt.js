@@ -98,6 +98,7 @@ const SecurityManager = {
             if(examState.isExamActive) this.openFullscreen(); 
         });
     },
+    
     startStrictExamMode: function() {
         document.addEventListener('visibilitychange', () => { 
             if (document.hidden && examState.isExamActive) {
@@ -109,12 +110,16 @@ const SecurityManager = {
             }
         });
         
+        // Kunci Fullscreen (Paksa kembali jika siswa menekan ESC)
         document.addEventListener("fullscreenchange", () => {
             if (!document.fullscreenElement && examState.isExamActive) {
                 this.handleViolation("Mode Layar Penuh (Fullscreen) dimatikan!");
+                // Langsung paksa kembali masuk fullscreen
+                setTimeout(() => this.openFullscreen(), 500); 
             }
         });
     },
+    
     handleViolation: async function(alasan) {
         if (!examState.isExamActive) return;
         examState.pelanggaran++;
