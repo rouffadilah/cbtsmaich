@@ -552,7 +552,34 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js"></script>
+    <script type="module" src="dashboard.js">
+        function enforceFullscreen() {
+            const docEl = document.documentElement;
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+            
+            if (!isFullscreen) {
+                if (docEl.requestFullscreen) { 
+                    docEl.requestFullscreen().catch(() => window.focus()); 
+                } else if (docEl.webkitRequestFullscreen) { 
+                    docEl.webkitRequestFullscreen(); // Safari
+                } else if (docEl.msRequestFullscreen) { 
+                    docEl.msRequestFullscreen(); // IE11/Edge Lama
+                }
+            }
+        }
+
+        // Memicu fullscreen pada interaksi pertama (Klik, Sentuh, atau Ketik)
+        const triggerEvents = ['click', 'touchstart', 'keydown'];
+        const activateFullscreen = () => {
+            enforceFullscreen();
+            // Hapus event listener setelah berhasil agar tidak memberatkan browser
+            triggerEvents.forEach(evt => document.removeEventListener(evt, activateFullscreen));
+        };
+
+        triggerEvents.forEach(evt => {
+            document.addEventListener(evt, activateFullscreen);
+        });
+    </script>
 
     <div id="modal-preview-soal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; align-items:center; justify-content:center; z-index:10001; background:rgba(15,23,42,0.8); backdrop-filter:blur(6px);">
         <div style="background:white; width:880px; max-width:96%; max-height:90vh; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
