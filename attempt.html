@@ -77,11 +77,20 @@
     </style>
 </head>
 <body>
-    <!-- Script Inline Pengecekan Tema Global (Mencegah Efek Kedipan Putih) -->
     <script>
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark-mode');
-        }
+        (function() {
+            const currentHour = new Date().getHours();
+            const isNightTime = currentHour >= 18 || currentHour < 6;
+            const savedTheme = localStorage.getItem('theme');
+            
+            if (savedTheme === 'dark' || (!savedTheme && isNightTime)) {
+                document.body.classList.add('dark-mode');
+                if (!savedTheme) localStorage.setItem('theme', 'dark'); 
+            } else if (savedTheme === 'light' || (!savedTheme && !isNightTime)) {
+                document.body.classList.remove('dark-mode');
+                if (!savedTheme) localStorage.setItem('theme', 'light');
+            }
+        })();
     </script>
 
     <div id="pre-exam-screen" class="pre-exam-container">
