@@ -1405,7 +1405,13 @@ window.downloadExcelHasil = async (mapel = currentMapelDetail, kelas = currentKe
     } catch (e) { window.customAlert("Terjadi kesalahan sistem rekap.", "error"); } finally { if (btn) { btn.innerHTML = origText; btn.disabled = false; } }
 };
 
-window.hapusHasil = async (id) => { if(await customConfirm("Hapus hasil ujian siswa ini?", "danger")) { await deleteDoc(doc(db, "hasil_ujian", id)); window.loadDataHasil(); window.renderDetailHasil(); } };
+window.hapusHasil = async (id) => { 
+    if (await customConfirm("Hapus hasil ujian siswa ini?", "danger")) { 
+        await deleteDoc(doc(db, "hasil_ujian", id)); 
+        await window.loadDataHasil(); // Tambahkan kata await di baris ini
+        window.renderDetailHasil(); 
+    } 
+};
 
 document.getElementById('btn-hapus-semua-hasil')?.addEventListener('click', async () => {
     if (!currentMapelDetail || !currentKelasDetail) return;
