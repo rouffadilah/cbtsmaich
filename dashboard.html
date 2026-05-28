@@ -35,10 +35,10 @@
 <body>
     <script>
         (function() {
+            // 1. Logika Auto-Theme Berdasarkan Waktu
             const currentHour = new Date().getHours();
             const isNightTime = currentHour >= 18 || currentHour < 6;
             const savedTheme = localStorage.getItem('theme');
-            
             if (savedTheme === 'dark' || (!savedTheme && isNightTime)) {
                 document.body.classList.add('dark-mode');
                 if (!savedTheme) localStorage.setItem('theme', 'dark'); 
@@ -46,13 +46,46 @@
                 document.body.classList.remove('dark-mode');
                 if (!savedTheme) localStorage.setItem('theme', 'light');
             }
+
+            // 2. Logika Fullscreen Otomatis Giras (Mode ANBK)
+            function pemicuFullscreenANBK() {
+                const docEl = document.documentElement;
+                const isFull = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+                if (!isFull) {
+                    if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(() => {}); }
+                    else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
+                    else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
+                }
+            }
+            window.addEventListener('focus', pemicuFullscreenANBK);
+            ['click', 'touchstart', 'keydown', 'mousemove'].forEach(evt => {
+                document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
+            });
+
+            // 3. Logika Jam & Tanggal Real-time di Bawah Logo
+            function inisialisasiJamSistem() {
+                const clockEl = document.getElementById('realtime-clock');
+                if (!clockEl) return;
+                function perbaruiWaktu() {
+                    const sekarang = new Date();
+                    const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    const strTanggal = sekarang.toLocaleDateString('id-ID', opsiTanggal);
+                    const strJam = sekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+                    clockEl.innerHTML = `<i class="far fa-calendar-alt"></i> ${strTanggal} &nbsp;|&nbsp; <i class="far fa-clock"></i> ${strJam} WIB`;
+                }
+                perbaruiWaktu();
+                setInterval(perbaruiWaktu, 1000);
+            }
+            document.addEventListener('DOMContentLoaded', inisialisasiJamSistem);
         })();
     </script>
     <div class="app-layout">
         <header class="app-header" style="position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 1000; width: 100%;">
             <div style="width: 40px;"></div> 
             <div style="cursor: pointer; text-align: center;" onclick="window.location.hash='section-beranda'">
-                <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0;">
+                <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0 auto;">
+                
+                <div id="realtime-clock" style="font-size: 0.72rem; font-weight: 800; color: var(--text-muted); margin-top: 3px; letter-spacing: 0.2px; text-transform: uppercase;">...</div>
             </div>
             <button id="btn-global-dark-mode" class="btn-icon" title="Mode Gelap/Terang" style="font-size: 1.4rem; color: var(--text-muted); border: none; background: transparent; cursor: pointer; padding: 5px; transition: 0.3s;">
                 <i class="fas fa-moon"></i>
@@ -443,7 +476,7 @@
                                                 <option value="file">File</option>
                                                 <option value="url">URL</option>
                                             </select>
-                                            <input type="file" id="media-opsi-D" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
+                                            <input type="file" id="media-opsi-B" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
                                             <input type="text" id="media-url-opsi-D" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
                                             <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="D"> Kunci</label>
                                             <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="D"> Benar</label>
@@ -552,37 +585,10 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js">
-        function enforceFullscreen() {
-            const docEl = document.documentElement;
-            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-            
-            if (!isFullscreen) {
-                if (docEl.requestFullscreen) { 
-                    docEl.requestFullscreen().catch(() => window.focus()); 
-                } else if (docEl.webkitRequestFullscreen) { 
-                    docEl.webkitRequestFullscreen(); // Safari
-                } else if (docEl.msRequestFullscreen) { 
-                    docEl.msRequestFullscreen(); // IE11/Edge Lama
-                }
-            }
-        }
-
-        // Memicu fullscreen pada interaksi pertama (Klik, Sentuh, atau Ketik)
-        const triggerEvents = ['click', 'touchstart', 'keydown'];
-        const activateFullscreen = () => {
-            enforceFullscreen();
-            // Hapus event listener setelah berhasil agar tidak memberatkan browser
-            triggerEvents.forEach(evt => document.removeEventListener(evt, activateFullscreen));
-        };
-
-        triggerEvents.forEach(evt => {
-            document.addEventListener(evt, activateFullscreen);
-        });
-    </script>
+    <script type="module" src="dashboard.js"></script>
 
     <div id="modal-preview-soal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; align-items:center; justify-content:center; z-index:10001; background:rgba(15,23,42,0.8); backdrop-filter:blur(6px);">
-        <div style="background:white; width:880px; max-width:96%; max-height:90vh; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
+        <div style="background:white; width:880px; max-width:96%; max-height:90vh; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 2px 50px -12px rgba(0,0,0,0.3);">
             <div style="padding:16px 22px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(to right, #f8fafc, #ffffff);">
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div style="width:38px; height:38px; background:#dbeafe; color:#2563eb; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem;"><i class="fas fa-eye"></i></div>
