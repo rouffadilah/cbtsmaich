@@ -123,32 +123,6 @@ window.handleRoleChange = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- FITUR DARK MODE GLOBAL ---
-    const darkModeBtn = document.getElementById('btn-global-dark-mode');
-    const iconDarkMode = darkModeBtn?.querySelector('i');
-    
-    // 1. Cek memori browser (LocalStorage) saat halaman pertama kali dimuat
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-        if (iconDarkMode) iconDarkMode.classList.replace('fa-moon', 'fa-sun');
-    }
-
-    // 2. Fungsi saat tombol ditekan
-    darkModeBtn?.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        
-        // Simpan preferensi agar tidak hilang saat direfresh
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        
-        // Ganti Icon
-        if (isDark) {
-            iconDarkMode.classList.replace('fa-moon', 'fa-sun');
-        } else {
-            iconDarkMode.classList.replace('fa-sun', 'fa-moon');
-        }
-    });
-    
     const filterKelas = document.getElementById('filter-kelas-pengguna');
     if (filterKelas) filterKelas.addEventListener('change', window.renderTablePengguna);
 
@@ -713,16 +687,32 @@ window.loadBankSoalSummary = async () => {
             let isMapelGuru = isGuru && userMapel.includes(mapel);
             let canEdit = isAdmin || isMapelGuru;
             
-           // Menampilkan kelas sebagai teks dipisah koma
-            let kelasDropdownHtml = assignedClasses.length > 0 ? assignedClasses.join(', ') : '-';
+            let dropdownId = `dd-kelas-${rowIdx}`;
+            let labelKelas = assignedClasses.length > 0 ? `${assignedClasses.length} Kelas Dipilih` : `Pilih Kelas`;
+            
+            let kelasDropdownHtml = `<div class="dropdown-check" id="${dropdownId}">
+                <button class="dropdown-check-btn" onclick="window.toggleDropdownCheck('${dropdownId}')" ${!canEdit ? 'disabled' : ''}>
+                    <span>${labelKelas}</span> <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="dropdown-check-content">`;
+            
+            listKelas.forEach(k => {
+                let isChecked = assignedClasses.includes(k) ? 'checked' : '';
+                kelasDropdownHtml += `
+                    <label>
+                        <input type="checkbox" value="${k}" ${isChecked} onchange="window.updateMapelKelasToggled('${mapel}', '${k}', this.checked, '${dropdownId}')"> 
+                        ${k}
+                    </label>`;
+            });
+            kelasDropdownHtml += `</div></div>`;
 
             let jadwalInputId = `jadwal-${rowIdx}`;
             let durasiInputId = `durasi-${rowIdx}`;
             let tokenInputId = `token-${rowIdx}`;
 
-            let jadwalInput = canEdit ? `<input type="datetime-local" id="${jadwalInputId}" class="ghost-input" value="${jadwal}">` : (jadwal || '-');
-            let durasiInput = canEdit ? `<input type="number" id="${durasiInputId}" class="ghost-input" value="${durasi}" placeholder="Menit">` : (durasi || '-');
-            let tokenInput = canEdit ? `<input type="text" id="${tokenInputId}" class="ghost-input" value="${token}" placeholder="KODE" style="text-transform:uppercase; font-weight:bold; color:var(--danger);">` : (token || '-');
+            let jadwalInput = canEdit ? `<input type="datetime-local" id="${jadwalInputId}" class="ghost-input" value="${jadwal}" style="min-width: 140px;">` : (jadwal || '-');
+            let durasiInput = canEdit ? `<input type="number" id="${durasiInputId}" class="ghost-input" value="${durasi}" placeholder="Menit" style="min-width: 80px; text-align: center;">` : (durasi || '-');
+            let tokenInput = canEdit ? `<input type="text" id="${tokenInputId}" class="ghost-input" value="${token}" placeholder="KODE" style="text-transform:uppercase; font-weight:bold; color:var(--danger); min-width: 120px; text-align: center;">` : `<span style="display:inline-block; min-width:120px; text-align:center;">${token || '-'}</span>`;
 
             let actionBtn = '';
             if (canEdit) {
@@ -1431,13 +1421,7 @@ window.downloadExcelHasil = async (mapel = currentMapelDetail, kelas = currentKe
     } catch (e) { window.customAlert("Terjadi kesalahan sistem rekap.", "error"); } finally { if (btn) { btn.innerHTML = origText; btn.disabled = false; } }
 };
 
-window.hapusHasil = async (id) => { 
-    if (await customConfirm("Hapus hasil ujian siswa ini?", "danger")) { 
-        await deleteDoc(doc(db, "hasil_ujian", id)); 
-        await window.loadDataHasil(); // Tambahkan kata await di baris ini
-        window.renderDetailHasil(); 
-    } 
-};
+window.hapusHasil = async (id) => { if(await customConfirm("Hapus hasil ujian siswa ini?", "danger")) { await deleteDoc(doc(db, "hasil_ujian", id)); window.loadDataHasil(); window.renderDetailHasil(); } };
 
 document.getElementById('btn-hapus-semua-hasil')?.addEventListener('click', async () => {
     if (!currentMapelDetail || !currentKelasDetail) return;
