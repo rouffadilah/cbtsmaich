@@ -422,3 +422,61 @@ table tbody tr:hover { background-color: #f8fafc !important; }
 .text-danger:hover { background: #fef2f2 !important; color: #dc2626 !important; }
 .text-warning { color: var(--warning) !important; }
 .text-warning:hover { background: #fffbeb !important; color: #d97706 !important; }
+
+/* =========================================
+   MODE GELAP GLOBAL (DARK MODE)
+========================================= */
+body.dark-mode {
+    --bg-main: #0f172a;        /* Latar belakang tergelap (Slate 900) */
+    --card-bg: #1e293b;        /* Latar kartu (Slate 800) */
+    --text-main: #f8fafc;      /* Teks putih terang */
+    --text-muted: #94a3b8;     /* Teks abu-abu */
+    --secondary: #e2e8f0;      /* Teks judul */
+    --secondary-hover: #ffffff;
+    --border-color: #334155;   /* Garis tepi gelap */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* Penyesuaian Card, Header, & Modal */
+body.dark-mode .app-header, 
+body.dark-mode .modal-content {
+    background: var(--card-bg) !important;
+}
+
+/* Penyesuaian Input Form, Select, & Textarea */
+body.dark-mode input.input-text, 
+body.dark-mode select.input-text, 
+body.dark-mode textarea.input-text,
+body.dark-mode .dropdown-check-content,
+body.dark-mode .checkbox-container {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+body.dark-mode .ghost-input:focus { background-color: #0f172a !important; }
+
+/* Penyesuaian Tabel */
+body.dark-mode table th { color: #cbd5e1; border-bottom-color: #334155 !important; }
+body.dark-mode table td { color: #f1f5f9; border-bottom-color: #1e293b !important; }
+body.dark-mode table tbody tr:hover { background-color: #334155 !important; }
+
+/* CSS HACK: Memaksa elemen bergaya inline-style putih bawaan JS menjadi gelap */
+body.dark-mode [style*="background: white"], 
+body.dark-mode [style*="background:#ffffff"], 
+body.dark-mode [style*="background: #ffffff"], 
+body.dark-mode [style*="background-color: white"],
+body.dark-mode [style*="background: #f8fafc"],
+body.dark-mode [style*="background:#f8fafc"] {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Perbaikan kontras Font & Tombol Tambahan */
+body.dark-mode .stat-card p { color: #94a3b8; }
+body.dark-mode h2, body.dark-mode h3, body.dark-mode h4 { color: var(--secondary) !important; }
+body.dark-mode .btn-secondary { background: #334155; }
+body.dark-mode .btn-secondary:hover { background: #475569; }
+body.dark-mode .text-danger:hover { background: #450a0a !important; color: #f87171 !important; }
