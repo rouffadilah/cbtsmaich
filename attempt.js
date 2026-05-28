@@ -110,12 +110,11 @@ const SecurityManager = {
             }
         });
         
-        // Kunci Fullscreen (Paksa kembali jika siswa menekan ESC)
         document.addEventListener("fullscreenchange", () => {
             if (!document.fullscreenElement && examState.isExamActive) {
                 this.handleViolation("Mode Layar Penuh (Fullscreen) dimatikan!");
-                // Langsung paksa kembali masuk fullscreen
-                setTimeout(() => this.openFullscreen(), 500); 
+                // Proteksi ANBK Agresif: Paksa masuk layar penuh kembali setelah 300ms
+                setTimeout(() => this.openFullscreen(), 300);
             }
         });
     },
