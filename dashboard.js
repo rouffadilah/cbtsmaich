@@ -18,8 +18,6 @@ if (!document.getElementById('cbt-custom-css')) {
         .dropdown-check-content label:hover { background-color: #f1f5f9; color: var(--primary); }
         .dropdown-check-content input[type="checkbox"] { transform: scale(1.3); cursor: pointer; }
         .dropdown-check.show .dropdown-check-content { display: block; }
-
-        /* --- PERBAIKAN DROPDOWN TERTUTUP --- */
         .card { overflow: visible !important; }
         #view-summary-bank-soal .table-container { min-height: 350px; padding-bottom: 120px; }
     `;
@@ -29,17 +27,9 @@ if (!document.getElementById('cbt-custom-css')) {
 // ==========================================
 // 1. VARIABEL GLOBAL & STATE APLIKASI
 // ==========================================
-let listMapel = []; 
-let listKelas = []; 
-let allUsersData = []; 
-let allHasilUjian = []; 
-let currentMapelDetail = ""; 
-let currentKelasDetail = "";
-let isAdmin = false; 
-let isGuru = false; 
-let userMapel = []; 
-let userKelas = [];
-let editMasterMode = false;
+let listMapel = []; let listKelas = []; let allUsersData = []; let allHasilUjian = []; 
+let currentMapelDetail = ""; let currentKelasDetail = ""; let isAdmin = false; let isGuru = false; 
+let userMapel = []; let userKelas = []; let editMasterMode = false;
 
 // ==========================================
 // 2. PEMBACAAN SESI & KEAMANAN AWAL
@@ -48,8 +38,7 @@ try {
     let userRoles = JSON.parse(localStorage.getItem("userRole") || "[]"); 
     userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]"); 
     userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]"); 
-    isAdmin = userRoles.includes("admin"); 
-    isGuru = userRoles.includes("guru");
+    isAdmin = userRoles.includes("admin"); isGuru = userRoles.includes("guru");
 } catch (e) { isAdmin = false; isGuru = false; }
 
 // ==========================================
@@ -125,8 +114,15 @@ window.addEventListener('popstate', function() { if (!window.location.hash || wi
 // ==========================================
 // 5. INISIALISASI HALAMAN (DOM)
 // ==========================================
+
+// Fungsi Update Tampilan Role berdasarkan Checkbox (Siswa/Guru/Admin/Custom)
+window.handleRoleChange = () => {
+    const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
+    document.getElementById('group-edit-guru').style.display = (selectedRoles.includes('guru') || selectedRoles.some(r => r !== 'siswa' && r !== 'admin')) ? 'flex' : 'none';
+    document.getElementById('group-edit-kelas-siswa').style.display = selectedRoles.includes('siswa') ? 'block' : 'none';
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-    
     const filterKelas = document.getElementById('filter-kelas-pengguna');
     if (filterKelas) filterKelas.addEventListener('change', window.renderTablePengguna);
 
@@ -136,17 +132,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterSiswaInputs = ['search-siswa-nis', 'search-siswa-nama', 'search-siswa-role', 'search-siswa-kelas'];
     filterSiswaInputs.forEach(id => { document.getElementById(id)?.addEventListener('input', window.renderTablePengguna); });
 
-    document.querySelectorAll('.edit-role-cb').forEach(cb => {
-        cb.addEventListener('change', () => {
-            const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
-            document.getElementById('group-edit-guru').style.display = selectedRoles.includes('guru') ? 'flex' : 'none';
-            document.getElementById('group-edit-kelas-siswa').style.display = selectedRoles.includes('siswa') ? 'block' : 'none';
-        });
-    });
-
     document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { document.getElementById('modal-edit-akun').style.display = 'none'; });
 
-    // Fungsi klik global untuk Accordion dan Dropdown Kelas
+    // Tambah Role Kustom Khusus Admin
+    document.getElementById('btn-add-custom-role')?.addEventListener('click', () => {
+        const roleVal = document.getElementById('input-custom-role').value.trim().toLowerCase();
+        if (!roleVal) return;
+        const container = document.getElementById('edit-role-container');
+        if (!container.querySelector(`input[value="${roleVal}"]`)) {
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="checkbox" class="edit-role-cb" value="${roleVal}" checked> <span style="text-transform:capitalize;">${roleVal}</span>`;
+            container.appendChild(label);
+            label.querySelector('input').addEventListener('change', window.handleRoleChange);
+        }
+        document.getElementById('input-custom-role').value = '';
+        window.handleRoleChange();
+    });
+
     document.addEventListener('click', (e) => {
         const header = e.target.closest('.toggle-accordion');
         if (header) {
@@ -155,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.style.display === 'none' || target.style.display === '') { target.style.display = 'block'; if (icon) icon.style.transform = 'rotate(180deg)'; header.style.background = '#f8fafc'; } 
             else { target.style.display = 'none'; if (icon) icon.style.transform = 'rotate(0deg)'; header.style.background = '#ffffff'; }
         }
-
         if (!e.target.closest('.dropdown-check')) {
             document.querySelectorAll('.dropdown-check.show').forEach(d => d.classList.remove('show'));
         }
@@ -252,7 +253,6 @@ onAuthStateChanged(auth, async (user) => {
 
     handleRouting(); 
     await window.loadDataMaster(); 
-    
     window.loadDataHasil(); 
     window.loadDataPengguna(); 
 });
@@ -397,7 +397,7 @@ window.renderTablePengguna = () => {
             </div>
         ` : '-';
 
-        if (roles.includes("guru") || roles.includes("admin")) {
+        if (roles.some(r => r !== 'siswa')) { // Guru, Admin, atau Custom Role
             if ((user.username || "").toLowerCase().includes(filterGId) && (user.nama || "").toLowerCase().includes(filterGNama) && roleDisplay.toLowerCase().includes(filterGRole) && `${mapel} ${kelas}`.toLowerCase().includes(filterGDetail)) {
                 countGuru++;
                 htmlGuru += `<tr><td><strong>${user.username || "-"}</strong></td><td>${user.nama || "-"}</td><td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${roleDisplay}</span></td><td><small><b>Mapel:</b> ${mapel}<br><b>Kelas:</b> ${kelas}</small></td>${isAdmin ? `<td style="text-align:center;">${actionButtons}</td>` : ''}</tr>`;
@@ -411,7 +411,7 @@ window.renderTablePengguna = () => {
         }
     });
 
-    if (countGuru === 0) htmlGuru = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada data guru yang cocok.</td></tr>`;
+    if (countGuru === 0) htmlGuru = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada data staf yang cocok.</td></tr>`;
     if (countSiswa === 0) htmlSiswa = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada data siswa yang cocok.</td></tr>`;
 
     tbodyGuru.innerHTML = htmlGuru; tbodySiswa.innerHTML = htmlSiswa;
@@ -440,23 +440,92 @@ window.bukaModalEditAkun = async (uid) => {
         document.getElementById('edit-username').value = data.username || ''; document.getElementById('edit-pass').value = ''; 
         
         const roles = Array.isArray(data.role) ? data.role : [data.role];
-        document.querySelectorAll('.edit-role-cb').forEach(cb => { cb.checked = roles.includes(cb.value); });
+        
+        // Tampilkan Custom Role Add Section Jika Admin
+        document.getElementById('admin-custom-role-group').style.display = isAdmin ? 'flex' : 'none';
+        
+        // Populate standard + existing custom roles in the UI
+        const container = document.getElementById('edit-role-container');
+        container.innerHTML = `
+            <label><input type="checkbox" class="edit-role-cb" value="siswa"> Siswa</label>
+            <label><input type="checkbox" class="edit-role-cb" value="guru"> Guru</label>
+            <label><input type="checkbox" class="edit-role-cb" value="admin"> Admin</label>
+        `;
+        const standardRoles = ['siswa', 'guru', 'admin'];
+        roles.forEach(r => {
+            if (!standardRoles.includes(r)) {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" class="edit-role-cb" value="${r}" checked> <span style="text-transform:capitalize;">${r}</span>`;
+                container.appendChild(label);
+            }
+        });
 
-        const isGuruEdit = roles.includes('guru'); const isSiswaEdit = roles.includes('siswa');
-        document.getElementById('group-edit-guru').style.display = isGuruEdit ? 'flex' : 'none';
-        document.getElementById('group-edit-kelas-siswa').style.display = isSiswaEdit ? 'block' : 'none';
+        // Set checks & attach events
+        document.querySelectorAll('.edit-role-cb').forEach(cb => { 
+            cb.checked = roles.includes(cb.value); 
+            cb.addEventListener('change', window.handleRoleChange);
+        });
 
-        if (isSiswaEdit) document.getElementById('edit-kelas-siswa').value = Array.isArray(data.kelas) ? data.kelas[0] : (data.kelas || '');
+        if (roles.includes('siswa')) {
+            document.getElementById('edit-kelas-siswa').value = Array.isArray(data.kelas) ? data.kelas[0] : (data.kelas || '');
+        }
 
-        if (isGuruEdit) {
+        if (roles.some(r => r !== 'siswa')) {
             const mapelArr = Array.isArray(data.mapel) ? data.mapel : [];
             document.querySelectorAll('.edit-mapel-cb').forEach(cb => { cb.checked = mapelArr.includes(cb.value); });
             const kelasArr = Array.isArray(data.kelas) ? data.kelas : [];
             document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = kelasArr.includes(cb.value); });
         }
+        
+        window.handleRoleChange(); // Update view visibility
         document.getElementById('modal-edit-akun').style.display = 'flex';
     } catch(e) { console.error(e); }
 };
+
+document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
+    const uid = document.getElementById('edit-uid').value;
+    if(!uid) return;
+
+    const btn = document.getElementById('btn-save-edit-akun');
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    btn.disabled = true;
+
+    try {
+        const newNama = document.getElementById('edit-nama').value.trim();
+        const newUsername = document.getElementById('edit-username').value.trim().toUpperCase();
+        const newPass = document.getElementById('edit-pass').value;
+        const roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
+
+        if(!newNama || !newUsername || roles.length === 0) {
+            throw new Error("Nama, Username, dan minimal 1 Role harus diisi!");
+        }
+
+        let payload = { nama: newNama, username: newUsername, role: roles };
+
+        if (roles.includes('siswa')) {
+            payload.kelas = [document.getElementById('edit-kelas-siswa').value];
+        } else {
+            payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(el => el.value);
+            payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(el => el.value);
+        }
+
+        await updateDoc(doc(db, "users", uid), payload);
+
+        if(newPass) {
+            window.customAlert("Data profil diperbarui!\n\nCatatan: Update password tidak dapat diterapkan otomatis dari halaman ini. Gunakan konsol Admin Firebase untuk reset password.", "warning", "Info Pembaruan");
+        } else {
+            window.customAlert("Data akun berhasil diperbarui!", "success");
+        }
+
+        document.getElementById('modal-edit-akun').style.display = 'none';
+        window.loadDataPengguna();
+    } catch (error) {
+        console.error(error); window.customAlert("Gagal menyimpan: " + error.message, "error");
+    } finally {
+        btn.innerHTML = origText; btn.disabled = false;
+    }
+});
 
 window.downloadDaftarPengguna = () => {
     const data = allUsersData.map(u => ({ "Nama": u.nama, "Username": u.username, "Role": Array.isArray(u.role) ? u.role.join(', ') : u.role, "Kelas": Array.isArray(u.kelas) ? u.kelas.join(', ') : (u.kelas || "-") }));
@@ -474,36 +543,7 @@ window.getTingkatan = (kelas) => {
     return "Lainnya";
 };
 
-// Logika Filter Tingkatan di Checkbox Roll
-window.handleSoalKelasToggle = () => {
-    const cbs = document.querySelectorAll('.cb-soal-kelas');
-    const checked = Array.from(cbs).filter(cb => cb.checked);
-    const label = document.getElementById('soal-kelas-label');
-    
-    if (checked.length === 0) {
-        cbs.forEach(cb => {
-            cb.disabled = false;
-            cb.parentElement.style.opacity = '1';
-            cb.parentElement.style.cursor = 'pointer';
-        });
-        label.innerText = "-- Pilih Kelas --";
-        return;
-    }
-
-    const targetTingkatan = window.getTingkatan(checked[0].value);
-    
-    cbs.forEach(cb => {
-        if (!cb.checked) {
-            const isSameTingkat = window.getTingkatan(cb.value) === targetTingkatan;
-            cb.disabled = !isSameTingkat;
-            cb.parentElement.style.opacity = isSameTingkat ? '1' : '0.4';
-            cb.parentElement.style.cursor = isSameTingkat ? 'pointer' : 'not-allowed';
-        }
-    });
-
-    label.innerText = `${checked.length} Kelas (Tk. ${targetTingkatan})`;
-};
-
+// Logika Filter Tingkatan di Checkbox Roll (Menu Edit Baris Tabel)
 window.toggleDropdownCheck = (id) => {
     const el = document.getElementById(id);
     const isShowing = el.classList.contains('show');
@@ -769,6 +809,29 @@ window.normalizeUrutanSoal = async (mapel) => {
     if (updates.length > 0) { await Promise.all(updates); }
 };
 
+// Filter Kelas (Khusus 1 Tingkatan di Input Soal Baru)
+window.handleSoalKelasToggle = () => {
+    const cbs = document.querySelectorAll('.cb-soal-kelas');
+    const checked = Array.from(cbs).filter(cb => cb.checked);
+    const label = document.getElementById('soal-kelas-label');
+    
+    if (checked.length === 0) {
+        cbs.forEach(cb => { cb.disabled = false; cb.parentElement.style.opacity = '1'; cb.parentElement.style.cursor = 'pointer'; });
+        label.innerText = "-- Pilih Kelas --"; return;
+    }
+
+    const targetTingkatan = window.getTingkatan(checked[0].value);
+    
+    cbs.forEach(cb => {
+        if (!cb.checked) {
+            const isSameTingkat = window.getTingkatan(cb.value) === targetTingkatan;
+            cb.disabled = !isSameTingkat; cb.parentElement.style.opacity = isSameTingkat ? '1' : '0.4'; cb.parentElement.style.cursor = isSameTingkat ? 'pointer' : 'not-allowed';
+        }
+    });
+
+    label.innerText = `${checked.length} Kelas (Tk. ${targetTingkatan})`;
+};
+
 window.bukaModalTambahSoal = async (mapelParams = "", targetNomor = "") => {
     document.getElementById('edit-soal-id').value = ''; document.getElementById('form-tambah-soal').reset();
     document.getElementById('soal-media').style.display = 'block'; document.getElementById('soal-media-url').style.display = 'none';
@@ -797,7 +860,7 @@ window.bukaModalTambahSoal = async (mapelParams = "", targetNomor = "") => {
         mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0'; 
         groupKelas.style.display = 'none';
     } else {
-        modalTitle.innerHTML = '<i class="fas fa-file-import"></i> Input Soal Baru'; mapelSelect.value = "";
+        modalTitle.innerHTML = '<i class="fas fa-file-import"></i> Input Soal'; mapelSelect.value = "";
         mapelSelect.style.pointerEvents = 'auto'; mapelSelect.style.backgroundColor = '#fafafa';
         groupKelas.style.display = 'block';
     }
@@ -810,7 +873,6 @@ window.editDataSoal = (id) => {
     const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
     const secMassal = document.getElementById('section-import-massal'); const divManual = document.getElementById('divider-import-manual');
     if (secMassal) secMassal.style.display = 'none'; if (divManual) divManual.style.display = 'none';
-    
     const mapelSelect = document.getElementById('soal-mapel'); 
     const groupKelas = document.getElementById('group-soal-kelas');
     
@@ -822,10 +884,34 @@ window.editDataSoal = (id) => {
     document.getElementById('edit-soal-id').value = id; document.getElementById('soal-mapel').value = soal.mataPelajaran; 
     document.getElementById('soal-nomor').value = soal.nomor_soal || ''; document.getElementById('soal-bobot').value = soal.bobot || 1; 
     document.getElementById('soal-tipe').value = soal.tipe || 'PG'; document.getElementById('soal-teks').value = soal.teks_soal || '';
+    
+    if (soal.media_soal) {
+        const urlStr = typeof soal.media_soal === 'object' ? soal.media_soal.url : soal.media_soal;
+        if (!urlStr.includes('firebasestorage.googleapis.com')) {
+            document.querySelector('input[name="tipe_media_utama"][value="url"]').checked = true; document.getElementById('soal-media').style.display = 'none'; document.getElementById('soal-media-url').style.display = 'block'; document.getElementById('soal-media-url').value = urlStr;
+        } else {
+             document.querySelector('input[name="tipe_media_utama"][value="file"]').checked = true; document.getElementById('soal-media').style.display = 'block'; document.getElementById('soal-media-url').style.display = 'none'; document.getElementById('soal-media-url').value = '';
+        }
+    } else {
+        document.querySelector('input[name="tipe_media_utama"][value="file"]').checked = true; document.getElementById('soal-media').style.display = 'block'; document.getElementById('soal-media-url').style.display = 'none'; document.getElementById('soal-media-url').value = '';
+    }
+
     document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
 
     if (soal.tipe === 'PG' || soal.tipe === 'PGK') {
-        ['A', 'B', 'C', 'D', 'E'].forEach(k => { document.getElementById(`soal-opsi-${k}`).value = (soal.opsi && soal.opsi[k]) ? soal.opsi[k] : ''; });
+        ['A', 'B', 'C', 'D', 'E'].forEach(k => { 
+            document.getElementById(`soal-opsi-${k}`).value = (soal.opsi && soal.opsi[k]) ? soal.opsi[k] : ''; 
+            if (soal.opsi_media && soal.opsi_media[k]) {
+                const mData = soal.opsi_media[k]; const urlStr = typeof mData === 'object' ? mData.url : mData;
+                if (urlStr.includes('firebasestorage.googleapis.com')) {
+                    document.getElementById(`tipe-media-opsi-${k}`).value = 'file'; document.getElementById(`media-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).style.display = 'none';
+                } else {
+                    document.getElementById(`tipe-media-opsi-${k}`).value = 'url'; document.getElementById(`media-opsi-${k}`).style.display = 'none'; document.getElementById(`media-url-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).value = urlStr;
+                }
+            } else {
+                document.getElementById(`tipe-media-opsi-${k}`).value = 'file'; document.getElementById(`media-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).style.display = 'none'; document.getElementById(`media-url-opsi-${k}`).value = '';
+            }
+        });
         if (soal.tipe === 'PG') {
             const radio = document.querySelector(`input[name="kunci-pg"][value="${soal.kunci_jawaban}"]`); if (radio) radio.checked = true;
         } else {
@@ -892,17 +978,31 @@ window.loadDaftarSoal = async (mapel) => {
                             <span style="background:var(--warning); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">Bobot: ${s.bobot || 1}</span>
                         </span>
                     </div>
-                    <div style="color:var(--text-main); line-height:1.6; font-size: 1rem; margin-bottom:15px;">${s.teks_soal}</div>
-                    ${s.media_soal ? `<div style="margin-bottom:15px; font-size:0.85rem; color:var(--info); background:#eff6ff; padding:8px 12px; border-radius:6px; display:inline-block;"><i class="fas fa-paperclip"></i> Terlampir File Media (${s.media_soal.type.toUpperCase()})</div><br>` : ''}`;
+                    <div style="color:var(--text-main); line-height:1.6; font-size: 1rem; margin-bottom:15px;">${s.teks_soal}</div>`;
+            
+            if(s.media_soal){
+                const mUrl = typeof s.media_soal === 'object' ? s.media_soal.url : s.media_soal;
+                const mType = typeof s.media_soal === 'object' && s.media_soal.type ? s.media_soal.type : 'image';
+                if(mType === 'video'){ html += `<div style="margin-bottom:15px;"><video src="${mUrl}" controls style="max-height:200px; border-radius:8px; background:#000;"></video></div>`; } 
+                else if(mType === 'audio'){ html += `<div style="margin-bottom:15px;"><audio src="${mUrl}" controls></audio></div>`; } 
+                else { html += `<div style="margin-bottom:15px;"><img src="${mUrl}" style="max-height:200px; border-radius:8px; border:1px solid #e2e8f0;"></div>`; }
+            }
             
             if (s.tipe === 'PG' || s.tipe === 'PGK' || !s.tipe) {
                 html += `<div style="display:flex; flex-direction:column; gap:6px;">`;
                 ['A','B','C','D','E'].forEach(o => {
                     let teksOpsi = (s.opsi && s.opsi[o]) ? s.opsi[o] : '';
-                    if(teksOpsi) {
+                    if(teksOpsi || (s.opsi_media && s.opsi_media[o])) {
                         let isBenar = (s.tipe === 'PG' || !s.tipe) ? s.kunci_jawaban === o : Array.isArray(s.kunci_jawaban) && s.kunci_jawaban.includes(o);
-                        if (isBenar) { html += `<div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; color:var(--success); font-weight:600; font-size:0.9rem;"><i class="fas fa-check-circle"></i> <span>${o}. ${teksOpsi}</span></div>`; } 
-                        else { html += `<div style="display:flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid #f1f5f9; border-radius:6px; color:var(--text-muted); font-size:0.9rem;"><span style="font-weight:600; width:20px;">${o}.</span> <span>${teksOpsi}</span></div>`; }
+                        let mHtml = '';
+                        if(s.opsi_media && s.opsi_media[o]){
+                            const moData = s.opsi_media[o]; const moUrl = typeof moData === 'object' ? moData.url : moData; const moType = typeof moData === 'object' && moData.type ? moData.type : 'image';
+                            if(moType === 'video') mHtml = `<video src="${moUrl}" controls style="max-height:100px; margin-top:5px; border-radius:6px; background:#000;"></video><br>`;
+                            else if(moType === 'audio') mHtml = `<audio src="${moUrl}" controls style="max-width:200px; margin-top:5px;"></audio><br>`;
+                            else mHtml = `<img src="${moUrl}" style="max-height:100px; margin-top:5px; border-radius:6px; border:1px solid #e2e8f0;"><br>`;
+                        }
+                        if (isBenar) { html += `<div style="display:flex; align-items:flex-start; gap:10px; padding:8px 12px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; color:var(--success); font-weight:600; font-size:0.9rem;"><i class="fas fa-check-circle" style="margin-top:3px;"></i> <div><span>${o}. ${teksOpsi}</span><br>${mHtml}</div></div>`; } 
+                        else { html += `<div style="display:flex; align-items:flex-start; gap:10px; padding:8px 12px; border:1px solid #f1f5f9; border-radius:6px; color:var(--text-muted); font-size:0.9rem;"><span style="font-weight:600; width:20px; margin-top:1px;">${o}.</span> <div><span>${teksOpsi}</span><br>${mHtml}</div></div>`; }
                     }
                 });
                 html += `</div>`;
@@ -923,15 +1023,6 @@ window.loadDaftarSoal = async (mapel) => {
         });
         container.innerHTML = html;
     } catch(e) { container.innerHTML = '<div style="text-align:center; color:red; padding: 20px;">Gagal memuat soal</div>'; }
-};
-
-window.hapusSoal = async (id) => {
-    if(await window.customConfirm("Apakah Anda yakin ingin menghapus soal ini beserta medianya?", "danger")) {
-        try { 
-            await deleteDoc(doc(db, "bank_soal", id)); const curMapel = document.getElementById('filter-soal-mapel').value;
-            await window.normalizeUrutanSoal(curMapel); window.loadDaftarSoal(curMapel); window.loadBankSoalSummary(); 
-        } catch(e) { window.customAlert("Gagal menghapus soal", "error"); }
-    }
 };
 
 document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e) => {
@@ -962,9 +1053,9 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
         } else if (tipeMediaUtama === 'url') {
             const urlVal = document.getElementById('soal-media-url').value.trim();
             if (urlVal) {
-                let mType = 'image';
-                if (urlVal.toLowerCase().includes('.mp4') || urlVal.toLowerCase().includes('drive')) mType = 'video';
-                if (urlVal.toLowerCase().includes('.mp3')) mType = 'audio';
+                let mType = 'image'; const lowerUrl = urlVal.toLowerCase();
+                if (lowerUrl.match(/\.(mp4|webm|ogg|mov)$/) || lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) mType = 'video';
+                else if (lowerUrl.match(/\.(mp3|wav|ogg)$/)) mType = 'audio';
                 mediaSoal = { url: urlVal, type: mType };
             }
         }
@@ -972,15 +1063,10 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
         const qC = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
         const snapC = await getDocs(qC);
         let currentClasses = new Set();
-        snapC.forEach(d => {
-             let arr = Array.isArray(d.data().kelas) ? d.data().kelas : [d.data().kelas];
-             arr.forEach(c => currentClasses.add(c));
-        });
+        snapC.forEach(d => { let arr = Array.isArray(d.data().kelas) ? d.data().kelas : [d.data().kelas]; arr.forEach(c => currentClasses.add(c)); });
         
         let kelasArrayToSave = Array.from(currentClasses);
-        if (kelasArrayToSave.length === 0 && selectedKelasCbs.length > 0) {
-            kelasArrayToSave = selectedKelasCbs; 
-        }
+        if (kelasArrayToSave.length === 0 && selectedKelasCbs.length > 0) { kelasArrayToSave = selectedKelasCbs; }
 
         let payload = { mataPelajaran: mapel, kelas: kelasArrayToSave, nomor_soal: nomorSoalTarget, bobot: bobotSoal, tipe: tipe, teks_soal: teks, updatedAt: new Date() };
         if (mediaSoal) payload.media_soal = mediaSoal;
@@ -989,8 +1075,19 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
             let opsiKeys = ['A', 'B', 'C', 'D', 'E']; let opsi = {}; let opsi_media = {};
             for (let k of opsiKeys) {
                 opsi[k] = document.getElementById(`soal-opsi-${k}`).value;
-                let fileOpsi = document.getElementById(`media-opsi-${k}`).files[0];
-                if (fileOpsi) { opsi_media[k] = await window.uploadMediaToStorage(fileOpsi, `bank_soal/${mapel}/opsi`); }
+                let tipeMediaOpsi = document.getElementById(`tipe-media-opsi-${k}`).value;
+                if (tipeMediaOpsi === 'file') {
+                    let fileOpsi = document.getElementById(`media-opsi-${k}`).files[0];
+                    if (fileOpsi) { opsi_media[k] = await window.uploadMediaToStorage(fileOpsi, `bank_soal/${mapel}/opsi`); }
+                } else {
+                    let urlOpsi = document.getElementById(`media-url-opsi-${k}`).value.trim();
+                    if (urlOpsi) {
+                        let mTypeOpsi = 'image'; const lowerUrlOpsi = urlOpsi.toLowerCase();
+                        if (lowerUrlOpsi.match(/\.(mp4|webm|ogg|mov)$/) || lowerUrlOpsi.includes('youtube') || lowerUrlOpsi.includes('youtu.be')) mTypeOpsi = 'video';
+                        else if (lowerUrlOpsi.match(/\.(mp3|wav|ogg)$/)) mTypeOpsi = 'audio';
+                        opsi_media[k] = { url: urlOpsi, type: mTypeOpsi };
+                    }
+                }
             }
             payload.opsi = opsi; if (Object.keys(opsi_media).length > 0) payload.opsi_media = opsi_media;
 
@@ -1352,17 +1449,29 @@ window.previewSoal = (id) => {
     
     let html = `<div style="margin-bottom:22px;"><div style="display:inline-flex; align-items:center; gap:8px; background:#f0f9ff; color:#0369a1; padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:600; margin-bottom:14px; border:1px solid #bae6fd;"><i class="fas fa-user-graduate"></i> Tampilan Siswa</div><div style="font-size:1.08rem; line-height:1.75; color:#0f172a; font-weight:500;">${s.teks_soal || ''}</div></div>`;
     
-    if(s.media_soal && s.media_soal.url){
-        const url = s.media_soal.url; const type = s.media_soal.type || 'image';
-        if(type === 'image' || url.match(/\.(jpg|jpeg|png|gif|webp)/i)){ html += `<div style="margin:20px 0; text-align:center;"><img src="${url}" style="max-width:100%; max-height:320px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>`; } else if(type === 'video'){ html += `<div style="margin:20px 0;"><video src="${url}" controls style="width:100%; max-height:360px; border-radius:12px; background:#000;"></video></div>`; }
+    if(s.media_soal){
+        const mUrl = typeof s.media_soal === 'object' ? s.media_soal.url : s.media_soal;
+        const mType = typeof s.media_soal === 'object' && s.media_soal.type ? s.media_soal.type : 'image';
+        if(mType === 'video'){ html += `<div style="margin:20px 0; text-align:center;"><video src="${mUrl}" controls style="max-width:100%; max-height:320px; border-radius:12px; background:#000;"></video></div>`; } 
+        else if(mType === 'audio'){ html += `<div style="margin:20px 0; text-align:center;"><audio src="${mUrl}" controls></audio></div>`; }
+        else { html += `<div style="margin:20px 0; text-align:center;"><img src="${mUrl}" style="max-width:100%; max-height:320px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>`; }
     }
     
     if(s.tipe === 'PG' || s.tipe === 'PGK'){
         html += '<div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">';
         ['A','B','C','D','E'].forEach(k => {
-            if(s.opsi && s.opsi[k]){
+            if(s.opsi && (s.opsi[k] || (s.opsi_media && s.opsi_media[k]))){
                 const isCorrect = s.tipe === 'PG' ? s.kunci_jawaban === k : (Array.isArray(s.kunci_jawaban) && s.kunci_jawaban.includes(k));
-                html += `<div style="display:flex; align-items:flex-start; gap:14px; padding:14px 16px; border:1.5px solid ${isCorrect ? '#86efac' : '#e2e8f0'}; border-radius:12px; background:${isCorrect ? '#f0fdf4' : 'white'}; transition:all 0.2s;"><div style="width:32px; height:32px; background:${isCorrect ? '#10b981' : '#f1f5f9'}; color:${isCorrect ? 'white' : '#475569'}; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0;">${k}</div><div style="flex:1; padding-top:2px;"><div style="color:#1e293b; line-height:1.6;">${s.opsi[k]}</div>${s.opsi_media && s.opsi_media[k] ? `<img src="${s.opsi_media[k]}" style="max-width:180px; margin-top:8px; border-radius:8px; border:1px solid #e2e8f0;">` : ''}</div>${isCorrect ? '<div style="color:#10b981; font-size:1.1rem;"><i class="fas fa-check-circle"></i></div>' : ''}</div>`;
+                
+                let mHtml = '';
+                if(s.opsi_media && s.opsi_media[k]){
+                    const moData = s.opsi_media[k]; const moUrl = typeof moData === 'object' ? moData.url : moData; const moType = typeof moData === 'object' && moData.type ? moData.type : 'image';
+                    if(moType === 'video') mHtml = `<video src="${moUrl}" controls style="max-width:180px; margin-top:8px; border-radius:8px; background:#000;"></video>`;
+                    else if(moType === 'audio') mHtml = `<audio src="${moUrl}" controls style="margin-top:8px;"></audio>`;
+                    else mHtml = `<img src="${moUrl}" style="max-width:180px; margin-top:8px; border-radius:8px; border:1px solid #e2e8f0;">`;
+                }
+
+                html += `<div style="display:flex; align-items:flex-start; gap:14px; padding:14px 16px; border:1.5px solid ${isCorrect ? '#86efac' : '#e2e8f0'}; border-radius:12px; background:${isCorrect ? '#f0fdf4' : 'white'}; transition:all 0.2s;"><div style="width:32px; height:32px; background:${isCorrect ? '#10b981' : '#f1f5f9'}; color:${isCorrect ? 'white' : '#475569'}; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0;">${k}</div><div style="flex:1; padding-top:2px;"><div style="color:#1e293b; line-height:1.6;">${s.opsi[k]}</div>${mHtml}</div>${isCorrect ? '<div style="color:#10b981; font-size:1.1rem;"><i class="fas fa-check-circle"></i></div>' : ''}</div>`;
             }
         });
         html += '</div>';
