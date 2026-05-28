@@ -6,6 +6,11 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-
 const loginForm = document.getElementById("login-form");
 const btnSubmit = document.getElementById("btn-submit");
 
+// --- CEK DARK MODE ---
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+
 /**
  * Fungsi untuk menstandarkan array data (role, mapel, kelas)
  */
