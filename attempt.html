@@ -77,6 +77,12 @@
     </style>
 </head>
 <body>
+    <!-- Script Inline Pengecekan Tema Global (Mencegah Efek Kedipan Putih) -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
 
     <div id="pre-exam-screen" class="pre-exam-container">
         <div class="pre-exam-card">
