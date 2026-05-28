@@ -92,13 +92,24 @@ const SecurityManager = {
             if (e.key === 'PrintScreen') navigator.clipboard.writeText("Aksi Ilegal Terdeteksi").catch(()=>{});
         });
 
+        // BLOKIR TOMBOL KEMBALI (BACK) MENGGUNAKAN POPSTATE SECARA AGRESIF
         history.pushState(null, null, window.location.href);
-        window.addEventListener('popstate', () => { 
-            history.pushState(null, null, window.location.href); 
-            if(examState.isExamActive) this.openFullscreen(); 
+        window.onpopstate = () => { 
+            history.go(1); // Paksa maju ke depan (mencegah ke belakang)
+            if(examState.isExamActive) {
+                this.openFullscreen();
+                this.handleViolation("Sistem mendeteksi Anda mencoba menekan tombol Kembali (Back)!");
+            }
+        };
+
+        // CEGAH PENUTUPAN TAB/RELOAD TANPA SENGAJA
+        window.addEventListener('beforeunload', (e) => {
+            if (examState.isExamActive) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
         });
     },
-    
     startStrictExamMode: function() {
         document.addEventListener('visibilitychange', () => { 
             if (document.hidden && examState.isExamActive) {
@@ -113,12 +124,10 @@ const SecurityManager = {
         document.addEventListener("fullscreenchange", () => {
             if (!document.fullscreenElement && examState.isExamActive) {
                 this.handleViolation("Mode Layar Penuh (Fullscreen) dimatikan!");
-                // Proteksi ANBK Agresif: Paksa masuk layar penuh kembali setelah 300ms
-                setTimeout(() => this.openFullscreen(), 300);
+                setTimeout(() => this.openFullscreen(), 300); // Paksa masuk fullscreen lagi
             }
         });
     },
-    
     handleViolation: async function(alasan) {
         if (!examState.isExamActive) return;
         examState.pelanggaran++;
@@ -274,7 +283,6 @@ function renderNavigasi() {
     const grid = document.getElementById('nav-grid');
     grid.innerHTML = '';
     examState.arraySoal.forEach((soal, idx) => {
-        // Cek status terisi berdasarkan tipe soal
         let isFilled = false;
         let ans = examState.jawabanSiswa[soal.id];
         let tipe = (soal.tipe || soal.tipe_soal || 'PG').toUpperCase();
@@ -310,10 +318,8 @@ function tampilkanSoal(idx) {
     const container = document.getElementById('soal-content');
     const teksSoal = soal.teks_soal || soal.teksSoal || soal.pertanyaan || '';
     
-    // Render Teks Pertanyaan
     let htmlContent = `<div style="font-size:1.1rem; line-height:1.6; margin-bottom:15px; color:var(--text-main);">${teksSoal}</div>`;
     
-    // Render File Media Jika Ada
     if (soal.media_soal && soal.media_soal.url) {
         let urlMedia = soal.media_soal.url;
         let tipeMedia = soal.media_soal.type;
@@ -324,7 +330,6 @@ function tampilkanSoal(idx) {
         htmlContent += `</div>`;
     }
 
-    // Render Pilihan Jawaban Sesuai Tipe
     if (tipeSoal === 'PG') {
         const opsiArr = ['A', 'B', 'C', 'D', 'E'];
         htmlContent += `<div style="display:flex; flex-direction:column; gap:10px;">`;
@@ -362,8 +367,6 @@ function tampilkanSoal(idx) {
     else if (tipeSoal === 'MENJODOHKAN') {
         htmlContent += `<div style="font-size:0.85rem; color:var(--warning); font-weight:bold; margin-bottom:15px;"><i class="fas fa-hand-pointer"></i> Pilih pasangan jawaban yang tepat di kotak sebelah kanan.</div>`;
         let pasangan = soal.pasangan || [];
-        
-        // Buat daftar jawaban kanan yang diacak agar siswa tidak sekadar memilih lurus
         let semuaKanan = pasangan.map(p => p.kanan).sort(() => Math.random() - 0.5); 
         
         htmlContent += `<div style="display:flex; flex-direction:column; gap:12px;">`;
@@ -393,7 +396,6 @@ function tampilkanSoal(idx) {
 
     container.innerHTML = htmlContent;
 
-    // --- EVENT LISTENERS UNTUK JAWABAN ---
     if (tipeSoal === 'PG') {
         container.querySelectorAll('input[name="answer_pg"]').forEach(radio => {
             radio.onchange = (e) => { 
@@ -435,12 +437,10 @@ function tampilkanSoal(idx) {
         tx.oninput = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
     }
 
-    // --- FITUR RAGU-RAGU ---
     const cbRagu = document.getElementById('cb-ragu');
     cbRagu.checked = !!examState.raguRagu[soal.id];
     cbRagu.onchange = (e) => { examState.raguRagu[soal.id] = e.target.checked; renderNavigasi(); };
 
-    // --- NAVIGASI BAWAH ---
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
 
@@ -468,7 +468,6 @@ async function checkSelesaiUjian() {
     const jumlahSoal = examState.arraySoal.length;
     let dijawab = 0;
 
-    // Hitung jumlah soal yang sudah diisi
     examState.arraySoal.forEach(s => {
         let ans = examState.jawabanSiswa[s.id];
         let tipe = (s.tipe || s.tipe_soal || 'PG').toUpperCase();
@@ -501,7 +500,6 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     let totalBobotPG = 0;
     let skorDiperolehPG = 0;
 
-    // SCORING ENGINE UNTUK PG, PGK, DAN MENJODOHKAN
     examState.arraySoal.forEach(s => {
         const tipeSoal = (s.tipe || s.tipe_soal || 'PG').toUpperCase();
         const bobot = parseFloat(s.bobot) || 1;
@@ -516,7 +514,6 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
             totalBobotPG += bobot;
             let kunciArr = Array.isArray(s.kunci_jawaban) ? s.kunci_jawaban : [];
             let jwbArr = Array.isArray(jwb) ? jwb : [];
-            // Harus benar semua
             if(kunciArr.length > 0 && jwbArr.length === kunciArr.length && kunciArr.every(k => jwbArr.includes(k))) {
                 skorDiperolehPG += bobot;
             }
@@ -530,7 +527,6 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
                 s.pasangan.forEach(p => {
                     if (jwbObj[p.kiri] === p.kanan) correctPairs++;
                 });
-                // Skoring parsial (Cth: 2 dari 4 benar = dapat setengah bobot)
                 if (totalPairs > 0) {
                     skorDiperolehPG += (correctPairs / totalPairs) * bobot;
                 }
@@ -550,7 +546,7 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
         jawaban: examState.jawabanSiswa,
         pelanggaran: examState.pelanggaran,
         skorPG: skorAkhir,
-        skor: skorAkhir, // Fallback key
+        skor: skorAkhir, 
         waktuSubmit: new Date().toISOString(),
         statusPelanggaran: statusAkhir
     };
