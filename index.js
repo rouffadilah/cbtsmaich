@@ -18,6 +18,11 @@ const normalizeArrayData = (data) => {
 loginForm.addEventListener("submit", async (event) => {
     event.preventDefault(); 
     
+    // Paksa fullscreen saat tombol login ditekan
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(()=>{}); }
+    else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); } 
+    
     // Set UI State: Loading
     const originalBtnText = btnSubmit.innerHTML;
     btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
