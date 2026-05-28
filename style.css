@@ -410,3 +410,102 @@ body.dark-mode [style*="background: #fee2e2"] {
     border-color: #7f1d1d !important;
     color: #fca5a5 !important;
 }
+
+
+/* =========================================
+   DARK MODE UNTUK HALAMAN UJIAN (ATTEMPT)
+========================================= */
+body.dark-mode .pre-exam-card,
+body.dark-mode .question-area,
+body.dark-mode .exam-header,
+body.dark-mode .nav-bottom-container {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .sidebar-area {
+    background-color: #0f172a !important; /* Slate 900 untuk sidebar */
+    border-left: 1px solid var(--border-color) !important;
+}
+
+body.dark-mode .sidebar-area h4 {
+    color: var(--text-main) !important;
+}
+
+/* Kotak nomor navigasi soal */
+body.dark-mode .q-box {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+body.dark-mode .q-box:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .q-box.filled {
+    background-color: #10b981 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .q-box.ragu {
+    background-color: #f59e0b !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .q-box.active {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Opsi jawaban teks / radio label */
+body.dark-mode .option-label {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: var(--text-main) !important;
+}
+body.dark-mode .option-label:hover {
+    background-color: #283548 !important;
+}
+body.dark-mode .option-label.selected {
+    background-color: #064e3b !important;
+    border-color: #10b981 !important;
+}
+body.dark-mode .option-label input:checked + span {
+    color: #34d399 !important;
+}
+
+/* Soal Menjodohkan (kontainer pasangan kiri-kanan) */
+body.dark-mode [style*="background:#f8fafc"],
+body.dark-mode [style*="background: #f8fafc"] {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+}
+body.dark-mode .select-jodoh,
+body.dark-mode select.select-jodoh {
+    background-color: #1e293b !important;
+    color: var(--text-main) !important;
+    border-color: #334155 !important;
+}
+
+/* Esai Textarea */
+body.dark-mode #essay-ans {
+    background-color: #0f172a !important;
+    color: var(--text-main) !important;
+    border-color: #334155 !important;
+}
+
+/* Kotak peringatan keamanan pre-exam */
+body.dark-mode .warning-box {
+    background-color: #1e1b4b !important; /* Indigo gelap */
+    color: #c7d2fe !important;
+    border-color: #312e81 !important;
+}
+
+/* Input teks non-aktif (seperti Kelas siswa) */
+body.dark-mode input:disabled,
+body.dark-mode input[style*="background: #e2e8f0"] {
+    background-color: #334155 !important;
+    color: #cbd5e1 !important;
+    border-color: #475569 !important;
+}
