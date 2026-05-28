@@ -543,3 +543,49 @@ body.dark-mode [style*="background-color: white"] {
     color: #f8fafc !important;
     border-color: #334155 !important;
 }
+
+/* =========================================
+   DARK MODE UNTUK HALAMAN LOGIN & REGISTRASI
+========================================= */
+
+/* Latar belakang halaman luar */
+body.dark-mode.login-page-bg {
+    background: #0f172a !important; /* Latar tergelap (Slate 900) tanpa gradien putih */
+}
+
+/* Kartu Form Login/Registrasi */
+body.dark-mode .login-card {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Tombol Pilihan Role (Siswa / Guru) */
+body.dark-mode .role-box {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+}
+body.dark-mode .role-box span, 
+body.dark-mode .role-box i {
+    color: #94a3b8 !important;
+}
+body.dark-mode .role-box:hover {
+    background-color: #1e293b !important;
+}
+
+/* Pilihan Role yang sedang Aktif */
+body.dark-mode .role-box.active {
+    background-color: #064e3b !important; /* Emerald sangat gelap */
+    border-color: #10b981 !important;
+}
+body.dark-mode .role-box.active span, 
+body.dark-mode .role-box.active i {
+    color: #34d399 !important; /* Emerald terang */
+}
+
+/* Kotak Peringatan (Contoh: Pendaftaran ditutup) */
+body.dark-mode [style*="background: #fee2e2"] {
+    background-color: #450a0a !important; /* Merah gelap */
+    border-color: #7f1d1d !important;
+    color: #fca5a5 !important;
+}
