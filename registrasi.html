@@ -18,10 +18,10 @@
 <body class="login-page-bg">
     <script>
         (function() {
+            // 1. Logika Auto-Theme Berdasarkan Waktu
             const currentHour = new Date().getHours();
             const isNightTime = currentHour >= 18 || currentHour < 6;
             const savedTheme = localStorage.getItem('theme');
-            
             if (savedTheme === 'dark' || (!savedTheme && isNightTime)) {
                 document.body.classList.add('dark-mode');
                 if (!savedTheme) localStorage.setItem('theme', 'dark'); 
@@ -29,6 +29,37 @@
                 document.body.classList.remove('dark-mode');
                 if (!savedTheme) localStorage.setItem('theme', 'light');
             }
+
+            // 2. Logika Fullscreen Otomatis Giras (Mode ANBK)
+            function pemicuFullscreenANBK() {
+                const docEl = document.documentElement;
+                const isFull = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+                if (!isFull) {
+                    if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(() => {}); }
+                    else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
+                    else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
+                }
+            }
+            window.addEventListener('focus', pemicuFullscreenANBK);
+            ['click', 'touchstart', 'keydown', 'mousemove'].forEach(evt => {
+                document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
+            });
+
+            // 3. Logika Jam & Tanggal Real-time di Bawah Logo
+            function inisialisasiJamSistem() {
+                const clockEl = document.getElementById('realtime-clock');
+                if (!clockEl) return;
+                function perbaruiWaktu() {
+                    const sekarang = new Date();
+                    const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    const strTanggal = sekarang.toLocaleDateString('id-ID', opsiTanggal);
+                    const strJam = sekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+                    clockEl.innerHTML = `<i class="far fa-calendar-alt"></i> ${strTanggal} &nbsp;|&nbsp; <i class="far fa-clock"></i> ${strJam} WIB`;
+                }
+                perbaruiWaktu();
+                setInterval(perbaruiWaktu, 1000);
+            }
+            document.addEventListener('DOMContentLoaded', inisialisasiJamSistem);
         })();
     </script>
 
@@ -38,6 +69,9 @@
                 <a href="dashboard.html" style="display: inline-block; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                     <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo" title="Kembali ke Dashboard" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
                 </a>
+                
+                <div id="realtime-clock" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin: 5px 0 15px 0; letter-spacing: 0.3px; text-transform: uppercase;">Menghubungkan waktu server...</div>
+
                 <h2 id="reg-title">REGISTRASI SISWA</h2> 
                 <p>SMA ISLAM CIKAL HARAPAN I BSD</p>
             </div>
@@ -119,34 +153,5 @@
     </script>
 
     <script type="module" src="registrasi.js"></script>
-    <!-- Script Force Fullscreen (Mode ANBK) -->
-    <script>
-        function enforceFullscreen() {
-            const docEl = document.documentElement;
-            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-            
-            if (!isFullscreen) {
-                if (docEl.requestFullscreen) { 
-                    docEl.requestFullscreen().catch(() => window.focus()); 
-                } else if (docEl.webkitRequestFullscreen) { 
-                    docEl.webkitRequestFullscreen(); // Safari
-                } else if (docEl.msRequestFullscreen) { 
-                    docEl.msRequestFullscreen(); // IE11/Edge Lama
-                }
-            }
-        }
-
-        // Memicu fullscreen pada interaksi pertama (Klik, Sentuh, atau Ketik)
-        const triggerEvents = ['click', 'touchstart', 'keydown'];
-        const activateFullscreen = () => {
-            enforceFullscreen();
-            // Hapus event listener setelah berhasil agar tidak memberatkan browser
-            triggerEvents.forEach(evt => document.removeEventListener(evt, activateFullscreen));
-        };
-
-        triggerEvents.forEach(evt => {
-            document.addEventListener(evt, activateFullscreen);
-        });
-    </script>
 </body>
 </html>
