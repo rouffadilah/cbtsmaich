@@ -6,11 +6,6 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-
 const loginForm = document.getElementById("login-form");
 const btnSubmit = document.getElementById("btn-submit");
 
-// --- CEK DARK MODE ---
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-    }
-
 /**
  * Fungsi untuk menstandarkan array data (role, mapel, kelas)
  */
@@ -71,7 +66,6 @@ loginForm.addEventListener("submit", async (event) => {
     } catch (error) {
         console.error("Proses Login Gagal:", error);
         
-        // Menangani tipe error yang umum
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             alert("LOGIN GAGAL: Username atau Password Anda salah!");
         } else if (error.code === 'permission-denied') {
