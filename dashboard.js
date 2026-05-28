@@ -27,7 +27,7 @@ if (!document.getElementById('cbt-custom-css')) {
 // ==========================================
 // 1. VARIABEL GLOBAL & STATE APLIKASI
 // ==========================================
-let listMapel = []; let listKelas = []; let allUsersData = []; let allHasilUjian = []; 
+let listMapel = []; let listKelas = []; let allUsersData = []; let allHasilUjian = []; let allBankSoalSummary = {};
 let currentMapelDetail = ""; let currentKelasDetail = ""; let isAdmin = false; let isGuru = false; 
 let userMapel = []; let userKelas = []; let editMasterMode = false;
 
@@ -114,8 +114,6 @@ window.addEventListener('popstate', function() { if (!window.location.hash || wi
 // ==========================================
 // 5. INISIALISASI HALAMAN (DOM)
 // ==========================================
-
-// Fungsi Update Tampilan Role berdasarkan Checkbox (Siswa/Guru/Admin/Custom)
 window.handleRoleChange = () => {
     const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
     document.getElementById('group-edit-guru').style.display = (selectedRoles.includes('guru') || selectedRoles.some(r => r !== 'siswa' && r !== 'admin')) ? 'flex' : 'none';
@@ -124,11 +122,9 @@ window.handleRoleChange = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- FITUR DARK MODE GLOBAL ---
     const darkModeBtn = document.getElementById('btn-global-dark-mode');
     const iconDarkMode = darkModeBtn?.querySelector('i');
     
-    // Periksa status classList body langsung yang telah diproses skrip auto-waktu HTML
     if (document.body.classList.contains('dark-mode') && iconDarkMode) {
         iconDarkMode.classList.replace('fa-moon', 'fa-sun');
     }
@@ -136,17 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
     darkModeBtn?.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
-        
-        // Simpan preferensi manual agar mengoverride keputusan sistem otomatis
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        
-        if (isDark) {
-            iconDarkMode?.classList.replace('fa-moon', 'fa-sun');
-        } else {
-            iconDarkMode?.classList.replace('fa-sun', 'fa-moon');
-        }
+        if (isDark) { iconDarkMode?.classList.replace('fa-moon', 'fa-sun'); } 
+        else { iconDarkMode?.classList.replace('fa-sun', 'fa-moon'); }
     });
-    
+
     const filterKelas = document.getElementById('filter-kelas-pengguna');
     if (filterKelas) filterKelas.addEventListener('change', window.renderTablePengguna);
 
@@ -158,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { document.getElementById('modal-edit-akun').style.display = 'none'; });
 
-    // Tambah Role Kustom Khusus Admin
     document.getElementById('btn-add-custom-role')?.addEventListener('click', () => {
         const roleVal = document.getElementById('input-custom-role').value.trim().toLowerCase();
         if (!roleVal) return;
@@ -169,8 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(label);
             label.querySelector('input').addEventListener('change', window.handleRoleChange);
         }
-        document.getElementById('input-custom-role').value = '';
-        window.handleRoleChange();
+        document.getElementById('input-custom-role').value = ''; window.handleRoleChange();
     });
 
     document.addEventListener('click', (e) => {
@@ -181,9 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.style.display === 'none' || target.style.display === '') { target.style.display = 'block'; if (icon) icon.style.transform = 'rotate(180deg)'; header.style.background = '#f8fafc'; } 
             else { target.style.display = 'none'; if (icon) icon.style.transform = 'rotate(0deg)'; header.style.background = '#ffffff'; }
         }
-        if (!e.target.closest('.dropdown-check')) {
-            document.querySelectorAll('.dropdown-check.show').forEach(d => d.classList.remove('show'));
-        }
+        if (!e.target.closest('.dropdown-check')) { document.querySelectorAll('.dropdown-check.show').forEach(d => d.classList.remove('show')); }
     });
 
     const btnLogout = document.getElementById('btn-logout');
@@ -421,7 +407,7 @@ window.renderTablePengguna = () => {
             </div>
         ` : '-';
 
-        if (roles.some(r => r !== 'siswa')) { // Guru, Admin, atau Custom Role
+        if (roles.some(r => r !== 'siswa')) { 
             if ((user.username || "").toLowerCase().includes(filterGId) && (user.nama || "").toLowerCase().includes(filterGNama) && roleDisplay.toLowerCase().includes(filterGRole) && `${mapel} ${kelas}`.toLowerCase().includes(filterGDetail)) {
                 countGuru++;
                 htmlGuru += `<tr><td><strong>${user.username || "-"}</strong></td><td>${user.nama || "-"}</td><td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${roleDisplay}</span></td><td><small><b>Mapel:</b> ${mapel}<br><b>Kelas:</b> ${kelas}</small></td>${isAdmin ? `<td style="text-align:center;">${actionButtons}</td>` : ''}</tr>`;
@@ -465,10 +451,8 @@ window.bukaModalEditAkun = async (uid) => {
         
         const roles = Array.isArray(data.role) ? data.role : [data.role];
         
-        // Tampilkan Custom Role Add Section Jika Admin
         document.getElementById('admin-custom-role-group').style.display = isAdmin ? 'flex' : 'none';
         
-        // Populate standard + existing custom roles in the UI
         const container = document.getElementById('edit-role-container');
         container.innerHTML = `
             <label><input type="checkbox" class="edit-role-cb" value="siswa"> Siswa</label>
@@ -484,7 +468,6 @@ window.bukaModalEditAkun = async (uid) => {
             }
         });
 
-        // Set checks & attach events
         document.querySelectorAll('.edit-role-cb').forEach(cb => { 
             cb.checked = roles.includes(cb.value); 
             cb.addEventListener('change', window.handleRoleChange);
@@ -501,8 +484,7 @@ window.bukaModalEditAkun = async (uid) => {
             document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = kelasArr.includes(cb.value); });
         }
         
-        window.handleRoleChange(); // Update view visibility
-        document.getElementById('modal-edit-akun').style.display = 'flex';
+        window.handleRoleChange(); document.getElementById('modal-edit-akun').style.display = 'flex';
     } catch(e) { console.error(e); }
 };
 
@@ -521,9 +503,7 @@ document.getElementById('btn-save-edit-akun')?.addEventListener('click', async (
         const newPass = document.getElementById('edit-pass').value;
         const roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
 
-        if(!newNama || !newUsername || roles.length === 0) {
-            throw new Error("Nama, Username, dan minimal 1 Role harus diisi!");
-        }
+        if(!newNama || !newUsername || roles.length === 0) { throw new Error("Nama, Username, dan minimal 1 Role harus diisi!"); }
 
         let payload = { nama: newNama, username: newUsername, role: roles };
 
@@ -560,61 +540,17 @@ window.downloadDaftarPengguna = () => {
 // ==========================================
 // 9. FUNGSI BANK SOAL & UJIAN
 // ==========================================
-
 window.getTingkatan = (kelas) => {
     if (!kelas) return "Lainnya"; let k = String(kelas).toUpperCase().trim();
     if (k.startsWith("XII")) return "XII"; if (k.startsWith("XI")) return "XI"; if (k.startsWith("X")) return "X";
     return "Lainnya";
 };
 
-// Logika Filter Tingkatan di Checkbox Roll (Menu Edit Baris Tabel)
 window.toggleDropdownCheck = (id) => {
     const el = document.getElementById(id);
     const isShowing = el.classList.contains('show');
     document.querySelectorAll('.dropdown-check.show').forEach(d => d.classList.remove('show'));
     if (!isShowing) el.classList.add('show');
-};
-
-window.updateMapelKelasToggled = async (mapel, kelasTarget, isChecked, dropdownId) => {
-    try {
-        const dropdown = document.getElementById(dropdownId);
-        if (dropdown) {
-            const checkedBoxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
-            const btnSpan = dropdown.querySelector('.dropdown-check-btn span');
-            if (btnSpan) { btnSpan.innerText = checkedBoxes.length > 0 ? `${checkedBoxes.length} Kelas Dipilih` : 'Pilih Kelas'; }
-        }
-
-        const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
-        const snap = await getDocs(q); 
-        const updatePromises = [];
-        
-        snap.forEach(d => {
-            let data = d.data();
-            let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
-            
-            if (isChecked) {
-                if (!arrKelas.includes(kelasTarget)) {
-                    arrKelas.push(kelasTarget);
-                    updatePromises.push(updateDoc(doc(db, "bank_soal", d.id), { kelas: arrKelas }));
-                }
-            } else {
-                if (arrKelas.includes(kelasTarget)) {
-                    arrKelas = arrKelas.filter(k => k !== kelasTarget);
-                    updatePromises.push(updateDoc(doc(db, "bank_soal", d.id), { kelas: arrKelas }));
-                }
-            }
-        });
-        await Promise.all(updatePromises);
-
-        if (!isChecked) {
-            const key = `${mapel}_${kelasTarget}`;
-            await updateDoc(doc(db, "pengaturan", "waktu_ujian"), { [key]: deleteField() }).catch(()=>{});
-            await updateDoc(doc(db, "pengaturan", "jadwal_ujian"), { [key]: deleteField() }).catch(()=>{});
-            await updateDoc(doc(db, "pengaturan", "token_ujian"), { [`token_${key}`]: deleteField() }).catch(()=>{});
-        }
-    } catch (e) {
-        console.error("Gagal mengupdate kelas:", e); window.customAlert("Gagal menerapkan perubahan kelas.", "error");
-    }
 };
 
 window.simpanPengaturanBaris = async (mapel, jadwalId, durasiId, tokenId, btnEl) => {
@@ -651,17 +587,44 @@ window.simpanPengaturanBaris = async (mapel, jadwalId, durasiId, tokenId, btnEl)
         }
         
         const icon = btnEl.querySelector('i');
-        if(icon) {
-            icon.className = 'fas fa-check';
-            setTimeout(() => { icon.className = 'fas fa-save'; }, 2000);
-        }
-    } catch (e) {
-        console.error(e); window.customAlert("Gagal menyimpan pengaturan: " + e.message, "error");
-    } finally {
-        btnEl.innerHTML = origHtml;
-        btnEl.disabled = false;
-    }
+        if(icon) { icon.className = 'fas fa-check'; setTimeout(() => { icon.className = 'fas fa-save'; }, 2000); }
+    } catch (e) { console.error(e); window.customAlert("Gagal menyimpan pengaturan: " + e.message, "error"); } 
+    finally { btnEl.innerHTML = origHtml; btnEl.disabled = false; }
 };
+
+window.bukaModalEditBankSoal = (mapel) => {
+    document.getElementById('edit-bs-old-mapel').value = mapel;
+    const container = document.getElementById('edit-bs-new-kelas-container');
+    const d = allBankSoalSummary[mapel];
+    let currentClasses = d ? Array.from(d.classes) : [];
+    
+    container.innerHTML = listKelas.map(k => `
+        <label style="display:block; margin-bottom:8px; cursor:pointer;">
+            <input type="checkbox" class="edit-bs-kelas-cb" value="${k}" ${currentClasses.includes(k) ? 'checked' : ''} style="transform:scale(1.2); margin-right:8px;"> <span style="font-size: 0.95rem;">${k}</span>
+        </label>
+    `).join('');
+    
+    document.getElementById('modal-edit-bank-soal').style.display = 'flex';
+};
+
+document.getElementById('btn-simpan-pindah-bs')?.addEventListener('click', async () => {
+    const mapel = document.getElementById('edit-bs-old-mapel').value;
+    const selectedKelas = Array.from(document.querySelectorAll('.edit-bs-kelas-cb:checked')).map(cb => cb.value);
+    
+    const btn = document.getElementById('btn-simpan-pindah-bs');
+    const orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...'; btn.disabled = true;
+    try {
+        const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
+        const snap = await getDocs(q);
+        const updates = [];
+        snap.forEach(d => updates.push(updateDoc(doc(db, "bank_soal", d.id), { kelas: selectedKelas })));
+        await Promise.all(updates);
+        window.loadBankSoalSummary();
+        document.getElementById('modal-edit-bank-soal').style.display = 'none';
+        window.customAlert("Kelas sasaran berhasil diperbarui!", "success");
+    } catch(e) { window.customAlert("Gagal update kelas sasaran.", "error"); }
+    btn.innerHTML = orig; btn.disabled = false;
+});
 
 window.loadBankSoalSummary = async () => {
     const tbody = document.querySelector('#table-bank-soal-summary tbody'); if(!tbody) return;
@@ -676,13 +639,12 @@ window.loadBankSoalSummary = async () => {
             let mapel = data.mataPelajaran; 
             let kelasArray = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
             
-            if(!summary[mapel]) {
-                summary[mapel] = { mapel: mapel, classes: new Set(), count: 0 };
-            }
+            if(!summary[mapel]) { summary[mapel] = { mapel: mapel, classes: new Set(), count: 0 }; }
             summary[mapel].count++;
             kelasArray.forEach(c => summary[mapel].classes.add(c));
         });
         
+        allBankSoalSummary = summary;
         let statSoalEl = document.getElementById('stat-soal'); if (statSoalEl) statSoalEl.innerText = Object.keys(summary).length;
         
         const waktuSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian")); const waktuData = waktuSnap.exists() ? waktuSnap.data() : {};
@@ -704,36 +666,20 @@ window.loadBankSoalSummary = async () => {
             let durasi = jadwalKey && waktuData[jadwalKey] ? waktuData[jadwalKey] : '';
             let token = '';
             if(jadwalKey && tokenData[`token_${jadwalKey}`]) { 
-                let tData = tokenData[`token_${jadwalKey}`]; 
-                token = typeof tData === 'object' ? tData.code : tData; 
+                let tData = tokenData[`token_${jadwalKey}`]; token = typeof tData === 'object' ? tData.code : tData; 
             }
             
             let isMapelGuru = isGuru && userMapel.includes(mapel);
             let canEdit = isAdmin || isMapelGuru;
             
-            let dropdownId = `dd-kelas-${rowIdx}`;
-            let labelKelas = assignedClasses.length > 0 ? `${assignedClasses.length} Kelas Dipilih` : `Pilih Kelas`;
-            
-            let kelasDropdownHtml = `<div class="dropdown-check" id="${dropdownId}">
-                <button class="dropdown-check-btn" onclick="window.toggleDropdownCheck('${dropdownId}')" ${!canEdit ? 'disabled' : ''}>
-                    <span>${labelKelas}</span> <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="dropdown-check-content">`;
-            
-            listKelas.forEach(k => {
-                let isChecked = assignedClasses.includes(k) ? 'checked' : '';
-                kelasDropdownHtml += `
-                    <label>
-                        <input type="checkbox" value="${k}" ${isChecked} onchange="window.updateMapelKelasToggled('${mapel}', '${k}', this.checked, '${dropdownId}')"> 
-                        ${k}
-                    </label>`;
-            });
-            kelasDropdownHtml += `</div></div>`;
+            // Format List Kelas Dideretkan (Koma)
+            let labelKelas = assignedClasses.length > 0 ? assignedClasses.join(', ') : '<i style="color:#94a3b8;">Belum ada kelas</i>';
+            let kelasHtml = `<div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:600; color:var(--secondary); font-size:0.85rem; flex:1;">${labelKelas}</span>
+                ${canEdit ? `<button onclick="window.bukaModalEditBankSoal('${mapel}')" class="btn-icon" style="background:#f1f5f9; padding:4px 8px; font-size:0.8rem;" title="Edit Kelas"><i class="fas fa-pen"></i></button>` : ''}
+            </div>`;
 
-            let jadwalInputId = `jadwal-${rowIdx}`;
-            let durasiInputId = `durasi-${rowIdx}`;
-            let tokenInputId = `token-${rowIdx}`;
-
+            let jadwalInputId = `jadwal-${rowIdx}`; let durasiInputId = `durasi-${rowIdx}`; let tokenInputId = `token-${rowIdx}`;
             let jadwalInput = canEdit ? `<input type="datetime-local" id="${jadwalInputId}" class="ghost-input" value="${jadwal}" style="min-width: 140px;">` : (jadwal || '-');
             let durasiInput = canEdit ? `<input type="number" id="${durasiInputId}" class="ghost-input" value="${durasi}" placeholder="Menit" style="min-width: 80px; text-align: center;">` : (durasi || '-');
             let tokenInput = canEdit ? `<input type="text" id="${tokenInputId}" class="ghost-input" value="${token}" placeholder="KODE" style="text-transform:uppercase; font-weight:bold; color:var(--danger); min-width: 120px; text-align: center;">` : `<span style="display:inline-block; min-width:120px; text-align:center;">${token || '-'}</span>`;
@@ -746,15 +692,11 @@ window.loadBankSoalSummary = async () => {
                         <button onclick="window.bukaDetailSoal('${mapel}')" class="btn-icon" title="Kelola Soal"><i class="fas fa-cog"></i></button>
                         <button onclick="window.hapusBankSoalKeseluruhan('${mapel}', 'SEMUA')" class="btn-icon text-danger" title="Hapus Mapel Ini"><i class="fas fa-trash-alt"></i></button>
                     </div>`;
-            } else {
-                actionBtn = `<span style="color:var(--text-muted);"><i class="fas fa-lock"></i></span>`;
-            }
+            } else { actionBtn = `<span style="color:var(--text-muted);"><i class="fas fa-lock"></i></span>`; }
             
             html += `<tr>
-                <td style="vertical-align: middle;">
-                    <b style="color: var(--secondary); font-size: 1.05rem;">${mapel}</b>
-                </td>
-                <td>${kelasDropdownHtml}</td>
+                <td style="vertical-align: middle;"><b style="color: var(--secondary); font-size: 1.05rem;">${mapel}</b></td>
+                <td>${kelasHtml}</td>
                 <td>${jadwalInput}</td>
                 <td>${durasiInput}</td>
                 <td>${tokenInput}</td>
@@ -765,26 +707,19 @@ window.loadBankSoalSummary = async () => {
         
         if(html === '') html = '<tr><td colspan="7" style="text-align:center;">Tidak ada data soal.</td></tr>';
         tbody.innerHTML = html;
-        
-    } catch (e) { 
-        console.error(e); 
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--danger);">Gagal memuat data</td></tr>'; 
-    }
+    } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--danger);">Gagal memuat data</td></tr>'; }
 };
 
 window.hapusBankSoalKeseluruhan = async (mapel, kelas) => {
     let confirmMsg = `PENGHAPUSAN MAPEL!\n\nApakah Anda YAKIN ingin menghapus SELURUH soal untuk mapel "${mapel}" di semua kelas?`;
     if (!(await window.customConfirm(confirmMsg, "danger", "Konfirmasi Hapus"))) { return; }
 
-    const btnHtmlOriginal = event.currentTarget.innerHTML;
-    const btn = event.currentTarget;
+    const btn = event.currentTarget; const btnHtmlOriginal = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
 
     try {
         const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
-        const snap = await getDocs(q); 
-        const updatePromises = [];
-        
+        const snap = await getDocs(q); const updatePromises = [];
         snap.forEach(d => { updatePromises.push(deleteDoc(doc(db, "bank_soal", d.id))); });
         await Promise.all(updatePromises);
 
@@ -795,13 +730,9 @@ window.hapusBankSoalKeseluruhan = async (mapel, kelas) => {
         const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         if(tSnap.exists()) { let fields = {}; Object.keys(tSnap.data()).forEach(k => { if(k.startsWith("token_"+mapel+"_")) fields[k] = deleteField(); }); if(Object.keys(fields).length > 0) await updateDoc(doc(db, "pengaturan", "token_ujian"), fields).catch(()=>{}); }
 
-        await window.customAlert(`Berhasil menghapus seluruh data soal mapel ${mapel}.`, "success");
-        window.loadBankSoalSummary();
-    } catch (e) {
-        console.error(e); window.customAlert("Terjadi kesalahan saat menghapus data.", "error");
-    } finally {
-        if(btn) { btn.innerHTML = btnHtmlOriginal; btn.disabled = false; }
-    }
+        await window.customAlert(`Berhasil menghapus seluruh data soal mapel ${mapel}.`, "success"); window.loadBankSoalSummary();
+    } catch (e) { console.error(e); window.customAlert("Terjadi kesalahan saat menghapus data.", "error"); } 
+    finally { if(btn) { btn.innerHTML = btnHtmlOriginal; btn.disabled = false; } }
 };
 
 window.uploadMediaToStorage = async (file, folderPath) => {
@@ -826,24 +757,16 @@ window.normalizeUrutanSoal = async (mapel) => {
         return (a.nomor_soal || 0) - (b.nomor_soal || 0);
     });
     let updates = [];
-    soalArr.forEach((s, idx) => {
-        let correctNum = idx + 1;
-        if (s.nomor_soal !== correctNum) { updates.push(updateDoc(doc(db, "bank_soal", s.id), { nomor_soal: correctNum })); }
-    });
+    soalArr.forEach((s, idx) => { let correctNum = idx + 1; if (s.nomor_soal !== correctNum) { updates.push(updateDoc(doc(db, "bank_soal", s.id), { nomor_soal: correctNum })); } });
     if (updates.length > 0) { await Promise.all(updates); }
 };
 
-// Filter Kelas (Khusus 1 Tingkatan di Input Soal Baru)
 window.handleSoalKelasToggle = () => {
     const cbs = document.querySelectorAll('.cb-soal-kelas');
     const checked = Array.from(cbs).filter(cb => cb.checked);
     const label = document.getElementById('soal-kelas-label');
     
-    if (checked.length === 0) {
-        cbs.forEach(cb => { cb.disabled = false; cb.parentElement.style.opacity = '1'; cb.parentElement.style.cursor = 'pointer'; });
-        label.innerText = "-- Pilih Kelas --"; return;
-    }
-
+    if (checked.length === 0) { cbs.forEach(cb => { cb.disabled = false; cb.parentElement.style.opacity = '1'; cb.parentElement.style.cursor = 'pointer'; }); label.innerText = "-- Pilih Kelas --"; return; }
     const targetTingkatan = window.getTingkatan(checked[0].value);
     
     cbs.forEach(cb => {
@@ -852,8 +775,7 @@ window.handleSoalKelasToggle = () => {
             cb.disabled = !isSameTingkat; cb.parentElement.style.opacity = isSameTingkat ? '1' : '0.4'; cb.parentElement.style.cursor = isSameTingkat ? 'pointer' : 'not-allowed';
         }
     });
-
-    label.innerText = `${checked.length} Kelas (Tk. ${targetTingkatan})`;
+    label.innerText = `${checked.length} Kelas Dipilih`;
 };
 
 window.bukaModalTambahSoal = async (mapelParams = "", targetNomor = "") => {
@@ -862,48 +784,35 @@ window.bukaModalTambahSoal = async (mapelParams = "", targetNomor = "") => {
     const secMassal = document.getElementById('section-import-massal'); const divManual = document.getElementById('divider-import-manual');
     if (secMassal) secMassal.style.display = 'block'; if (divManual) divManual.style.display = 'flex';
     
-    const mapelSelect = document.getElementById('soal-mapel'); 
-    const modalTitle = document.getElementById('title-modal-soal');
-    const groupKelas = document.getElementById('group-soal-kelas');
-    const containerKelas = document.getElementById('soal-kelas-container');
-    const labelKelas = document.getElementById('soal-kelas-label');
+    const mapelSelect = document.getElementById('soal-mapel'); const modalTitle = document.getElementById('title-modal-soal');
+    const groupKelas = document.getElementById('group-soal-kelas'); const containerKelas = document.getElementById('soal-kelas-container'); const labelKelas = document.getElementById('soal-kelas-label');
     
     let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
     mapelSelect.innerHTML = '<option value="" disabled selected>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
     
-    containerKelas.innerHTML = listKelas.map(k => `
-        <label>
-            <input type="checkbox" class="cb-soal-kelas" value="${k}" onchange="window.handleSoalKelasToggle()"> 
-            ${k}
-        </label>
-    `).join('');
+    containerKelas.innerHTML = listKelas.map(k => `<label><input type="checkbox" class="cb-soal-kelas" value="${k}" onchange="window.handleSoalKelasToggle()"> ${k}</label>`).join('');
     labelKelas.innerText = "-- Pilih Kelas --";
 
     if (mapelParams) {
         modalTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Tambah Soal (Mapel Ini)'; mapelSelect.value = mapelParams;
-        mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0'; 
-        groupKelas.style.display = 'none';
+        mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0'; groupKelas.style.display = 'none';
     } else {
         modalTitle.innerHTML = '<i class="fas fa-file-import"></i> Input Soal'; mapelSelect.value = "";
-        mapelSelect.style.pointerEvents = 'auto'; mapelSelect.style.backgroundColor = '#fafafa';
-        groupKelas.style.display = 'block';
+        mapelSelect.style.pointerEvents = 'auto'; mapelSelect.style.backgroundColor = '#fafafa'; groupKelas.style.display = 'block';
     }
     
-    const inputNomor = document.getElementById('soal-nomor');
-    inputNomor.value = targetNomor; document.getElementById('modal-tambah-soal').style.display = 'flex'; document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
+    const inputNomor = document.getElementById('soal-nomor'); inputNomor.value = targetNomor; document.getElementById('modal-tambah-soal').style.display = 'flex'; document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
 };
 
 window.editDataSoal = (id) => {
     const soal = window.tempDataSoalKelola.find(s => s.id === id); if (!soal) return;
     const secMassal = document.getElementById('section-import-massal'); const divManual = document.getElementById('divider-import-manual');
     if (secMassal) secMassal.style.display = 'none'; if (divManual) divManual.style.display = 'none';
-    const mapelSelect = document.getElementById('soal-mapel'); 
-    const groupKelas = document.getElementById('group-soal-kelas');
+    const mapelSelect = document.getElementById('soal-mapel'); const groupKelas = document.getElementById('group-soal-kelas');
     
     let allowedMapel = listMapel; if (!isAdmin && isGuru) { allowedMapel = listMapel.filter(m => userMapel.includes(m)); }
     mapelSelect.innerHTML = '<option value="" disabled>-- Pilih Mapel --</option>' + allowedMapel.map(m => `<option value="${m}">${m}</option>`).join('');
-    mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0'; 
-    groupKelas.style.display = 'none'; 
+    mapelSelect.style.pointerEvents = 'none'; mapelSelect.style.backgroundColor = '#e2e8f0'; groupKelas.style.display = 'none'; 
     
     document.getElementById('edit-soal-id').value = id; document.getElementById('soal-mapel').value = soal.mataPelajaran; 
     document.getElementById('soal-nomor').value = soal.nomor_soal || ''; document.getElementById('soal-bobot').value = soal.bobot || 1; 
@@ -911,14 +820,9 @@ window.editDataSoal = (id) => {
     
     if (soal.media_soal) {
         const urlStr = typeof soal.media_soal === 'object' ? soal.media_soal.url : soal.media_soal;
-        if (!urlStr.includes('firebasestorage.googleapis.com')) {
-            document.querySelector('input[name="tipe_media_utama"][value="url"]').checked = true; document.getElementById('soal-media').style.display = 'none'; document.getElementById('soal-media-url').style.display = 'block'; document.getElementById('soal-media-url').value = urlStr;
-        } else {
-             document.querySelector('input[name="tipe_media_utama"][value="file"]').checked = true; document.getElementById('soal-media').style.display = 'block'; document.getElementById('soal-media-url').style.display = 'none'; document.getElementById('soal-media-url').value = '';
-        }
-    } else {
-        document.querySelector('input[name="tipe_media_utama"][value="file"]').checked = true; document.getElementById('soal-media').style.display = 'block'; document.getElementById('soal-media-url').style.display = 'none'; document.getElementById('soal-media-url').value = '';
-    }
+        if (!urlStr.includes('firebasestorage.googleapis.com')) { document.querySelector('input[name="tipe_media_utama"][value="url"]').checked = true; document.getElementById('soal-media').style.display = 'none'; document.getElementById('soal-media-url').style.display = 'block'; document.getElementById('soal-media-url').value = urlStr; } 
+        else { document.querySelector('input[name="tipe_media_utama"][value="file"]').checked = true; document.getElementById('soal-media').style.display = 'block'; document.getElementById('soal-media-url').style.display = 'none'; document.getElementById('soal-media-url').value = ''; }
+    } else { document.querySelector('input[name="tipe_media_utama"][value="file"]').checked = true; document.getElementById('soal-media').style.display = 'block'; document.getElementById('soal-media-url').style.display = 'none'; document.getElementById('soal-media-url').value = ''; }
 
     document.getElementById('soal-tipe').dispatchEvent(new Event('change'));
 
@@ -927,20 +831,12 @@ window.editDataSoal = (id) => {
             document.getElementById(`soal-opsi-${k}`).value = (soal.opsi && soal.opsi[k]) ? soal.opsi[k] : ''; 
             if (soal.opsi_media && soal.opsi_media[k]) {
                 const mData = soal.opsi_media[k]; const urlStr = typeof mData === 'object' ? mData.url : mData;
-                if (urlStr.includes('firebasestorage.googleapis.com')) {
-                    document.getElementById(`tipe-media-opsi-${k}`).value = 'file'; document.getElementById(`media-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).style.display = 'none';
-                } else {
-                    document.getElementById(`tipe-media-opsi-${k}`).value = 'url'; document.getElementById(`media-opsi-${k}`).style.display = 'none'; document.getElementById(`media-url-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).value = urlStr;
-                }
-            } else {
-                document.getElementById(`tipe-media-opsi-${k}`).value = 'file'; document.getElementById(`media-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).style.display = 'none'; document.getElementById(`media-url-opsi-${k}`).value = '';
-            }
+                if (urlStr.includes('firebasestorage.googleapis.com')) { document.getElementById(`tipe-media-opsi-${k}`).value = 'file'; document.getElementById(`media-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).style.display = 'none'; } 
+                else { document.getElementById(`tipe-media-opsi-${k}`).value = 'url'; document.getElementById(`media-opsi-${k}`).style.display = 'none'; document.getElementById(`media-url-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).value = urlStr; }
+            } else { document.getElementById(`tipe-media-opsi-${k}`).value = 'file'; document.getElementById(`media-opsi-${k}`).style.display = 'block'; document.getElementById(`media-url-opsi-${k}`).style.display = 'none'; document.getElementById(`media-url-opsi-${k}`).value = ''; }
         });
-        if (soal.tipe === 'PG') {
-            const radio = document.querySelector(`input[name="kunci-pg"][value="${soal.kunci_jawaban}"]`); if (radio) radio.checked = true;
-        } else {
-            document.querySelectorAll('.kunci-pgk').forEach(cb => { cb.checked = Array.isArray(soal.kunci_jawaban) && soal.kunci_jawaban.includes(cb.value); });
-        }
+        if (soal.tipe === 'PG') { const radio = document.querySelector(`input[name="kunci-pg"][value="${soal.kunci_jawaban}"]`); if (radio) radio.checked = true; } 
+        else { document.querySelectorAll('.kunci-pgk').forEach(cb => { cb.checked = Array.isArray(soal.kunci_jawaban) && soal.kunci_jawaban.includes(cb.value); }); }
     } else if (soal.tipe === 'Menjodohkan') {
         const container = document.getElementById('pasangan-container'); container.innerHTML = '';
         if (soal.pasangan) {
@@ -950,9 +846,7 @@ window.editDataSoal = (id) => {
                 container.appendChild(row);
             });
         }
-    } else if (soal.tipe === 'Essay') {
-        const fieldEssay = document.getElementById('soal-kunci-essay'); if (fieldEssay) fieldEssay.value = soal.kunci_jawaban || '';
-    }
+    } else if (soal.tipe === 'Essay') { const fieldEssay = document.getElementById('soal-kunci-essay'); if (fieldEssay) fieldEssay.value = soal.kunci_jawaban || ''; }
     document.getElementById('title-modal-soal').innerHTML = '<i class="fas fa-edit"></i> Update Soal'; document.getElementById('modal-tambah-soal').style.display = 'flex';
 };
 
@@ -960,8 +854,7 @@ window.bukaDetailSoal = async (mapel) => {
     document.getElementById('view-summary-bank-soal').style.display = 'none'; 
     document.getElementById('view-soal-list').style.display = 'block';
     document.getElementById('label-mapel-edit').innerText = `Kelola Soal: ${mapel}`;
-    document.getElementById('filter-soal-mapel').value = mapel;
-    window.loadDaftarSoal(mapel);
+    document.getElementById('filter-soal-mapel').value = mapel; window.loadDaftarSoal(mapel);
 };
 
 window.loadDaftarSoal = async (mapel) => {
@@ -973,40 +866,18 @@ window.loadDaftarSoal = async (mapel) => {
         soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0)); window.tempDataSoalKelola = soalArr; 
 
         if(soalArr.length === 0) { 
-            container.innerHTML = `
-            <div style="text-align:center; padding: 30px; background: white; border: 1px dashed var(--border-color); border-radius: 8px;">
-                Belum ada soal untuk mata pelajaran ini.<br><br>
-                <button onclick="window.bukaModalTambahSoal('${mapel}', 1)" class="btn-3d" style="background:var(--success); padding:8px 20px; border-radius:20px; font-size:0.9rem; margin:0 auto;"><i class="fas fa-plus"></i> Buat Soal Pertama</button>
-            </div>`; return; 
+            container.innerHTML = `<div style="text-align:center; padding: 30px; background: white; border: 1px dashed var(--border-color); border-radius: 8px;">Belum ada soal untuk mata pelajaran ini.<br><br><button onclick="window.bukaModalTambahSoal('${mapel}', 1)" class="btn-3d" style="background:var(--success); padding:8px 20px; border-radius:20px; font-size:0.9rem; margin:0 auto;"><i class="fas fa-plus"></i> Buat Soal Pertama</button></div>`; return; 
         }
 
-        let html = `
-        <div style="display:flex; justify-content:center; position:relative; margin-bottom: 15px; margin-top: 5px;">
-            <hr style="position:absolute; width:100%; top:50%; border:none; border-top:1px dashed #cbd5e1; z-index:1;">
-            <button onclick="window.bukaModalTambahSoal('${mapel}', 1)" class="btn-3d" style="background:white; color:var(--success); border:1px solid var(--success); padding:4px 15px; border-radius:20px; font-size:0.8rem; z-index:2; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='var(--success)'; this.style.color='white'" onmouseout="this.style.background='white'; this.style.color='var(--success)'"><i class="fas fa-plus"></i> Sisipkan Soal di Sini</button>
-        </div>`;
+        let html = `<div style="display:flex; justify-content:center; position:relative; margin-bottom: 15px; margin-top: 5px;"><hr style="position:absolute; width:100%; top:50%; border:none; border-top:1px dashed #cbd5e1; z-index:1;"><button onclick="window.bukaModalTambahSoal('${mapel}', 1)" class="btn-3d" style="background:white; color:var(--success); border:1px solid var(--success); padding:4px 15px; border-radius:20px; font-size:0.8rem; z-index:2; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='var(--success)'; this.style.color='white'" onmouseout="this.style.background='white'; this.style.color='var(--success)'"><i class="fas fa-plus"></i> Sisipkan Soal di Sini</button></div>`;
         
         soalArr.forEach((s, idx) => {
-            html += `
-            <div style="background: white; border: 1px solid var(--border-color); border-left: 4px solid transparent; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s ease; position: relative;"
-                 onmouseover="this.style.borderLeftColor='var(--info)'; this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(-2px)'"
-                 onmouseout="this.style.borderLeftColor='transparent'; this.style.boxShadow='var(--shadow-sm)'; this.style.transform='translateY(0)'"
-                 onclick="window.editDataSoal('${s.id}')">
-                <div style="position:absolute; right:15px; top:15px; z-index:10;">
-                    <button onclick="event.stopPropagation(); window.hapusSoal('${s.id}')" style="background:#fee2e2; color:var(--danger); border:none; width:32px; height:32px; border-radius:8px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--danger)'; this.style.color='white'" onmouseout="this.style.background='#fee2e2'; this.style.color='var(--danger)'" title="Hapus Soal"><i class="fas fa-trash-alt"></i></button>
-                </div>
-                <div style="padding: 20px 25px;">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                        <span style="font-weight:800; color:var(--primary); display:block; margin-bottom:8px;">Soal ${s.nomor_soal || (idx+1)} 
-                            <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">${s.tipe || 'PG'}</span>
-                            <span style="background:var(--warning); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">Bobot: ${s.bobot || 1}</span>
-                        </span>
-                    </div>
-                    <div style="color:var(--text-main); line-height:1.6; font-size: 1rem; margin-bottom:15px;">${s.teks_soal}</div>`;
+            html += `<div style="background: white; border: 1px solid var(--border-color); border-left: 4px solid transparent; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s ease; position: relative;" onmouseover="this.style.borderLeftColor='var(--info)'; this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderLeftColor='transparent'; this.style.boxShadow='var(--shadow-sm)'; this.style.transform='translateY(0)'" onclick="window.editDataSoal('${s.id}')">
+                <div style="position:absolute; right:15px; top:15px; z-index:10;"><button onclick="event.stopPropagation(); window.hapusSoal('${s.id}')" style="background:#fee2e2; color:var(--danger); border:none; width:32px; height:32px; border-radius:8px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--danger)'; this.style.color='white'" onmouseout="this.style.background='#fee2e2'; this.style.color='var(--danger)'" title="Hapus Soal"><i class="fas fa-trash-alt"></i></button></div>
+                <div style="padding: 20px 25px;"><div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;"><span style="font-weight:800; color:var(--primary); display:block; margin-bottom:8px;">Soal ${s.nomor_soal || (idx+1)} <span style="background:var(--info); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">${s.tipe || 'PG'}</span><span style="background:var(--warning); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;">Bobot: ${s.bobot || 1}</span></span></div><div style="color:var(--text-main); line-height:1.6; font-size: 1rem; margin-bottom:15px;">${s.teks_soal}</div>`;
             
             if(s.media_soal){
-                const mUrl = typeof s.media_soal === 'object' ? s.media_soal.url : s.media_soal;
-                const mType = typeof s.media_soal === 'object' && s.media_soal.type ? s.media_soal.type : 'image';
+                const mUrl = typeof s.media_soal === 'object' ? s.media_soal.url : s.media_soal; const mType = typeof s.media_soal === 'object' && s.media_soal.type ? s.media_soal.type : 'image';
                 if(mType === 'video'){ html += `<div style="margin-bottom:15px;"><video src="${mUrl}" controls style="max-height:200px; border-radius:8px; background:#000;"></video></div>`; } 
                 else if(mType === 'audio'){ html += `<div style="margin-bottom:15px;"><audio src="${mUrl}" controls></audio></div>`; } 
                 else { html += `<div style="margin-bottom:15px;"><img src="${mUrl}" style="max-height:200px; border-radius:8px; border:1px solid #e2e8f0;"></div>`; }
@@ -1039,11 +910,7 @@ window.loadDaftarSoal = async (mapel) => {
             }
             html += `</div></div>`; 
             let targetNext = (s.nomor_soal || (idx+1)) + 1;
-            html += `
-            <div style="display:flex; justify-content:center; position:relative; margin: 15px 0;">
-                <hr style="position:absolute; width:100%; top:50%; border:none; border-top:1px dashed #cbd5e1; z-index:1;">
-                <button onclick="window.bukaModalTambahSoal('${mapel}', ${targetNext})" class="btn-3d" style="background:white; color:var(--success); border:1px solid var(--success); padding:4px 15px; border-radius:20px; font-size:0.8rem; z-index:2; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='var(--success)'; this.style.color='white'" onmouseout="this.style.background='white'; this.style.color='var(--success)'"><i class="fas fa-plus"></i> Sisipkan Soal di Sini</button>
-            </div>`;
+            html += `<div style="display:flex; justify-content:center; position:relative; margin: 15px 0;"><hr style="position:absolute; width:100%; top:50%; border:none; border-top:1px dashed #cbd5e1; z-index:1;"><button onclick="window.bukaModalTambahSoal('${mapel}', ${targetNext})" class="btn-3d" style="background:white; color:var(--success); border:1px solid var(--success); padding:4px 15px; border-radius:20px; font-size:0.8rem; z-index:2; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='var(--success)'; this.style.color='white'" onmouseout="this.style.background='white'; this.style.color='var(--success)'"><i class="fas fa-plus"></i> Sisipkan Soal di Sini</button></div>`;
         });
         container.innerHTML = html;
     } catch(e) { container.innerHTML = '<div style="text-align:center; color:red; padding: 20px;">Gagal memuat soal</div>'; }
@@ -1063,8 +930,7 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
         return window.customAlert("Silakan pilih minimal satu kelas pada form Kelas Sasaran!", "warning");
     }
 
-    const btnSubmitSoal = e.target.querySelector('button[type="submit"]'); 
-    const originalText = btnSubmitSoal.innerHTML;
+    const btnSubmitSoal = e.target.querySelector('button[type="submit"]'); const originalText = btnSubmitSoal.innerHTML;
     btnSubmitSoal.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGUNGGAH & MENYIMPAN...'; btnSubmitSoal.disabled = true;
 
     try {
@@ -1085,8 +951,7 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
         }
         
         const qC = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
-        const snapC = await getDocs(qC);
-        let currentClasses = new Set();
+        const snapC = await getDocs(qC); let currentClasses = new Set();
         snapC.forEach(d => { let arr = Array.isArray(d.data().kelas) ? d.data().kelas : [d.data().kelas]; arr.forEach(c => currentClasses.add(c)); });
         
         let kelasArrayToSave = Array.from(currentClasses);
@@ -1153,6 +1018,46 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
     } catch(err) { window.customAlert(err.message || "Gagal menyimpan soal.", "error"); } 
     finally { btnSubmitSoal.innerHTML = originalText; btnSubmitSoal.disabled = false; }
 });
+
+// FUNGSI UNDUH TEMPLATE
+window.downloadTemplate = (type) => {
+    if(type === 'excel') {
+        const data = [
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Nomor Soal": 1, "Bobot Soal": 1, "Teks Pertanyaan": "Siapa penemu lampu pijar?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Thomas Alva Edison", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "Nikola Tesla", "Opsi C": "Albert Einstein", "Opsi D": "Isaac Newton", "Opsi E": "Michael Faraday", "Kunci Jawaban / Pasangan Menjodohkan": "A"},
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Nomor Soal": 2, "Bobot Soal": 2, "Teks Pertanyaan": "Manakah yang merupakan perangkat keras komputer?", "Opsi A": "Mouse", "Opsi B": "Sistem Operasi", "Opsi C": "Keyboard", "Opsi D": "Aplikasi Web", "Opsi E": "Monitor", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E"},
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Menjodohkan", "Nomor Soal": 3, "Bobot Soal": 3, "Teks Pertanyaan": "Jodohkan istilah jaringan berikut", "Kunci Jawaban / Pasangan Menjodohkan": "IP Address=Alamat Jaringan; Router=Perangkat Routing; Switch=Penghubung Jaringan"},
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Essay", "Nomor Soal": 4, "Bobot Soal": 5, "Teks Pertanyaan": "Jelaskan langkah-langkah instalasi Windows!", "Kunci Jawaban / Pasangan Menjodohkan": "Mulai dari persiapan bootable, pengaturan partisi, hingga penyelesaian akun."}
+        ];
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Template Soal");
+        XLSX.writeFile(wb, "Template_Soal_CBT.xlsx");
+    } else if (type === 'word') {
+        const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Template Soal CBT</title></head><body>
+        <h2>FORMAT PENULISAN SOAL CBT (DIBACA OLEH SISTEM)</h2>
+        <p>Gunakan pola di bawah ini persis, jangan hapus judul besar 'A. Pilihan Ganda' atau tulisan 'Kunci Jawaban:'.</p>
+        <br>
+        <p><b>A. Pilihan Ganda</b></p>
+        <p>1. Siapakah penemu lampu pijar komersial yang sukses pertama kali?</p>
+        <p>A. Thomas Edison</p>
+        <p>B. Nikola Tesla</p>
+        <p>C. Alexander Graham Bell</p>
+        <p>D. Galileo Galilei</p>
+        <p>E. Albert Einstein</p>
+        <p>Kunci Jawaban: A</p>
+        <br>
+        <p><b>B. Essay</b></p>
+        <p>1. Jelaskan menurut pemahaman Anda mengenai perbedaan LAN dan WAN!</p>
+        <p>Kunci Jawaban: LAN untuk skala lokal, WAN untuk jangkauan luas (antar wilayah/negara).</p>
+        </body></html>`;
+        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = 'Template_Soal_CBT_Word.doc';
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+};
 
 window.parseDocTextToJSON = (text) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0); const jsonData = [];
@@ -1343,9 +1248,7 @@ window.loadDataHasil = async () => {
             </div>`;
         }
         
-        if(gridMapel.innerHTML === '') {
-            gridMapel.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:var(--text-muted);">Belum ada data hasil ujian untuk mapel yang Anda ampu.</p>';
-        }
+        if(gridMapel.innerHTML === '') { gridMapel.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:var(--text-muted);">Belum ada data hasil ujian untuk mapel yang Anda ampu.</p>'; }
     } catch(e) { console.error("Gagal memuat hasil ujian:", e); }
 };
 
@@ -1356,6 +1259,69 @@ window.bukaDetailHasil = (mapel, kelas) => {
     window.location.hash = 'section-hasil-detail'; 
     window.renderDetailHasil(); 
 };
+
+// MENAMPILKAN DETAIL JAWABAN SISWA
+window.lihatDetailJawaban = async (id) => {
+    const h = allHasilUjian.find(x => x.id === id); if(!h) return;
+    document.getElementById('edit-id-hasil').value = id;
+    document.getElementById('detail-nama-siswa').innerText = `${h.nama} (${h.username || h.uid})`;
+    let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : (h.nilai || 0));
+    document.getElementById('edit-nilai-siswa').value = nilaiSiswa;
+
+    const container = document.getElementById('container-jawaban-siswa');
+    container.innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Menarik lembar jawaban...</div>';
+    document.getElementById('modal-detail-jawaban').style.display = 'flex';
+
+    try {
+        const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", h.mataPelajaran));
+        const snap = await getDocs(q); let soalArr = []; 
+        snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+        soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
+
+        let html = '';
+        soalArr.forEach((s, idx) => {
+            let jwbSiswa = (h.jawaban && h.jawaban[s.id]) ? h.jawaban[s.id] : '-';
+            let kunci = s.kunci_jawaban || s.jawaban_benar || '-';
+            let tipe = s.tipe || 'PG';
+            
+            let statusBenar = false;
+            if(tipe === 'PG' || tipe === 'PGK'){
+                statusBenar = Array.isArray(kunci) ? (Array.isArray(jwbSiswa) && jwbSiswa.sort().join(',') === kunci.sort().join(',')) : (jwbSiswa === kunci);
+            }
+            
+            html += `<div style="padding:15px; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:10px; background:${statusBenar ? '#f0fdf4' : '#ffffff'};">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="color:var(--secondary);">Soal ${idx+1} <span style="background:var(--info); color:white; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-left:4px;">${tipe}</span></b>
+                    ${(tipe === 'PG' || tipe === 'PGK') ? `<i class="${statusBenar ? 'fas fa-check-circle' : 'fas fa-times-circle'}" style="color:${statusBenar ? 'var(--success)' : 'var(--danger)'};"></i>` : ''}
+                </div>
+                <div style="font-size:0.9rem; margin-top:8px; color:#475569; padding-bottom:8px; border-bottom:1px dashed #cbd5e1;">${s.teks_soal || ''}</div>
+                <div style="margin-top:10px; font-size:0.9rem;">
+                    <span style="color:var(--primary);">Jawaban Siswa: <b style="color:#0f172a;">${typeof jwbSiswa === 'object' ? JSON.stringify(jwbSiswa) : jwbSiswa}</b></span><br>
+                    <span style="color:var(--success);">Kunci Jawaban: <b>${typeof kunci === 'object' ? JSON.stringify(kunci) : kunci}</b></span>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html || '<div style="text-align:center;">Lembar kosong / data soal tidak ditemukan.</div>';
+    } catch(e) { container.innerHTML = '<div style="text-align:center; color:red;">Gagal memuat soal.</div>'; }
+};
+
+document.getElementById('btn-simpan-nilai-baru')?.addEventListener('click', async () => {
+    const id = document.getElementById('edit-id-hasil').value;
+    const newSkor = parseFloat(document.getElementById('edit-nilai-siswa').value) || 0;
+    const btn = document.getElementById('btn-simpan-nilai-baru');
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+    try {
+        await updateDoc(doc(db, "hasil_ujian", id), { skorPG: newSkor, skor: newSkor });
+        let idx = allHasilUjian.findIndex(x => x.id === id);
+        if(idx !== -1) { allHasilUjian[idx].skorPG = newSkor; allHasilUjian[idx].skor = newSkor; }
+        
+        window.renderDetailHasil();
+        window.customAlert("Nilai siswa berhasil diubah secara manual!", "success");
+        document.getElementById('modal-detail-jawaban').style.display = 'none';
+    } catch(e) { window.customAlert("Gagal update nilai", "error"); }
+    btn.innerHTML = 'Simpan Nilai'; btn.disabled = false;
+});
 
 window.lihatDetailStatus = (status, pelanggaran) => {
     let title = "Detail Status Ujian"; let msg = ""; let type = "info";
@@ -1368,14 +1334,7 @@ window.lihatDetailStatus = (status, pelanggaran) => {
 
 window.renderDetailHasil = () => {
     const tbody = document.querySelector('#table-hasil tbody'); if (!tbody) return;
-    
-    const dataFiltered = allHasilUjian.filter(h => {
-        const mapelMatch = h.mataPelajaran === currentMapelDetail;
-        const kelasSiswaStr = Array.isArray(h.kelas) ? h.kelas.join(', ') : (h.kelas || "-");
-        const kelasMatch = kelasSiswaStr === currentKelasDetail;
-        return mapelMatch && kelasMatch;
-    });
-    
+    const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === currentMapelDetail && (Array.isArray(h.kelas) ? h.kelas.join(', ') : (h.kelas || "-")) === currentKelasDetail);
     dataFiltered.sort((a, b) => new Date(b.waktuSubmit) - new Date(a.waktuSubmit));
 
     if (dataFiltered.length === 0) { 
@@ -1397,7 +1356,7 @@ window.renderDetailHasil = () => {
                     <td style="text-align:center;"><span class="badge ${jmlPelanggaran > 0 ? 'badge-danger' : 'badge-success'}">${jmlPelanggaran}</span></td>
                     <td style="text-align:center;"><span onclick="window.lihatDetailStatus('${status}', ${jmlPelanggaran})" style="background: ${warnaStatus}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: inline-block; transition: 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">${status}</span></td>
                     <td style="text-align:center; font-size:0.85rem;">${waktu}</td>
-                    <td style="text-align:center;"><div style="display: flex; gap: 5px; justify-content: center;"><button onclick="window.lihatDetailJawaban('${h.id}')" class="btn-3d" style="background:var(--info); padding:6px 10px; font-size:0.85rem;" title="Lihat Detail & Edit Nilai"><i class="fas fa-eye"></i></button><button onclick="window.hapusHasil('${h.id}')" class="btn-3d" style="background:var(--danger); padding:6px 10px; font-size:0.85rem;" title="Hapus Data"><i class="fas fa-trash-alt"></i></button></div></td>
+                    <td style="text-align:center;"><div style="display: flex; gap: 5px; justify-content: center;"><button onclick="window.lihatDetailJawaban('${h.id}')" class="btn-3d" style="background:var(--info); padding:6px 10px; font-size:0.85rem;" title="Lihat Detail Jawaban"><i class="fas fa-eye"></i></button><button onclick="window.hapusHasil('${h.id}')" class="btn-3d" style="background:var(--danger); padding:6px 10px; font-size:0.85rem;" title="Hapus Data"><i class="fas fa-trash-alt"></i></button></div></td>
                 </tr>`;
         });
         tbody.innerHTML = html;
@@ -1405,13 +1364,7 @@ window.renderDetailHasil = () => {
 };
 
 window.downloadExcelHasil = async (mapel = currentMapelDetail, kelas = currentKelasDetail) => {
-    const dataFiltered = allHasilUjian.filter(h => {
-        const mapelMatch = h.mataPelajaran === mapel;
-        const kelasSiswaStr = Array.isArray(h.kelas) ? h.kelas.join(', ') : (h.kelas || "-");
-        const kelasMatch = kelasSiswaStr === kelas;
-        return mapelMatch && kelasMatch;
-    });
-    
+    const dataFiltered = allHasilUjian.filter(h => h.mataPelajaran === mapel && (Array.isArray(h.kelas) ? h.kelas.join(', ') : (h.kelas || "-")) === kelas);
     if (dataFiltered.length === 0) { window.customAlert("Tidak ada data hasil ujian.", "warning"); return; }
     
     const btn = document.querySelector(`button[onclick="window.downloadExcelHasil()"]`) || document.querySelector(`button[onclick*="downloadExcelHasil('${mapel}'"]`);
