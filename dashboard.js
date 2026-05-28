@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const darkModeBtn = document.getElementById('btn-global-dark-mode');
     const iconDarkMode = darkModeBtn?.querySelector('i');
     
-    // Periksa status classList body langsung (dikendalikan oleh auto-theme inline script)
+    // Periksa status classList body langsung yang telah diproses skrip auto-waktu HTML
     if (document.body.classList.contains('dark-mode') && iconDarkMode) {
         iconDarkMode.classList.replace('fa-moon', 'fa-sun');
     }
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
         
-        // Memaksa override dari otomatis ke preferensi manual pengguna
+        // Simpan preferensi manual agar mengoverride keputusan sistem otomatis
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         
         if (isDark) {
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             iconDarkMode?.classList.replace('fa-sun', 'fa-moon');
         }
     });
-
+    
     const filterKelas = document.getElementById('filter-kelas-pengguna');
     if (filterKelas) filterKelas.addEventListener('change', window.renderTablePengguna);
 
