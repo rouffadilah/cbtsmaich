@@ -146,7 +146,6 @@ table tbody tr:hover { background-color: #f8fafc !important; }
 /* =========================================
    10. EXAM FOCUS MODE (ATTEMPT.HTML)
 ========================================= */
-/* Mempercantik Tampilan Pilihan Ganda */
 .option-label {
     display: flex; 
     padding: 15px 20px; 
@@ -158,24 +157,14 @@ table tbody tr:hover { background-color: #f8fafc !important; }
     align-items: center;
     background: #ffffff;
 }
-
-.option-label:hover { 
-    border-color: #cbd5e1; 
-    background: #f8fafc; 
-}
-
+.option-label:hover { border-color: #cbd5e1; background: #f8fafc; }
 .option-label.selected { 
     border-color: var(--primary); 
-    background: #ecfdf5; /* Hijau sangat muda */
+    background: #ecfdf5; 
     box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);
 }
+.option-label input:checked + span { color: var(--primary); font-weight: 800; }
 
-.option-label input:checked + span { 
-    color: var(--primary); 
-    font-weight: 800; 
-}
-
-/* Tampilan Header Ujian yang Sticky & Bersih */
 .exam-header { 
     background: #ffffff; 
     padding: 15px 25px; 
@@ -189,30 +178,8 @@ table tbody tr:hover { background-color: #f8fafc !important; }
     border-bottom: 1px solid var(--border-color);
 }
 
-/* Navigasi Drawer untuk Mobile (Menyembunyikan Grid Soal) */
-.overlay-drawer {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 998;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.overlay-drawer.active {
-    display: block;
-    opacity: 1;
-}
-
-.btn-toggle-nav {
-    display: none; /* Disembunyikan di PC */
-}
-
 @media screen and (max-width: 1024px) {
     .exam-header { padding: 12px 15px; }
-    
     .btn-toggle-nav {
         display: flex;
         align-items: center;
@@ -225,10 +192,9 @@ table tbody tr:hover { background-color: #f8fafc !important; }
         font-weight: bold;
         cursor: pointer;
     }
-
     .sidebar-area {
         position: fixed;
-        right: -100%; /* Sembunyi di luar layar kanan */
+        right: -100%; 
         top: 0;
         width: 85%;
         max-width: 320px;
@@ -242,69 +208,30 @@ table tbody tr:hover { background-color: #f8fafc !important; }
         padding: 20px !important;
         border: none !important;
     }
-
-    .sidebar-area.open {
-        right: 0; /* Muncul ke layar */
-    }
-
+    .sidebar-area.open { right: 0; }
     .q-grid {
         display: grid !important;
         grid-template-columns: repeat(5, 1fr) !important;
         overflow: visible !important;
     }
-
-    #btn-finish {
-        margin-top: 20px !important;
-        padding: 15px !important;
-    }
+    #btn-finish { margin-top: 20px !important; padding: 15px !important; }
 }
 
 /* =========================================
    11. RESPONSIVE PREVIEW GURU
 ========================================= */
-.preview-body-container {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-    background: var(--bg-main);
-}
-.preview-q-area {
-    flex: 1;
-    padding: 30px;
-    overflow-y: auto;
-    background: white;
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-}
-.preview-nav-area {
-    width: 300px;
-    background: #f8fafc;
-    padding: 25px;
-    overflow-y: auto;
-}
+.preview-body-container { display: flex; flex: 1; overflow: hidden; background: var(--bg-main); }
+.preview-q-area { flex: 1; padding: 30px; overflow-y: auto; background: white; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
+.preview-nav-area { width: 300px; background: #f8fafc; padding: 25px; overflow-y: auto; }
 
-/* Aturan Khusus Layar HP / Tablet */
 @media screen and (max-width: 1024px) {
-    .preview-body-container {
-        flex-direction: column;
-        overflow-y: auto; /* Mengaktifkan scroll pada seluruh body */
-    }
-    .preview-q-area {
-        overflow-y: visible; /* Teks dibiarkan memanjang ke bawah */
-        border-right: none;
-        border-bottom: 3px solid var(--border-color);
-        padding: 20px;
-    }
-    .preview-nav-area {
-        width: 100%;
-        overflow-y: visible;
-        padding: 20px;
-    }
+    .preview-body-container { flex-direction: column; overflow-y: auto; }
+    .preview-q-area { overflow-y: visible; border-right: none; border-bottom: 3px solid var(--border-color); padding: 20px; }
+    .preview-nav-area { width: 100%; overflow-y: visible; padding: 20px; }
 }
 
 /* =========================================
-   12. MODERN EXIT BUTTON
+   12. MODERN EXIT BUTTON & UI UTILS
 ========================================= */
 .btn-exit-modern {
     background: transparent;
@@ -320,132 +247,75 @@ table tbody tr:hover { background-color: #f8fafc !important; }
     gap: 8px;
     transition: var(--transition);
 }
+.btn-exit-modern:hover { background: #fef2f2; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15); transform: translateY(-1px); }
 
-.btn-exit-modern:hover {
-    background: #fef2f2;
-    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15);
-    transform: translateY(-1px);
-}
-
-/* Responsif untuk Layar HP */
 @media screen and (max-width: 1024px) {
-    .btn-exit-modern span { 
-        display: none; /* Sembunyikan teks 'Keluar', sisakan ikon saja */
-    } 
-    .btn-exit-modern { 
-        padding: 8px 12px; 
-    }
+    .btn-exit-modern span { display: none; } 
+    .btn-exit-modern { padding: 8px 12px; }
 }
-#modal-custom-alert, #modal-custom-confirm {
-    z-index: 99999 !important;
-}
-/* Perbaikan layout modal form */
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 15px;
-}
+
+#modal-custom-alert, #modal-custom-confirm { z-index: 99999 !important; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 15px; }
 .form-full { grid-column: span 3; }
+@media screen and (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .form-full { grid-column: span 1; } }
 
-@media screen and (max-width: 600px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .form-full { grid-column: span 1; }
-}
+.ghost-input { border: 1px solid transparent; background: transparent; padding: 8px 10px; width: 100%; border-radius: 6px; transition: all 0.2s; font-family: inherit; color: var(--text-main); font-size: 0.9rem; }
+.ghost-input:hover { border-color: #cbd5e1; background: #f8fafc; }
+.ghost-input:focus { border-color: var(--primary); background: #ffffff; outline: none; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
 
-/* Styling untuk input agar terlihat simpel & profesional */
-.ghost-input {
-    border: 1px solid transparent;
-    background: transparent;
-    padding: 5px;
-    width: 100%;
-    transition: var(--transition);
-}
-
-.ghost-input:hover {
-    border: 1px solid var(--border-color);
-    background: #ffffff;
-}
-
-.ghost-input:focus {
-    border: 1px solid var(--primary);
-    background: #ffffff;
-    outline: none;
-}
-
-/* Tombol Ikon (Ganti "Kelola" dengan Icon) */
-.btn-icon {
-    background: transparent;
-    color: var(--info);
-    border: none;
-    font-size: 1.1rem;
-    padding: 5px;
-    cursor: pointer;
-}
-
-.btn-icon:hover { color: var(--primary-hover); }
-
-/* --- UI KHUSUS TABEL BANK SOAL --- */
-.ghost-input {
-    border: 1px solid transparent;
-    background: transparent;
-    padding: 8px 10px;
-    width: 100%;
-    border-radius: 6px;
-    transition: all 0.2s;
-    font-family: inherit;
-    color: var(--text-main);
-    font-size: 0.9rem;
-}
-.ghost-input:hover {
-    border-color: #cbd5e1;
-    background: #f8fafc;
-}
-.ghost-input:focus {
-    border-color: var(--primary);
-    background: #ffffff;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-}
-.btn-icon {
-    background: transparent;
-    color: var(--info);
-    border: none;
-    font-size: 1.1rem;
-    padding: 6px 8px;
-    cursor: pointer;
-    transition: 0.2s;
-    border-radius: 6px;
-}
+.btn-icon { background: transparent; color: var(--info); border: none; font-size: 1.1rem; padding: 6px 8px; cursor: pointer; transition: 0.2s; border-radius: 6px; }
 .btn-icon:hover { background: #eff6ff; transform: scale(1.1); }
 .text-danger { color: var(--danger) !important; }
 .text-danger:hover { background: #fef2f2 !important; color: #dc2626 !important; }
 .text-warning { color: var(--warning) !important; }
 .text-warning:hover { background: #fffbeb !important; color: #d97706 !important; }
 
+
 /* =========================================
-   MODE GELAP GLOBAL (DARK MODE)
+   MODE GELAP GLOBAL (DARK MODE - INTEGRASI SEAMLESS)
 ========================================= */
 body.dark-mode {
-    --bg-main: #0f172a;        /* Latar belakang tergelap (Slate 900) */
-    --card-bg: #1e293b;        /* Latar kartu (Slate 800) */
-    --text-main: #f8fafc;      /* Teks putih terang */
-    --text-muted: #94a3b8;     /* Teks abu-abu */
-    --secondary: #e2e8f0;      /* Teks judul */
+    --bg-main: #0f172a;        /* Slate 900 */
+    --card-bg: #1e293b;        /* Slate 800 */
+    --text-main: #f8fafc;      /* Putih terang */
+    --text-muted: #94a3b8;     /* Abu-abu */
+    --secondary: #e2e8f0;      
     --secondary-hover: #ffffff;
-    --border-color: #334155;   /* Garis tepi gelap */
+    --border-color: #334155;   /* Slate 700 */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.7);
 }
 
-/* Penyesuaian Card, Header, & Modal */
+/* 1. Komponen Struktural, Header, dan Modal */
 body.dark-mode .app-header, 
 body.dark-mode .modal-content {
     background: var(--card-bg) !important;
 }
 
-/* Penyesuaian Input Form, Select, & Textarea */
+/* 2. Pengaturan Kartu Elegan & Premium */
+body.dark-mode .card, 
+body.dark-mode .stat-card, 
+body.dark-mode .table-container {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
+}
+body.dark-mode .stat-card:hover {
+    background-color: #283548 !important;
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6) !important;
+}
+body.dark-mode .stat-card p,
+body.dark-mode .stat-card span { 
+    color: #94a3b8 !important; 
+} 
+body.dark-mode .stat-card h3,
+body.dark-mode .stat-card strong { 
+    color: #f8fafc !important; 
+}
+
+/* 3. Penyesuaian Input Form, Dropdown & Kontainer Konten */
 body.dark-mode input.input-text, 
 body.dark-mode select.input-text, 
 body.dark-mode textarea.input-text,
@@ -457,12 +327,36 @@ body.dark-mode .checkbox-container {
 }
 body.dark-mode .ghost-input:focus { background-color: #0f172a !important; }
 
-/* Penyesuaian Tabel */
+/* 4. Penyesuaian Komponen Tabel */
 body.dark-mode table th { color: #cbd5e1; border-bottom-color: #334155 !important; }
 body.dark-mode table td { color: #f1f5f9; border-bottom-color: #1e293b !important; }
 body.dark-mode table tbody tr:hover { background-color: #334155 !important; }
 
-/* CSS HACK: Memaksa elemen bergaya inline-style putih bawaan JS menjadi gelap */
+/* 5. Perbaikan Badge / Label Role di Akses Pengguna */
+body.dark-mode span[style*="background: #e2e8f0"],
+body.dark-mode span[style*="background:#e2e8f0"] {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+/* 6. Pembersihan Gradien Terang di Header Modal Form */
+body.dark-mode [style*="linear-gradient(to right, #ffffff, #f8fafc)"],
+body.dark-mode [style*="linear-gradient(to right, #f8fafc, #ffffff)"] {
+    background: #1e293b !important;
+    border-bottom: 1px solid #334155 !important;
+}
+
+/* 7. Penyesuaian Kontainer Form Import Massal */
+body.dark-mode #section-import-massal {
+    background-color: #064e3b !important; /* Emerald 900 */
+    border-color: #047857 !important; /* Emerald 700 */
+}
+body.dark-mode #section-import-massal div[style*="color:#166534"] {
+    color: #6ee7b7 !important;
+}
+
+/* 8. CSS HACK / OVERRIDE: Memaksa Gaya Inline Putih JS Menjadi Gelap */
+body.dark-mode [style*="background:white"], 
 body.dark-mode [style*="background: white"], 
 body.dark-mode [style*="background:#ffffff"], 
 body.dark-mode [style*="background: #ffffff"], 
@@ -474,93 +368,24 @@ body.dark-mode [style*="background:#f8fafc"] {
     border-color: var(--border-color) !important;
 }
 
-/* Perbaikan kontras Font & Tombol Tambahan */
-body.dark-mode .stat-card p { color: #94a3b8; }
+/* 9. Tipografi, Tip & Tombol Utility */
 body.dark-mode h2, body.dark-mode h3, body.dark-mode h4 { color: var(--secondary) !important; }
 body.dark-mode .btn-secondary { background: #334155; }
 body.dark-mode .btn-secondary:hover { background: #475569; }
 body.dark-mode .text-danger:hover { background: #450a0a !important; color: #f87171 !important; }
 
-/* Perbaikan warna badge/label 'Role' di tabel pengguna saat Dark Mode */
-body.dark-mode span[style*="background: #e2e8f0"] {
-    background-color: #334155 !important; /* Latar belakang abu-abu kebiruan gelap (Slate 700) */
-    color: #f8fafc !important; /* Teks putih terang */
-}
-
-/* =========================================
-   PERBAIKAN KARTU & ELEMEN TERANG DI DARK MODE
-========================================= */
-
-/* 1. Menggelapkan Kartu Dashboard, Capaian Siswa, dan Tabel */
-body.dark-mode .card, 
-body.dark-mode .stat-card, 
-body.dark-mode .table-container {
-    background-color: #1e293b !important; /* Latar Slate 800 (Elegan & Gelap) */
-    border: 1px solid #334155 !important; /* Garis tepi tipis agar lebih rapi */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important; /* Bayangan lebih pekat */
-}
-
-/* Efek sentuhan (Hover) pada kartu statistik agar terlihat interaktif */
-body.dark-mode .stat-card:hover {
-    background-color: #283548 !important; /* Sedikit lebih terang saat disorot mouse */
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6) !important;
-}
-
-/* 2. Memperbaiki Kontras Teks di dalam Kartu Statistik / Capaian */
-body.dark-mode .stat-card p,
-body.dark-mode .stat-card span { 
-    color: #94a3b8 !important; /* Teks label abu-abu kebiruan */
-} 
-body.dark-mode .stat-card h3,
-body.dark-mode .stat-card strong { 
-    color: #f8fafc !important; /* Teks utama/angka putih bersih */
-}
-
-/* 3. Menghilangkan gradient putih bawaan di Header Modal (Modal Input Soal & Preview) */
-body.dark-mode [style*="linear-gradient(to right, #ffffff, #f8fafc)"],
-body.dark-mode [style*="linear-gradient(to right, #f8fafc, #ffffff)"] {
-    background: #1e293b !important;
-    border-bottom: 1px solid #334155 !important;
-}
-
-/* 4. Memperbaiki warna Box "Input Massal" yang aslinya hijau terang */
-body.dark-mode #section-import-massal {
-    background-color: #064e3b !important; /* Emerald 900 (Gelap) */
-    border-color: #047857 !important; /* Emerald 700 */
-}
-body.dark-mode #section-import-massal div[style*="color:#166534"] {
-    color: #6ee7b7 !important; /* Emerald 300 agar teks tetap terbaca */
-}
-
-/* 5. Memaksa sisa elemen putih yang terlewat (dari inline style JS) menjadi gelap */
-body.dark-mode [style*="background:white"],
-body.dark-mode [style*="background: white"],
-body.dark-mode [style*="background:#ffffff"],
-body.dark-mode [style*="background: #ffffff"],
-body.dark-mode [style*="background-color: white"] {
-    background-color: #1e293b !important;
-    color: #f8fafc !important;
-    border-color: #334155 !important;
-}
 
 /* =========================================
    DARK MODE UNTUK HALAMAN LOGIN & REGISTRASI
 ========================================= */
-
-/* Latar belakang halaman luar */
 body.dark-mode.login-page-bg {
-    background: #0f172a !important; /* Latar tergelap (Slate 900) tanpa gradien putih */
+    background: #0f172a !important; 
 }
-
-/* Kartu Form Login/Registrasi */
 body.dark-mode .login-card {
     background-color: #1e293b !important;
     border: 1px solid #334155 !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
 }
-
-/* Tombol Pilihan Role (Siswa / Guru) */
 body.dark-mode .role-box {
     background-color: #0f172a !important;
     border-color: #334155 !important;
@@ -572,20 +397,16 @@ body.dark-mode .role-box i {
 body.dark-mode .role-box:hover {
     background-color: #1e293b !important;
 }
-
-/* Pilihan Role yang sedang Aktif */
 body.dark-mode .role-box.active {
-    background-color: #064e3b !important; /* Emerald sangat gelap */
+    background-color: #064e3b !important;
     border-color: #10b981 !important;
 }
 body.dark-mode .role-box.active span, 
 body.dark-mode .role-box.active i {
-    color: #34d399 !important; /* Emerald terang */
+    color: #34d399 !important;
 }
-
-/* Kotak Peringatan (Contoh: Pendaftaran ditutup) */
 body.dark-mode [style*="background: #fee2e2"] {
-    background-color: #450a0a !important; /* Merah gelap */
+    background-color: #450a0a !important;
     border-color: #7f1d1d !important;
     color: #fca5a5 !important;
 }
