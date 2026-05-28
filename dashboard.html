@@ -21,7 +21,6 @@
         input, textarea, select { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
         @media print { body { display: none !important; } }
         
-        /* Input Transparan untuk Tabel */
         .ghost-input { border: 1px solid transparent; background: transparent; padding: 8px 10px; width: 100%; border-radius: 6px; transition: all 0.2s; font-family: inherit; color: var(--text-main); font-size: 0.9rem; }
         .ghost-input:hover { border-color: #cbd5e1; background: #f8fafc; }
         .ghost-input:focus { border-color: var(--primary); background: #ffffff; outline: none; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
@@ -292,7 +291,7 @@
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div style="width:40px; height:40px; background:var(--primary-light); color:var(--primary); border-radius:10px; display:flex; align-items:center; justify-content:center;"><i class="fas fa-pen-to-square"></i></div>
                     <div>
-                        <h3 id="title-modal-soal" style="margin:0; font-size:1.15rem; font-weight:700; color:var(--secondary);">Input Soal Baru</h3>
+                        <h3 id="title-modal-soal" style="margin:0; font-size:1.15rem; font-weight:700; color:var(--secondary);">Input Soal</h3>
                         <p style="margin:2px 0 0; font-size:0.8rem; color:var(--text-muted);">Buat soal yang rapi dan mudah dibaca siswa</p>
                     </div>
                 </div>
@@ -306,7 +305,6 @@
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--secondary);"><i class="fas fa-book" style="color:#3b82f6;"></i> Mata Pelajaran</label>
                         <select id="soal-mapel" class="input-text" required style="background:white; padding:11px 14px;"></select>
                     </div>
-                    
                     <div class="input-group" id="group-soal-kelas" style="margin:0;">
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--secondary);"><i class="fas fa-users" style="color:#3b82f6;"></i> Kelas Sasaran</label>
                         <div class="dropdown-check" id="dd-soal-kelas">
@@ -349,24 +347,109 @@
                 </div>
 
                 <div class="input-group" style="background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:14px; margin-bottom:18px;">
-                    <label style="font-weight:600; margin-bottom:8px; display:block; font-size:0.88rem;"><i class="fas fa-paperclip" style="color:#0ea5e9;"></i> Media (opsional)</label>
+                    <label style="font-weight:600; margin-bottom:8px; display:block; font-size:0.88rem;"><i class="fas fa-paperclip" style="color:#0ea5e9;"></i> Media Utama (opsional)</label>
                     <div style="display:flex; gap:16px; margin-bottom:8px;">
-                        <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; cursor:pointer;"><input type="radio" name="tipe_media_utama" value="file" checked onchange="document.getElementById('soal-media').style.display='block'; document.getElementById('soal-media-url').style.display='none';"> Upload</label>
-                        <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; cursor:pointer;"><input type="radio" name="tipe_media_utama" value="url" onchange="document.getElementById('soal-media').style.display='none'; document.getElementById('soal-media-url').style.display='block';"> Drive</label>
+                        <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; cursor:pointer;"><input type="radio" name="tipe_media_utama" value="file" checked onchange="document.getElementById('soal-media').style.display='block'; document.getElementById('soal-media-url').style.display='none';"> Upload File</label>
+                        <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; cursor:pointer;"><input type="radio" name="tipe_media_utama" value="url" onchange="document.getElementById('soal-media').style.display='none'; document.getElementById('soal-media-url').style.display='block';"> Link Media</label>
                     </div>
                     <input type="file" id="soal-media" class="input-text" accept="image/*,video/*,audio/*" style="background:white; padding:8px; font-size:0.85rem;">
-                    <input type="text" id="soal-media-url" class="input-text" placeholder="https://drive.google.com/..." style="display:none; background:white; font-size:0.85rem;">
+                    <input type="text" id="soal-media-url" class="input-text" placeholder="https://... (URL Gambar/Video/Audio dari internet)" style="display:none; background:white; font-size:0.85rem;">
                 </div>
 
                 <div id="opsi-container">
                     <div id="pg-options" style="display:none;">
                         <label style="font-weight:700; margin-bottom:10px; display:block; font-size:0.9rem;"><i class="fas fa-list-ol" style="color:#10b981;"></i> Opsi Jawaban</label>
                         <div style="display:flex; flex-direction:column; gap:10px;">
-                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;"><div style="display:flex; gap:10px;"><div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">A</div><div style="flex:1;"><input type="text" id="soal-opsi-A" class="input-text" placeholder="Opsi A..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;"><div style="display:flex; gap:10px; align-items:center;"><input type="file" id="media-opsi-A" accept="image/*" style="flex:1; font-size:0.75rem;"><label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="A"> Kunci</label><label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="A"> Benar</label></div></div></div></div>
-                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;"><div style="display:flex; gap:10px;"><div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">B</div><div style="flex:1;"><input type="text" id="soal-opsi-B" class="input-text" placeholder="Opsi B..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;"><div style="display:flex; gap:10px; align-items:center;"><input type="file" id="media-opsi-B" accept="image/*" style="flex:1; font-size:0.75rem;"><label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="B"> Kunci</label><label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="B"> Benar</label></div></div></div></div>
-                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;"><div style="display:flex; gap:10px;"><div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">C</div><div style="flex:1;"><input type="text" id="soal-opsi-C" class="input-text" placeholder="Opsi C..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;"><div style="display:flex; gap:10px; align-items:center;"><input type="file" id="media-opsi-C" accept="image/*" style="flex:1; font-size:0.75rem;"><label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="C"> Kunci</label><label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="C"> Benar</label></div></div></div></div>
-                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;"><div style="display:flex; gap:10px;"><div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">D</div><div style="flex:1;"><input type="text" id="soal-opsi-D" class="input-text" placeholder="Opsi D..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;"><div style="display:flex; gap:10px; align-items:center;"><input type="file" id="media-opsi-D" accept="image/*" style="flex:1; font-size:0.75rem;"><label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="D"> Kunci</label><label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="D"> Benar</label></div></div></div></div>
-                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;"><div style="display:flex; gap:10px;"><div style="width:28px; height:28px; background:#f8fafc; color:#64748b; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">E</div><div style="flex:1;"><input type="text" id="soal-opsi-E" class="input-text" placeholder="Opsi E..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;"><div style="display:flex; gap:10px; align-items:center;"><input type="file" id="media-opsi-E" accept="image/*" style="flex:1; font-size:0.75rem;"><label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="E"> Kunci</label><label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="E"> Benar</label></div></div></div></div>
+                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                                <div style="display:flex; gap:10px;">
+                                    <div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">A</div>
+                                    <div style="flex:1;">
+                                        <input type="text" id="soal-opsi-A" class="input-text" placeholder="Opsi A..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <select id="tipe-media-opsi-A" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-A').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-A').style.display = this.value === 'url' ? 'block' : 'none';">
+                                                <option value="file">File</option>
+                                                <option value="url">URL</option>
+                                            </select>
+                                            <input type="file" id="media-opsi-A" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
+                                            <input type="text" id="media-url-opsi-A" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
+                                            <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="A"> Kunci</label>
+                                            <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="A"> Benar</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                                <div style="display:flex; gap:10px;">
+                                    <div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">B</div>
+                                    <div style="flex:1;">
+                                        <input type="text" id="soal-opsi-B" class="input-text" placeholder="Opsi B..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <select id="tipe-media-opsi-B" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-B').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-B').style.display = this.value === 'url' ? 'block' : 'none';">
+                                                <option value="file">File</option>
+                                                <option value="url">URL</option>
+                                            </select>
+                                            <input type="file" id="media-opsi-B" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
+                                            <input type="text" id="media-url-opsi-B" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
+                                            <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="B"> Kunci</label>
+                                            <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="B"> Benar</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                                <div style="display:flex; gap:10px;">
+                                    <div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">C</div>
+                                    <div style="flex:1;">
+                                        <input type="text" id="soal-opsi-C" class="input-text" placeholder="Opsi C..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <select id="tipe-media-opsi-C" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-C').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-C').style.display = this.value === 'url' ? 'block' : 'none';">
+                                                <option value="file">File</option>
+                                                <option value="url">URL</option>
+                                            </select>
+                                            <input type="file" id="media-opsi-C" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
+                                            <input type="text" id="media-url-opsi-C" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
+                                            <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="C"> Kunci</label>
+                                            <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="C"> Benar</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                                <div style="display:flex; gap:10px;">
+                                    <div style="width:28px; height:28px; background:#ecfdf5; color:#059669; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">D</div>
+                                    <div style="flex:1;">
+                                        <input type="text" id="soal-opsi-D" class="input-text" placeholder="Opsi D..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <select id="tipe-media-opsi-D" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-D').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-D').style.display = this.value === 'url' ? 'block' : 'none';">
+                                                <option value="file">File</option>
+                                                <option value="url">URL</option>
+                                            </select>
+                                            <input type="file" id="media-opsi-D" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
+                                            <input type="text" id="media-url-opsi-D" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
+                                            <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="D"> Kunci</label>
+                                            <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="D"> Benar</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                                <div style="display:flex; gap:10px;">
+                                    <div style="width:28px; height:28px; background:#f8fafc; color:#64748b; border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">E</div>
+                                    <div style="flex:1;">
+                                        <input type="text" id="soal-opsi-E" class="input-text" placeholder="Opsi E..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <select id="tipe-media-opsi-E" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-E').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-E').style.display = this.value === 'url' ? 'block' : 'none';">
+                                                <option value="file">File</option>
+                                                <option value="url">URL</option>
+                                            </select>
+                                            <input type="file" id="media-opsi-E" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
+                                            <input type="text" id="media-url-opsi-E" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
+                                            <label class="kunci-pg-container" style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:#059669; font-weight:600; white-space:nowrap;"><input type="radio" name="kunci-pg" value="E"> Kunci</label>
+                                            <label class="kunci-pgk-container" style="display:none; align-items:center; gap:4px; font-size:0.78rem; color:#0284c7; font-weight:600;"><input type="checkbox" class="kunci-pgk" value="E"> Benar</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div id="menjodohkan-options" style="display:none;">
@@ -394,16 +477,17 @@
             <div class="input-group"><label>Password Baru (Kosongkan jika tidak diubah)</label><input type="password" id="edit-pass" class="input-text"></div>
             <div class="input-group">
                 <label>Role Akses</label>
-                <div style="display: flex; gap: 15px; margin-top: 5px;">
-                    <label><input type="checkbox" class="edit-role-cb" value="siswa"> Siswa</label>
-                    <label><input type="checkbox" class="edit-role-cb" value="guru"> Guru</label>
-                    <label><input type="checkbox" class="edit-role-cb" value="admin"> Admin</label>
+                <div style="display: flex; gap: 15px; margin-top: 5px; flex-wrap: wrap;" id="edit-role-container">
+                    </div>
+                <div id="admin-custom-role-group" style="display:none; margin-top: 10px; gap: 10px; align-items: center;">
+                    <input type="text" id="input-custom-role" class="input-text" placeholder="Tambah role kustom (cth: kepsek)..." style="flex:1; margin:0;">
+                    <button type="button" id="btn-add-custom-role" class="btn-3d" style="margin:0; padding:8px 12px; font-size:0.9rem; background:var(--info);">+</button>
                 </div>
             </div>
             <div class="input-group" id="group-edit-kelas-siswa" style="display: none;"><label>Kelas (Untuk Siswa)</label><select id="edit-kelas-siswa" class="input-text"></select></div>
             <div id="group-edit-guru" style="display: none; flex-direction: column; gap: 15px;">
-                <div class="input-group"><label>Mata Pelajaran (Untuk Guru)</label><div id="edit-mapel-container" class="checkbox-container"></div></div>
-                <div class="input-group"><label>Kelas Ajar (Untuk Guru)</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
+                <div class="input-group"><label>Mata Pelajaran (Untuk Pengajar)</label><div id="edit-mapel-container" class="checkbox-container"></div></div>
+                <div class="input-group"><label>Kelas Ajar (Untuk Pengajar)</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
             </div>
             <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; margin-top: 15px;">Simpan Perubahan</button>
         </div>
