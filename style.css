@@ -352,3 +352,73 @@ table tbody tr:hover { background-color: #f8fafc !important; }
     .form-grid { grid-template-columns: 1fr; }
     .form-full { grid-column: span 1; }
 }
+
+/* Styling untuk input agar terlihat simpel & profesional */
+.ghost-input {
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 5px;
+    width: 100%;
+    transition: var(--transition);
+}
+
+.ghost-input:hover {
+    border: 1px solid var(--border-color);
+    background: #ffffff;
+}
+
+.ghost-input:focus {
+    border: 1px solid var(--primary);
+    background: #ffffff;
+    outline: none;
+}
+
+/* Tombol Ikon (Ganti "Kelola" dengan Icon) */
+.btn-icon {
+    background: transparent;
+    color: var(--info);
+    border: none;
+    font-size: 1.1rem;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.btn-icon:hover { color: var(--primary-hover); }
+
+/* --- UI KHUSUS TABEL BANK SOAL --- */
+.ghost-input {
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 8px 10px;
+    width: 100%;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-family: inherit;
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+.ghost-input:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+.ghost-input:focus {
+    border-color: var(--primary);
+    background: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+.btn-icon {
+    background: transparent;
+    color: var(--info);
+    border: none;
+    font-size: 1.1rem;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    border-radius: 6px;
+}
+.btn-icon:hover { background: #eff6ff; transform: scale(1.1); }
+.text-danger { color: var(--danger) !important; }
+.text-danger:hover { background: #fef2f2 !important; color: #dc2626 !important; }
+.text-warning { color: var(--warning) !important; }
+.text-warning:hover { background: #fffbeb !important; color: #d97706 !important; }

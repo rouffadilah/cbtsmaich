@@ -118,31 +118,27 @@ const SecurityManager = {
     handleViolation: async function(alasan) {
         if (!examState.isExamActive) return;
         examState.pelanggaran++;
-        document.getElementById('violation-count').innerText = examState.pelanggaran;
+        const violationEl = document.getElementById('violation-count');
+        if (violationEl) violationEl.innerText = examState.pelanggaran;
+        
         this.openFullscreen();
 
         if (examState.pelanggaran >= examState.maxPelanggaran) {
             examState.isExamActive = false;
-            await window.customAlert(`Ujian dihentikan karena mencapai batas maksimal ${examState.maxPelanggaran} kali pelanggaran.\nAlasan: ${alasan}`, 'DISKUALIFIKASI');
+            await window.customAlert(`Ujian dihentikan karena mencapai batas maksimal ${examState.maxPelanggaran} kali pelanggaran.\n\nAlasan Terakhir: ${alasan}`, 'DISKUALIFIKASI');
             selesaiUjian("DISKUALIFIKASI");
         } else {
-            window.customAlert(`${alasan}\nPeringatan ${examState.pelanggaran}/${examState.maxPelanggaran}! Jika mencapai batas, ujian otomatis selesai.`, 'PERINGATAN KEAMANAN');
+            window.customAlert(`${alasan}\n\nPeringatan ${examState.pelanggaran}/${examState.maxPelanggaran}!\nJika mencapai batas, ujian otomatis selesai dan Anda didiskualifikasi.`, 'PERINGATAN KEAMANAN');
         }
     },
     openFullscreen: function() {
         const el = document.documentElement;
-        if (el.requestFullscreen) {
-            el.requestFullscreen().catch(() => {});
-        } else if (el.webkitRequestFullscreen) {
-            el.webkitRequestFullscreen();
-        } else if (el.msRequestFullscreen) {
-            el.msRequestFullscreen();
-        }
+        if (el.requestFullscreen) { el.requestFullscreen().catch(() => {}); } 
+        else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); } 
+        else if (el.msRequestFullscreen) { el.msRequestFullscreen(); }
     },
     closeFullscreen: function() {
-        if (document.exitFullscreen) {
-            document.exitFullscreen().catch(()=>{});
-        }
+        if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); }
     }
 };
 
@@ -155,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userDoc.exists()) {
                 examState.student = { uid: user.uid, ...userDoc.data() };
                 document.getElementById('welcome-student').innerText = `Assalamu'alaikum ${examState.student.nama}...`;
-                document.getElementById('student-class').value = examState.student.kelas || examState.student.kelas_siswa || "-";
+                document.getElementById('student-class').value = Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : (examState.student.kelas || "-");
                 document.getElementById('exam-student-name').innerText = `${examState.student.nama} (${examState.student.username})`;
                 WatermarkManager.init(examState.student.nama, examState.student.username);
                 await loadMapelOptions();
@@ -163,15 +159,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e) { console.error(e); }
     });
 
-    // Fitur Toggle Navigasi Soal di Mobile
     const toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar-nav');
         const overlay = document.getElementById('overlay-sidebar');
         if (sidebar) {
             sidebar.classList.toggle('open'); 
-            if(overlay) {
-                overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
-            }
+            if(overlay) { overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none'; }
         }
     };
 
@@ -186,7 +179,7 @@ async function loadMapelOptions() {
         const snap = await getDoc(doc(db, "pengaturan", "data_akademik"));
         const select = document.getElementById('select-mapel');
         if (snap.exists() && snap.data().list_mapel) { 
-            select.innerHTML = '<option value="">-- Pilih Mapel --</option>' + snap.data().list_mapel.map(m => `<option value="${m}">${m}</option>`).join(''); 
+            select.innerHTML = '<option value="">-- Pilih Mapel Ujian --</option>' + snap.data().list_mapel.map(m => `<option value="${m}">${m}</option>`).join(''); 
         }
     } catch(e) {}
 }
@@ -196,7 +189,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     const tokenInput = document.getElementById('input-token').value.toUpperCase().trim();
     const kelasSiswa = document.getElementById('student-class').value;
 
-    if(!examState.mapelTerpilih || !tokenInput) return window.customAlert("Pilih mapel dan masukkan token!", "Peringatan");
+    if(!examState.mapelTerpilih || !tokenInput) return window.customAlert("Pilih mapel dan masukkan token dengan benar!", "Peringatan");
     
     SecurityManager.openFullscreen();
 
@@ -206,20 +199,19 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     try {
         const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
         const tokenKey = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
-        if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) throw new Error("Token ujian belum diatur.");
+        if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) throw new Error("Token ujian untuk mapel dan kelas ini belum diatur oleh guru.");
 
         const tokenData = tokenSnap.data()[tokenKey];
         const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
-        if (tokenInput !== tokenCode) throw new Error("Token yang Anda masukkan salah!");
+        if (tokenInput !== tokenCode) throw new Error("Token yang Anda masukkan SALAH!");
 
         if (typeof tokenData === 'object' && tokenData.expiredAt) {
             const waktuSekarang = new Date().getTime();
             if (waktuSekarang > tokenData.expiredAt) {
-                throw new Error("Token sudah kedaluwarsa (masa aktif 15 menit habis). Silakan minta guru untuk menyimpan/membuat ulang token!");
+                throw new Error("Token sudah kedaluwarsa (masa aktif habis). Silakan minta guru untuk memperbarui token!");
             }
         }
 
-        // AMBIL SOAL BERDASARKAN MAPEL LALU FILTER KELAS (ARRAY)
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", examState.mapelTerpilih));
         const soalSnap = await getDocs(qSoal);
         
@@ -227,9 +219,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         soalSnap.forEach(d => {
             let data = d.data();
             let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
-            if (arrKelas.includes(kelasSiswa)) {
-                examState.arraySoal.push({id: d.id, ...data});
-            }
+            if (arrKelas.includes(kelasSiswa)) { examState.arraySoal.push({id: d.id, ...data}); }
         });
 
         if (examState.arraySoal.length === 0) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
@@ -254,7 +244,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         jalankanTimer();
     } catch(e) {
         SecurityManager.closeFullscreen();
-        window.customAlert(e.message, "Gagal Masuk");
+        window.customAlert(e.message, "Akses Ditolak");
     } finally {
         btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
     }
@@ -265,7 +255,7 @@ function jalankanTimer() {
     examState.timerInterval = setInterval(() => {
         if (examState.durasiDetik <= 0) {
             clearInterval(examState.timerInterval);
-            window.customAlert("Waktu ujian telah habis!", "Selesai").then(() => selesaiUjian("WAKTU HABIS"));
+            window.customAlert("Waktu ujian telah habis! Sistem akan mengumpulkan jawaban Anda secara otomatis.", "Selesai").then(() => selesaiUjian("WAKTU HABIS"));
             return;
         }
         examState.durasiDetik--;
@@ -280,8 +270,18 @@ function renderNavigasi() {
     const grid = document.getElementById('nav-grid');
     grid.innerHTML = '';
     examState.arraySoal.forEach((soal, idx) => {
+        // Cek status terisi berdasarkan tipe soal
+        let isFilled = false;
+        let ans = examState.jawabanSiswa[soal.id];
+        let tipe = (soal.tipe || soal.tipe_soal || 'PG').toUpperCase();
+        
+        if (tipe === 'PG' && ans) isFilled = true;
+        if (tipe === 'PGK' && Array.isArray(ans) && ans.length > 0) isFilled = true;
+        if (tipe === 'MENJODOHKAN' && typeof ans === 'object' && Object.values(ans).some(v => v !== '')) isFilled = true;
+        if (tipe === 'ESSAY' && ans && ans.trim() !== '') isFilled = true;
+
         const box = document.createElement('button');
-        box.className = `q-box ${examState.jawabanSiswa[soal.id] ? 'filled' : ''} ${examState.raguRagu[soal.id] ? 'ragu' : ''} ${examState.currentIndex === idx ? 'active' : ''}`;
+        box.className = `q-box ${isFilled ? 'filled' : ''} ${examState.raguRagu[soal.id] ? 'ragu' : ''} ${examState.currentIndex === idx ? 'active' : ''}`;
         box.innerText = idx + 1;
         box.onclick = () => {
             tampilkanSoal(idx);
@@ -300,52 +300,143 @@ function tampilkanSoal(idx) {
     const soal = examState.arraySoal[idx];
     
     document.getElementById('current-q-num').innerText = idx + 1;
-    
-    const tipeSoal = soal.tipe || soal.tipe_soal || 'PG';
-    document.getElementById('badge-tipe-soal').innerText = tipeSoal.toUpperCase();
+    const tipeSoal = (soal.tipe || soal.tipe_soal || 'PG').toUpperCase();
+    document.getElementById('badge-tipe-soal').innerText = tipeSoal;
     
     const container = document.getElementById('soal-content');
     const teksSoal = soal.teks_soal || soal.teksSoal || soal.pertanyaan || '';
-    let htmlContent = `<p style="font-size:1.1rem; line-height:1.6; margin-bottom:20px;">${teksSoal}</p>`;
+    
+    // Render Teks Pertanyaan
+    let htmlContent = `<div style="font-size:1.1rem; line-height:1.6; margin-bottom:15px; color:var(--text-main);">${teksSoal}</div>`;
+    
+    // Render File Media Jika Ada
+    if (soal.media_soal && soal.media_soal.url) {
+        let urlMedia = soal.media_soal.url;
+        let tipeMedia = soal.media_soal.type;
+        htmlContent += `<div style="margin-bottom:20px; text-align:center;">`;
+        if (tipeMedia === 'image') htmlContent += `<img src="${urlMedia}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1;">`;
+        else if (tipeMedia === 'video') htmlContent += `<video src="${urlMedia}" controls controlsList="nodownload" style="max-width:100%; border-radius:8px;"></video>`;
+        else if (tipeMedia === 'audio') htmlContent += `<audio src="${urlMedia}" controls controlsList="nodownload" style="width:100%;"></audio>`;
+        htmlContent += `</div>`;
+    }
 
+    // Render Pilihan Jawaban Sesuai Tipe
     if (tipeSoal === 'PG') {
         const opsiArr = ['A', 'B', 'C', 'D', 'E'];
-        htmlContent += `<div style="display:flex; flex-direction:column; gap:12px;">`;
-        
+        htmlContent += `<div style="display:flex; flex-direction:column; gap:10px;">`;
         opsiArr.forEach(o => {
             const teksOpsi = (soal.opsi && soal.opsi[o]) ? soal.opsi[o] : soal[`opsi${o}`];
             if (teksOpsi) {
                 const checked = examState.jawabanSiswa[soal.id] === o ? 'checked' : '';
                 htmlContent += `
-                    <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer;">
-                        <input type="radio" name="answer" value="${o}" ${checked} style="transform:scale(1.2);">
-                        <span><b>${o}.</b> ${teksOpsi}</span>
+                    <label class="option-label ${checked ? 'selected' : ''}">
+                        <input type="radio" name="answer_pg" value="${o}" ${checked} style="transform:scale(1.2); margin-right: 12px; cursor:pointer;">
+                        <span style="flex:1;"><b>${o}.</b> ${teksOpsi}</span>
                     </label>`;
             }
         });
         htmlContent += `</div>`;
-    } else {
+    } 
+    else if (tipeSoal === 'PGK') {
+        htmlContent += `<div style="font-size:0.85rem; color:var(--info); font-weight:bold; margin-bottom:10px;"><i class="fas fa-info-circle"></i> Anda dapat memilih lebih dari satu jawaban.</div>`;
+        const opsiArr = ['A', 'B', 'C', 'D', 'E'];
+        htmlContent += `<div style="display:flex; flex-direction:column; gap:10px;">`;
+        opsiArr.forEach(o => {
+            const teksOpsi = (soal.opsi && soal.opsi[o]) ? soal.opsi[o] : soal[`opsi${o}`];
+            if (teksOpsi) {
+                let arrJwb = examState.jawabanSiswa[soal.id] || [];
+                const checked = arrJwb.includes(o) ? 'checked' : '';
+                htmlContent += `
+                    <label class="option-label ${checked ? 'selected' : ''}">
+                        <input type="checkbox" name="answer_pgk" value="${o}" ${checked} style="transform:scale(1.3); margin-right: 12px; cursor:pointer;">
+                        <span style="flex:1;"><b>${o}.</b> ${teksOpsi}</span>
+                    </label>`;
+            }
+        });
+        htmlContent += `</div>`;
+    }
+    else if (tipeSoal === 'MENJODOHKAN') {
+        htmlContent += `<div style="font-size:0.85rem; color:var(--warning); font-weight:bold; margin-bottom:15px;"><i class="fas fa-hand-pointer"></i> Pilih pasangan jawaban yang tepat di kotak sebelah kanan.</div>`;
+        let pasangan = soal.pasangan || [];
+        
+        // Buat daftar jawaban kanan yang diacak agar siswa tidak sekadar memilih lurus
+        let semuaKanan = pasangan.map(p => p.kanan).sort(() => Math.random() - 0.5); 
+        
+        htmlContent += `<div style="display:flex; flex-direction:column; gap:12px;">`;
+        pasangan.forEach(p => {
+            let jwbSiswaObj = examState.jawabanSiswa[soal.id] || {};
+            let selectedKanan = jwbSiswaObj[p.kiri] || '';
+            
+            let optionsHtml = `<option value="">-- Pilih Pasangan --</option>`;
+            semuaKanan.forEach(k => {
+                optionsHtml += `<option value="${k}" ${selectedKanan === k ? 'selected' : ''}>${k}</option>`;
+            });
+
+            htmlContent += `
+            <div style="display:flex; flex-direction:column; background:#f8fafc; padding:15px; border:1px solid #cbd5e1; border-radius:8px;">
+                <div style="font-weight:600; margin-bottom:10px; color:var(--secondary); font-size:0.95rem;">${p.kiri}</div>
+                <select class="input-text select-jodoh" data-kiri="${p.kiri}" style="border-color:var(--primary); background:white;">
+                    ${optionsHtml}
+                </select>
+            </div>`;
+        });
+        htmlContent += `</div>`;
+    }
+    else {
         const nilaiInput = examState.jawabanSiswa[soal.id] || '';
-        htmlContent += `<textarea id="essay-ans" class="input-text" rows="4" placeholder="Ketik jawaban Anda di sini...">${nilaiInput}</textarea>`;
+        htmlContent += `<textarea id="essay-ans" class="input-text" rows="5" placeholder="Ketik jawaban uraian Anda di sini..." style="resize:vertical;">${nilaiInput}</textarea>`;
     }
 
     container.innerHTML = htmlContent;
 
+    // --- EVENT LISTENERS UNTUK JAWABAN ---
     if (tipeSoal === 'PG') {
-        container.querySelectorAll('input[name="answer"]').forEach(radio => {
-            radio.onchange = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
+        container.querySelectorAll('input[name="answer_pg"]').forEach(radio => {
+            radio.onchange = (e) => { 
+                examState.jawabanSiswa[soal.id] = e.target.value; 
+                container.querySelectorAll('.option-label').forEach(lbl => lbl.classList.remove('selected'));
+                e.target.closest('.option-label').classList.add('selected');
+                renderNavigasi(); 
+            };
         });
-    } else {
+    } 
+    else if (tipeSoal === 'PGK') {
+        container.querySelectorAll('input[name="answer_pgk"]').forEach(cb => {
+            cb.onchange = (e) => {
+                let arr = examState.jawabanSiswa[soal.id] || [];
+                if(e.target.checked) {
+                    if(!arr.includes(e.target.value)) arr.push(e.target.value);
+                    e.target.closest('.option-label').classList.add('selected');
+                } else {
+                    arr = arr.filter(v => v !== e.target.value);
+                    e.target.closest('.option-label').classList.remove('selected');
+                }
+                examState.jawabanSiswa[soal.id] = arr;
+                renderNavigasi();
+            };
+        });
+    }
+    else if (tipeSoal === 'MENJODOHKAN') {
+        container.querySelectorAll('.select-jodoh').forEach(sel => {
+            sel.onchange = (e) => {
+                let jwbSiswaObj = examState.jawabanSiswa[soal.id] || {};
+                jwbSiswaObj[e.target.getAttribute('data-kiri')] = e.target.value;
+                examState.jawabanSiswa[soal.id] = jwbSiswaObj;
+                renderNavigasi();
+            };
+        });
+    }
+    else {
         const tx = document.getElementById('essay-ans');
         tx.oninput = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
     }
 
+    // --- FITUR RAGU-RAGU ---
     const cbRagu = document.getElementById('cb-ragu');
     cbRagu.checked = !!examState.raguRagu[soal.id];
     cbRagu.onchange = (e) => { examState.raguRagu[soal.id] = e.target.checked; renderNavigasi(); };
 
-    renderNavigasi();
-
+    // --- NAVIGASI BAWAH ---
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
 
@@ -357,21 +448,10 @@ function tampilkanSoal(idx) {
     }
 
     if (examState.currentIndex === examState.arraySoal.length - 1) {
-        btnNext.innerHTML = '<i class="fas fa-check"></i>';
+        btnNext.innerHTML = '<i class="fas fa-check"></i> Selesai';
         btnNext.style.backgroundColor = 'var(--danger)'; 
         btnNext.title = 'Selesai Ujian';
-        btnNext.onclick = async () => {
-            const jumlahSoal = examState.arraySoal.length;
-            const dijawab = Object.keys(examState.jawabanSiswa).length;
-            const adaRagu = Object.values(examState.raguRagu).includes(true);
-
-            let infoMsg = `Anda telah menjawab ${dijawab} dari ${jumlahSoal} soal.`;
-            if(adaRagu) infoMsg += `\n\n⚠️ PERINGATAN: Masih ada soal yang ditandai RAGU-RAGU!`;
-
-            if (await window.customConfirm(`${infoMsg}\n\nApakah kamu yakin untuk menyelesaikan ujian ini?`, "Selesai Ujian")) {
-                selesaiUjian("NORMAL");
-            }
-        };
+        btnNext.onclick = checkSelesaiUjian;
     } else {
         btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>';
         btnNext.style.backgroundColor = ''; 
@@ -380,67 +460,103 @@ function tampilkanSoal(idx) {
     }
 }
 
-document.getElementById('btn-selesai').onclick = async () => {
+async function checkSelesaiUjian() {
     const jumlahSoal = examState.arraySoal.length;
-    const dijawab = Object.keys(examState.jawabanSiswa).length;
+    let dijawab = 0;
+
+    // Hitung jumlah soal yang sudah diisi
+    examState.arraySoal.forEach(s => {
+        let ans = examState.jawabanSiswa[s.id];
+        let tipe = (s.tipe || s.tipe_soal || 'PG').toUpperCase();
+        if (tipe === 'PG' && ans) dijawab++;
+        else if (tipe === 'PGK' && Array.isArray(ans) && ans.length > 0) dijawab++;
+        else if (tipe === 'MENJODOHKAN' && typeof ans === 'object' && Object.values(ans).some(v => v !== '')) dijawab++;
+        else if (tipe === 'ESSAY' && ans && ans.trim() !== '') dijawab++;
+    });
+
     const adaRagu = Object.values(examState.raguRagu).includes(true);
 
     let infoMsg = `Anda telah menjawab ${dijawab} dari ${jumlahSoal} soal.`;
-    if(adaRagu) infoMsg += `\n\n⚠️ PERINGATAN: Masih ada soal yang ditandai RAGU-RAGU!`;
+    if (dijawab < jumlahSoal) infoMsg += `\n\n⚠️ Masih ada ${jumlahSoal - dijawab} soal KOSONG yang belum Anda jawab.`;
+    if (adaRagu) infoMsg += `\n\n⚠️ Terdapat soal yang masih ditandai RAGU-RAGU.`;
 
-    if (await window.customConfirm(`${infoMsg}\n\nApakah kamu yakin untuk menyelesaikan ujian ini?`, "Selesai Ujian")) {
+    if (await window.customConfirm(`${infoMsg}\n\nApakah Anda YAKIN ingin mengumpulkan lembar jawaban ini sekarang?`, "warning", "Konfirmasi Pengumpulan", "Ya, Kumpulkan")) {
         selesaiUjian("NORMAL");
     }
-};
+}
+
+document.getElementById('btn-selesai').onclick = checkSelesaiUjian;
 
 async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
 
-    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><h2 style="color:var(--secondary); font-family:sans-serif;">Menyimpan Lembar Ujian Anda...</h2><p style="color:var(--text-muted);">Mohon jangan tutup jendela ini.</p></div>';
+    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><i class="fas fa-spinner fa-spin fa-4x" style="color:var(--primary); margin-bottom:20px;"></i><h2 style="color:var(--secondary); font-family:sans-serif; text-align:center;">Menyimpan Lembar Jawaban...</h2><p style="color:var(--text-muted);">Mohon jangan tutup atau kembali dari halaman ini.</p></div>';
 
-    let benar = 0; let salah = 0; let skor = 0;
     let totalBobotPG = 0;
     let skorDiperolehPG = 0;
 
+    // SCORING ENGINE UNTUK PG, PGK, DAN MENJODOHKAN
     examState.arraySoal.forEach(s => {
-        const tipeSoal = s.tipe || s.tipe_soal || 'PG';
+        const tipeSoal = (s.tipe || s.tipe_soal || 'PG').toUpperCase();
         const bobot = parseFloat(s.bobot) || 1;
+        const jwb = examState.jawabanSiswa[s.id];
 
         if(tipeSoal === 'PG') {
             totalBobotPG += bobot;
             const kunci = s.kunci_jawaban || s.jawaban_benar;
-            if(examState.jawabanSiswa[s.id] === kunci) {
-                benar++; 
-                skorDiperolehPG += bobot; 
-            } else {
-                salah++;
+            if(jwb === kunci) { skorDiperolehPG += bobot; }
+        } 
+        else if (tipeSoal === 'PGK') {
+            totalBobotPG += bobot;
+            let kunciArr = Array.isArray(s.kunci_jawaban) ? s.kunci_jawaban : [];
+            let jwbArr = Array.isArray(jwb) ? jwb : [];
+            // Harus benar semua
+            if(kunciArr.length > 0 && jwbArr.length === kunciArr.length && kunciArr.every(k => jwbArr.includes(k))) {
+                skorDiperolehPG += bobot;
+            }
+        }
+        else if (tipeSoal === 'MENJODOHKAN') {
+            totalBobotPG += bobot;
+            if (s.pasangan && Array.isArray(s.pasangan)) {
+                let totalPairs = s.pasangan.length;
+                let correctPairs = 0;
+                let jwbObj = typeof jwb === 'object' ? jwb : {};
+                s.pasangan.forEach(p => {
+                    if (jwbObj[p.kiri] === p.kanan) correctPairs++;
+                });
+                // Skoring parsial (Cth: 2 dari 4 benar = dapat setengah bobot)
+                if (totalPairs > 0) {
+                    skorDiperolehPG += (correctPairs / totalPairs) * bobot;
+                }
             }
         }
     });
     
-    if(totalBobotPG > 0) skor = Math.round((skorDiperolehPG / totalBobotPG) * 100);
+    let skorAkhir = 0;
+    if(totalBobotPG > 0) skorAkhir = Math.round((skorDiperolehPG / totalBobotPG) * 100);
 
     const payload = {
         uid: examState.student.uid,
         nama: examState.student.nama,
         username: examState.student.username,
-        kelas: examState.student.kelas || examState.student.kelas_siswa,
+        kelas: Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas,
         mataPelajaran: examState.mapelTerpilih,
         jawaban: examState.jawabanSiswa,
         pelanggaran: examState.pelanggaran,
-        skorPG: skor,
+        skorPG: skorAkhir,
+        skor: skorAkhir, // Fallback key
         waktuSubmit: new Date().toISOString(),
         statusPelanggaran: statusAkhir
     };
 
     try {
         await addDoc(collection(db, "hasil_ujian"), payload);
-        alert("PEMBERITAHUAN:\nJawaban Anda berhasil disimpan di server. Anda akan diarahkan kembali ke halaman utama.");
+        alert("PEMBERITAHUAN:\nLembar jawaban Anda berhasil direkam dengan aman oleh server. Anda akan diarahkan keluar.");
         window.location.replace("index.html");
     } catch(e) {
-        alert("GAGAL MENYIMPAN!\nTerjadi kesalahan koneksi. Silakan panggil pengawas ruangan.");
+        alert("GAGAL MENYIMPAN!\nTerjadi kesalahan koneksi internet atau server sibuk. Silakan panggil pengawas ruangan dan JANGAN tutup halaman ini.");
         window.location.replace("index.html");
     }
 }
