@@ -537,3 +537,11 @@ body.dark-mode #cbt-secure-watermark {
         box-shadow: 0 -4px 15px rgba(0,0,0,0.4) !important;
     }
 }
+
+/* =========================================
+   PERBAIKAN TABEL RESPONSIVE MOBILE
+========================================= */
+/* Mencegah input di tabel Bank Soal terpotong (squished) di layar HP */
+#table-bank-soal-summary {
+    min-width: 850px !important;
+}
