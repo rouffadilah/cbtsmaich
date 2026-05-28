@@ -480,3 +480,9 @@ body.dark-mode h2, body.dark-mode h3, body.dark-mode h4 { color: var(--secondary
 body.dark-mode .btn-secondary { background: #334155; }
 body.dark-mode .btn-secondary:hover { background: #475569; }
 body.dark-mode .text-danger:hover { background: #450a0a !important; color: #f87171 !important; }
+
+/* Perbaikan warna badge/label 'Role' di tabel pengguna saat Dark Mode */
+body.dark-mode span[style*="background: #e2e8f0"] {
+    background-color: #334155 !important; /* Latar belakang abu-abu kebiruan gelap (Slate 700) */
+    color: #f8fafc !important; /* Teks putih terang */
+}
