@@ -687,24 +687,8 @@ window.loadBankSoalSummary = async () => {
             let isMapelGuru = isGuru && userMapel.includes(mapel);
             let canEdit = isAdmin || isMapelGuru;
             
-            let dropdownId = `dd-kelas-${rowIdx}`;
-            let labelKelas = assignedClasses.length > 0 ? `${assignedClasses.length} Kelas Dipilih` : `Pilih Kelas`;
-            
-            let kelasDropdownHtml = `<div class="dropdown-check" id="${dropdownId}">
-                <button class="dropdown-check-btn" onclick="window.toggleDropdownCheck('${dropdownId}')" ${!canEdit ? 'disabled' : ''}>
-                    <span>${labelKelas}</span> <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="dropdown-check-content">`;
-            
-            listKelas.forEach(k => {
-                let isChecked = assignedClasses.includes(k) ? 'checked' : '';
-                kelasDropdownHtml += `
-                    <label>
-                        <input type="checkbox" value="${k}" ${isChecked} onchange="window.updateMapelKelasToggled('${mapel}', '${k}', this.checked, '${dropdownId}')"> 
-                        ${k}
-                    </label>`;
-            });
-            kelasDropdownHtml += `</div></div>`;
+           // Menampilkan kelas sebagai teks dipisah koma
+            let kelasDropdownHtml = assignedClasses.length > 0 ? assignedClasses.join(', ') : '-';
 
             let jadwalInputId = `jadwal-${rowIdx}`;
             let durasiInputId = `durasi-${rowIdx}`;
