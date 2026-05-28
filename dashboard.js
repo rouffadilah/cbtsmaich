@@ -123,6 +123,26 @@ window.handleRoleChange = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- FITUR DARK MODE GLOBAL ---
+    const darkModeBtn = document.getElementById('btn-global-dark-mode');
+    const iconDarkMode = darkModeBtn?.querySelector('i');
+    
+    if (localStorage.getItem('theme') === 'dark' && iconDarkMode) {
+        iconDarkMode.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    darkModeBtn?.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        if (isDark) {
+            iconDarkMode?.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            iconDarkMode?.classList.replace('fa-sun', 'fa-moon');
+        }
+    });
+
     const filterKelas = document.getElementById('filter-kelas-pengguna');
     if (filterKelas) filterKelas.addEventListener('change', window.renderTablePengguna);
 
