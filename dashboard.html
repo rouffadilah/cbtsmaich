@@ -34,10 +34,16 @@
 </head>
 <body>
     <div class="app-layout">
-        <header class="app-header" style="position: sticky; top: 0; display: flex; justify-content: center; align-items: center; padding: 10px 20px; background: white; border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 1000;">
-            <div style="cursor: pointer;" onclick="window.location.hash='section-beranda'">
+        <header class="app-header" style="position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 1000; width: 100%;">
+            <div style="width: 40px;"></div> 
+            
+            <div style="cursor: pointer; text-align: center;" onclick="window.location.hash='section-beranda'">
                 <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0;">
             </div>
+            
+            <button id="btn-global-dark-mode" class="btn-icon" title="Mode Gelap/Terang" style="font-size: 1.4rem; color: var(--text-muted); border: none; background: transparent; cursor: pointer; padding: 5px; transition: 0.3s;">
+                <i class="fas fa-moon"></i>
+            </button>
         </header>
 
         <div class="main-wrapper">
