@@ -23,7 +23,7 @@
             user-select: auto !important; 
         }
         img { pointer-events: none; -webkit-user-drag: none; }
-        @media print { body { display: none !important; } }
+        @media print { print { body { display: none !important; } } }
         
         .pre-exam-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .pre-exam-card { background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 100%; max-width: 500px; text-align: center; }
@@ -58,19 +58,11 @@
             body, html { overflow: hidden !important; height: 100% !important; }
             .pre-exam-container { align-items: flex-start; padding: 15px; overflow-y: auto; height: 100dvh; }
             #exam-workspace { height: 100dvh !important; }
-            
-            /* Beri ruang di bawah agar soal tidak tertutup tombol fixed */
             .question-area { padding: 20px 15px 90px 15px !important; border: none; } 
-            
-            /* Buat navigasi bawah nempel di dasar layar */
             .nav-bottom-container { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 12px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 100; margin: 0; }
             .nav-bottom-container button { width: 60px; justify-content: center; }
             .nav-bottom-container label { flex: 1; white-space: nowrap; justify-content: center; }
-            
-            /* Hilangkan tombol nav di header yang bikin sesak */
             .btn-toggle-nav { display: none !important; } 
-            
-            /* Tampilkan Tombol Floating & Tombol Tutup */
             #btn-fab-nav { display: flex !important; } 
             #btn-close-sidebar { display: block !important; }
         }
@@ -78,38 +70,11 @@
 </head>
 <body>
     <script>
-        function enforceFullscreen() {
-            const docEl = document.documentElement;
-            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-            
-            if (!isFullscreen) {
-                if (docEl.requestFullscreen) { 
-                    docEl.requestFullscreen().catch(() => window.focus()); 
-                } else if (docEl.webkitRequestFullscreen) { 
-                    docEl.webkitRequestFullscreen(); // Safari
-                } else if (docEl.msRequestFullscreen) { 
-                    docEl.msRequestFullscreen(); // IE11/Edge Lama
-                }
-            }
-        }
-
-        // Memicu fullscreen pada interaksi pertama (Klik, Sentuh, atau Ketik)
-        const triggerEvents = ['click', 'touchstart', 'keydown'];
-        const activateFullscreen = () => {
-            enforceFullscreen();
-            // Hapus event listener setelah berhasil agar tidak memberatkan browser
-            triggerEvents.forEach(evt => document.removeEventListener(evt, activateFullscreen));
-        };
-
-        triggerEvents.forEach(evt => {
-            document.addEventListener(evt, activateFullscreen);
-        });
-        
         (function() {
+            // 1. Logika Auto-Theme Berdasarkan Waktu
             const currentHour = new Date().getHours();
             const isNightTime = currentHour >= 18 || currentHour < 6;
             const savedTheme = localStorage.getItem('theme');
-            
             if (savedTheme === 'dark' || (!savedTheme && isNightTime)) {
                 document.body.classList.add('dark-mode');
                 if (!savedTheme) localStorage.setItem('theme', 'dark'); 
@@ -117,12 +82,46 @@
                 document.body.classList.remove('dark-mode');
                 if (!savedTheme) localStorage.setItem('theme', 'light');
             }
+
+            // 2. Logika Fullscreen Otomatis Giras (Mode ANBK)
+            function pemicuFullscreenANBK() {
+                const docEl = document.documentElement;
+                const isFull = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+                if (!isFull) {
+                    if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(() => {}); }
+                    else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
+                    else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
+                }
+            }
+            window.addEventListener('focus', pemicuFullscreenANBK);
+            ['click', 'touchstart', 'keydown', 'mousemove'].forEach(evt => {
+                document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
+            });
+
+            // 3. Logika Jam & Tanggal Real-time di Bawah Logo
+            function inisialisasiJamSistem() {
+                const clockEl = document.getElementById('realtime-clock');
+                if (!clockEl) return;
+                function perbaruiWaktu() {
+                    const sekarang = new Date();
+                    const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    const strTanggal = sekarang.toLocaleDateString('id-ID', opsiTanggal);
+                    const strJam = sekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+                    clockEl.innerHTML = `<i class="far fa-calendar-alt"></i> ${strTanggal} &nbsp;|&nbsp; <i class="far fa-clock"></i> ${strJam} WIB`;
+                }
+                perbaruiWaktu();
+                setInterval(perbaruiWaktu, 1000);
+            }
+            document.addEventListener('DOMContentLoaded', inisialisasiJamSistem);
         })();
     </script>
 
     <div id="pre-exam-screen" class="pre-exam-container">
         <div class="pre-exam-card">
-            <div style="background: var(--primary-light); color: var(--primary); width: 70px; height: 70px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 20px;"><i class="fas fa-laptop-code"></i></div>
+            <div style="background: var(--primary-light); color: var(--primary); width: 70px; height: 70px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 10px;"><i class="fas fa-laptop-code"></i></div>
+            
+            <div id="realtime-clock" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin: 0 0 20px 0; letter-spacing: 0.3px; text-transform: uppercase;">Menghubungkan waktu server...</div>
+
             <h2 style="color: var(--secondary); margin-bottom: 5px;" id="welcome-student">Assalamu'alaikum...</h2>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px;">Siapkan diri Anda dan berdoa sebelum memulai ujian.</p>
             
