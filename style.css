@@ -486,3 +486,60 @@ body.dark-mode span[style*="background: #e2e8f0"] {
     background-color: #334155 !important; /* Latar belakang abu-abu kebiruan gelap (Slate 700) */
     color: #f8fafc !important; /* Teks putih terang */
 }
+
+/* =========================================
+   PERBAIKAN KARTU & ELEMEN TERANG DI DARK MODE
+========================================= */
+
+/* 1. Menggelapkan Kartu Dashboard, Capaian Siswa, dan Tabel */
+body.dark-mode .card, 
+body.dark-mode .stat-card, 
+body.dark-mode .table-container {
+    background-color: #1e293b !important; /* Latar Slate 800 (Elegan & Gelap) */
+    border: 1px solid #334155 !important; /* Garis tepi tipis agar lebih rapi */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important; /* Bayangan lebih pekat */
+}
+
+/* Efek sentuhan (Hover) pada kartu statistik agar terlihat interaktif */
+body.dark-mode .stat-card:hover {
+    background-color: #283548 !important; /* Sedikit lebih terang saat disorot mouse */
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 2. Memperbaiki Kontras Teks di dalam Kartu Statistik / Capaian */
+body.dark-mode .stat-card p,
+body.dark-mode .stat-card span { 
+    color: #94a3b8 !important; /* Teks label abu-abu kebiruan */
+} 
+body.dark-mode .stat-card h3,
+body.dark-mode .stat-card strong { 
+    color: #f8fafc !important; /* Teks utama/angka putih bersih */
+}
+
+/* 3. Menghilangkan gradient putih bawaan di Header Modal (Modal Input Soal & Preview) */
+body.dark-mode [style*="linear-gradient(to right, #ffffff, #f8fafc)"],
+body.dark-mode [style*="linear-gradient(to right, #f8fafc, #ffffff)"] {
+    background: #1e293b !important;
+    border-bottom: 1px solid #334155 !important;
+}
+
+/* 4. Memperbaiki warna Box "Input Massal" yang aslinya hijau terang */
+body.dark-mode #section-import-massal {
+    background-color: #064e3b !important; /* Emerald 900 (Gelap) */
+    border-color: #047857 !important; /* Emerald 700 */
+}
+body.dark-mode #section-import-massal div[style*="color:#166534"] {
+    color: #6ee7b7 !important; /* Emerald 300 agar teks tetap terbaca */
+}
+
+/* 5. Memaksa sisa elemen putih yang terlewat (dari inline style JS) menjadi gelap */
+body.dark-mode [style*="background:white"],
+body.dark-mode [style*="background: white"],
+body.dark-mode [style*="background:#ffffff"],
+body.dark-mode [style*="background: #ffffff"],
+body.dark-mode [style*="background-color: white"] {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
