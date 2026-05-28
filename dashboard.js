@@ -123,6 +123,32 @@ window.handleRoleChange = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- FITUR DARK MODE GLOBAL ---
+    const darkModeBtn = document.getElementById('btn-global-dark-mode');
+    const iconDarkMode = darkModeBtn?.querySelector('i');
+    
+    // 1. Cek memori browser (LocalStorage) saat halaman pertama kali dimuat
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        if (iconDarkMode) iconDarkMode.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    // 2. Fungsi saat tombol ditekan
+    darkModeBtn?.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        
+        // Simpan preferensi agar tidak hilang saat direfresh
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        
+        // Ganti Icon
+        if (isDark) {
+            iconDarkMode.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            iconDarkMode.classList.replace('fa-sun', 'fa-moon');
+        }
+    });
+    
     const filterKelas = document.getElementById('filter-kelas-pengguna');
     if (filterKelas) filterKelas.addEventListener('change', window.renderTablePengguna);
 
