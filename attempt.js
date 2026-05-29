@@ -66,7 +66,21 @@ const WatermarkManager = {
 };
 
 const SecurityManager = {
+    isStaff: function() {
+        try {
+            const roles = JSON.parse(localStorage.getItem('userRole')) || [];
+            return roles.includes('admin') || roles.includes('guru');
+        } catch(e) { return false; }
+    },
     initGlobal: function() {
+        // UPDATE: JIKA GURU/ADMIN, HENTIKAN BLOKIR COPY PASTE 
+        if (this.isStaff()) {
+            document.body.style.userSelect = "auto";
+            document.body.style.webkitUserSelect = "auto";
+            return; 
+        }
+
+        // --- SISTEM BLOKIR UNTUK SISWA ---
         document.addEventListener('contextmenu', e => e.preventDefault());
         ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => {
             document.addEventListener(evt, e => {
@@ -92,17 +106,17 @@ const SecurityManager = {
             if (e.key === 'PrintScreen') navigator.clipboard.writeText("Aksi Ilegal Terdeteksi").catch(()=>{});
         });
 
-        // BLOKIR TOMBOL KEMBALI (BACK) MENGGUNAKAN POPSTATE SECARA AGRESIF
+        // BLOKIR TOMBOL KEMBALI (BACK) MENGGUNAKAN POPSTATE
         history.pushState(null, null, window.location.href);
         window.onpopstate = () => { 
-            history.go(1); // Paksa maju ke depan (mencegah ke belakang)
+            history.go(1); 
             if(examState.isExamActive) {
                 this.openFullscreen();
                 this.handleViolation("Sistem mendeteksi Anda mencoba menekan tombol Kembali (Back)!");
             }
         };
 
-        // CEGAH PENUTUPAN TAB/RELOAD TANPA SENGAJA
+        // CEGAH PENUTUPAN TAB
         window.addEventListener('beforeunload', (e) => {
             if (examState.isExamActive) {
                 e.preventDefault();
@@ -111,6 +125,8 @@ const SecurityManager = {
         });
     },
     startStrictExamMode: function() {
+        if (this.isStaff()) return; // UPDATE: Guru/Admin bebas blokir
+
         document.addEventListener('visibilitychange', () => { 
             if (document.hidden && examState.isExamActive) {
                 document.body.style.filter = "blur(25px)";
@@ -124,7 +140,7 @@ const SecurityManager = {
         document.addEventListener("fullscreenchange", () => {
             if (!document.fullscreenElement && examState.isExamActive) {
                 this.handleViolation("Mode Layar Penuh (Fullscreen) dimatikan!");
-                setTimeout(() => this.openFullscreen(), 300); // Paksa masuk fullscreen lagi
+                setTimeout(() => this.openFullscreen(), 300); 
             }
         });
     },
@@ -145,6 +161,7 @@ const SecurityManager = {
         }
     },
     openFullscreen: function() {
+        if (this.isStaff()) return; // UPDATE: Guru/Admin tidak dipaksa fullscreen
         const el = document.documentElement;
         if (el.requestFullscreen) { el.requestFullscreen().catch(() => {}); } 
         else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); } 

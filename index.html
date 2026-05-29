@@ -82,29 +82,27 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
+                <span class="login-badge"><i class="fas fa-shield-alt"></i>CBT-SMAICH</span>
                 <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
                 
-                <div id="realtime-clock" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin: 5px 0 15px 0; letter-spacing: 0.3px; text-transform: uppercase;">Menghubungkan waktu server...</div>
-                
-                <h2 id="portal-title">CBT-SMAICH</h2>
-                <p>SMA ISLAM CIKAL HARAPAN I BSD</p>
+                <div id="realtime-clock" class="realtime-clock">Menghubungkan waktu server...</div>
             </div>
 
             <form id="login-form">
                 <div class="input-group">
                     <label>Username / NIS / NIP</label>
-                    <input type="text" id="username" class="input-text" placeholder="Masukkan ID Anda" required autocomplete="off">
+                    <input type="text" id="username" class="input-text" placeholder="Masukkan ID Anda" required autocomplete="username">
                 </div>
                 <div class="input-group">
                     <label>Password</label>
-                    <input type="password" id="password" class="input-text" placeholder="Masukkan Password" required>
+                    <input type="password" id="password" class="input-text" placeholder="Masukkan Password" required autocomplete="current-password">
                 </div>
                 
-                <button type="submit" class="btn-3d" id="btn-submit">
+                <button type="submit" class="btn-3d" id="btn-submit" data-default-text="<i class='fas fa-sign-in-alt'></i> MASUK">
                     <i class="fas fa-sign-in-alt"></i> MASUK
                 </button>
             
-                <a href="javascript:void(0)" id="btn-install-app" style="display: none; margin-top: 20px; text-align: center; color: var(--info); font-weight: bold; text-decoration: none; width: 100%; transition: opacity 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                <a href="javascript:void(0)" id="btn-install-app" class="install-link" aria-hidden="true">
                     <i class="fas fa-download"></i> Instal CBT
                 </a>
             
@@ -170,15 +168,44 @@
         window.addEventListener('blur', () => { if(!isStaff()) document.body.style.filter = "blur(15px)"; });
         window.addEventListener('focus', () => { if(!isStaff()) document.body.style.filter = "none"; });
 
-        let deferredPrompt; const installBtn = document.getElementById('btn-install-app');
-        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'block'; });
-        installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { installBtn.style.display = 'none'; } deferredPrompt = null; } });
+        let deferredPrompt; 
+        const installBtn = document.getElementById('btn-install-app');
+        if (installBtn) {
+            installBtn.style.display = 'none';
+            window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'block'; installBtn.setAttribute('aria-hidden', 'false'); });
+            installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { installBtn.style.display = 'none'; } deferredPrompt = null; } });
+        }
     </script>
     <script type="module" src="index.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Gagal: ', err)); });
       }
+    </script>
+    <button onclick="window.history.back()" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999; padding: 10px 15px; background-color: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-arrow-left"></i> Kembali
+    </button>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            try {
+                const roles = JSON.parse(localStorage.getItem('userRole')) || [];
+                const isStaff = roles.includes('admin') || roles.includes('guru');
+                
+                if (isStaff) {
+                    // Membuka kunci blokir seleksi teks
+                    document.body.style.userSelect = "auto";
+                    document.body.style.webkitUserSelect = "auto";
+                    document.body.style.mozUserSelect = "auto";
+                    document.body.style.msUserSelect = "auto";
+                    
+                    // Membuka kunci blokir klik kanan
+                    window.addEventListener('contextmenu', function(e) {
+                        e.stopPropagation();
+                    }, true);
+                }
+            } catch(e) {}
+        });
     </script>
 </body>
 </html>

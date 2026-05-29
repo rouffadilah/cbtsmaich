@@ -5,6 +5,20 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-
 
 const loginForm = document.getElementById("login-form");
 const btnSubmit = document.getElementById("btn-submit");
+const loginStatus = document.getElementById("login-status");
+
+const setLoginMessage = (type, message) => {
+    if (!loginStatus) return;
+    loginStatus.className = `auth-status ${type}`;
+    loginStatus.textContent = message;
+};
+
+const setSubmittingState = (isSubmitting) => {
+    if (!btnSubmit) return;
+    btnSubmit.disabled = isSubmitting;
+    const defaultText = btnSubmit.dataset.defaultText || btnSubmit.innerHTML;
+    btnSubmit.innerHTML = isSubmitting ? '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...' : defaultText;
+};
 
 /**
  * Fungsi untuk menstandarkan array data (role, mapel, kelas)
@@ -23,10 +37,8 @@ loginForm.addEventListener("submit", async (event) => {
     if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(()=>{}); }
     else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); } 
     
-    // Set UI State: Loading
-    const originalBtnText = btnSubmit.innerHTML;
-    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
-    btnSubmit.disabled = true;
+    setSubmittingState(true);
+    setLoginMessage('info', 'Memverifikasi kredensial Anda...');
 
     // Sanitasi Input
     const username = document.getElementById("username").value.trim().toLowerCase();
@@ -42,7 +54,7 @@ loginForm.addEventListener("submit", async (event) => {
         const userDoc = await getDoc(doc(db, "users", user.uid));
 
         if (!userDoc.exists()) {
-            alert("AKSES DITOLAK: Akun Anda tidak memiliki data di database.");
+            setLoginMessage('error', 'Akun tidak memiliki data profil di database. Hubungi admin sekolah.');
             await auth.signOut();
             return;
         }
@@ -61,6 +73,8 @@ loginForm.addEventListener("submit", async (event) => {
             localStorage.setItem("userKelas", JSON.stringify(kelases));
         }
 
+        setLoginMessage('success', 'Berhasil masuk. Mengalihkan ke dashboard...');
+
         // 4. Routing Berdasarkan Role
         if (roles.includes("admin") || roles.includes("guru")) {
             window.location.replace("dashboard.html"); 
@@ -72,15 +86,13 @@ loginForm.addEventListener("submit", async (event) => {
         console.error("Proses Login Gagal:", error);
         
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-            alert("LOGIN GAGAL: Username atau Password Anda salah!");
+            setLoginMessage('error', 'Username atau password tidak valid. Silakan coba lagi.');
         } else if (error.code === 'permission-denied') {
-            alert("ERROR DATABASE: Akses ke Firestore ditolak. Periksa Firestore Rules.");
+            setLoginMessage('error', 'Akses database ditolak. Periksa konfigurasi Firestore.');
         } else {
-            alert(`TERJADI KESALAHAN: ${error.message}`);
+            setLoginMessage('error', `Terjadi kesalahan: ${error.message}`);
         }
     } finally {
-        // Reset UI State
-        btnSubmit.innerHTML = originalBtnText;
-        btnSubmit.disabled = false;
+        setSubmittingState(false);
     }
 });

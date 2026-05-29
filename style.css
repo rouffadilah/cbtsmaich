@@ -48,11 +48,24 @@ img { max-width: 100%; height: auto; display: block; }
 ========================================= */
 .login-page-bg { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); }
 .login-container { width: 100%; max-width: 480px; }
-.login-card { background: var(--card-bg); padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 100%; border: none; }
-.login-header { text-align: center; margin-bottom: 30px; }
-.login-header .main-logo { height: 70px; width: auto; object-fit: contain; margin: 0 auto 15px auto; }
-.login-header h2 { font-size: 1.5rem; font-weight: 800; color: var(--secondary); margin-bottom: 5px; }
-.login-header p { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
+.login-card { background: rgba(255, 255, 255, 0.96); padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 100%; border: 1px solid rgba(148, 163, 184, 0.22); position: relative; overflow: hidden; backdrop-filter: blur(6px); }
+.login-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: linear-gradient(90deg, var(--primary), var(--info)); }
+.login-header { text-align: center; margin-bottom: 24px; }
+.login-badge { display: inline-flex; align-items: center; gap: 8px; margin: 0 auto 14px auto; padding: 6px 10px; border-radius: 999px; background: rgba(16, 185, 129, 0.12); color: var(--primary); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.login-header .main-logo { height: 70px; width: auto; object-fit: contain; margin: 0 auto 12px auto; }
+.realtime-clock { font-size: 0.74rem; font-weight: 800; color: var(--text-muted); margin: 4px 0 14px 0; letter-spacing: 0.2px; text-transform: uppercase; }
+.login-header h2 { font-size: 1.58rem; font-weight: 800; color: var(--secondary); margin-bottom: 6px; }
+.login-header p { font-size: 0.92rem; color: var(--text-muted); font-weight: 500; max-width: 320px; margin: 0 auto; }
+.auth-status { margin: 0 0 18px 0; padding: 12px 14px; border-radius: var(--radius-md); background: #f8fafc; border: 1px solid #dfe6ef; color: #475569; font-size: 0.84rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.auth-status::before { content: '\f05a'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: var(--info); }
+.auth-status.success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+.auth-status.success::before { content: '\f058'; color: #16a34a; }
+.auth-status.error { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+.auth-status.error::before { content: '\f071'; color: #e11d48; }
+.auth-status.info { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.auth-status.info::before { content: '\f06a'; color: #2563eb; }
+.install-link { display: none; margin-top: 16px; text-align: center; color: var(--info); font-weight: 800; text-decoration: none; width: 100%; transition: opacity 0.3s; }
+.install-link:hover { opacity: 0.8; }
 .role-selection-container { display: flex; gap: 15px; margin-bottom: 25px; }
 .role-box { flex: 1; border: 2px solid var(--border-color); padding: 15px; border-radius: var(--radius-md); cursor: pointer; text-align: center; transition: var(--transition); background: var(--card-bg); }
 .role-box i { font-size: 1.8rem; display: block; margin-bottom: 10px; color: var(--text-muted); transition: var(--transition); }
@@ -316,7 +329,11 @@ body.dark-mode .text-danger:hover { background: #450a0a !important; color: #f871
 
 /* Mode Gelap Halaman Login / Registrasi */
 body.dark-mode.login-page-bg { background: #0f172a !important; }
-body.dark-mode .login-card { background-color: #1e293b !important; border: 1px solid #334155 !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important; }
+body.dark-mode .login-card { background-color: rgba(30, 41, 59, 0.96) !important; border: 1px solid rgba(51, 65, 85, 0.9) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important; }
+body.dark-mode .auth-status { background: rgba(15, 23, 42, 0.92) !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+body.dark-mode .auth-status.success { background: rgba(5, 46, 22, 0.72) !important; border-color: #166534 !important; color: #bbf7d0 !important; }
+body.dark-mode .auth-status.error { background: rgba(69, 10, 10, 0.72) !important; border-color: #991b1b !important; color: #fecdd3 !important; }
+body.dark-mode .auth-status.info { background: rgba(8, 47, 73, 0.72) !important; border-color: #1d4ed8 !important; color: #dbeafe !important; }
 body.dark-mode .role-box { background-color: #0f172a !important; border-color: #334155 !important; }
 body.dark-mode .role-box span, body.dark-mode .role-box i { color: #94a3b8 !important; }
 body.dark-mode .role-box:hover { background-color: #1e293b !important; }

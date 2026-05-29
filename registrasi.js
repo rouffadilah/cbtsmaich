@@ -9,16 +9,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const registerForm = document.getElementById("register-form");
     const btnSubmit = document.getElementById("btn-submit");
+    const regStatus = document.getElementById("reg-status");
     const boxSiswa = document.getElementById("select-siswa");
     const boxGuru = document.getElementById("select-guru");
     const roleInput = document.getElementById("reg-role");
     const usernameLabel = document.getElementById("username-label");
     const regTitle = document.getElementById("reg-title");
     
+    const setRegMessage = (type, message) => {
+        if (!regStatus) return;
+        regStatus.className = `auth-status ${type}`;
+        regStatus.textContent = message;
+    };
+
+    const setSubmittingState = (isSubmitting) => {
+        if (!btnSubmit) return;
+        btnSubmit.disabled = isSubmitting;
+        const defaultText = btnSubmit.dataset.defaultText || btnSubmit.textContent;
+        btnSubmit.innerHTML = isSubmitting ? "<i class='fas fa-spinner fa-spin'></i> MEMPROSES..." : defaultText;
+    };
+    
     let statusRegSiswa = true;
     let statusRegGuru = true;
 
     async function fetchRegStatus() {
+        setRegMessage('info', 'Memuat pengaturan pendaftaran dan data akademik...');
         try {
             const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
             if(regSnap.exists()) {
@@ -66,11 +81,13 @@ document.addEventListener("DOMContentLoaded", () => {
             btnSubmit.innerHTML = '<i class="fas fa-lock"></i> PENDAFTARAN DITUTUP';
             warningBox.style.display = 'block';
             warningBox.innerHTML = `<i class="fas fa-lock"></i> Pendaftaran form <b>${role.toUpperCase()}</b> saat ini ditutup oleh Admin.`;
+            setRegMessage('error', `Pendaftaran ${role.toUpperCase()} sedang ditutup. Silakan kembali nanti.`);
         } else {
             btnSubmit.disabled = false;
             btnSubmit.style.opacity = '1';
-            btnSubmit.innerHTML = 'DAFTAR MANUAL'; 
+            btnSubmit.innerHTML = btnSubmit.dataset.defaultText || 'DAFTAR MANUAL'; 
             warningBox.style.display = 'none';
+            setRegMessage('info', `Pilih jenis akun ${role === 'guru' ? 'guru' : 'siswa'} dan lengkapi formulir di bawah ini.`);
         }
     }
 
@@ -255,11 +272,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     }, { merge: true });
                 }
 
-                alert(`REGISTRASI MASSAL SELESAI!\n\nBerhasil Dibuat: ${successCount} Akun\nGagal/Terlewat: ${errorCount} Akun\n\nSistem otomatis memperbarui Data Master jika ditemukan Mapel/Kelas baru.`);
+                setRegMessage('success', `Registrasi massal selesai. Berhasil: ${successCount} akun, gagal: ${errorCount}. Sistem memperbarui data master jika diperlukan.`);
                 window.location.href = "index.html";
 
             } catch (error) {
-                alert("Gagal memproses file Excel: " + error.message);
+                setRegMessage('error', 'Gagal memproses file Excel: ' + error.message);
                 statusLabel.style.display = 'none';
             }
         };
@@ -274,29 +291,54 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault(); 
         const role = roleInput.value;
         
-        if (role === 'siswa' && !statusRegSiswa) return alert("Pendaftaran Siswa sedang ditutup!");
-        if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Guru sedang ditutup!");
+        if (role === 'siswa' && !statusRegSiswa) {
+            setRegMessage('error', 'Pendaftaran siswa sedang ditutup.');
+            return;
+        }
+        if (role === 'guru' && !statusRegGuru) {
+            setRegMessage('error', 'Pendaftaran guru sedang ditutup.');
+            return;
+        }
         
-        const name = document.getElementById("reg-name").value;
+        const name = document.getElementById("reg-name").value.trim();
         const username = document.getElementById("reg-username").value.replace(/\s+/g, '').toUpperCase();
         const password = document.getElementById("reg-password").value;
 
+        if (!name) {
+            setRegMessage('error', 'Nama lengkap wajib diisi.');
+            return;
+        }
+
         if(password !== document.getElementById("reg-confirm-password").value) {
-            return alert("Password tidak cocok!");
+            setRegMessage('error', 'Password tidak cocok. Periksa kembali pengisian.');
+            return;
+        }
+
+        if (password.length < 6) {
+            setRegMessage('error', 'Password minimal 6 karakter untuk keamanan akun.');
+            return;
         }
 
         if (role === 'siswa') {
             const isNumeric = /^\d+$/.test(username);
-            if (!isNumeric) return alert("Pendaftaran Ditolak: NIS Siswa harus berupa angka!");
-            if (username.length !== 10) return alert(`Pendaftaran Ditolak: NIS harus berjumlah 10 digit angka!`);
+            if (!isNumeric) {
+                setRegMessage('error', 'NIS siswa harus berupa angka.');
+                return;
+            }
+            if (username.length !== 10) {
+                setRegMessage('error', 'NIS harus berjumlah 10 digit angka.');
+                return;
+            }
         } else if (role === 'guru') {
             const regexGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/;
-            if (!regexGuru.test(username)) return alert("Pendaftaran Ditolak: Format ID Guru tidak sesuai!\nContoh: E24H6-223");
+            if (!regexGuru.test(username)) {
+                setRegMessage('error', 'Format ID Guru tidak sesuai. Contoh: E24H6-223.');
+                return;
+            }
         }
 
-        const originalBtnText = btnSubmit.innerHTML;
-        btnSubmit.innerHTML = "<i class='fas fa-spinner fa-spin'></i> MEMPROSES...";
-        btnSubmit.disabled = true;
+        setSubmittingState(true);
+        setRegMessage('info', 'Mendaftarkan akun baru...');
 
         const dummyEmail = `${username}@cbt.smaich.id`;
 
@@ -317,9 +359,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-cb:checked')).map(cb => cb.value);
                 
                 if (mapelTerpilih.length === 0 || kelasTerpilih.length === 0) {
-                    btnSubmit.innerHTML = "DAFTAR MANUAL";
-                    btnSubmit.disabled = false;
-                    return alert("Pendaftaran ditolak: Silakan centang minimal 1 Mata Pelajaran dan 1 Kelas Ajar!");
+                    setRegMessage('error', 'Pilih minimal 1 mata pelajaran dan 1 kelas ajar.');
+                    return;
                 }
                 
                 payload.mapel = mapelTerpilih;
@@ -332,17 +373,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             await setDoc(doc(db, "users", user.uid), payload);
 
-            alert(`Selamat! Akun ${role.toUpperCase()} berhasil dibuat.\n\nINFO KEAMANAN: Sangat disarankan bagi Anda untuk mengubah password ini nanti secara mandiri, agar hak akses pribadi tetap terjaga dan aman.`);
+            setRegMessage('success', `Akun ${role.toUpperCase()} berhasil dibuat. Anda akan diarahkan ke halaman masuk.`);
             window.location.href = "index.html";
 
         } catch (error) {
-            let msg = "Terjadi kesalahan.";
+            let msg = "Terjadi kesalahan saat menyimpan akun.";
             if (error.code === 'auth/email-already-in-use') msg = "ID/Username sudah terdaftar!";
             if (error.code === 'auth/weak-password') msg = "Password minimal 6 karakter!";
             
-            alert(msg);
-            btnSubmit.innerHTML = "DAFTAR MANUAL";
-            btnSubmit.disabled = false;
+            setRegMessage('error', msg);
+        } finally {
+            setSubmittingState(false);
         }
     });
 });
