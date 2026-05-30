@@ -66,6 +66,14 @@
             #btn-fab-nav { display: flex !important; } 
             #btn-close-sidebar { display: block !important; }
         }
+        /* --- RESPONSIVITAS LOGO HEADER --- */
+        .logo-desktop-container { flex: 1; display: flex; justify-content: center; align-items: center; }
+        .logo-mobile-img { display: none; }
+        
+        @media screen and (max-width: 1024px) {
+            .logo-desktop-container { display: none !important; }
+            .logo-mobile-img { display: block !important; height: 18px; width: auto; object-fit: contain; object-position: left; margin-bottom: 6px; }
+        }
     </style>
 </head>
 <body>
@@ -161,17 +169,69 @@
     </div>
 
     <div id="exam-workspace">
-        <header class="exam-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 10; gap: 10px;">
-            <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; min-width: 0;">
-                <img src="logo-smaich.png" alt="Logo" style="height: 18px; width: auto; object-fit: contain; object-position: left; margin-bottom: 6px;" onerror="this.src='https://via.placeholder.com/80x18?text=CBT'">
+        <style>
+            .exam-header { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                padding: 10px 25px; 
+                background: var(--card-bg); 
+                border-bottom: 1px solid var(--border-color); 
+                box-shadow: 0 2px 10px rgba(0,0,0,0.03); 
+                z-index: 10; 
+            }
+            .exam-header-left { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; order: 1; }
+            .exam-header-center { flex: 1; display: flex; justify-content: center; align-items: center; order: 2; }
+            .exam-header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; order: 3; }
+            .exam-header-center img { height: 42px; width: auto; object-fit: contain; }
+            
+            /* TAMPILAN HP (MOBILE) */
+            @media screen and (max-width: 1024px) {
+                .exam-header { 
+                    flex-direction: column !important; 
+                    padding: 12px 15px !important; 
+                    gap: 8px !important; 
+                    align-items: stretch !important;
+                }
+                .exam-header-center { 
+                    order: 1; /* Pindah ke urutan paling atas */
+                    width: 100%; 
+                    margin-bottom: 5px; 
+                }
+                .exam-header-center img { height: 38px; } /* Ukuran optimal di HP */
                 
-                <h3 id="exam-mapel-title" style="margin: 0; font-size: 1.05rem; color: var(--secondary); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</h3>
-                <p id="exam-student-name" style="margin: 0; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</p>
-                <div class="realtime-clock-display" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                .exam-header-bottom {
+                    order: 2; /* Pindah ke bawah logo */
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                }
+                .exam-header-left { order: unset; flex: 1; margin-right: 10px; }
+                .exam-header-right { order: unset; flex: 0 0 auto; }
+            }
+            
+            /* TAMPILAN LAPTOP (DESKTOP) */
+            @media screen and (min-width: 1025px) {
+                .exam-header-bottom { display: contents; } /* Gabungkan kembali menjadi satu baris */
+            }
+        </style>
+
+        <header class="exam-header">
+            <div class="exam-header-center">
+                <img src="logo-smaich.png" alt="Logo" onerror="this.src='https://via.placeholder.com/120x40?text=CBT'">
             </div>
             
-            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                <button id="btn-toggle-sidebar" class="btn-toggle-nav btn-3d btn-secondary" style="padding: 8px 10px; margin: 0; font-size: 1rem;"><i class="fas fa-th-large"></i></button>
+            <div class="exam-header-bottom">
+                <div class="exam-header-left">
+                    <h3 id="exam-mapel-title" style="margin: 0; font-size: 0.85rem; color: var(--secondary); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</h3>
+                    <p id="exam-student-name" style="margin: 0; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</p>
+                    <div class="realtime-clock-display" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                </div>
+                
+                <div class="exam-header-right">
+                    <button id="btn-toggle-sidebar" class="btn-toggle-nav btn-3d btn-secondary" style="padding: 8px 10px; margin: 0; font-size: 1rem;"><i class="fas fa-th-large"></i></button>
+                </div>
             </div>
         </header>
 
