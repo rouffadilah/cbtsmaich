@@ -100,13 +100,15 @@
 
             // 3. Logika Jam & Tanggal Real-time di Bawah Logo
             function inisialisasiJamSistem() {
-                const clockEls = document.querySelectorAll('#realtime-clock, .realtime-clock-display');
+                // Target semua elemen jam baik menggunakan ID maupun Class
+                const clockEls = document.querySelectorAll('#realtime-clock, .realtime-clock, .realtime-clock-display');
                 if (clockEls.length === 0) return;
                 function perbaruiWaktu() {
                     const sekarang = new Date();
                     const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                     const strTanggal = sekarang.toLocaleDateString('id-ID', opsiTanggal);
                     const strJam = sekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+                    
                     clockEls.forEach(el => {
                         el.innerHTML = `<i class="far fa-calendar-alt"></i> ${strTanggal} &nbsp;|&nbsp; <i class="far fa-clock"></i> ${strJam} WIB`;
                     });
@@ -119,26 +121,22 @@
     </script>
 
     <div id="pre-exam-ui" class="login-page-bg">
-        <div class="login-container" style="margin: 0 auto;"> <!-- Pembungkus ini yang mengatur lebarnya -->
+        <div class="login-container" style="margin: 0 auto;">
             <div class="login-card" style="text-align: center; padding: 35px 30px;">
-                <!-- Header Kartu -->
                 <div class="login-header" style="margin-bottom: 20px;">
                     <span class="login-badge" style="margin-bottom: 12px;"><i class="fas fa-file-signature"></i> Portal Ujian</span>
                     <img src="logo-smaich.png" alt="Logo SMA ICH" class="main-logo" style="margin: 0 auto 8px auto; height: 70px;" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
-                    <div class="realtime-clock" style="margin: 0;">Menghubungkan waktu server...</div>
+                    
+                    <div id="realtime-clock" class="realtime-clock" style="margin: 0; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Menghubungkan waktu server...</div>
                 </div>
 
-                <!-- Pesan Sambutan -->
-                <h2 id="welcome-student" style="margin-bottom: 5px; font-size: 1.3rem; font-weight: 800; color: var(--secondary);">Memuat Data...</h2>
-                <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">Silakan pilih mata pelajaran dan masukkan token.</p>
+                <h2 id="welcome-student" style="margin-bottom: 20px; font-size: 0.85rem; font-weight: 400; color: var(--secondary);">Memuat Data...</h2>
 
-                <!-- Kotak Peringatan Elegan -->
                 <div class="warning-box" style="margin-bottom: 25px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: 12px 15px; font-size: 0.8rem; text-align: left; line-height: 1.5;">
                     <div style="font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;"><i class="fas fa-shield-alt"></i> Pengawasan Aktif</div>
                     Keluar dari layar penuh atau membuka tab lain akan otomatis memicu pelanggaran sistem.
                 </div>
 
-                <!-- Input Form -->
                 <div class="input-group" style="text-align: left; margin-bottom: 15px;">
                     <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Kelas Anda (Otomatis)</label>
                     <input type="text" id="student-class" class="input-text" readonly style="background: #f8fafc; font-weight: 700; color: var(--text-muted); cursor: not-allowed; border-color: var(--border-color);">
@@ -153,10 +151,9 @@
 
                 <div class="input-group" style="text-align: left; margin-bottom: 25px;">
                     <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Token Ujian</label>
-                    <input type="text" id="input-token" class="input-text" placeholder="Masukkan Token Di Sini" style="text-transform: uppercase; font-size: 1.15rem; font-weight: 800; letter-spacing: 4px; text-align: center; background: #ffffff; color: var(--danger);">
+                    <input type="text" id="input-token" class="input-text" placeholder="KODE 6 DIGIT" style="text-transform: uppercase; font-size: 1.15rem; font-weight: 800; letter-spacing: 4px; text-align: center; background: #ffffff; color: var(--danger);">
                 </div>
 
-                <!-- Tombol Aksi -->
                 <button id="btn-verifikasi" class="btn-3d" style="width: 100%; padding: 12px; font-size: 0.95rem;"><i class="fas fa-play-circle"></i> MULAI UJIAN</button>
                 <button onclick="window.location.replace('index.html')" class="btn-exit-modern" style="width: 100%; justify-content: center; margin-top: 12px; padding: 10px; font-size: 0.85rem;"><i class="fas fa-arrow-left"></i> Batal & Kembali</button>
             </div>
@@ -165,20 +162,15 @@
 
     <div id="exam-workspace">
         <header class="exam-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 10; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                <img src="logo-smaich.png" alt="Logo" style="height: 35px; flex-shrink: 0;" onerror="this.src='https://via.placeholder.com/35x35?text=CBT'">
-                <div style="overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
-                    <h3 id="exam-mapel-title" style="margin: 0; font-size: 1.05rem; color: var(--secondary); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</h3>
-                    <p id="exam-student-name" style="margin: 0; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</p>
-                    <div class="realtime-clock-display" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
-                </div>
+            <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; min-width: 0;">
+                <img src="logo-smaich.png" alt="Logo" style="height: 18px; width: auto; object-fit: contain; object-position: left; margin-bottom: 6px;" onerror="this.src='https://via.placeholder.com/80x18?text=CBT'">
+                
+                <h3 id="exam-mapel-title" style="margin: 0; font-size: 1.05rem; color: var(--secondary); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</h3>
+                <p id="exam-student-name" style="margin: 0; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</p>
+                <div class="realtime-clock-display" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
             </div>
             
             <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                <div style="text-align: right;">
-                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Sisa Waktu</div>
-                    <div id="timer-display" style="font-family: monospace; font-size: 1.15rem; font-weight: bold; color: var(--secondary); background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; letter-spacing: 1px;">00:00:00</div>
-                </div>
                 <button id="btn-toggle-sidebar" class="btn-toggle-nav btn-3d btn-secondary" style="padding: 8px 10px; margin: 0; font-size: 1rem;"><i class="fas fa-th-large"></i></button>
             </div>
         </header>
@@ -187,7 +179,15 @@
             <main class="question-area">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px dashed var(--border-color);">
                     <div style="font-size: 1.2rem; font-weight: 800; color: var(--secondary);">Soal No. <span id="current-q-num" style="color: var(--primary); font-size: 1.5rem;">1</span></div>
-                    <div id="badge-tipe-soal" style="background: var(--info); color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; letter-spacing: 0.5px;">-</div>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--card-bg);">
+                            <i class="fas fa-stopwatch" style="color: var(--danger); font-size: 0.9rem;"></i>
+                            <span id="timer-display" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--danger); letter-spacing: 1px;">00:00:00</span>
+                        </div>
+                        
+                        <div id="badge-tipe-soal" style="background: var(--info); color: white; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.5px;">-</div>
+                    </div>
                 </div>
                 
                 <div id="soal-content" style="flex: 1;">
