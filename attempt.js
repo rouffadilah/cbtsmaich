@@ -65,34 +65,49 @@ const WatermarkManager = {
     }
 };
 
+// --- 1. REFACTORING SECURITY MANAGER ---
 const SecurityManager = {
-    isStaff: function() {
-        try {
-            const roles = JSON.parse(localStorage.getItem('userRole')) || [];
-            return roles.includes('admin') || roles.includes('guru');
-        } catch(e) { return false; }
-    },
-    initGlobal: function() {
-        if (this.isStaff()) {
+    isPrivileged: false, // Default: Bukan Guru/Admin
+
+    // Fungsi ini hanya dipanggil SETELAH data ditarik dari Firebase
+    setPrivileged: function(roles) {
+        const roleArray = Array.isArray(roles) ? roles : [roles];
+        this.isPrivileged = roleArray.includes('admin') || roleArray.includes('guru');
+        
+        if (this.isPrivileged) {
+            // Buka kunci seleksi teks jika terbukti sebagai guru/admin
             document.body.style.userSelect = "auto";
             document.body.style.webkitUserSelect = "auto";
-            return; 
         }
+    },
 
-        document.addEventListener('contextmenu', e => e.preventDefault());
+    initGlobal: function() {
+        // Blokir klik kanan
+        document.addEventListener('contextmenu', e => {
+            if (!this.isPrivileged) e.preventDefault();
+        });
+
+        // Blokir copy, paste, drag
         ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => {
             document.addEventListener(evt, e => {
-                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+                if (!this.isPrivileged && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                }
             });
         });
 
+        // Blokir Inspect Element & Screenshot (Hanya untuk Siswa)
         document.addEventListener('keydown', e => {
+            if (this.isPrivileged) return; // Guru bebas menggunakan shortcut
+
             const forbidden = ['F12', 'PrintScreen', 'Meta', 'OS', 'ContextMenu'];
             if (forbidden.includes(e.key) || 
                (e.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(e.key.toLowerCase())) || 
                (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 's'].includes(e.key.toLowerCase())) ||
                (e.metaKey && e.shiftKey && e.key.toLowerCase() === 's')) { 
+                
                 e.preventDefault(); 
+                
                 if (e.key === 'PrintScreen' || (e.metaKey && e.shiftKey && e.key.toLowerCase() === 's')) {
                     navigator.clipboard.writeText("Aksi Ilegal Terdeteksi").catch(()=>{});
                     this.handleViolation("Percobaan Screenshot/PrintScreen Terdeteksi!");
@@ -100,31 +115,28 @@ const SecurityManager = {
             }
         });
 
-        document.addEventListener('keyup', e => {
-            if (e.key === 'PrintScreen') navigator.clipboard.writeText("Aksi Ilegal Terdeteksi").catch(()=>{});
-        });
-
+        // Cegah tombol Back Browser
         history.pushState(null, null, window.location.href);
-        history.pushState(null, null, window.location.href); 
-        
         window.onpopstate = () => { 
             history.pushState(null, null, window.location.href); 
-            if(examState.isExamActive) {
-                this.handleViolation("Sistem mendeteksi Anda mencoba menekan tombol Kembali (Back) atau navigasi keluar!");
+            if(examState.isExamActive && !this.isPrivileged) {
+                this.handleViolation("Sistem mendeteksi Anda mencoba menekan navigasi Kembali (Back)!");
             }
         };
 
         window.addEventListener('beforeunload', (e) => {
-            if (examState.isExamActive) {
+            if (examState.isExamActive && !this.isPrivileged) {
                 e.preventDefault();
                 e.returnValue = 'Ujian sedang berlangsung! Keluar dari halaman ini akan membatalkan ujian Anda.';
                 return e.returnValue;
             }
         });
     },
-    startStrictExamMode: function() {
-        if (this.isStaff()) return;
 
+    startStrictExamMode: function() {
+        if (this.isPrivileged) return; // Jangan hukum guru yang sedang simulasi
+
+        // Tab Switching Detection
         document.addEventListener('visibilitychange', () => { 
             if (document.hidden && examState.isExamActive) {
                 document.body.style.filter = "blur(25px)";
@@ -134,14 +146,17 @@ const SecurityManager = {
             }
         });
         
+        // Keluar dari Layar Penuh
         document.addEventListener("fullscreenchange", () => {
             if (!document.fullscreenElement && examState.isExamActive) {
                 this.handleViolation("Mode Layar Penuh (Fullscreen) dimatikan!");
             }
         });
     },
+
     handleViolation: async function(alasan) {
-        if (!examState.isExamActive) return;
+        if (!examState.isExamActive || this.isPrivileged) return;
+        
         examState.pelanggaran++;
         const violationEl = document.getElementById('violation-count');
         if (violationEl) violationEl.innerText = examState.pelanggaran;
@@ -155,33 +170,50 @@ const SecurityManager = {
             this.openFullscreen();
         }
     },
+
     openFullscreen: function() {
-        if (this.isStaff()) return;
+        if (this.isPrivileged) return;
         const el = document.documentElement;
         if (el.requestFullscreen) { el.requestFullscreen().catch(() => {}); } 
         else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); } 
-        else if (el.msRequestFullscreen) { el.msRequestFullscreen(); }
     },
+
     closeFullscreen: function() {
         if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); }
     }
 };
 
+// --- 2. INTEGRASI AUTENTIKASI DENGAN SECURITY MANAGER ---
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Inisialisasi perlindungan ketat (Default: Berlaku untuk semua yang baru buka web)
     SecurityManager.initGlobal();
+
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.replace("index.html"); return; }
+        
         try {
+            // 2. Tarik data otentik yang valid dari server Firestore
             const userDoc = await getDoc(doc(db, "users", user.uid));
+            
             if (userDoc.exists()) {
-                examState.student = { uid: user.uid, ...userDoc.data() };
-                document.getElementById('welcome-student').innerText = `Assalamu'alaikum ${examState.student.nama}...`;
+                const userData = userDoc.data();
+                
+                // 3. Verifikasi Server: Beritahu SecurityManager apa role sebenarnya
+                SecurityManager.setPrivileged(userData.role);
+
+                examState.student = { uid: user.uid, ...userData };
+                document.getElementById('welcome-student').innerHTML = `Assalamu'alaikum, <span style="display: inline-block;">${examState.student.nama}! 🙏</span>`;
                 document.getElementById('student-class').value = Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : (examState.student.kelas || "-");
                 document.getElementById('exam-student-name').innerText = `${examState.student.nama} (${examState.student.username})`;
-                WatermarkManager.init(examState.student.nama, examState.student.username);
+                
                 await loadMapelOptions();
+            } else {
+                // User tidak punya data di database, tendang keluar
+                window.location.replace("index.html");
             }
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+            console.error("Gagal memuat profil pengguna:", e); 
+        }
     });
 
     const toggleSidebar = () => {
@@ -260,6 +292,8 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         SecurityManager.startStrictExamMode();
         examState.isExamActive = true;
         
+        WatermarkManager.init(examState.student.nama, examState.student.username);
+
         // PERBAIKAN: SESUAIKAN DENGAN ID HTML YANG BENAR
         document.getElementById('pre-exam-ui').style.display = 'none';
         document.getElementById('exam-workspace').style.display = 'flex';
@@ -268,6 +302,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         renderNavigasi();
         tampilkanSoal(0);
         jalankanTimer();
+        
     } catch(e) {
         SecurityManager.closeFullscreen();
         window.customAlert(e.message, "Akses Ditolak");
@@ -293,7 +328,7 @@ function jalankanTimer() {
 }
 
 function renderNavigasi() {
-    const grid = document.getElementById('nav-grid');
+    const grid = document.getElementById('grid-nav-soal');
     if (!grid) return;
     grid.innerHTML = '';
     examState.arraySoal.forEach((soal, idx) => {
@@ -473,14 +508,14 @@ function tampilkanSoal(idx) {
 
     if (examState.currentIndex === examState.arraySoal.length - 1) {
         if(btnNext) {
-            btnNext.innerHTML = '<i class="fas fa-check"></i> Selesai';
+            btnNext.innerHTML = '<i class="fas fa-check"></i>'; // Hanya icon centang
             btnNext.style.backgroundColor = 'var(--danger)'; 
             btnNext.title = 'Selesai Ujian';
             btnNext.onclick = checkSelesaiUjian;
         }
     } else {
         if(btnNext) {
-            btnNext.innerHTML = 'Selanjutnya <i class="fas fa-chevron-right"></i>';
+            btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>'; // Hanya icon panah
             btnNext.style.backgroundColor = ''; 
             btnNext.title = 'Selanjutnya';
             btnNext.onclick = () => tampilkanSoal(examState.currentIndex + 1);

@@ -118,69 +118,32 @@
     </div>
 
     <script>
-        function isStaff() {
-            try {
-                let roles = JSON.parse(localStorage.getItem("userRole") || "[]");
-                return roles.includes("admin") || roles.includes("guru");
-            } catch(e) { return false; }
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            if(isStaff()) {
-                document.body.style.userSelect = "auto";
-                document.body.style.webkitUserSelect = "auto";
-                document.body.style.mozUserSelect = "auto";
-                document.body.style.msUserSelect = "auto";
-            }
-
-            const darkModeBtn = document.getElementById('btn-login-dark-mode');
-            const iconDarkMode = darkModeBtn?.querySelector('i');
-            
-            if (document.body.classList.contains('dark-mode') && iconDarkMode) {
-                iconDarkMode.classList.replace('fa-moon', 'fa-sun');
-            }
-
-            darkModeBtn?.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
-                const isDark = document.body.classList.contains('dark-mode');
-                localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                if (isDark) {
-                    iconDarkMode?.classList.replace('fa-moon', 'fa-sun');
-                } else {
-                    iconDarkMode?.classList.replace('fa-sun', 'fa-moon');
-                }
-            });
+    // Hanya sisakan script untuk PWA (Service Worker) dan Prompt Install
+    let deferredPrompt; 
+    const installBtn = document.getElementById('btn-install-app');
+    if (installBtn) {
+        installBtn.style.display = 'none';
+        window.addEventListener('beforeinstallprompt', (e) => { 
+            e.preventDefault(); 
+            deferredPrompt = e; 
+            installBtn.style.display = 'block'; 
+            installBtn.setAttribute('aria-hidden', 'false'); 
         });
-
-        document.addEventListener('contextmenu', event => { if(!isStaff()) event.preventDefault(); });
-        ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => document.addEventListener(evt, event => { 
-            if (!isStaff() && event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } 
-        }));
-        
-        document.addEventListener('keydown', event => {
-            if(!isStaff()) {
-                if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { 
-                    event.preventDefault(); 
-                }
-            }
+        installBtn.addEventListener('click', async () => { 
+            if (deferredPrompt) { 
+                deferredPrompt.prompt(); 
+                const { outcome } = await deferredPrompt.userChoice; 
+                if (outcome === 'accepted') { installBtn.style.display = 'none'; } 
+                deferredPrompt = null; 
+            } 
         });
-        
-        window.addEventListener('blur', () => { if(!isStaff()) document.body.style.filter = "blur(15px)"; });
-        window.addEventListener('focus', () => { if(!isStaff()) document.body.style.filter = "none"; });
-
-        let deferredPrompt; 
-        const installBtn = document.getElementById('btn-install-app');
-        if (installBtn) {
-            installBtn.style.display = 'none';
-            window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'block'; installBtn.setAttribute('aria-hidden', 'false'); });
-            installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { installBtn.style.display = 'none'; } deferredPrompt = null; } });
-        }
-    </script>
-    <script type="module" src="index.js"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Gagal: ', err)); });
-      }
-    </script>
+    }
+</script>
+<script type="module" src="index.js"></script>
+<script>
+    if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Gagal: ', err)); });
+    }
+</script>
 </body>
 </html>
