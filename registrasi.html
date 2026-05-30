@@ -40,8 +40,8 @@
                     else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
                 }
             }
-            window.addEventListener('focus', pemicuFullscreenANBK);
-            ['click', 'touchstart', 'keydown', 'mousemove'].forEach(evt => {
+            // HANYA GUNAKAN EVENT KLIK/SENTUH AGAR TIDAK ERROR DI CONSOLE
+            ['click', 'touchstart', 'keydown', 'dblclick'].forEach(evt => {
                 document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
             });
 
@@ -156,7 +156,8 @@
     </script>
 
     <script type="module" src="registrasi.js"></script>
-    <button onclick="window.history.back()" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999; padding: 10px 15px; background-color: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+    
+    <button onclick="window.history.back()" class="btn-back-floating">
         <i class="fas fa-arrow-left"></i> Kembali
     </button>
 

@@ -1,4 +1,4 @@
-import { auth, db, storage, functions } from './firebase-config.js'; 
+import { auth, db, storage } from './firebase-config.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
@@ -588,6 +588,10 @@ window.simpanPengaturanBaris = async (mapel, jadwalId, durasiId, tokenId, btnEl)
         
         const icon = btnEl.querySelector('i');
         if(icon) { icon.className = 'fas fa-check'; setTimeout(() => { icon.className = 'fas fa-save'; }, 2000); }
+        
+        // PERBAIKAN: Notifikasi Berhasil Disimpan
+        await window.customAlert("Pengaturan Jadwal, Durasi, dan Token berhasil disimpan!", "success", "Tersimpan");
+
     } catch (e) { console.error(e); window.customAlert("Gagal menyimpan pengaturan: " + e.message, "error"); } 
     finally { btnEl.innerHTML = origHtml; btnEl.disabled = false; }
 };
@@ -672,12 +676,9 @@ window.loadBankSoalSummary = async () => {
             let isMapelGuru = isGuru && userMapel.includes(mapel);
             let canEdit = isAdmin || isMapelGuru;
             
-            // Format List Kelas Dideretkan (Koma)
+            // PERBAIKAN: Menghilangkan Tombol Edit Kelas Sesuai Permintaan
             let labelKelas = assignedClasses.length > 0 ? assignedClasses.join(', ') : '<i style="color:#94a3b8;">Belum ada kelas</i>';
-            let kelasHtml = `<div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-weight:600; color:var(--secondary); font-size:0.85rem; flex:1;">${labelKelas}</span>
-                ${canEdit ? `<button onclick="window.bukaModalEditBankSoal('${mapel}')" class="btn-icon" style="background:#f1f5f9; padding:4px 8px; font-size:0.8rem;" title="Edit Kelas"><i class="fas fa-pen"></i></button>` : ''}
-            </div>`;
+            let kelasHtml = `<span style="font-weight:600; color:var(--secondary); font-size:0.85rem;">${labelKelas}</span>`;
 
             let jadwalInputId = `jadwal-${rowIdx}`; let durasiInputId = `durasi-${rowIdx}`; let tokenInputId = `token-${rowIdx}`;
             let jadwalInput = canEdit ? `<input type="datetime-local" id="${jadwalInputId}" class="ghost-input" value="${jadwal}" style="min-width: 140px;">` : (jadwal || '-');
@@ -782,7 +783,7 @@ window.bukaModalTambahSoal = async (mapelParams = "", targetNomor = "") => {
     document.getElementById('edit-soal-id').value = ''; document.getElementById('form-tambah-soal').reset();
     document.getElementById('soal-media').style.display = 'block'; document.getElementById('soal-media-url').style.display = 'none';
     const secMassal = document.getElementById('section-import-massal'); const divManual = document.getElementById('divider-import-manual');
-    if (secMassal) secMassal.style.display = 'block'; if (divManual) divManual.style.display = 'flex';
+    if (secMassal) secMassal.style.display = 'flex'; if (divManual) divManual.style.display = 'flex';
     
     const mapelSelect = document.getElementById('soal-mapel'); const modalTitle = document.getElementById('title-modal-soal');
     const groupKelas = document.getElementById('group-soal-kelas'); const containerKelas = document.getElementById('soal-kelas-container'); const labelKelas = document.getElementById('soal-kelas-label');

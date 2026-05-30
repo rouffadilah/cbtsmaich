@@ -73,14 +73,12 @@ const SecurityManager = {
         } catch(e) { return false; }
     },
     initGlobal: function() {
-        // UPDATE: JIKA GURU/ADMIN, HENTIKAN BLOKIR COPY PASTE 
         if (this.isStaff()) {
             document.body.style.userSelect = "auto";
             document.body.style.webkitUserSelect = "auto";
             return; 
         }
 
-        // --- SISTEM BLOKIR UNTUK SISWA ---
         document.addEventListener('contextmenu', e => e.preventDefault());
         ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => {
             document.addEventListener(evt, e => {
@@ -106,26 +104,26 @@ const SecurityManager = {
             if (e.key === 'PrintScreen') navigator.clipboard.writeText("Aksi Ilegal Terdeteksi").catch(()=>{});
         });
 
-        // BLOKIR TOMBOL KEMBALI (BACK) MENGGUNAKAN POPSTATE
         history.pushState(null, null, window.location.href);
+        history.pushState(null, null, window.location.href); 
+        
         window.onpopstate = () => { 
-            history.go(1); 
+            history.pushState(null, null, window.location.href); 
             if(examState.isExamActive) {
-                this.openFullscreen();
-                this.handleViolation("Sistem mendeteksi Anda mencoba menekan tombol Kembali (Back)!");
+                this.handleViolation("Sistem mendeteksi Anda mencoba menekan tombol Kembali (Back) atau navigasi keluar!");
             }
         };
 
-        // CEGAH PENUTUPAN TAB
         window.addEventListener('beforeunload', (e) => {
             if (examState.isExamActive) {
                 e.preventDefault();
-                e.returnValue = '';
+                e.returnValue = 'Ujian sedang berlangsung! Keluar dari halaman ini akan membatalkan ujian Anda.';
+                return e.returnValue;
             }
         });
     },
     startStrictExamMode: function() {
-        if (this.isStaff()) return; // UPDATE: Guru/Admin bebas blokir
+        if (this.isStaff()) return;
 
         document.addEventListener('visibilitychange', () => { 
             if (document.hidden && examState.isExamActive) {
@@ -133,14 +131,12 @@ const SecurityManager = {
                 this.handleViolation("Sistem mendeteksi Anda membuka tab atau aplikasi lain!"); 
             } else if (!document.hidden && examState.isExamActive) {
                 document.body.style.filter = "none";
-                this.openFullscreen();
             }
         });
         
         document.addEventListener("fullscreenchange", () => {
             if (!document.fullscreenElement && examState.isExamActive) {
                 this.handleViolation("Mode Layar Penuh (Fullscreen) dimatikan!");
-                setTimeout(() => this.openFullscreen(), 300); 
             }
         });
     },
@@ -149,19 +145,18 @@ const SecurityManager = {
         examState.pelanggaran++;
         const violationEl = document.getElementById('violation-count');
         if (violationEl) violationEl.innerText = examState.pelanggaran;
-        
-        this.openFullscreen();
 
         if (examState.pelanggaran >= examState.maxPelanggaran) {
             examState.isExamActive = false;
             await window.customAlert(`Ujian dihentikan karena mencapai batas maksimal ${examState.maxPelanggaran} kali pelanggaran.\n\nAlasan Terakhir: ${alasan}`, 'DISKUALIFIKASI');
             selesaiUjian("DISKUALIFIKASI");
         } else {
-            window.customAlert(`${alasan}\n\nPeringatan ${examState.pelanggaran}/${examState.maxPelanggaran}!\nJika mencapai batas, ujian otomatis selesai dan Anda didiskualifikasi.`, 'PERINGATAN KEAMANAN');
+            await window.customAlert(`${alasan}\n\nPeringatan ${examState.pelanggaran}/${examState.maxPelanggaran}!\nJika mencapai batas, ujian otomatis selesai dan Anda didiskualifikasi.`, 'PERINGATAN KEAMANAN');
+            this.openFullscreen();
         }
     },
     openFullscreen: function() {
-        if (this.isStaff()) return; // UPDATE: Guru/Admin tidak dipaksa fullscreen
+        if (this.isStaff()) return;
         const el = document.documentElement;
         if (el.requestFullscreen) { el.requestFullscreen().catch(() => {}); } 
         else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); } 
@@ -265,7 +260,8 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         SecurityManager.startStrictExamMode();
         examState.isExamActive = true;
         
-        document.getElementById('pre-exam-screen').style.display = 'none';
+        // PERBAIKAN: SESUAIKAN DENGAN ID HTML YANG BENAR
+        document.getElementById('pre-exam-ui').style.display = 'none';
         document.getElementById('exam-workspace').style.display = 'flex';
         document.getElementById('exam-mapel-title').innerText = `UJIAN: ${examState.mapelTerpilih.toUpperCase()}`;
 
@@ -298,6 +294,7 @@ function jalankanTimer() {
 
 function renderNavigasi() {
     const grid = document.getElementById('nav-grid');
+    if (!grid) return;
     grid.innerHTML = '';
     examState.arraySoal.forEach((soal, idx) => {
         let isFilled = false;
@@ -451,33 +448,43 @@ function tampilkanSoal(idx) {
     }
     else {
         const tx = document.getElementById('essay-ans');
-        tx.oninput = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
+        if (tx) {
+            tx.oninput = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
+        }
     }
 
     const cbRagu = document.getElementById('cb-ragu');
-    cbRagu.checked = !!examState.raguRagu[soal.id];
-    cbRagu.onchange = (e) => { examState.raguRagu[soal.id] = e.target.checked; renderNavigasi(); };
+    if (cbRagu) {
+        cbRagu.checked = !!examState.raguRagu[soal.id];
+        cbRagu.onchange = (e) => { examState.raguRagu[soal.id] = e.target.checked; renderNavigasi(); };
+    }
 
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
 
     if (examState.currentIndex === 0) {
-        btnPrev.style.visibility = 'hidden';
+        if(btnPrev) btnPrev.style.visibility = 'hidden';
     } else {
-        btnPrev.style.visibility = 'visible';
-        btnPrev.onclick = () => tampilkanSoal(examState.currentIndex - 1);
+        if(btnPrev) {
+            btnPrev.style.visibility = 'visible';
+            btnPrev.onclick = () => tampilkanSoal(examState.currentIndex - 1);
+        }
     }
 
     if (examState.currentIndex === examState.arraySoal.length - 1) {
-        btnNext.innerHTML = '<i class="fas fa-check"></i> Selesai';
-        btnNext.style.backgroundColor = 'var(--danger)'; 
-        btnNext.title = 'Selesai Ujian';
-        btnNext.onclick = checkSelesaiUjian;
+        if(btnNext) {
+            btnNext.innerHTML = '<i class="fas fa-check"></i> Selesai';
+            btnNext.style.backgroundColor = 'var(--danger)'; 
+            btnNext.title = 'Selesai Ujian';
+            btnNext.onclick = checkSelesaiUjian;
+        }
     } else {
-        btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>';
-        btnNext.style.backgroundColor = ''; 
-        btnNext.title = 'Selanjutnya';
-        btnNext.onclick = () => tampilkanSoal(examState.currentIndex + 1);
+        if(btnNext) {
+            btnNext.innerHTML = 'Selanjutnya <i class="fas fa-chevron-right"></i>';
+            btnNext.style.backgroundColor = ''; 
+            btnNext.title = 'Selanjutnya';
+            btnNext.onclick = () => tampilkanSoal(examState.currentIndex + 1);
+        }
     }
 }
 
@@ -505,7 +512,11 @@ async function checkSelesaiUjian() {
     }
 }
 
-document.getElementById('btn-selesai').onclick = checkSelesaiUjian;
+// PERBAIKAN: MEMASTIKAN TIDAK ERROR JIKA BTN SELESAI TIDAK DITEMUKAN
+const btnSelesaiUjian = document.getElementById('btn-selesai-ujian');
+if (btnSelesaiUjian) {
+    btnSelesaiUjian.onclick = checkSelesaiUjian;
+}
 
 async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);

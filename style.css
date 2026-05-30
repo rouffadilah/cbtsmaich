@@ -371,3 +371,39 @@ body.dark-mode #cbt-secure-watermark { filter: invert(1) brightness(1.5); opacit
 @media screen and (max-width: 1024px) {
     body.dark-mode .nav-bottom-container { background-color: #1e293b !important; border-top-color: #334155 !important; box-shadow: 0 -4px 15px rgba(0,0,0,0.4) !important; }
 }
+
+/* =========================================
+   TOMBOL KEMBALI FLOATING & THEME AWARE
+========================================= */
+.btn-back-floating {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 9999;
+    padding: 10px 15px;
+    background-color: var(--secondary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.btn-back-floating:hover {
+    background-color: var(--secondary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+body.dark-mode .btn-back-floating {
+    background-color: #334155;
+    color: #f8fafc;
+}
+
+body.dark-mode .btn-back-floating:hover {
+    background-color: #475569;
+}

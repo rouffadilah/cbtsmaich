@@ -52,8 +52,8 @@
                     else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
                 }
             }
-            window.addEventListener('focus', pemicuFullscreenANBK);
-            ['click', 'touchstart', 'keydown', 'mousemove'].forEach(evt => {
+            // HANYA GUNAKAN EVENT KLIK/SENTUH AGAR TIDAK ERROR DI CONSOLE
+            ['click', 'touchstart', 'keydown', 'dblclick'].forEach(evt => {
                 document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
             });
 
@@ -181,31 +181,6 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Gagal: ', err)); });
       }
-    </script>
-    <button onclick="window.history.back()" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999; padding: 10px 15px; background-color: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
-        <i class="fas fa-arrow-left"></i> Kembali
-    </button>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            try {
-                const roles = JSON.parse(localStorage.getItem('userRole')) || [];
-                const isStaff = roles.includes('admin') || roles.includes('guru');
-                
-                if (isStaff) {
-                    // Membuka kunci blokir seleksi teks
-                    document.body.style.userSelect = "auto";
-                    document.body.style.webkitUserSelect = "auto";
-                    document.body.style.mozUserSelect = "auto";
-                    document.body.style.msUserSelect = "auto";
-                    
-                    // Membuka kunci blokir klik kanan
-                    window.addEventListener('contextmenu', function(e) {
-                        e.stopPropagation();
-                    }, true);
-                }
-            } catch(e) {}
-        });
     </script>
 </body>
 </html>
