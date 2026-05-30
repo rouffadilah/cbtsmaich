@@ -164,21 +164,22 @@
     </div>
 
     <div id="exam-workspace">
-        <header class="app-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 10;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="logo-smaich.png" alt="Logo" style="height: 35px;" onerror="this.src='https://via.placeholder.com/35x35?text=CBT'">
-                <div>
-                    <h3 id="exam-mapel-title" style="margin: 0; font-size: 1.1rem; color: var(--secondary); font-weight: 800;">-</h3>
-                    <p id="exam-student-name" style="margin: 0; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">-</p>
-                    <div class="realtime-clock-display" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-top: 2px;"></div>
+        <header class="exam-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 10; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                <img src="logo-smaich.png" alt="Logo" style="height: 35px; flex-shrink: 0;" onerror="this.src='https://via.placeholder.com/35x35?text=CBT'">
+                <div style="overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
+                    <h3 id="exam-mapel-title" style="margin: 0; font-size: 1.05rem; color: var(--secondary); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</h3>
+                    <p id="exam-student-name" style="margin: 0; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</p>
+                    <div class="realtime-clock-display" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
                 </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <div style="text-align: center;">
-                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Sisa Waktu</div>
-                    <div id="timer-display" style="font-family: monospace; font-size: 1.3rem; font-weight: bold; color: var(--secondary); background: #f1f5f9; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">00:00:00</div>
+            
+            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                <div style="text-align: right;">
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Sisa Waktu</div>
+                    <div id="timer-display" style="font-family: monospace; font-size: 1.15rem; font-weight: bold; color: var(--secondary); background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; letter-spacing: 1px;">00:00:00</div>
                 </div>
-                <button id="btn-toggle-sidebar" class="btn-toggle-nav btn-3d btn-secondary" style="padding: 8px 15px; margin: 0; font-size: 0.9rem;"><i class="fas fa-th-large"></i> Daftar Soal</button>
+                <button id="btn-toggle-sidebar" class="btn-toggle-nav btn-3d btn-secondary" style="padding: 8px 10px; margin: 0; font-size: 1rem;"><i class="fas fa-th-large"></i></button>
             </div>
         </header>
 
