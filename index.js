@@ -79,7 +79,9 @@ loginForm.addEventListener("submit", async (event) => {
         if (roles.includes("admin") || roles.includes("guru")) {
             window.location.replace("dashboard.html"); 
         } else {
-            window.location.replace("attempt.html"); 
+            // Tangkap parameter URL (jika ada) dan teruskan ke attempt.html
+            const queryString = window.location.search;
+            window.location.replace("attempt.html" + queryString); 
         }
 
     } catch (error) {

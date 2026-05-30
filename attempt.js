@@ -207,6 +207,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('exam-student-name').innerText = `${examState.student.nama} (${examState.student.username})`;
                 
                 await loadMapelOptions();
+
+                // --- FITUR BYPASS & DETEKSI TOKEN OTOMATIS UNTUK SEB ---
+                const urlParams = new URLSearchParams(window.location.search);
+                const directMapel = urlParams.get('mapel');
+
+                if (directMapel) {
+                    setTimeout(async () => {
+                        const mapelSelect = document.getElementById('select-mapel');
+                        const tokenInput = document.getElementById('input-token');
+                        const kelasSiswa = document.getElementById('student-class').value;
+
+                        if (!kelasSiswa || kelasSiswa === "-") return;
+
+                        try {
+                            // 1. Set pilihan mata pelajaran pada dropdown
+                            if (!Array.from(mapelSelect.options).some(opt => opt.value === directMapel)) {
+                                mapelSelect.innerHTML += `<option value="${directMapel}">${directMapel}</option>`;
+                            }
+                            mapelSelect.value = directMapel;
+
+                            // 2. Tarik token aktif dari database secara otomatis berdasarkan Mapel & Kelas siswa
+                            const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+                            const tokenKey = `token_${directMapel}_${kelasSiswa}`;
+
+                            if (tokenSnap.exists() && tokenSnap.data()[tokenKey]) {
+                                const tokenData = tokenSnap.data()[tokenKey];
+                                const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
+                                
+                                // Isikan token ke input secara gaib
+                                tokenInput.value = tokenCode;
+
+                                // 3. Eksekusi klik tombol mulai ujian secara otomatis
+                                document.getElementById('pre-exam-ui').style.opacity = '0.5';
+                                document.getElementById('pre-exam-ui').style.pointerEvents = 'none';
+                                document.getElementById('btn-verifikasi').click();
+                            } else {
+                                window.customAlert(`Gagal masuk otomatis. Token untuk mapel "${directMapel}" di kelas "${kelasSiswa}" belum diatur oleh guru.`, "Peringatan");
+                            }
+                        } catch (err) {
+                            console.error("Gagal melakukan bypass token otomatis:", err);
+                        }
+                    }, 600); // Jeda aman memastikan data akademik ter-render
+                }
+                // --------------------------------------------------------
+
             } else {
                 // User tidak punya data di database, tendang keluar
                 window.location.replace("index.html");

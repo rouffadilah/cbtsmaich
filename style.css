@@ -407,3 +407,31 @@ body.dark-mode .btn-back-floating {
 body.dark-mode .btn-back-floating:hover {
     background-color: #475569;
 }
+
+/* --- ELEGANT UPLOAD BUTTON --- */
+.btn-upload-elegant {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #ffffff;
+    padding: 8px 18px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 20px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-upload-elegant:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+}
+
+body.dark-mode .btn-upload-elegant {
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
