@@ -146,7 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
     SecurityManager.initGlobal();
 
     onAuthStateChanged(auth, async (user) => {
-        if (!user) { window.location.replace("index.html"); return; }
+        // PERUBAHAN: Jika tidak login, biarkan sistem berjalan (Mode Publik)
+        if (!user) { 
+            console.log("Mode Ujian Tanpa Login Aktif");
+            examState.student = null;
+            return; 
+        }
         
         try {
             const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -154,8 +159,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userData = userDoc.data();
                 SecurityManager.setPrivileged(userData.role);
                 examState.student = { uid: user.uid, ...userData };
-                document.getElementById('welcome-student').innerHTML = `Assalamu'alaikum, <span style="display: inline-block;">${examState.student.nama}! 🙏</span>`;
                 
+                const welcomeEl = document.getElementById('welcome-student');
+                if (welcomeEl) {
+                    welcomeEl.innerHTML = `Assalamu'alaikum, <span style="display: inline-block;">${examState.student.nama}! 🙏</span>`;
+                }
+                
+                // Isi otomatis nama ke kolom input baru jika tersedia
+                const inputNama = document.getElementById('input-nama-siswa');
+                if (inputNama) inputNama.value = examState.student.nama || user.displayName || user.email || '';
+
                 const selectKelas = document.getElementById('student-class');
                 if (selectKelas && selectKelas.tagName !== 'SELECT') {
                     const newSelect = document.createElement('select');
@@ -166,7 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectKelas.parentNode.replaceChild(newSelect, selectKelas);
                 }
                 
-                document.getElementById('exam-student-name').innerText = `${examState.student.nama} (${examState.student.username})`;
                 await loadMapelOptions();
                 await loadKelasOptions(); 
             } else {
@@ -177,8 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === LOGIKA LOGOUT / BATAL KEMBALI ===
     document.getElementById('btn-batal-kembali')?.addEventListener('click', async () => {
-        if (confirm("Yakin ingin membatalkan dan keluar dari akun ini? Anda akan dikembalikan ke halaman Login utama.")) {
-            // Melakukan sign out otomatis dari Firebase
+        if (confirm("Yakin ingin membatalkan dan kembali ke halaman Login?")) {
             await signOut(auth);
             localStorage.clear();
             window.location.replace("index.html");
@@ -204,17 +215,19 @@ async function loadMapelOptions() {
     try {
         const snap = await getDoc(doc(db, "pengaturan", "data_akademik"));
         const select = document.getElementById('select-mapel');
-        if (snap.exists() && snap.data().list_mapel) { 
+        if (snap.exists() && snap.data().list_mapel && select) { 
             select.innerHTML = '<option value="">-- Pilih Mapel Ujian --</option>' + snap.data().list_mapel.map(m => `<option value="${m}">${m}</option>`).join(''); 
         }
     } catch(e) {}
 }
 
 async function loadKelasOptions() {
-    const selectKelas = document.getElementById('student-class');
+    const selectKelas = document.getElementById('student-class') || document.getElementById('select-kelas');
     const selectMapel = document.getElementById('select-mapel');
     const inputToken = document.getElementById('input-token'); 
     let containerToken = inputToken ? inputToken.parentElement : null;
+
+    if (!selectKelas) return;
 
     try {
         const docRef = doc(db, "pengaturan", "data_akademik");
@@ -232,7 +245,7 @@ async function loadKelasOptions() {
 
     const checkTokenStatus = async () => {
         const kelas = selectKelas.value;
-        const mapel = selectMapel.value;
+        const mapel = selectMapel ? selectMapel.value : "";
         if(!kelas || !mapel || !containerToken) return;
 
         try {
@@ -256,17 +269,44 @@ async function loadKelasOptions() {
     };
 
     selectKelas.addEventListener('change', checkTokenStatus);
-    selectMapel.addEventListener('change', checkTokenStatus);
+    if(selectMapel) selectMapel.addEventListener('change', checkTokenStatus);
 }
 
 document.getElementById('btn-verifikasi').onclick = async () => {
-    examState.mapelTerpilih = document.getElementById('select-mapel').value;
-    const tokenInput = document.getElementById('input-token').value.toUpperCase().trim();
-    const kelasSiswa = document.getElementById('student-class').value;
+    // 1. CEK VALIDASI NAMA UNTUK MODE PUBLIK
+    const inputNamaEl = document.getElementById('input-nama-siswa');
+    const namaSiswa = inputNamaEl ? inputNamaEl.value.trim() : "";
+
+    if (!examState.student && !namaSiswa) {
+        return window.customAlert("Silakan isi Nama Lengkap Anda terlebih dahulu!", "Peringatan");
+    }
+
+    // 2. CEK PILIHAN MAPEL & KELAS
+    const elMapel = document.getElementById('select-mapel') || document.querySelector('select[id*="mapel"]');
+    const elKelas = document.getElementById('student-class') || document.getElementById('select-kelas') || document.querySelector('select[id*="kelas"]');
+    const elToken = document.getElementById('input-token');
+
+    examState.mapelTerpilih = elMapel ? elMapel.value : "";
+    const tokenInput = elToken ? elToken.value.toUpperCase().trim() : "BYPASS";
+    const kelasSiswa = elKelas ? elKelas.value : "";
 
     if(!examState.mapelTerpilih || !kelasSiswa) return window.customAlert("Pilih Mapel dan Kelas Anda terlebih dahulu!", "Peringatan");
-    if(document.getElementById('input-token').parentElement.style.display !== 'none' && !tokenInput) return window.customAlert("Masukkan token ujian!", "Peringatan");
     
+    const containerToken = elToken ? elToken.parentElement : null;
+    if(containerToken && containerToken.style.display !== 'none' && !tokenInput) return window.customAlert("Masukkan token ujian!", "Peringatan");
+    
+    // 3. SET DATA SISWA JIKA MODE PUBLIK
+    if (!examState.student) {
+        examState.student = {
+            uid: "publik-" + new Date().getTime(),
+            nama: namaSiswa || "Siswa Anonim",
+            username: "Tanpa Akun",
+            kelas: kelasSiswa
+        };
+    } else if (namaSiswa) {
+        examState.student.nama = namaSiswa; // Update jika diubah oleh user login
+    }
+
     SecurityManager.openFullscreen();
 
     const btn = document.getElementById('btn-verifikasi'); 
@@ -318,6 +358,11 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         document.getElementById('pre-exam-ui').style.display = 'none';
         document.getElementById('exam-workspace').style.display = 'flex';
         document.getElementById('exam-mapel-title').innerText = `UJIAN: ${examState.mapelTerpilih.toUpperCase()}`;
+
+        const examNameEl = document.getElementById('exam-student-name');
+        if (examNameEl) {
+            examNameEl.innerText = `${examState.student.nama} (${examState.student.username})`;
+        }
 
         renderNavigasi();
         tampilkanSoal(0);
@@ -577,11 +622,9 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
 
-    // 1. AMBIL DATA KELAS SEBELUM LAYAR DIHAPUS OLEH LOADING (Solusi Error Loading Terus)
-    const inputKelas = document.getElementById('student-class');
-    const kelasSiswa = inputKelas ? inputKelas.value : (Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas);
+    const inputKelas = document.getElementById('student-class') || document.getElementById('select-kelas') || document.querySelector('select[id*="kelas"]');
+    const kelasSiswa = inputKelas ? inputKelas.value : (examState.student && examState.student.kelas ? (Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas) : "Umum");
 
-    // 2. TAMPILKAN ANIMASI LOADING
     document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><i class="fas fa-spinner fa-spin fa-4x" style="color:var(--primary); margin-bottom:20px;"></i><h2 style="color:var(--secondary); font-family:sans-serif; text-align:center;">Menyimpan Lembar Jawaban...</h2><p style="color:var(--text-muted);">Mohon jangan tutup atau kembali dari halaman ini.</p></div>';
 
     let totalBobotPG = 0;
@@ -646,9 +689,13 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
         const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycby5mtBZIaTKv91Fx9qYNbcLCEql-1Rst3gyKIg0rXvULqd0F-uDe553ifSmUW_lly_g/exec"; 
         
         if (URL_GOOGLE_SCRIPT.startsWith("http")) {
-            // Gunakan FormData (URLSearchParams) agar lolos blokir CORS
+            // Gunakan FormData agar lolos blokir CORS
             const formData = new URLSearchParams();
             formData.append("nama", payload.nama);
+            
+            // 👇 TAMBAHAN MENGIRIM EMAIL / USERNAME KE SCRIPT GOOGLE 👇
+            formData.append("email", payload.username); 
+            
             formData.append("kelas", payload.kelas);
             formData.append("mapel", payload.mataPelajaran);
             formData.append("nilai", payload.skor);
@@ -670,28 +717,86 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
 }
 
 // ==========================================
-// OVERRIDE: KELAS MANUAL & BYPASS TOKEN OTOMATIS
+// OVERRIDE: KELAS MANUAL, BYPASS TOKEN & AUTO-SELECT LINK
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
-    const selectKelas = document.getElementById('select-kelas') || document.querySelector('select[id*="kelas"]');
-    const selectMapel = document.getElementById('select-mapel') || document.querySelector('select[id*="mapel"]');
-    const inputToken = document.getElementById('input-token') || document.querySelector('input[placeholder*="Token"]'); 
+    // 1. Pastikan input kelas diubah menjadi dropdown untuk siswa yang tidak login
+    let elKelas = document.getElementById('student-class');
+    if (elKelas && elKelas.tagName !== 'SELECT') {
+        const newSelect = document.createElement('select');
+        newSelect.id = 'student-class';
+        newSelect.className = 'input-text';
+        newSelect.style.fontWeight = '600';
+        newSelect.style.backgroundColor = '#ffffff';
+        elKelas.parentNode.replaceChild(newSelect, elKelas);
+    }
+
+    const selectKelas = document.getElementById('student-class');
+    const selectMapel = document.getElementById('select-mapel');
+    const inputToken = document.getElementById('input-token'); 
+    const containerToken = inputToken ? inputToken.parentElement : null;
     
     if(!selectKelas || !selectMapel) return;
-    
-    let containerToken = inputToken ? inputToken.parentElement : null;
 
+    // 2. Baca Parameter URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlMapel = urlParams.get('mapel');
+    const urlKelas = urlParams.get('kelas');
+
+    // 3. Sembunyikan Token SEPENUHNYA jika menggunakan Link Mode
+    if (urlMapel || urlKelas) {
+        if (containerToken) containerToken.style.display = 'none';
+        if (inputToken) inputToken.value = 'BYPASS';
+    }
+
+    // 4. Tarik data Mapel dan Kelas dari database
     try {
         const docRef = doc(db, "pengaturan", "data_akademik");
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().list_kelas) {
-            const listKelas = docSnap.data().list_kelas;
-            selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
-            selectKelas.disabled = false;
+        
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            if (data.list_kelas) {
+                selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + data.list_kelas.map(k => `<option value="${k}">${k}</option>`).join('');
+            }
+            
+            if (data.list_mapel) {
+                selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mapel Ujian --</option>' + data.list_mapel.map(m => `<option value="${m}">${m}</option>`).join('');
+            }
         }
-    } catch(e) { console.error("Gagal memuat list kelas:", e); }
+    } catch(e) { 
+        console.error("Gagal memuat data akademik:", e); 
+    }
 
+    // 5. Lakukan Auto-Select berdasarkan Parameter URL
+    if (urlMapel) {
+        let options = Array.from(selectMapel.options);
+        let match = options.find(opt => opt.value.toLowerCase().includes(urlMapel.toLowerCase()));
+        if (match) {
+            selectMapel.value = match.value;
+            // Kunci dropdown agar siswa tidak bisa asal mengganti mapel
+            selectMapel.style.pointerEvents = 'none';
+            selectMapel.style.backgroundColor = '#f1f5f9';
+        }
+    }
+    
+    if (urlKelas) {
+        let options = Array.from(selectKelas.options);
+        let match = options.find(opt => opt.value.toLowerCase() === urlKelas.toLowerCase() || opt.value.toLowerCase().includes(urlKelas.toLowerCase()));
+        if (match) {
+            selectKelas.value = match.value;
+            // Kunci dropdown agar siswa tidak bisa asal mengganti kelas
+            selectKelas.style.pointerEvents = 'none';
+            selectKelas.style.backgroundColor = '#f1f5f9';
+        }
+    }
+
+    // 6. Logika Pengecekan Token (Hanya dijalankan jika BUKAN Link Mode)
     const checkTokenStatus = async () => {
+        // Jika sedang pakai mode link URL, abaikan dan biarkan token disembunyikan
+        if (urlMapel || urlKelas) return;
+
         const kelas = selectKelas.value;
         const mapel = selectMapel.value;
         if(!kelas || !mapel || !containerToken) return;
@@ -718,4 +823,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     selectKelas.addEventListener('change', checkTokenStatus);
     selectMapel.addEventListener('change', checkTokenStatus);
+
+    // Cek token saat pertama kali load (Hanya jika manual/bukan mode link)
+    if (!urlMapel && !urlKelas) {
+        setTimeout(checkTokenStatus, 500);
+    }
 });

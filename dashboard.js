@@ -279,7 +279,7 @@ const SoalManager = {
             
             this.tempDataKelola.forEach((s, idx) => {
                 html += `
-                <div style="background: white; border: 1px solid var(--border-color); border-left: 4px solid transparent; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s ease; position: relative;" onmouseover="this.style.borderLeftColor='var(--info)'; this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderLeftColor='transparent'; this.style.boxShadow='var(--shadow-sm)'; this.style.transform='translateY(0)'" onclick="SoalManager.bukaModalEdit('${s.id}')">
+                <div id="soal-item-${s.id}" style="background: white; border: 1px solid var(--border-color); border-left: 4px solid transparent; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s ease; position: relative;" onmouseover="this.style.borderLeftColor='var(--info)'; this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderLeftColor='transparent'; this.style.boxShadow='var(--shadow-sm)'; this.style.transform='translateY(0)'" onclick="SoalManager.bukaModalEdit('${s.id}')">
                     <div style="position:absolute; right:15px; top:15px; z-index:10; display:flex; gap:6px;">
                         <button onclick="event.stopPropagation(); SoalManager.geserUrutan('${s.id}', 'up', '${mapel}', '${kelasKey}')" style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; width:32px; height:32px; border-radius:8px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'" title="Geser ke Atas"><i class="fas fa-arrow-up"></i></button>
                         <button onclick="event.stopPropagation(); SoalManager.geserUrutan('${s.id}', 'down', '${mapel}', '${kelasKey}')" style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; width:32px; height:32px; border-radius:8px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'" title="Geser ke Bawah"><i class="fas fa-arrow-down"></i></button>
@@ -386,7 +386,7 @@ const SoalManager = {
             if (a.nomor_soal === b.nomor_soal) {
                 let timeA = a.updatedAt || a.createdAt; timeA = timeA ? (timeA.toMillis ? timeA.toMillis() : new Date(timeA).getTime()) : 0;
                 let timeB = b.updatedAt || b.createdAt; timeB = timeB ? (timeB.toMillis ? timeB.toMillis() : new Date(timeB).getTime()) : 0;
-                return timeB - timeA; 
+                return timeA - timeB; 
             }
             return (a.nomor_soal || 0) - (b.nomor_soal || 0);
         });
@@ -978,13 +978,19 @@ window.loadDataPengguna = async () => {
 };
 
 window.renderTablePengguna = () => {
-    const tbodyGuru = document.querySelector("#table-guru tbody"); const tbodySiswa = document.querySelector("#table-siswa tbody");
-    if (!tbodyGuru || !tbodySiswa) return;
+    const tbodyGuru = document.querySelector("#table-guru tbody"); 
+    const tbodySiswa = document.querySelector("#table-siswa tbody");
+    const tbodyGmail = document.querySelector("#table-gmail tbody");
+    if (!tbodyGuru || !tbodySiswa || !tbodyGmail) return;
 
     const filterGId = (document.getElementById('search-guru-id')?.value || '').toLowerCase();
     const filterGNama = (document.getElementById('search-guru-nama')?.value || '').toLowerCase();
     const filterGRole = (document.getElementById('search-guru-role')?.value || '').toLowerCase();
     const filterGDetail = (document.getElementById('search-guru-detail')?.value || '').toLowerCase();
+
+    const filterGEmail = (document.getElementById('search-gmail-email')?.value || '').toLowerCase();
+    const filterGNamaGmail = (document.getElementById('search-gmail-nama')?.value || '').toLowerCase();
+    const filterGRoleGmail = (document.getElementById('search-gmail-role')?.value || '').toLowerCase();
 
     const filterKelasEl = document.getElementById("filter-kelas-pengguna");
     const filterKelas = filterKelasEl ? filterKelasEl.value : "all";
@@ -993,7 +999,8 @@ window.renderTablePengguna = () => {
     const filterSRole = (document.getElementById('search-siswa-role')?.value || '').toLowerCase();
     const filterSKelas = (document.getElementById('search-siswa-kelas')?.value || '').toLowerCase();
     
-    let htmlGuru = ''; let htmlSiswa = ''; let countGuru = 0; let countSiswa = 0;
+    let htmlGuru = ''; let htmlSiswa = ''; let htmlGmail = ''; 
+    let countGuru = 0; let countSiswa = 0; let countGmail = 0;
 
     allUsersData.forEach((user) => {
         const roles = Array.isArray(user.role) ? user.role : [user.role];
@@ -1008,7 +1015,14 @@ window.renderTablePengguna = () => {
             </div>
         ` : '-';
 
-        if (roles.some(r => r !== 'siswa')) { 
+        const isGmail = user.username && String(user.username).toLowerCase().includes('@');
+
+        if (isGmail) {
+            if ((user.username || "").toLowerCase().includes(filterGEmail) && (user.nama || "").toLowerCase().includes(filterGNamaGmail) && roleDisplay.toLowerCase().includes(filterGRoleGmail)) {
+                countGmail++;
+                htmlGmail += `<tr><td><strong>${user.username || "-"}</strong></td><td>${user.nama || "-"}</td><td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${roleDisplay}</span></td><td><small><b>Mapel:</b> ${mapel}<br><b>Kelas:</b> ${kelas}</small></td>${isAdmin ? `<td style="text-align:center;">${actionButtons}</td>` : ''}</tr>`;
+            }
+        } else if (roles.some(r => r !== 'siswa')) { 
             if ((user.username || "").toLowerCase().includes(filterGId) && (user.nama || "").toLowerCase().includes(filterGNama) && roleDisplay.toLowerCase().includes(filterGRole) && `${mapel} ${kelas}`.toLowerCase().includes(filterGDetail)) {
                 countGuru++;
                 htmlGuru += `<tr><td><strong>${user.username || "-"}</strong></td><td>${user.nama || "-"}</td><td><span style="text-transform: capitalize; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${roleDisplay}</span></td><td><small><b>Mapel:</b> ${mapel}<br><b>Kelas:</b> ${kelas}</small></td>${isAdmin ? `<td style="text-align:center;">${actionButtons}</td>` : ''}</tr>`;
@@ -1024,15 +1038,20 @@ window.renderTablePengguna = () => {
 
     if (countGuru === 0) htmlGuru = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada data staf yang cocok.</td></tr>`;
     if (countSiswa === 0) htmlSiswa = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada data siswa yang cocok.</td></tr>`;
+    if (countGmail === 0) htmlGmail = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada data akun Google yang cocok.</td></tr>`;
 
-    tbodyGuru.innerHTML = htmlGuru; tbodySiswa.innerHTML = htmlSiswa;
+    tbodyGuru.innerHTML = htmlGuru; tbodySiswa.innerHTML = htmlSiswa; tbodyGmail.innerHTML = htmlGmail;
 
     const thAksiGuru = document.getElementById('th-aksi-guru'); const thFilterAksiGuru = document.getElementById('th-filter-aksi-guru');
     const thAksiSiswa = document.getElementById('th-aksi-siswa'); const thFilterAksiSiswa = document.getElementById('th-filter-aksi-siswa');
+    const thAksiGmail = document.getElementById('th-aksi-gmail'); const thFilterAksiGmail = document.getElementById('th-filter-aksi-gmail');
+    
     if (thAksiGuru) thAksiGuru.style.display = isAdmin ? 'table-cell' : 'none';
     if (thFilterAksiGuru) thFilterAksiGuru.style.display = isAdmin ? 'table-cell' : 'none';
     if (thAksiSiswa) thAksiSiswa.style.display = isAdmin ? 'table-cell' : 'none';
     if (thFilterAksiSiswa) thFilterAksiSiswa.style.display = isAdmin ? 'table-cell' : 'none';
+    if (thAksiGmail) thAksiGmail.style.display = isAdmin ? 'table-cell' : 'none';
+    if (thFilterAksiGmail) thFilterAksiGmail.style.display = isAdmin ? 'table-cell' : 'none';
 };
 
 window.hapusPengguna = async (uid) => {
@@ -1244,7 +1263,16 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
         document.getElementById('edit-soal-id').value = '';
         document.getElementById('modal-tambah-soal').style.display = 'none';
 
-        if(document.getElementById('view-soal-list').style.display === 'block') { SoalManager.loadDaftarSoal(mapel, kelasKeyToSave); }
+        if(document.getElementById('view-soal-list').style.display === 'block') { 
+            await SoalManager.loadDaftarSoal(mapel, kelasKeyToSave); 
+            // Fungsi agar scroll kembali berhenti di soal yang baru saja diedit
+            if (editId) {
+                setTimeout(() => {
+                    const el = document.getElementById(`soal-item-${editId}`);
+                    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                }, 400);
+            }
+        }
         SoalManager.loadSummary();
         window.customAlert("Soal berhasil disimpan!", "success");
     } catch(err) { window.customAlert(err.message || "Gagal menyimpan soal.", "error"); } 
@@ -1321,21 +1349,49 @@ window.parseDocTextToJSON = (text) => {
 
 window.prosesUploadMassal = async (jsonData, mapel, kelasArray) => {
     if (jsonData.length === 0) throw new Error("File kosong atau tidak sesuai format Template!");
-    let updates = []; let timestampAwal = new Date().getTime();
     
-    let kelasArrayToSave = kelasArray;
-    let kelasKeyToSave = [...kelasArrayToSave].sort().join(', ');
+    let kelasKeyToSave = [...kelasArray].sort().join(', ');
 
+    // 1. Cari nomor soal paling terakhir di database agar tidak menimpa/acak
+    const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", mapel));
+    const snap = await getDocs(q);
+    let maxNomor = 0;
+    snap.forEach(doc => {
+        let data = doc.data();
+        let kArr = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
+        if ([...kArr].sort().join(', ') === kelasKeyToSave) {
+            let nom = parseInt(data.nomor_soal) || 0;
+            if (nom > maxNomor) maxNomor = nom;
+        }
+    });
+
+    let updates = []; 
+    let timestampAwal = new Date().getTime();
+    let currentNomor = maxNomor + 1; // Mulai increment dari nomor terakhir
+    
     for (let row of jsonData) {
         let tipeRaw = String(row["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] || "PG").toUpperCase().trim();
         let tipeFormat = "PG"; if (tipeRaw.includes('ESSAY')) tipeFormat = 'Essay'; else if (tipeRaw.includes('PGK')) tipeFormat = 'PGK'; else if (tipeRaw.includes('JODOH') || tipeRaw.includes('MENJODOHKAN')) tipeFormat = 'Menjodohkan';
-        timestampAwal += 10;
-        let payload = { mataPelajaran: mapel, kelas: kelasArrayToSave, nomor_soal: parseInt(row["Nomor Soal"]) || 1, bobot: parseFloat(row["Bobot Soal"]) || 1, tipe: tipeFormat, teks_soal: String(row["Teks Pertanyaan"] || ""), createdAt: new Date(timestampAwal), updatedAt: new Date(timestampAwal) };
+        
+        timestampAwal += 1000; // Beri jeda millisecond agar database mencatat urutannya dengan pasti
+        
+        let payload = { 
+            mataPelajaran: mapel, 
+            kelas: kelasArray, 
+            nomor_soal: currentNomor++, // Angka akan bertambah berurutan
+            bobot: parseFloat(row["Bobot Soal"]) || 1, 
+            tipe: tipeFormat, 
+            teks_soal: String(row["Teks Pertanyaan"] || ""), 
+            createdAt: new Date(timestampAwal), 
+            updatedAt: new Date(timestampAwal) 
+        };
+        
         let linkMediaPertanyaan = row["Link Media Pertanyaan (URL Gambar/Audio/Video)"] ? String(row["Link Media Pertanyaan (URL Gambar/Audio/Video)"]).trim() : "";
         if (linkMediaPertanyaan) {
             let mType = "image"; if (linkMediaPertanyaan.toLowerCase().includes('.mp3') || linkMediaPertanyaan.toLowerCase().includes('.wav')) mType = "audio"; else if (linkMediaPertanyaan.toLowerCase().includes('.mp4') || linkMediaPertanyaan.toLowerCase().includes('.mkv')) mType = "video";
             payload.media_soal = { url: linkMediaPertanyaan, type: mType };
         }
+        
         if (tipeFormat === 'PG' || tipeFormat === 'PGK') {
             payload.opsi = { A: row["Opsi A"] ? String(row["Opsi A"]) : "", B: row["Opsi B"] ? String(row["Opsi B"]) : "", C: row["Opsi C"] ? String(row["Opsi C"]) : "", D: row["Opsi D"] ? String(row["Opsi D"]) : "", E: row["Opsi E"] ? String(row["Opsi E"]) : "" };
             let opsiMediaObj = {}; ['A', 'B', 'C', 'D', 'E'].forEach(k => { let linkMediaOpsi = row[`Link Media Opsi ${k} (URL Gambar)`] ? String(row[`Link Media Opsi ${k} (URL Gambar)`]).trim() : ""; if (linkMediaOpsi) { opsiMediaObj[k] = { url: linkMediaOpsi, type: "image" }; } });
@@ -1347,11 +1403,15 @@ window.prosesUploadMassal = async (jsonData, mapel, kelasArray) => {
             if (kunciRaw) { kunciRaw.split(';').forEach(p => { let splitPair = p.split('='); if (splitPair.length === 2) { pasanganArr.push({ kiri: splitPair[0].trim(), kanan: splitPair[1].trim() }); } }); }
             payload.pasangan = pasanganArr;
         } else if (tipeFormat === 'Essay') { payload.kunci_jawaban = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || ""); }
+        
         updates.push(addDoc(collection(db, "bank_soal"), payload));
     }
-    await Promise.all(updates); await SoalManager.normalizeUrutan(mapel, kelasKeyToSave);
+    await Promise.all(updates); 
+    await SoalManager.normalizeUrutan(mapel, kelasKeyToSave);
+    
     window.customAlert(`Sukses! ${jsonData.length} Soal berhasil diunggah dengan aman.`, "success"); 
-    SoalManager.bukaDetailSoal(mapel, kelasKeyToSave); SoalManager.loadSummary();
+    SoalManager.bukaDetailSoal(mapel, kelasKeyToSave); 
+    SoalManager.loadSummary();
 };
 
 document.getElementById('btn-import-gdrive')?.addEventListener('click', () => {
@@ -1503,9 +1563,20 @@ window.lihatDetailJawaban = async (id) => {
     document.getElementById('modal-detail-jawaban').style.display = 'flex';
 
     try {
+        // Menggunakan h.mataPelajaran sesuai nama variabel di fungsi ini
         const q = query(collection(db, "bank_soal"), where("mataPelajaran", "==", h.mataPelajaran));
-        const snap = await getDocs(q); let soalArr = []; 
-        snap.forEach(doc => soalArr.push({id: doc.id, ...doc.data()}));
+        const snap = await getDocs(q); 
+        let soalArr = []; 
+        
+        snap.forEach(d => {
+            let sData = d.data();
+            let kelasSoal = Array.isArray(sData.kelas) ? sData.kelas : [sData.kelas];
+            // PERBAIKAN: Menggunakan h.kelas (bukan hasil.kelas)
+            if (kelasSoal.includes(h.kelas) || kelasSoal.includes("Umum") || kelasSoal.length === 0) {
+                soalArr.push({id: d.id, ...sData});
+            }
+        });
+        
         soalArr.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
 
         let html = '';
@@ -1532,7 +1603,10 @@ window.lihatDetailJawaban = async (id) => {
             </div>`;
         });
         container.innerHTML = html || '<div style="text-align:center;">Lembar kosong / data soal tidak ditemukan.</div>';
-    } catch(e) { container.innerHTML = '<div style="text-align:center; color:red;">Gagal memuat soal.</div>'; }
+    } catch(e) { 
+        console.error(e); // Ditambahkan untuk membantu pelacakan jika ada error lain
+        container.innerHTML = '<div style="text-align:center; color:red;">Gagal memuat soal.</div>'; 
+    }
 };
 
 document.getElementById('btn-simpan-nilai-baru')?.addEventListener('click', async () => {
@@ -1579,9 +1653,11 @@ window.renderDetailHasil = () => {
             let warnaStatus = '#10b981'; if (status === 'DISKUALIFIKASI' || status === 'DIHENTIKAN PAKSA') warnaStatus = '#ef4444'; else if (status === 'WAKTU HABIS') warnaStatus = '#f59e0b';
             let waktu = '-'; if (h.waktuSubmit) { const dateObj = new Date(h.waktuSubmit); waktu = !isNaN(dateObj) ? dateObj.toLocaleString('id-ID', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : h.waktuSubmit; }
             
+            // Temukan blok ini di dalam window.renderDetailHasil
             html += `<tr>
                     <td>${index + 1}</td>
-                    <td>${namaSiswa} <br><small style="color:var(--text-muted)">${nisSiswa}</small></td>
+                    <td style="font-weight: 600;">${namaSiswa}</td>
+                    <td><span style="color: var(--info); font-size: 0.85rem; font-weight: bold;">${nisSiswa}</span></td>
                     <td style="text-align:center; font-weight:bold; font-size:1.1rem;">${nilai}</td>
                     <td style="text-align:center;"><span class="badge ${jmlPelanggaran > 0 ? 'badge-danger' : 'badge-success'}">${jmlPelanggaran}</span></td>
                     <td style="text-align:center;"><span onclick="window.lihatDetailStatus('${status}', ${jmlPelanggaran})" style="background: ${warnaStatus}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: inline-block; transition: 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">${status}</span></td>
@@ -1605,10 +1681,24 @@ window.downloadExcelHasil = async (mapel = currentMapelDetail, kelas = currentKe
         soalSnap.forEach(doc => { let data = doc.data(); let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas]; if (arrKelas.includes(kelas) || kelas.includes(arrKelas[0])) { soalArr.push({ id: doc.id, ...data }); } }); 
         soalArr.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
 
+        // Temukan bagian pemetaan rowsForExcel dan perbarui "NIS / Username" menjadi "NIS / Email"
         const rowsForExcel = dataFiltered.map((h, index) => {
             let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : 0);
             let waktu = '-'; if (h.waktuSubmit) { const dObj = new Date(h.waktuSubmit); waktu = !isNaN(dObj) ? dObj.toLocaleString('id-ID') : h.waktuSubmit; }
-            let rowData = { "No": index + 1, "Nama Siswa": h.nama || "Nama Tidak Terdata", "NIS / Username": h.username || h.uid || "-", "Mata Pelajaran": h.mataPelajaran, "Kelas": h.kelas, "Nilai Akhir": nilaiSiswa, "Jumlah Pelanggaran": h.pelanggaran || 0, "Status Ujian": h.statusPelanggaran || 'NORMAL', "Waktu Submit": waktu };
+            
+            // PERUBAHAN DI BARIS INI (Ubah "NIS / Username" -> "NIS / Email")
+            let rowData = { 
+                "No": index + 1, 
+                "Nama Siswa": h.nama || "Nama Tidak Terdata", 
+                "NIS / Email": h.username || h.uid || "-", 
+                "Mata Pelajaran": h.mataPelajaran, 
+                "Kelas": h.kelas, 
+                "Nilai Akhir": nilaiSiswa, 
+                "Jumlah Pelanggaran": h.pelanggaran || 0, 
+                "Status Ujian": h.statusPelanggaran || 'NORMAL', 
+                "Waktu Submit": waktu 
+            };
+            
             soalArr.forEach((s, idx) => {
                 const tipe = s.tipe || 'PG'; const jawabanSiswa = h.jawaban || {}; const jwbSiswa = jawabanSiswa[s.id] || '-'; const jwbBenar = s.kunci_jawaban || s.jawaban_benar || '-';
                 let teksBersih = (s.teks_soal || s.pertanyaan || '').replace(/<[^>]*>/g, ''); if (teksBersih.length > 45) teksBersih = teksBersih.substring(0, 45) + '...';
@@ -1739,6 +1829,13 @@ document.addEventListener('DOMContentLoaded', () => {
             overlaySidebar.style.display = 'none';
         });
     }
+
+    document.getElementById('btn-mode-siswa')?.addEventListener('click', () => {
+        window.location.href = 'attempt.html';
+    });
+
+    const filterGmailInputs = ['search-gmail-email', 'search-gmail-nama', 'search-gmail-role'];
+    filterGmailInputs.forEach(id => { document.getElementById(id)?.addEventListener('input', window.renderTablePengguna); });
 });
 
 window.switchTab = function(sectionId) { 

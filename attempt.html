@@ -97,6 +97,9 @@
     </style>
 </head>
 <body>
+    <button id="btn-attempt-dark-mode" style="position: absolute; top: 20px; right: 20px; background: var(--secondary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-md); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: 0.3s;" title="Ganti Tema">
+        <i class="fas fa-moon"></i>
+    </button>
     <script>
         (function() {
             // 1. Logika Auto-Theme Berdasarkan Waktu
@@ -163,6 +166,11 @@
                 <div class="warning-box" style="margin-bottom: 25px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: 12px 15px; font-size: 0.8rem; text-align: left; line-height: 1.5;">
                     <div style="font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;"><i class="fas fa-shield-alt"></i> Pengawasan Aktif</div>
                     Keluar dari layar penuh atau membuka tab lain akan otomatis memicu pelanggaran sistem.
+                </div>
+
+                <div style="margin-bottom: 15px; text-align: left;">
+                    <label for="input-nama-siswa" style="font-weight: 600; font-size: 0.9rem; color: var(--secondary); margin-bottom: 5px; display: block;">Nama Lengkap:</label>
+                    <input type="text" id="input-nama-siswa" class="input-text" placeholder="Ketik nama lengkap Anda di sini..." style="width: 100%; padding: 10px 12px; font-size: 0.9rem;" required>
                 </div>
 
                 <div class="input-group" style="text-align: left; margin-bottom: 15px;">
@@ -321,5 +329,37 @@
         </div>
     </div>
     <script type="module" src="attempt.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Cek preferensi tema saat halaman dimuat
+            const savedTheme = localStorage.getItem('theme');
+            const btnDarkMode = document.getElementById('btn-attempt-dark-mode');
+            const iconDarkMode = btnDarkMode ? btnDarkMode.querySelector('i') : null;
+
+            // Jika sebelumnya sudah diset dark mode, aktifkan langsung
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                if (iconDarkMode) iconDarkMode.classList.replace('fa-moon', 'fa-sun');
+            }
+
+            // 2. Logika Toggle saat tombol diklik
+            if (btnDarkMode) {
+                btnDarkMode.addEventListener('click', () => {
+                    document.body.classList.toggle('dark-mode');
+                    const isDark = document.body.classList.contains('dark-mode');
+                    
+                    // Simpan ke memori browser
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                    
+                    // Ganti ikon
+                    if (isDark) { 
+                        iconDarkMode.classList.replace('fa-moon', 'fa-sun'); 
+                    } else { 
+                        iconDarkMode.classList.replace('fa-sun', 'fa-moon'); 
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

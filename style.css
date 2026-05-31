@@ -372,42 +372,6 @@ body.dark-mode #cbt-secure-watermark { filter: invert(1) brightness(1.5); opacit
     body.dark-mode .nav-bottom-container { background-color: #1e293b !important; border-top-color: #334155 !important; box-shadow: 0 -4px 15px rgba(0,0,0,0.4) !important; }
 }
 
-/* =========================================
-   TOMBOL KEMBALI FLOATING & THEME AWARE
-========================================= */
-.btn-back-floating {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    z-index: 9999;
-    padding: 10px 15px;
-    background-color: var(--secondary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: var(--transition);
-}
-
-.btn-back-floating:hover {
-    background-color: var(--secondary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-}
-
-body.dark-mode .btn-back-floating {
-    background-color: #334155;
-    color: #f8fafc;
-}
-
-body.dark-mode .btn-back-floating:hover {
-    background-color: #475569;
-}
-
 /* --- ELEGANT UPLOAD BUTTON --- */
 .btn-upload-elegant {
     background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
@@ -434,4 +398,154 @@ body.dark-mode .btn-back-floating:hover {
 body.dark-mode .btn-upload-elegant {
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ==========================================================================
+   PERBAIKAN MODE GELAP (TABEL AKSES PENGGUNA & ANTI-BURAM SAAT SCROLL)
+   ========================================================================== */
+
+/* 1. Reset warna latar belakang kontainer tabel dan akordion dalam mode gelap */
+body.dark-mode .card,
+body.dark-mode #container-daftar-pengguna,
+body.dark-mode .table-container {
+    background-color: #1e293b !important; /* Slate 800 */
+    background: #1e293b !important;
+    border-color: #334155 !important; /* Slate 700 */
+}
+
+body.dark-mode .toggle-accordion {
+    background: #334155 !important; /* Slate 700 agar kontras dengan dasar kontainer */
+    border-color: #475569 !important;
+}
+
+body.dark-mode .toggle-accordion h4 {
+    color: #f1f5f9 !important; /* Putih abu-abu terang */
+}
+
+/* 2. Pastikan baris tabel, filter, dan text-input terbaca tajam */
+body.dark-mode table,
+body.dark-mode tbody tr,
+body.dark-mode td {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important; /* Warna teks utama abu terang */
+    border-color: #334155 !important;
+    -webkit-font-smoothing: subpixel-antialiased !important; /* Menjaga ketajaman font */
+}
+
+body.dark-mode tr[id^="row-filter-"] {
+    background: #0f172a !important; /* Slate 900 untuk baris kolom pencarian/filter */
+}
+
+body.dark-mode tr[id^="row-filter-"] th {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .input-text,
+body.dark-mode tr[id^="row-filter-"] input {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    border: 1px solid #475569 !important;
+}
+
+body.dark-mode .input-text::placeholder,
+body.dark-mode tr[id^="row-filter-"] input::placeholder {
+    color: #94a3b8 !important; /* Warna placeholder abu terang */
+}
+
+/* 3. Penyesuaian tag kecil / sub-detail data di dalam baris */
+body.dark-mode td small,
+body.dark-mode td b {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode td span[style*="background: #e2e8f0"] {
+    background: #334155 !important; /* Badge Role */
+    color: #f8fafc !important;
+}
+
+/* 4. MENGHILANGKAN EFEK BURAM SAAT SCROLL SOAL KE ATAS/BAWAH */
+/* Masalah buram diakibatkan oleh transformasi 3D/hardware acceleration atau filter backdrop */
+#view-soal-list,
+.soal-item,
+div[id^="soal-item-"] {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: auto !important; /* Mematikan pemaksaan optimasi layer browser yang memicu blur */
+    filter: none !important; /* Memastikan tidak ada efek filter blur tak sengaja */
+    backdrop-filter: none !important;
+}
+
+/* CSS Mode Gelap Spesifik untuk Item Kotak Soal */
+body.dark-mode div[id^="soal-item-"] {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+body.dark-mode div[id^="soal-item-"]:hover {
+    background-color: #334155 !important;
+}
+
+body.dark-mode div[style*="background: #ffffff"] {
+    background: #1e293b !important;
+}
+body.dark-mode h3[style*="color: var(--secondary)"] {
+    color: #f1f5f9 !important;
+}
+
+/* ==========================================================================
+   PERBAIKAN MODE GELAP UNTUK MODAL DETAIL JAWABAN SISWA
+   ========================================================================== */
+body.dark-mode #modal-detail .modal-content,
+body.dark-mode div[id^="modal-"] .modal-content {
+    background-color: #0f172a !important; /* Latar belakang utama modal gelap */
+    color: #f1f5f9 !important; /* Teks terang */
+    border: 1px solid #334155;
+}
+
+body.dark-mode #modal-detail div[style*="background: white"],
+body.dark-mode #modal-detail div[style*="background:#ffffff"],
+body.dark-mode #modal-detail div[style*="background: #f8fafc"],
+body.dark-mode #modal-detail div[style*="background:#f8fafc"] {
+    background-color: #1e293b !important; /* Ubah latar kotak dalam menjadi Slate 800 */
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+body.dark-mode #modal-detail span[style*="color: var(--text-main)"],
+body.dark-mode #modal-detail div[style*="color: var(--text-main)"] {
+    color: #f1f5f9 !important; /* Pastikan teks utama tetap terang */
+}
+
+/* Memperbaiki warna teks untuk opsi jawaban yang benar/salah agar tetap kontras */
+body.dark-mode #modal-detail strong,
+body.dark-mode #modal-detail b {
+    color: #cbd5e1 !important;
+}
+
+/* ==========================================================================
+   PAKSAAN WARNA TEKS DETAIL JAWABAN (MODE GELAP)
+   ========================================================================== */
+body.dark-mode #modal-detail .modal-content,
+body.dark-mode #modal-detail .modal-content div,
+body.dark-mode #modal-detail .modal-content span,
+body.dark-mode #modal-detail .modal-content p,
+body.dark-mode #modal-detail .modal-content h4,
+body.dark-mode #modal-detail .modal-content b,
+body.dark-mode #modal-detail .modal-content strong {
+    color: #f1f5f9 !important; /* Paksa teks menjadi putih terang */
+}
+
+/* Pertahankan warna merah/hijau untuk status Benar/Salah agar tidak ikut memutih */
+body.dark-mode #modal-detail .modal-content span[style*="color: var(--success)"],
+body.dark-mode #modal-detail .modal-content span[style*="color:var(--success)"],
+body.dark-mode #modal-detail .modal-content span[style*="color: green"],
+body.dark-mode #modal-detail .modal-content span[style*="color: var(--danger)"],
+body.dark-mode #modal-detail .modal-content span[style*="color:var(--danger)"],
+body.dark-mode #modal-detail .modal-content span[style*="color: red"] {
+    color: inherit !important; 
+    filter: brightness(1.5); /* Terangkan sedikit warna badge di mode gelap */
 }
