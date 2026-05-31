@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     SecurityManager.initGlobal();
 
     onAuthStateChanged(auth, async (user) => {
-        // PERUBAHAN: Jika tidak login, biarkan sistem berjalan (Mode Publik)
+        // Jika tidak login, biarkan sistem berjalan (Mode Publik)
         if (!user) { 
             console.log("Mode Ujian Tanpa Login Aktif");
             examState.student = null;
@@ -168,19 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Isi otomatis nama ke kolom input baru jika tersedia
                 const inputNama = document.getElementById('input-nama-siswa');
                 if (inputNama) inputNama.value = examState.student.nama || user.displayName || user.email || '';
-
-                const selectKelas = document.getElementById('student-class');
-                if (selectKelas && selectKelas.tagName !== 'SELECT') {
-                    const newSelect = document.createElement('select');
-                    newSelect.id = 'student-class';
-                    newSelect.className = 'input-text';
-                    newSelect.style.fontWeight = '600';
-                    newSelect.style.backgroundColor = '#ffffff';
-                    selectKelas.parentNode.replaceChild(newSelect, selectKelas);
-                }
-                
-                await loadMapelOptions();
-                await loadKelasOptions(); 
             } else {
                 window.location.replace("index.html");
             }
@@ -211,67 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-close-sidebar')?.addEventListener('click', toggleSidebar);
 });
 
-async function loadMapelOptions() {
-    try {
-        const snap = await getDoc(doc(db, "pengaturan", "data_akademik"));
-        const select = document.getElementById('select-mapel');
-        if (snap.exists() && snap.data().list_mapel && select) { 
-            select.innerHTML = '<option value="">-- Pilih Mapel Ujian --</option>' + snap.data().list_mapel.map(m => `<option value="${m}">${m}</option>`).join(''); 
-        }
-    } catch(e) {}
-}
-
-async function loadKelasOptions() {
-    const selectKelas = document.getElementById('student-class') || document.getElementById('select-kelas');
-    const selectMapel = document.getElementById('select-mapel');
-    const inputToken = document.getElementById('input-token'); 
-    let containerToken = inputToken ? inputToken.parentElement : null;
-
-    if (!selectKelas) return;
-
-    try {
-        const docRef = doc(db, "pengaturan", "data_akademik");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().list_kelas) {
-            const listKelas = docSnap.data().list_kelas;
-            selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
-            
-            if(examState.student && examState.student.kelas) {
-                let defaultK = Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas;
-                if(listKelas.includes(defaultK)) selectKelas.value = defaultK;
-            }
-        }
-    } catch(e) { console.error("Gagal memuat list kelas:", e); }
-
-    const checkTokenStatus = async () => {
-        const kelas = selectKelas.value;
-        const mapel = selectMapel ? selectMapel.value : "";
-        if(!kelas || !mapel || !containerToken) return;
-
-        try {
-            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-            if(tSnap.exists()) {
-                const tokenData = tSnap.data();
-                const tokenKey = `token_${mapel}_${kelas}`;
-                
-                if(tokenData[tokenKey] && tokenData[tokenKey].code && tokenData[tokenKey].code.trim() !== '') {
-                    containerToken.style.display = 'block'; 
-                    if(inputToken) inputToken.value = '';
-                } else {
-                    containerToken.style.display = 'none'; 
-                    if(inputToken) inputToken.value = 'BYPASS'; 
-                }
-            } else {
-                containerToken.style.display = 'none'; 
-                if(inputToken) inputToken.value = 'BYPASS';
-            }
-        } catch(e) { console.log(e); }
-    };
-
-    selectKelas.addEventListener('change', checkTokenStatus);
-    if(selectMapel) selectMapel.addEventListener('change', checkTokenStatus);
-}
-
 document.getElementById('btn-verifikasi').onclick = async () => {
     // 1. CEK VALIDASI NAMA UNTUK MODE PUBLIK
     const inputNamaEl = document.getElementById('input-nama-siswa');
@@ -292,9 +218,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
     if(!examState.mapelTerpilih || !kelasSiswa) return window.customAlert("Pilih Mapel dan Kelas Anda terlebih dahulu!", "Peringatan");
     
-    const containerToken = elToken ? elToken.parentElement : null;
-    if(containerToken && containerToken.style.display !== 'none' && !tokenInput) return window.customAlert("Masukkan token ujian!", "Peringatan");
-    
     // 3. SET DATA SISWA JIKA MODE PUBLIK
     if (!examState.student) {
         examState.student = {
@@ -304,7 +227,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
             kelas: kelasSiswa
         };
     } else if (namaSiswa) {
-        examState.student.nama = namaSiswa; // Update jika diubah oleh user login
+        examState.student.nama = namaSiswa;
     }
 
     SecurityManager.openFullscreen();
@@ -313,23 +236,57 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memverifikasi...'; btn.disabled = true;
 
     try {
-        if (tokenInput !== 'BYPASS') {
+        const isLinkMode = (new URLSearchParams(window.location.search)).get('mapel') != null;
+        const jadwalKey = `${examState.mapelTerpilih}_${kelasSiswa}`;
+
+        // --- OTOMATISASI JADWAL UJIAN ---
+        const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
+        const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
+
+        const jadwalMulaiStr = jadwalSnap.exists() ? jadwalSnap.data()[jadwalKey] : null;
+        let durasiMenit = 90; // Default 90 menit jika tidak diatur di dashboard
+        
+        if (timeSnap.exists() && timeSnap.data()[jadwalKey]) {
+            durasiMenit = parseInt(timeSnap.data()[jadwalKey]);
+        }
+        
+        // Simpan durasi ke variabel global agar timer countdown ujian berjalan sesuai aturan
+        examState.durasiDetik = durasiMenit * 60;
+
+        // Jika Guru belum pernah mensetting tanggal dan jam sama sekali di dashboard
+        if (!jadwalMulaiStr) {
+            throw new Error("Akses Ditolak: Jadwal ujian untuk mapel dan kelas ini belum diatur oleh Pengawas di Dashboard.");
+        }
+
+        const waktuMulai = new Date(jadwalMulaiStr).getTime();
+        const waktuSelesai = waktuMulai + (durasiMenit * 60 * 1000);
+        const waktuSekarang = new Date().getTime();
+
+        // 4. PENGECEKAN WAKTU UJIAN
+        if (waktuSekarang < waktuMulai) {
+            const formatJadwal = new Date(jadwalMulaiStr).toLocaleString('id-ID', {day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+            throw new Error(`Akses Ditolak: Ujian belum dimulai! Ujian ini dijadwalkan terbuka otomatis pada:\n${formatJadwal} WIB.`);
+        }
+
+        if (waktuSekarang > waktuSelesai) {
+            throw new Error("Akses Ditolak: Waktu pelaksanaan ujian ini sudah berakhir dan link telah otomatis ditutup.");
+        }
+
+        // 5. PENGECEKAN TOKEN (Hanya berlaku bagi siswa yang masuk tanpa mode link)
+        if (!isLinkMode) {
             const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-            const tokenKey = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
-            if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) throw new Error("Ujian untuk mapel & kelas ini belum dibuka oleh guru.");
-
-            const tokenData = tokenSnap.data()[tokenKey];
+            const tokenKeyDb = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
+            if (!tokenSnap.exists() || !tokenSnap.data()[tokenKeyDb] || !tokenSnap.data()[tokenKeyDb].code) {
+                 throw new Error("Token ujian belum dibuka oleh Pengawas.");
+            }
+            const tokenData = tokenSnap.data()[tokenKeyDb];
             const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
-            if (tokenInput !== tokenCode) throw new Error("Token yang Anda masukkan SALAH!");
-
-            if (typeof tokenData === 'object' && tokenData.expiredAt) {
-                const waktuSekarang = new Date().getTime();
-                if (waktuSekarang > tokenData.expiredAt) {
-                    throw new Error("Token sudah kedaluwarsa. Silakan minta guru untuk memperbarui token!");
-                }
+            if (tokenInput !== tokenCode) {
+                throw new Error("Token yang Anda masukkan SALAH!");
             }
         }
 
+        // --- AMBIL SOAL DARI DATABASE ---
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", examState.mapelTerpilih));
         const soalSnap = await getDocs(qSoal);
         
@@ -337,19 +294,16 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         soalSnap.forEach(d => {
             let data = d.data();
             let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
-            if (arrKelas.includes(kelasSiswa)) { examState.arraySoal.push({id: d.id, ...data}); }
+            // Filter agar hanya memunculkan soal untuk kelas siswa tersebut
+            if (arrKelas.includes(kelasSiswa) || arrKelas.includes("Umum") || arrKelas.length === 0) { 
+                examState.arraySoal.push({id: d.id, ...data}); 
+            }
         });
 
         if (examState.arraySoal.length === 0) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
         examState.arraySoal.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
 
-        let durasiMenit = 90;
-        const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
-        if (timeSnap.exists() && timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]) { 
-            durasiMenit = timeSnap.data()[`${examState.mapelTerpilih}_${kelasSiswa}`]; 
-        }
-        examState.durasiDetik = durasiMenit * 60;
-
+        // --- MASUK KE RUANG UJIAN ---
         SecurityManager.startStrictExamMode();
         examState.isExamActive = true;
         
@@ -731,9 +685,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         elKelas.parentNode.replaceChild(newSelect, elKelas);
     }
 
-    const selectKelas = document.getElementById('student-class');
-    const selectMapel = document.getElementById('select-mapel');
-    const inputToken = document.getElementById('input-token'); 
+    const selectKelas = document.getElementById('student-class') || document.querySelector('select[id*="kelas"]');
+    const selectMapel = document.getElementById('select-mapel') || document.querySelector('select[id*="mapel"]');
+    const inputToken = document.getElementById('input-token') || document.querySelector('input[placeholder*="Token"]'); 
     const containerToken = inputToken ? inputToken.parentElement : null;
     
     if(!selectKelas || !selectMapel) return;
@@ -759,9 +713,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (data.list_kelas) {
                 selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + data.list_kelas.map(k => `<option value="${k}">${k}</option>`).join('');
+                selectKelas.disabled = false;
             }
             
-            if (data.list_mapel) {
+            if (data.list_mapel && selectMapel.options.length <= 1) {
                 selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mapel Ujian --</option>' + data.list_mapel.map(m => `<option value="${m}">${m}</option>`).join('');
             }
         }
