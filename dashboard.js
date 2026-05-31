@@ -3299,3 +3299,55 @@ document.getElementById('btn-mulai-simulasi')?.addEventListener('click', async (
         btn.innerHTML = origHtml; btn.disabled = false;
     }
 });
+
+// ==========================================
+// 14. FIX UI & NAVIGASI BAWAAN (SOLUSI TOMBOL MACET)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Kembalikan fungsi tombol Close (X) di semua Modal/Popup
+    document.querySelectorAll('.close-btn, .close-modal, [data-dismiss="modal"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const modal = this.closest('.modal');
+            if (modal) modal.style.display = 'none';
+        });
+    });
+
+    // 2. Klik di luar area popup untuk menutupnya otomatis
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+    });
+
+    // 3. Kembalikan fungsi Sidebar (Menu Navigasi Mobile/HP)
+    const btnFabNav = document.getElementById('btn-fab-nav');
+    const sidebar = document.querySelector('aside') || document.querySelector('.sidebar');
+    const overlaySidebar = document.getElementById('overlay-sidebar');
+
+    if(btnFabNav && sidebar && overlaySidebar) {
+        btnFabNav.addEventListener('click', () => {
+            sidebar.style.display = 'block';
+            if(sidebar.style.transform) sidebar.style.transform = 'translateX(0)';
+            overlaySidebar.style.display = 'block';
+        });
+        overlaySidebar.addEventListener('click', () => {
+            if(sidebar.style.transform) sidebar.style.transform = 'translateX(-100%)';
+            else sidebar.style.display = 'none';
+            overlaySidebar.style.display = 'none';
+        });
+    }
+});
+
+// 4. Polyfill (Fungsi Cadangan) agar tombol menu di HTML asli tidak Error
+window.switchTab = function(sectionId) { 
+    window.location.hash = sectionId; 
+    document.getElementById('overlay-sidebar')?.click(); // Tutup menu di HP setelah klik
+};
+window.showSection = function(sectionId) { 
+    window.location.hash = sectionId; 
+};
+window.closeModal = function(modalId) {
+    const m = document.getElementById(modalId);
+    if(m) m.style.display = 'none';
+};
