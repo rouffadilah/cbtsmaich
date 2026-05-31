@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-config.js'; 
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const examState = {
@@ -16,18 +16,6 @@ window.customAlert = (msg, title = 'Informasi') => {
         document.getElementById('alert-message').innerText = msg;
         modal.style.display = 'flex';
         document.getElementById('btn-alert-ok').onclick = () => { modal.style.display = 'none'; res(); };
-    });
-};
-
-window.customConfirm = (msg, title = 'Konfirmasi') => {
-    return new Promise(res => {
-        const modal = document.getElementById('modal-custom-confirm');
-        if(!modal) { return res(confirm(msg)); }
-        document.getElementById('confirm-title').innerText = title;
-        document.getElementById('confirm-message').innerText = msg;
-        modal.style.display = 'flex';
-        document.getElementById('btn-confirm-ok').onclick = () => { modal.style.display = 'none'; res(true); };
-        document.getElementById('btn-confirm-cancel').onclick = () => { modal.style.display = 'none'; res(false); };
     });
 };
 
@@ -65,29 +53,18 @@ const WatermarkManager = {
     }
 };
 
-// --- 1. REFACTORING SECURITY MANAGER ---
 const SecurityManager = {
-    isPrivileged: false, // Default: Bukan Guru/Admin
-
-    // Fungsi ini hanya dipanggil SETELAH data ditarik dari Firebase
+    isPrivileged: false,
     setPrivileged: function(roles) {
         const roleArray = Array.isArray(roles) ? roles : [roles];
         this.isPrivileged = roleArray.includes('admin') || roleArray.includes('guru');
-        
         if (this.isPrivileged) {
-            // Buka kunci seleksi teks jika terbukti sebagai guru/admin
             document.body.style.userSelect = "auto";
             document.body.style.webkitUserSelect = "auto";
         }
     },
-
     initGlobal: function() {
-        // Blokir klik kanan
-        document.addEventListener('contextmenu', e => {
-            if (!this.isPrivileged) e.preventDefault();
-        });
-
-        // Blokir copy, paste, drag
+        document.addEventListener('contextmenu', e => { if (!this.isPrivileged) e.preventDefault(); });
         ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => {
             document.addEventListener(evt, e => {
                 if (!this.isPrivileged && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
@@ -95,27 +72,20 @@ const SecurityManager = {
                 }
             });
         });
-
-        // Blokir Inspect Element & Screenshot (Hanya untuk Siswa)
         document.addEventListener('keydown', e => {
-            if (this.isPrivileged) return; // Guru bebas menggunakan shortcut
-
+            if (this.isPrivileged) return;
             const forbidden = ['F12', 'PrintScreen', 'Meta', 'OS', 'ContextMenu'];
             if (forbidden.includes(e.key) || 
                (e.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(e.key.toLowerCase())) || 
                (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 's'].includes(e.key.toLowerCase())) ||
                (e.metaKey && e.shiftKey && e.key.toLowerCase() === 's')) { 
-                
                 e.preventDefault(); 
-                
                 if (e.key === 'PrintScreen' || (e.metaKey && e.shiftKey && e.key.toLowerCase() === 's')) {
                     navigator.clipboard.writeText("Aksi Ilegal Terdeteksi").catch(()=>{});
                     this.handleViolation("Percobaan Screenshot/PrintScreen Terdeteksi!");
                 }
             }
         });
-
-        // Cegah tombol Back Browser
         history.pushState(null, null, window.location.href);
         window.onpopstate = () => { 
             history.pushState(null, null, window.location.href); 
@@ -123,7 +93,6 @@ const SecurityManager = {
                 this.handleViolation("Sistem mendeteksi Anda mencoba menekan navigasi Kembali (Back)!");
             }
         };
-
         window.addEventListener('beforeunload', (e) => {
             if (examState.isExamActive && !this.isPrivileged) {
                 e.preventDefault();
@@ -132,11 +101,8 @@ const SecurityManager = {
             }
         });
     },
-
     startStrictExamMode: function() {
-        if (this.isPrivileged) return; // Jangan hukum guru yang sedang simulasi
-
-        // Tab Switching Detection
+        if (this.isPrivileged) return;
         document.addEventListener('visibilitychange', () => { 
             if (document.hidden && examState.isExamActive) {
                 document.body.style.filter = "blur(25px)";
@@ -145,22 +111,17 @@ const SecurityManager = {
                 document.body.style.filter = "none";
             }
         });
-        
-        // Keluar dari Layar Penuh
         document.addEventListener("fullscreenchange", () => {
             if (!document.fullscreenElement && examState.isExamActive) {
                 this.handleViolation("Mode Layar Penuh (Fullscreen) dimatikan!");
             }
         });
     },
-
     handleViolation: async function(alasan) {
         if (!examState.isExamActive || this.isPrivileged) return;
-        
         examState.pelanggaran++;
         const violationEl = document.getElementById('violation-count');
         if (violationEl) violationEl.innerText = examState.pelanggaran;
-
         if (examState.pelanggaran >= examState.maxPelanggaran) {
             examState.isExamActive = false;
             await window.customAlert(`Ujian dihentikan karena mencapai batas maksimal ${examState.maxPelanggaran} kali pelanggaran.\n\nAlasan Terakhir: ${alasan}`, 'DISKUALIFIKASI');
@@ -170,94 +131,57 @@ const SecurityManager = {
             this.openFullscreen();
         }
     },
-
     openFullscreen: function() {
         if (this.isPrivileged) return;
         const el = document.documentElement;
         if (el.requestFullscreen) { el.requestFullscreen().catch(() => {}); } 
         else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); } 
     },
-
     closeFullscreen: function() {
         if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); }
     }
 };
 
-// --- 2. INTEGRASI AUTENTIKASI DENGAN SECURITY MANAGER ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inisialisasi perlindungan ketat (Default: Berlaku untuk semua yang baru buka web)
     SecurityManager.initGlobal();
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.replace("index.html"); return; }
         
         try {
-            // 2. Tarik data otentik yang valid dari server Firestore
             const userDoc = await getDoc(doc(db, "users", user.uid));
-            
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                
-                // 3. Verifikasi Server: Beritahu SecurityManager apa role sebenarnya
                 SecurityManager.setPrivileged(userData.role);
-
                 examState.student = { uid: user.uid, ...userData };
                 document.getElementById('welcome-student').innerHTML = `Assalamu'alaikum, <span style="display: inline-block;">${examState.student.nama}! 🙏</span>`;
-                document.getElementById('student-class').value = Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : (examState.student.kelas || "-");
-                document.getElementById('exam-student-name').innerText = `${examState.student.nama} (${examState.student.username})`;
                 
-                await loadMapelOptions();
-
-                // --- FITUR BYPASS & DETEKSI TOKEN OTOMATIS UNTUK SEB ---
-                const urlParams = new URLSearchParams(window.location.search);
-                const directMapel = urlParams.get('mapel');
-
-                if (directMapel) {
-                    setTimeout(async () => {
-                        const mapelSelect = document.getElementById('select-mapel');
-                        const tokenInput = document.getElementById('input-token');
-                        const kelasSiswa = document.getElementById('student-class').value;
-
-                        if (!kelasSiswa || kelasSiswa === "-") return;
-
-                        try {
-                            // 1. Set pilihan mata pelajaran pada dropdown
-                            if (!Array.from(mapelSelect.options).some(opt => opt.value === directMapel)) {
-                                mapelSelect.innerHTML += `<option value="${directMapel}">${directMapel}</option>`;
-                            }
-                            mapelSelect.value = directMapel;
-
-                            // 2. Tarik token aktif dari database secara otomatis berdasarkan Mapel & Kelas siswa
-                            const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-                            const tokenKey = `token_${directMapel}_${kelasSiswa}`;
-
-                            if (tokenSnap.exists() && tokenSnap.data()[tokenKey]) {
-                                const tokenData = tokenSnap.data()[tokenKey];
-                                const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
-                                
-                                // Isikan token ke input secara gaib
-                                tokenInput.value = tokenCode;
-
-                                // 3. Eksekusi klik tombol mulai ujian secara otomatis
-                                document.getElementById('pre-exam-ui').style.opacity = '0.5';
-                                document.getElementById('pre-exam-ui').style.pointerEvents = 'none';
-                                document.getElementById('btn-verifikasi').click();
-                            } else {
-                                window.customAlert(`Gagal masuk otomatis. Token untuk mapel "${directMapel}" di kelas "${kelasSiswa}" belum diatur oleh guru.`, "Peringatan");
-                            }
-                        } catch (err) {
-                            console.error("Gagal melakukan bypass token otomatis:", err);
-                        }
-                    }, 600); // Jeda aman memastikan data akademik ter-render
+                const selectKelas = document.getElementById('student-class');
+                if (selectKelas && selectKelas.tagName !== 'SELECT') {
+                    const newSelect = document.createElement('select');
+                    newSelect.id = 'student-class';
+                    newSelect.className = 'input-text';
+                    newSelect.style.fontWeight = '600';
+                    newSelect.style.backgroundColor = '#ffffff';
+                    selectKelas.parentNode.replaceChild(newSelect, selectKelas);
                 }
-                // --------------------------------------------------------
-
+                
+                document.getElementById('exam-student-name').innerText = `${examState.student.nama} (${examState.student.username})`;
+                await loadMapelOptions();
+                await loadKelasOptions(); 
             } else {
-                // User tidak punya data di database, tendang keluar
                 window.location.replace("index.html");
             }
-        } catch(e) { 
-            console.error("Gagal memuat profil pengguna:", e); 
+        } catch(e) { console.error(e); }
+    });
+
+    // === LOGIKA LOGOUT / BATAL KEMBALI ===
+    document.getElementById('btn-batal-kembali')?.addEventListener('click', async () => {
+        if (confirm("Yakin ingin membatalkan dan keluar dari akun ini? Anda akan dikembalikan ke halaman Login utama.")) {
+            // Melakukan sign out otomatis dari Firebase
+            await signOut(auth);
+            localStorage.clear();
+            window.location.replace("index.html");
         }
     });
 
@@ -286,12 +210,62 @@ async function loadMapelOptions() {
     } catch(e) {}
 }
 
+async function loadKelasOptions() {
+    const selectKelas = document.getElementById('student-class');
+    const selectMapel = document.getElementById('select-mapel');
+    const inputToken = document.getElementById('input-token'); 
+    let containerToken = inputToken ? inputToken.parentElement : null;
+
+    try {
+        const docRef = doc(db, "pengaturan", "data_akademik");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().list_kelas) {
+            const listKelas = docSnap.data().list_kelas;
+            selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+            
+            if(examState.student && examState.student.kelas) {
+                let defaultK = Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas;
+                if(listKelas.includes(defaultK)) selectKelas.value = defaultK;
+            }
+        }
+    } catch(e) { console.error("Gagal memuat list kelas:", e); }
+
+    const checkTokenStatus = async () => {
+        const kelas = selectKelas.value;
+        const mapel = selectMapel.value;
+        if(!kelas || !mapel || !containerToken) return;
+
+        try {
+            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            if(tSnap.exists()) {
+                const tokenData = tSnap.data();
+                const tokenKey = `token_${mapel}_${kelas}`;
+                
+                if(tokenData[tokenKey] && tokenData[tokenKey].code && tokenData[tokenKey].code.trim() !== '') {
+                    containerToken.style.display = 'block'; 
+                    if(inputToken) inputToken.value = '';
+                } else {
+                    containerToken.style.display = 'none'; 
+                    if(inputToken) inputToken.value = 'BYPASS'; 
+                }
+            } else {
+                containerToken.style.display = 'none'; 
+                if(inputToken) inputToken.value = 'BYPASS';
+            }
+        } catch(e) { console.log(e); }
+    };
+
+    selectKelas.addEventListener('change', checkTokenStatus);
+    selectMapel.addEventListener('change', checkTokenStatus);
+}
+
 document.getElementById('btn-verifikasi').onclick = async () => {
     examState.mapelTerpilih = document.getElementById('select-mapel').value;
     const tokenInput = document.getElementById('input-token').value.toUpperCase().trim();
     const kelasSiswa = document.getElementById('student-class').value;
 
-    if(!examState.mapelTerpilih || !tokenInput) return window.customAlert("Pilih mapel dan masukkan token dengan benar!", "Peringatan");
+    if(!examState.mapelTerpilih || !kelasSiswa) return window.customAlert("Pilih Mapel dan Kelas Anda terlebih dahulu!", "Peringatan");
+    if(document.getElementById('input-token').parentElement.style.display !== 'none' && !tokenInput) return window.customAlert("Masukkan token ujian!", "Peringatan");
     
     SecurityManager.openFullscreen();
 
@@ -299,18 +273,20 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memverifikasi...'; btn.disabled = true;
 
     try {
-        const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-        const tokenKey = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
-        if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) throw new Error("Token ujian untuk mapel dan kelas ini belum diatur oleh guru.");
+        if (tokenInput !== 'BYPASS') {
+            const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            const tokenKey = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
+            if (!tokenSnap.exists() || !tokenSnap.data()[tokenKey]) throw new Error("Ujian untuk mapel & kelas ini belum dibuka oleh guru.");
 
-        const tokenData = tokenSnap.data()[tokenKey];
-        const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
-        if (tokenInput !== tokenCode) throw new Error("Token yang Anda masukkan SALAH!");
+            const tokenData = tokenSnap.data()[tokenKey];
+            const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
+            if (tokenInput !== tokenCode) throw new Error("Token yang Anda masukkan SALAH!");
 
-        if (typeof tokenData === 'object' && tokenData.expiredAt) {
-            const waktuSekarang = new Date().getTime();
-            if (waktuSekarang > tokenData.expiredAt) {
-                throw new Error("Token sudah kedaluwarsa (masa aktif habis). Silakan minta guru untuk memperbarui token!");
+            if (typeof tokenData === 'object' && tokenData.expiredAt) {
+                const waktuSekarang = new Date().getTime();
+                if (waktuSekarang > tokenData.expiredAt) {
+                    throw new Error("Token sudah kedaluwarsa. Silakan minta guru untuk memperbarui token!");
+                }
             }
         }
 
@@ -339,7 +315,6 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         
         WatermarkManager.init(examState.student.nama, examState.student.username);
 
-        // PERBAIKAN: SESUAIKAN DENGAN ID HTML YANG BENAR
         document.getElementById('pre-exam-ui').style.display = 'none';
         document.getElementById('exam-workspace').style.display = 'flex';
         document.getElementById('exam-mapel-title').innerText = `UJIAN: ${examState.mapelTerpilih.toUpperCase()}`;
@@ -418,7 +393,7 @@ function tampilkanSoal(idx) {
         let urlMedia = soal.media_soal.url;
         let tipeMedia = soal.media_soal.type;
         htmlContent += `<div style="margin-bottom:20px; text-align:center;">`;
-        if (tipeMedia === 'image') htmlContent += `<img src="${urlMedia}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1;">`;
+        if (tipeMedia === 'image') htmlContent += `<img src="${urlMedia}" style="max-width:100%; max-height:400px; width:auto; object-fit:contain; border-radius:8px; border:1px solid #cbd5e1;">`;
         else if (tipeMedia === 'video') htmlContent += `<video src="${urlMedia}" controls controlsList="nodownload" style="max-width:100%; border-radius:8px;"></video>`;
         else if (tipeMedia === 'audio') htmlContent += `<audio src="${urlMedia}" controls controlsList="nodownload" style="width:100%;"></audio>`;
         htmlContent += `</div>`;
@@ -553,14 +528,14 @@ function tampilkanSoal(idx) {
 
     if (examState.currentIndex === examState.arraySoal.length - 1) {
         if(btnNext) {
-            btnNext.innerHTML = '<i class="fas fa-check"></i>'; // Hanya icon centang
+            btnNext.innerHTML = '<i class="fas fa-check"></i>';
             btnNext.style.backgroundColor = 'var(--danger)'; 
             btnNext.title = 'Selesai Ujian';
             btnNext.onclick = checkSelesaiUjian;
         }
     } else {
         if(btnNext) {
-            btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>'; // Hanya icon panah
+            btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>';
             btnNext.style.backgroundColor = ''; 
             btnNext.title = 'Selanjutnya';
             btnNext.onclick = () => tampilkanSoal(examState.currentIndex + 1);
@@ -587,12 +562,11 @@ async function checkSelesaiUjian() {
     if (dijawab < jumlahSoal) infoMsg += `\n\n⚠️ Masih ada ${jumlahSoal - dijawab} soal KOSONG yang belum Anda jawab.`;
     if (adaRagu) infoMsg += `\n\n⚠️ Terdapat soal yang masih ditandai RAGU-RAGU.`;
 
-    if (await window.customConfirm(`${infoMsg}\n\nApakah Anda YAKIN ingin mengumpulkan lembar jawaban ini sekarang?`, "warning", "Konfirmasi Pengumpulan", "Ya, Kumpulkan")) {
+    if (confirm(`${infoMsg}\n\nApakah Anda YAKIN ingin mengumpulkan lembar jawaban ini sekarang?`)) {
         selesaiUjian("NORMAL");
     }
 }
 
-// PERBAIKAN: MEMASTIKAN TIDAK ERROR JIKA BTN SELESAI TIDAK DITEMUKAN
 const btnSelesaiUjian = document.getElementById('btn-selesai-ujian');
 if (btnSelesaiUjian) {
     btnSelesaiUjian.onclick = checkSelesaiUjian;
@@ -603,6 +577,11 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
 
+    // 1. AMBIL DATA KELAS SEBELUM LAYAR DIHAPUS OLEH LOADING (Solusi Error Loading Terus)
+    const inputKelas = document.getElementById('student-class');
+    const kelasSiswa = inputKelas ? inputKelas.value : (Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas);
+
+    // 2. TAMPILKAN ANIMASI LOADING
     document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><i class="fas fa-spinner fa-spin fa-4x" style="color:var(--primary); margin-bottom:20px;"></i><h2 style="color:var(--secondary); font-family:sans-serif; text-align:center;">Menyimpan Lembar Jawaban...</h2><p style="color:var(--text-muted);">Mohon jangan tutup atau kembali dari halaman ini.</p></div>';
 
     let totalBobotPG = 0;
@@ -649,7 +628,7 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
         uid: examState.student.uid,
         nama: examState.student.nama,
         username: examState.student.username,
-        kelas: Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas,
+        kelas: kelasSiswa,
         mataPelajaran: examState.mapelTerpilih,
         jawaban: examState.jawabanSiswa,
         pelanggaran: examState.pelanggaran,
@@ -660,11 +639,83 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     };
 
     try {
+        // SIMPAN KE FIREBASE
         await addDoc(collection(db, "hasil_ujian"), payload);
-        alert("PEMBERITAHUAN:\nLembar jawaban Anda berhasil direkam dengan aman oleh server. Anda akan diarahkan keluar.");
+        
+        // SIMPAN KE GOOGLE SHEETS
+        const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycby5mtBZIaTKv91Fx9qYNbcLCEql-1Rst3gyKIg0rXvULqd0F-uDe553ifSmUW_lly_g/exec"; 
+        
+        if (URL_GOOGLE_SCRIPT.startsWith("http")) {
+            // Gunakan FormData (URLSearchParams) agar lolos blokir CORS
+            const formData = new URLSearchParams();
+            formData.append("nama", payload.nama);
+            formData.append("kelas", payload.kelas);
+            formData.append("mapel", payload.mataPelajaran);
+            formData.append("nilai", payload.skor);
+            formData.append("status", payload.statusPelanggaran);
+
+            fetch(URL_GOOGLE_SCRIPT, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: formData
+            }).catch(err => console.log("Gagal sync ke Drive", err));
+        }
+
+        alert("PEMBERITAHUAN:\nLembar jawaban Anda berhasil direkam dengan aman oleh server.");
         window.location.replace("index.html");
     } catch(e) {
         alert("GAGAL MENYIMPAN!\nTerjadi kesalahan koneksi internet atau server sibuk. Silakan panggil pengawas ruangan dan JANGAN tutup halaman ini.");
         window.location.replace("index.html");
     }
 }
+
+// ==========================================
+// OVERRIDE: KELAS MANUAL & BYPASS TOKEN OTOMATIS
+// ==========================================
+document.addEventListener('DOMContentLoaded', async () => {
+    const selectKelas = document.getElementById('select-kelas') || document.querySelector('select[id*="kelas"]');
+    const selectMapel = document.getElementById('select-mapel') || document.querySelector('select[id*="mapel"]');
+    const inputToken = document.getElementById('input-token') || document.querySelector('input[placeholder*="Token"]'); 
+    
+    if(!selectKelas || !selectMapel) return;
+    
+    let containerToken = inputToken ? inputToken.parentElement : null;
+
+    try {
+        const docRef = doc(db, "pengaturan", "data_akademik");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().list_kelas) {
+            const listKelas = docSnap.data().list_kelas;
+            selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+            selectKelas.disabled = false;
+        }
+    } catch(e) { console.error("Gagal memuat list kelas:", e); }
+
+    const checkTokenStatus = async () => {
+        const kelas = selectKelas.value;
+        const mapel = selectMapel.value;
+        if(!kelas || !mapel || !containerToken) return;
+
+        try {
+            const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
+            if(tSnap.exists()) {
+                const tokenData = tSnap.data();
+                const tokenKey = `token_${mapel}_${kelas}`;
+                
+                if(tokenData[tokenKey] && tokenData[tokenKey].code && tokenData[tokenKey].code.trim() !== '') {
+                    containerToken.style.display = 'block'; 
+                    if(inputToken) inputToken.value = '';
+                } else {
+                    containerToken.style.display = 'none'; 
+                    if(inputToken) inputToken.value = 'BYPASS'; 
+                }
+            } else {
+                containerToken.style.display = 'none'; 
+                if(inputToken) inputToken.value = 'BYPASS';
+            }
+        } catch(e) { console.log(e); }
+    };
+
+    selectKelas.addEventListener('change', checkTokenStatus);
+    selectMapel.addEventListener('change', checkTokenStatus);
+});

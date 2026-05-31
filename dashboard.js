@@ -4,7 +4,7 @@ import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc,
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
 // ==========================================
-// 0. INJEKSI CSS CUSTOM UNTUK DROPDOWN CHECKBOX
+// 0. INJEKSI CSS CUSTOM
 // ==========================================
 if (!document.getElementById('cbt-custom-css')) {
     const style = document.createElement('style');
@@ -25,7 +25,7 @@ if (!document.getElementById('cbt-custom-css')) {
 }
 
 // ==========================================
-// 1. VARIABEL GLOBAL & STATE APLIKASI
+// 1. VARIABEL GLOBAL
 // ==========================================
 let listMapel = []; 
 let listKelas = []; 
@@ -40,7 +40,7 @@ let currentMapelDetail = "";
 let currentKelasDetail = ""; 
 
 // ==========================================
-// 2. MODUL REFACTORING: SOAL MANAGER
+// 2. MODUL SOAL MANAGER
 // ==========================================
 const SoalManager = {
     allSummary: {},
@@ -86,7 +86,6 @@ const SoalManager = {
         try {
             const snap = await getDocs(collection(db, "bank_soal"));
             this.allSummary = {}; 
-            let totalSemuaSoal = 0; // Fix perhitungan 0 jadi jumlah soal riil
             
             snap.forEach(d => {
                 let data = d.data();
@@ -99,11 +98,10 @@ const SoalManager = {
                     this.allSummary[groupKey] = { mapel: mapel, classes: kelasArray, kelasKey: kelasKey, count: 0 }; 
                 }
                 this.allSummary[groupKey].count++;
-                totalSemuaSoal++;
             });
             
             const statSoalEl = document.getElementById('stat-soal'); 
-            if (statSoalEl) statSoalEl.innerText = totalSemuaSoal;
+            if (statSoalEl) statSoalEl.innerText = Object.keys(this.allSummary).length;
             
             const waktuSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian")); 
             const waktuData = waktuSnap.exists() ? waktuSnap.data() : {};
@@ -140,7 +138,13 @@ const SoalManager = {
                 
                 let jadwalInput = canEdit ? `<input type="datetime-local" id="${jadwalInputId}" class="ghost-input" value="${jadwal}" style="min-width: 140px;">` : (jadwal || '-');
                 let durasiInput = canEdit ? `<input type="number" id="${durasiInputId}" class="ghost-input" value="${durasi}" placeholder="Menit" style="min-width: 80px; text-align: center;">` : (durasi || '-');
-                let tokenInput = canEdit ? `<input type="text" id="${tokenInputId}" class="ghost-input" value="${token}" placeholder="KODE" style="text-transform:uppercase; font-weight:bold; color:var(--danger); min-width: 120px; text-align: center;">` : `<span style="display:inline-block; min-width:120px; text-align:center;">${token || '-'}</span>`;
+                
+                // TOMBOL NONAKTIFKAN TOKEN DITAMBAHKAN DI SINI
+                let tokenInput = canEdit ? `
+                    <div style="display:flex; align-items:center; gap:5px; justify-content:center;">
+                        <input type="text" id="${tokenInputId}" class="ghost-input" value="${token}" placeholder="KODE" style="text-transform:uppercase; font-weight:bold; color:var(--danger); width: 80px; text-align: center; border: 1px solid #e2e8f0; padding: 4px;">
+                        <button onclick="document.getElementById('${tokenInputId}').value=''; SoalManager.simpanPengaturanBaris('${d.mapel}', '${d.kelasKey}', '${jadwalInputId}', '${durasiInputId}', '${tokenInputId}', this)" class="btn-icon" style="color:white; background:var(--danger); border-radius:4px; padding:4px 8px; font-size:0.8rem; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);" title="Nonaktifkan Token"><i class="fas fa-power-off"></i></button>
+                    </div>` : `<span style="display:inline-block; min-width:120px; text-align:center;">${token || '<span style="color:var(--success); font-size:0.8rem; font-weight:bold;">Tanpa Token</span>'}</span>`;
 
                 let actionBtn = canEdit ? `
                     <div style="display:flex; gap:5px; justify-content:center;">
@@ -162,7 +166,6 @@ const SoalManager = {
             
             tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center;">Tidak ada data soal.</td></tr>';
         } catch (e) { 
-            console.error(e);
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--danger);">Gagal memuat data ringkasan.</td></tr>'; 
         }
     },
@@ -186,7 +189,14 @@ const SoalManager = {
                 classesToUpdate.forEach(cls => { 
                     if(durasiVal) wUpdates[`${mapel}_${cls}`] = durasiVal; 
                     if(jadwalVal) jUpdates[`${mapel}_${cls}`] = jadwalVal;
-                    if(tokenVal) tUpdates[`token_${mapel}_${cls}`] = { code: tokenVal, active: true, expiredAt }; 
+                    
+                    // PERUBAHAN LOGIKA PENGHAPUSAN TOKEN
+                    if(tokenVal) {
+                        tUpdates[`token_${mapel}_${cls}`] = { code: tokenVal, active: true, expiredAt }; 
+                    } else {
+                        // Jika kolom dikosongkan (atau tekan tombol power), hapus token dari database
+                        tUpdates[`token_${mapel}_${cls}`] = deleteField(); 
+                    }
                 });
 
                 if(Object.keys(wUpdates).length > 0) await setDoc(doc(db, "pengaturan", "waktu_ujian"), wUpdates, { merge: true });
@@ -196,10 +206,16 @@ const SoalManager = {
             
             const icon = btnEl.querySelector('i');
             if(icon) { icon.className = 'fas fa-check'; setTimeout(() => { icon.className = 'fas fa-save'; }, 2000); }
-            await window.customAlert("Pengaturan Jadwal, Durasi, dan Token berhasil disimpan untuk kelas terpilih!", "success", "Tersimpan");
+            
+            // Khusus pesan jika ditekan dari tombol Power
+            if(origHtml.includes('fa-power-off')) {
+                await window.customAlert("Token dinonaktifkan! Siswa bisa langsung masuk ujian.", "success", "Token Dihapus");
+            } else {
+                await window.customAlert("Pengaturan Jadwal, Durasi, dan Token berhasil disimpan!", "success", "Tersimpan");
+            }
+            
             this.loadSummary();
         } catch (e) { 
-            console.error(e); 
             window.customAlert("Gagal menyimpan pengaturan: " + e.message, "error"); 
         } finally { 
             btnEl.innerHTML = origHtml; btnEl.disabled = false; 
@@ -209,6 +225,25 @@ const SoalManager = {
     bukaDetailSoal: async function(mapel, kelasKey) {
         document.getElementById('view-summary-bank-soal').style.display = 'none'; 
         document.getElementById('view-soal-list').style.display = 'block';
+        
+        let headerDiv = document.getElementById('label-mapel-edit').parentElement.parentElement;
+        let existingBtn = document.getElementById('btn-selesai-kelola');
+        if(!existingBtn) {
+            existingBtn = document.createElement('button');
+            existingBtn.id = 'btn-selesai-kelola';
+            existingBtn.className = 'btn-3d';
+            existingBtn.style.backgroundColor = 'var(--success)';
+            existingBtn.style.padding = '8px 18px';
+            existingBtn.style.margin = '0';
+            existingBtn.style.fontSize = '0.9rem';
+            existingBtn.innerHTML = '<i class="fas fa-check-circle"></i> Selesai Mengelola';
+            existingBtn.onclick = () => {
+                window.customAlert("Perubahan bank soal telah tersimpan otomatis.", "success", "Tersimpan");
+                document.getElementById('btn-back-mapel-list').click();
+            };
+            headerDiv.appendChild(existingBtn);
+        }
+
         document.getElementById('label-mapel-edit').innerText = `Kelola Paket: ${mapel} (${kelasKey})`;
         document.getElementById('filter-soal-mapel').value = mapel; 
         document.getElementById('filter-soal-mapel').dataset.kelasKey = kelasKey; 
@@ -233,6 +268,7 @@ const SoalManager = {
                 }
             });
             this.tempDataKelola.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
+            window.tempDataSoalKelola = this.tempDataKelola;
 
             if(this.tempDataKelola.length === 0) { 
                 container.innerHTML = `<div style="text-align:center; padding: 30px; background: white; border: 1px dashed var(--border-color); border-radius: 8px;">Belum ada soal untuk mata pelajaran ini.<br><br><button onclick="SoalManager.bukaModalTambah('${mapel}', 1, '${kelasKey}')" class="btn-3d" style="background:var(--success); padding:8px 20px; border-radius:20px; font-size:0.9rem; margin:0 auto;"><i class="fas fa-plus"></i> Buat Soal Pertama</button></div>`; 
@@ -260,7 +296,7 @@ const SoalManager = {
                     const mType = typeof s.media_soal === 'object' && s.media_soal.type ? s.media_soal.type : 'image';
                     if(mType === 'video'){ html += `<div style="margin-bottom:15px;"><video src="${mUrl}" controls style="max-height:200px; border-radius:8px; background:#000;"></video></div>`; } 
                     else if(mType === 'audio'){ html += `<div style="margin-bottom:15px;"><audio src="${mUrl}" controls></audio></div>`; } 
-                    else { html += `<div style="margin-bottom:15px;"><img src="${mUrl}" style="max-height:200px; border-radius:8px; border:1px solid #e2e8f0;"></div>`; }
+                    else { html += `<div style="margin-bottom:15px; text-align:left;"><img src="${mUrl}" style="max-height:250px; max-width:100%; width:auto; object-fit:contain; border-radius:8px; border:1px solid #e2e8f0;"></div>`; }
                 }
                 
                 if (s.tipe === 'PG' || s.tipe === 'PGK' || !s.tipe) {
@@ -274,7 +310,7 @@ const SoalManager = {
                                 const moData = s.opsi_media[o]; const moUrl = typeof moData === 'object' ? moData.url : moData; const moType = typeof moData === 'object' && moData.type ? moData.type : 'image';
                                 if(moType === 'video') mHtml = `<video src="${moUrl}" controls style="max-height:100px; margin-top:5px; border-radius:6px; background:#000;"></video><br>`;
                                 else if(moType === 'audio') mHtml = `<audio src="${moUrl}" controls style="max-width:200px; margin-top:5px;"></audio><br>`;
-                                else mHtml = `<img src="${moUrl}" style="max-height:100px; margin-top:5px; border-radius:6px; border:1px solid #e2e8f0;"><br>`;
+                                else mHtml = `<img src="${moUrl}" style="max-height:120px; max-width:100%; width:auto; object-fit:contain; margin-top:5px; border-radius:6px; border:1px solid #e2e8f0;"><br>`;
                             }
                             if (isBenar) { html += `<div style="display:flex; align-items:flex-start; gap:10px; padding:8px 12px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; color:var(--success); font-weight:600; font-size:0.9rem;"><i class="fas fa-check-circle" style="margin-top:3px;"></i> <div><span>${o}. ${teksOpsi}</span><br>${mHtml}</div></div>`; } 
                             else { html += `<div style="display:flex; align-items:flex-start; gap:10px; padding:8px 12px; border:1px solid #f1f5f9; border-radius:6px; color:var(--text-muted); font-size:0.9rem;"><span style="font-weight:600; width:20px; margin-top:1px;">${o}.</span> <div><span>${teksOpsi}</span><br>${mHtml}</div></div>`; }
@@ -296,7 +332,6 @@ const SoalManager = {
             
             container.innerHTML = html;
         } catch(e) {
-            console.error(e);
             container.innerHTML = '<div style="text-align:center; color:var(--danger); padding:20px;">Gagal memuat daftar soal.</div>';
         }
     },
@@ -557,12 +592,12 @@ const SoalManager = {
             await window.customAlert(`Berhasil menghapus seluruh data soal mapel ${mapel} untuk kelas ${kelasKey}.`, "success"); 
             this.loadSummary();
         } catch (e) { 
-            console.error(e); window.customAlert("Terjadi kesalahan saat menghapus data.", "error"); 
+            window.customAlert("Terjadi kesalahan saat menghapus data.", "error"); 
         }
     }
 };
 
-window.SoalManager = SoalManager; // Ekspos ke global
+window.SoalManager = SoalManager;
 
 // ==========================================
 // 3. FUNGSI UTILITAS GLOBAL & MODAL UI
@@ -801,7 +836,6 @@ onAuthStateChanged(auth, async (user) => {
             return; 
         }
     } catch(e) {
-        console.error("Gagal membaca role:", e);
         window.location.replace("index.html");
         return;
     }
@@ -881,7 +915,7 @@ window.loadDataMaster = async () => {
 
         listMapel = currentMapel; listKelas = currentKelas;
         window.renderTableMaster(); window.populateSemuaDropdown();
-    } catch (e) { console.error("Gagal sinkronisasi otomatis data master:", e); }
+    } catch (e) {}
 };
 
 window.renderTableMaster = () => {
@@ -939,7 +973,6 @@ window.loadDataPengguna = async () => {
         const elStatSiswa = document.getElementById("stat-siswa"); if (elStatSiswa) elStatSiswa.innerText = allUsersData.length;
         window.renderTablePengguna();
     } catch (error) { 
-        console.error("Gagal memuat data pengguna:", error);
         const elStatSiswa = document.getElementById("stat-siswa"); if (elStatSiswa) elStatSiswa.innerText = "0";
     }
 };
@@ -1053,7 +1086,7 @@ window.bukaModalEditAkun = async (uid) => {
         }
         
         window.handleRoleChange(); document.getElementById('modal-edit-akun').style.display = 'flex';
-    } catch(e) { console.error(e); }
+    } catch(e) {}
 };
 
 document.getElementById('btn-save-edit-akun')?.addEventListener('click', async () => {
@@ -1093,7 +1126,7 @@ document.getElementById('btn-save-edit-akun')?.addEventListener('click', async (
         document.getElementById('modal-edit-akun').style.display = 'none';
         window.loadDataPengguna();
     } catch (error) {
-        console.error(error); window.customAlert("Gagal menyimpan: " + error.message, "error");
+        window.customAlert("Gagal menyimpan: " + error.message, "error");
     } finally {
         btn.innerHTML = origText; btn.disabled = false;
     }
@@ -1103,7 +1136,6 @@ window.downloadDaftarPengguna = () => {
     const data = allUsersData.map(u => ({ "Nama": u.nama, "Username": u.username, "Role": Array.isArray(u.role) ? u.role.join(', ') : u.role, "Kelas": Array.isArray(u.kelas) ? u.kelas.join(', ') : (u.kelas || "-") }));
     const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Daftar Pengguna"); XLSX.writeFile(wb, "Daftar_Pengguna_SMAICH.xlsx");
 };
-
 
 // ==========================================
 // 9. EVENT SUBMIT FORM SOAL MANUAL
@@ -1226,9 +1258,7 @@ window.downloadTemplate = (type) => {
     if(type === 'excel') {
         const data = [
             {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Nomor Soal": 1, "Bobot Soal": 1, "Teks Pertanyaan": "Siapa penemu lampu pijar?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Thomas Alva Edison", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "Nikola Tesla", "Opsi C": "Albert Einstein", "Opsi D": "Isaac Newton", "Opsi E": "Michael Faraday", "Kunci Jawaban / Pasangan Menjodohkan": "A"},
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Nomor Soal": 2, "Bobot Soal": 2, "Teks Pertanyaan": "Manakah yang merupakan perangkat keras komputer?", "Opsi A": "Mouse", "Opsi B": "Sistem Operasi", "Opsi C": "Keyboard", "Opsi D": "Aplikasi Web", "Opsi E": "Monitor", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E"},
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Menjodohkan", "Nomor Soal": 3, "Bobot Soal": 3, "Teks Pertanyaan": "Jodohkan istilah jaringan berikut", "Kunci Jawaban / Pasangan Menjodohkan": "IP Address=Alamat Jaringan; Router=Perangkat Routing; Switch=Penghubung Jaringan"},
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Essay", "Nomor Soal": 4, "Bobot Soal": 5, "Teks Pertanyaan": "Jelaskan langkah-langkah instalasi Windows!", "Kunci Jawaban / Pasangan Menjodohkan": "Mulai dari persiapan bootable, pengaturan partisi, hingga penyelesaian akun."}
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Nomor Soal": 2, "Bobot Soal": 2, "Teks Pertanyaan": "Manakah yang merupakan perangkat keras komputer?", "Opsi A": "Mouse", "Opsi B": "Sistem Operasi", "Opsi C": "Keyboard", "Opsi D": "Aplikasi Web", "Opsi E": "Monitor", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E"}
         ];
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
@@ -1238,25 +1268,25 @@ window.downloadTemplate = (type) => {
         const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head><meta charset='utf-8'><title>Template Soal CBT</title></head><body>
         <h2>FORMAT PENULISAN SOAL CBT (DIBACA OLEH SISTEM)</h2>
-        <p>Gunakan pola di bawah ini persis, jangan hapus judul besar 'A. Pilihan Ganda' atau tulisan 'Kunci Jawaban:'.</p>
+        <p>Pastikan tidak menghapus teks penanda seperti "A. Pilihan Ganda", "B. Essay", atau "Kunci Jawaban:".</p>
         <br>
-        <p><b>A. Pilihan Ganda</b></p>
-        <p>1. Siapakah penemu lampu pijar komersial yang sukses pertama kali?</p>
-        <p>A. Thomas Edison</p>
-        <p>B. Nikola Tesla</p>
-        <p>C. Alexander Graham Bell</p>
-        <p>D. Galileo Galilei</p>
-        <p>E. Albert Einstein</p>
-        <p>Kunci Jawaban: A</p>
+        <h2>A. Pilihan Ganda</h2>
+        <p>1. Pendekatan memecahkan masalah besar dan kompleks dengan cara membaginya menjadi bagian-bagian kecil yang lebih mudah dikelola disebut...</p>
+        <p>A. Pengenalan Pola</p>
+        <p>B. Abstraksi</p>
+        <p>C. Dekomposisi</p>
+        <p>D. Algoritma</p>
+        <p>E. Komputasi Awan</p>
+        <p>Kunci Jawaban: C</p>
         <br>
-        <p><b>B. Essay</b></p>
-        <p>1. Jelaskan menurut pemahaman Anda mengenai perbedaan LAN dan WAN!</p>
-        <p>Kunci Jawaban: LAN untuk skala lokal, WAN untuk jangkauan luas (antar wilayah/negara).</p>
+        <h2>B. Essay</h2>
+        <p>1. Jelaskan secara singkat apa yang dimaksud dengan 4 (empat) pilar utama Berpikir Komputasional (Dekomposisi, Pengenalan Pola, Abstraksi, Algoritma)!</p>
+        <p>Kunci Jawaban: Dekomposisi (Memecah masalah), Pengenalan Pola (Mencari kesamaan tren), Abstraksi (Fokus pada info penting saja), Algoritma (Menyusun langkah penyelesaian berurut).</p>
         </body></html>`;
         const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = url; link.download = 'Template_Soal_CBT_Word.doc';
+        link.href = url; link.download = 'Template_Upload_CBT.doc';
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 };
@@ -1450,7 +1480,7 @@ window.loadDataHasil = async () => {
         }
         
         if(gridMapel.innerHTML === '') { gridMapel.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:var(--text-muted);">Belum ada data hasil ujian untuk mapel yang Anda ampu.</p>'; }
-    } catch(e) { console.error("Gagal memuat hasil ujian:", e); }
+    } catch(e) {}
 };
 
 window.bukaDetailHasil = (mapel, kelas) => { 
@@ -1631,7 +1661,7 @@ window.previewSoal = (id) => {
         const mType = typeof s.media_soal === 'object' && s.media_soal.type ? s.media_soal.type : 'image';
         if(mType === 'video'){ html += `<div style="margin:20px 0; text-align:center;"><video src="${mUrl}" controls style="max-width:100%; max-height:320px; border-radius:12px; background:#000;"></video></div>`; } 
         else if(mType === 'audio'){ html += `<div style="margin:20px 0; text-align:center;"><audio src="${mUrl}" controls></audio></div>`; }
-        else { html += `<div style="margin:20px 0; text-align:center;"><img src="${mUrl}" style="max-width:100%; max-height:320px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>`; }
+        else { html += `<div style="margin:20px 0; text-align:center;"><img src="${mUrl}" style="max-width:100%; max-height:350px; width:auto; object-fit:contain; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>`; }
     }
     
     if(s.tipe === 'PG' || s.tipe === 'PGK'){
@@ -1645,7 +1675,7 @@ window.previewSoal = (id) => {
                     const moData = s.opsi_media[k]; const moUrl = typeof moData === 'object' ? moData.url : moData; const moType = typeof moData === 'object' && moData.type ? moData.type : 'image';
                     if(moType === 'video') mHtml = `<video src="${moUrl}" controls style="max-width:180px; margin-top:8px; border-radius:8px; background:#000;"></video>`;
                     else if(moType === 'audio') mHtml = `<audio src="${moUrl}" controls style="margin-top:8px;"></audio>`;
-                    else mHtml = `<img src="${moUrl}" style="max-width:180px; margin-top:8px; border-radius:8px; border:1px solid #e2e8f0;">`;
+                    else mHtml = `<img src="${moUrl}" style="max-width:100%; max-height:150px; width:auto; object-fit:contain; margin-top:8px; border-radius:8px; border:1px solid #e2e8f0;">`;
                 }
 
                 html += `<div style="display:flex; align-items:flex-start; gap:14px; padding:14px 16px; border:1.5px solid ${isCorrect ? '#86efac' : '#e2e8f0'}; border-radius:12px; background:${isCorrect ? '#f0fdf4' : 'white'}; transition:all 0.2s;"><div style="width:32px; height:32px; background:${isCorrect ? '#10b981' : '#f1f5f9'}; color:${isCorrect ? 'white' : '#475569'}; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0;">${k}</div><div style="flex:1; padding-top:2px;"><div style="color:#1e293b; line-height:1.6;">${s.opsi[k]}</div>${mHtml}</div>${isCorrect ? '<div style="color:#10b981; font-size:1.1rem;"><i class="fas fa-check-circle"></i></div>' : ''}</div>`;
@@ -1676,37 +1706,7 @@ window.togglePreviewDark = () => {
 };
 
 // ==========================================
-// 13. EVENT LISTENER SIMULASI SISWA
-// ==========================================
-document.getElementById('btn-mode-siswa')?.addEventListener('click', () => {
-    const selectKelas = document.getElementById('simulasi-kelas');
-    selectKelas.innerHTML = listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
-    document.getElementById('modal-simulasi-siswa').style.display = 'flex';
-});
-
-document.getElementById('btn-mulai-simulasi')?.addEventListener('click', async () => {
-    const kelasTarget = document.getElementById('simulasi-kelas').value;
-    if(!kelasTarget) return window.customAlert("Pilih kelas terlebih dahulu!", "warning");
-    
-    const btn = document.getElementById('btn-mulai-simulasi');
-    const origHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mempersiapkan...';
-    btn.disabled = true;
-
-    try {
-        const user = auth.currentUser;
-        if(user) {
-            await updateDoc(doc(db, "users", user.uid), { kelas: [kelasTarget] });
-            window.location.href = "attempt.html";
-        }
-    } catch(e) {
-        console.error(e); window.customAlert("Gagal memulai simulasi. Periksa koneksi Anda.", "error");
-        btn.innerHTML = origHtml; btn.disabled = false;
-    }
-});
-
-// ==========================================
-// 14. FIX UI & NAVIGASI BAWAAN (SOLUSI TOMBOL MACET)
+// 14. FIX UI & NAVIGASI BAWAAN
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.close-btn, .close-modal, [data-dismiss="modal"]').forEach(btn => {
@@ -1741,7 +1741,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// 4. Polyfill (Fungsi Cadangan) agar tombol menu di HTML asli tidak Error
 window.switchTab = function(sectionId) { 
     window.location.hash = sectionId; 
     document.getElementById('overlay-sidebar')?.click(); 

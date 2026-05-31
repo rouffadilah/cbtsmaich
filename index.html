@@ -42,22 +42,7 @@
                 if (!savedTheme) localStorage.setItem('theme', 'light');
             }
 
-            // 2. Logika Fullscreen Otomatis Giras (Mode ANBK)
-            function pemicuFullscreenANBK() {
-                const docEl = document.documentElement;
-                const isFull = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-                if (!isFull) {
-                    if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(() => {}); }
-                    else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
-                    else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
-                }
-            }
-            // HANYA GUNAKAN EVENT KLIK/SENTUH AGAR TIDAK ERROR DI CONSOLE
-            ['click', 'touchstart', 'keydown', 'dblclick'].forEach(evt => {
-                document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
-            });
-
-            // 3. Logika Jam & Tanggal Real-time di Bawah Logo
+            // 2. Logika Jam & Tanggal Real-time di Bawah Logo
             function inisialisasiJamSistem() {
                 const clockEl = document.getElementById('realtime-clock');
                 if (!clockEl) return;
@@ -102,6 +87,13 @@
                     <i class="fas fa-sign-in-alt"></i> MASUK
                 </button>
             
+                <div style="text-align: center; margin: 15px 0; color: var(--text-muted);">ATAU</div>
+
+                <button type="button" id="btn-login-google" class="btn-3d" style="background-color: white; color: #475569; border: 1px solid #cbd5e1; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style="width: 20px;">
+                    Masuk dengan Akun Google
+                </button>
+
                 <a href="javascript:void(0)" id="btn-install-app" class="install-link" aria-hidden="true">
                     <i class="fas fa-download"></i> Instal CBT
                 </a>
