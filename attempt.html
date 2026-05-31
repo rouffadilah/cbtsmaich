@@ -53,27 +53,47 @@
         .q-box.ragu { background-color: #f59e0b !important; border-color: #d97706 !important; color: #ffffff !important; }
         .q-box.active { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
 
-        /* --- RESPONSIVITAS MOBILE --- */
-        @media screen and (max-width: 1024px) {
-            body, html { overflow: hidden !important; height: 100% !important; }
-            .pre-exam-container { align-items: flex-start; padding: 15px; overflow-y: auto; height: 100dvh; }
-            #exam-workspace { height: 100dvh !important; }
-            .question-area { padding: 20px 15px 90px 15px !important; border: none; } 
-            .nav-bottom-container { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 12px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 100; margin: 0; }
-            .nav-bottom-container button { width: 60px; justify-content: center; }
-            .nav-bottom-container label { flex: 1; white-space: nowrap; justify-content: center; }
-            .btn-toggle-nav { display: none !important; } 
-            #btn-fab-nav { display: flex !important; } 
-            #btn-close-sidebar { display: block !important; }
-        }
-        /* --- RESPONSIVITAS LOGO HEADER --- */
-        .logo-desktop-container { flex: 1; display: flex; justify-content: center; align-items: center; }
-        .logo-mobile-img { display: none; }
-        
-        @media screen and (max-width: 1024px) {
-            .logo-desktop-container { display: none !important; }
-            .logo-mobile-img { display: block !important; height: 18px; width: auto; object-fit: contain; object-position: left; margin-bottom: 6px; }
-        }
+        /* TAMPILAN HP (MOBILE) */
+            @media screen and (max-width: 1024px) {
+                .exam-header { 
+                    flex-direction: column !important; 
+                    padding: 12px 15px !important; 
+                    gap: 8px !important; 
+                    align-items: stretch !important;
+                }
+                .exam-header-center { 
+                    order: 1; 
+                    width: 100%; 
+                    margin-bottom: 5px; 
+                }
+                .exam-header-center img { height: 38px; }
+                
+                .exam-header-bottom {
+                    order: 2; 
+                    display: flex;
+                    justify-content: center; /* Posisikan item ke tengah */
+                    align-items: center;
+                    width: 100%;
+                    position: relative; /* Agar tombol grid bisa menempel di kanan */
+                }
+                .exam-header-left { 
+                    order: unset; 
+                    flex: 1; 
+                    margin-right: 0; 
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center; /* Teks ke tengah */
+                    text-align: center;
+                }
+                .exam-header-right { 
+                    order: unset; 
+                    flex: 0 0 auto; 
+                    position: absolute;
+                    right: 0; /* Paksa tombol selalu di ujung kanan */
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+            }
     </style>
 </head>
 <body>
