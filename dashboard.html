@@ -594,5 +594,17 @@
             } catch(e) {}
         });
     </script>
+    <div id="modal-import-gdrive" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10005; background: rgba(15,23,42,0.8);">
+        <div class="modal-content" style="background: white; width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-radius: 10px;">
+            <span class="close-btn" onclick="document.getElementById('modal-import-gdrive').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
+            <i class="fab fa-google-drive fa-4x" style="color: var(--warning); margin-bottom: 15px;"></i>
+            <h3 style="margin-top: 0; color: var(--secondary); margin-bottom: 10px;">Import dari Google Drive</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Masukkan link Google Sheets / Docs yang telah diatur ke "Siapa saja yang memiliki link" (Public).</p>
+            <div class="input-group" style="text-align: left;">
+                <input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/..." style="width: 100%;">
+            </div>
+            <button id="btn-proses-gdrive" class="btn-3d" style="width: 100%; margin-top: 10px;"><i class="fas fa-cloud-download-alt"></i> Proses & Import</button>
+        </div>
+    </div>
 </body>
 </html>
