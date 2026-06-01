@@ -97,9 +97,6 @@
     </style>
 </head>
 <body>
-    <button id="btn-attempt-dark-mode" style="position: absolute; top: 20px; right: 20px; background: var(--secondary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-md); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: 0.3s;" title="Ganti Tema">
-        <i class="fas fa-moon"></i>
-    </button>
     <script>
         (function() {
             // 1. Logika Auto-Theme Berdasarkan Waktu
@@ -151,7 +148,10 @@
         })();
     </script>
 
-    <div id="pre-exam-ui" class="login-page-bg">
+    <div id="pre-exam-ui" class="pre-exam-container" style="position: relative;">
+        <button id="btn-attempt-dark-mode" style="position: absolute; top: 15px; right: 15px; background: transparent; color: var(--secondary); border: none; font-size: 1.5rem; cursor: pointer; transition: 0.3s; z-index: 10;" title="Ganti Tema">
+            <i class="fas fa-moon"></i>
+        </button>
         <div class="login-container" style="margin: 0 auto;">
             <div class="login-card" style="text-align: center; padding: 35px 30px;">
                 <div class="login-header" style="margin-bottom: 20px;">
@@ -168,30 +168,36 @@
                     Keluar dari layar penuh atau membuka tab lain akan otomatis memicu pelanggaran sistem.
                 </div>
 
-                <div style="margin-bottom: 15px; text-align: left;">
-                    <label for="input-nama-siswa" style="font-weight: 600; font-size: 0.9rem; color: var(--secondary); margin-bottom: 5px; display: block;">Nama Lengkap:</label>
-                    <input type="text" id="input-nama-siswa" class="input-text" placeholder="Ketik nama lengkap Anda di sini..." style="width: 100%; padding: 10px 12px; font-size: 0.9rem;" required>
+                <!-- Input Nama Siswa untuk Mode Tanpa Login -->
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="input-nama-siswa" class="input-text" placeholder="Nama Lengkap" style="width: 100%; padding: 12px 15px; font-size: 0.95rem;" required>
                 </div>
 
-                <div class="input-group" style="text-align: left; margin-bottom: 15px;">
-                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Kelas Anda (Otomatis)</label>
-                    <input type="text" id="student-class" class="input-text" readonly style="background: #f8fafc; font-weight: 700; color: var(--text-muted); cursor: not-allowed; border-color: var(--border-color);">
-                </div>
-
-                <div class="input-group" style="text-align: left; margin-bottom: 15px;">
-                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Mata Pelajaran Ujian</label>
-                    <select id="select-mapel" class="input-text" style="font-weight: 600; background: #ffffff;">
-                        <option value="">Memuat mata pelajaran...</option>
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <select id="student-class" class="input-text" style="font-weight: 600; padding: 12px 15px; font-size: 0.95rem;">
+                        <option value="" disabled selected>-- Pilih Kelas Anda --</option>
                     </select>
                 </div>
 
-                <div class="input-group" style="text-align: left; margin-bottom: 25px;">
-                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--secondary);">Token Ujian</label>
-                    <input type="text" id="input-token" class="input-text" placeholder="KODE 6 DIGIT" style="text-transform: uppercase; font-size: 1.15rem; font-weight: 800; letter-spacing: 4px; text-align: center; background: #ffffff; color: var(--danger);">
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <select id="select-mapel" class="input-text" style="font-weight: 600; padding: 12px 15px; font-size: 0.95rem;">
+                        <option value="" disabled selected>-- Pilih Mapel Ujian --</option>
+                    </select>
                 </div>
 
-                <button id="btn-verifikasi" class="btn-3d" style="width: 100%; padding: 12px; font-size: 0.95rem;"><i class="fas fa-play-circle"></i> MULAI UJIAN</button>
-                <button id="btn-batal-kembali" class="btn-exit-modern" style="width: 100%; justify-content: center; margin-top: 12px; padding: 10px; font-size: 0.85rem;"><i class="fas fa-arrow-left"></i> Batal & Keluar Akun</button>
+                <div class="input-group" style="margin-bottom: 25px;">
+                    <input type="text" id="input-token" class="input-text" placeholder="TOKEN UJIAN" style="text-transform: uppercase; font-size: 1.15rem; font-weight: 800; letter-spacing: 4px; text-align: center; color: var(--danger); padding: 12px 15px;">
+                </div>
+
+                <!-- Tombol Action -->
+                <div style="display: flex; justify-content: center; gap: 15px; margin-top: 10px;">
+                    <button id="btn-batal-kembali" class="btn-exit-modern" style="padding: 10px 20px; font-size: 0.95rem; min-width: 120px; justify-content: center;">
+                        Keluar
+                    </button>
+                    <button id="btn-verifikasi" class="btn-3d" style="padding: 10px 20px; font-size: 0.95rem; margin: 0; min-width: 120px;">
+                        Mulai
+                    </button>
+                </div>
             </div>
         </div>
     </div>
