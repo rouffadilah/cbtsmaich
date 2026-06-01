@@ -227,21 +227,45 @@ const SoalManager = {
         document.getElementById('view-soal-list').style.display = 'block';
         
         let headerDiv = document.getElementById('label-mapel-edit').parentElement.parentElement;
-        let existingBtn = document.getElementById('btn-selesai-kelola');
-        if(!existingBtn) {
-            existingBtn = document.createElement('button');
+        let actionContainer = document.getElementById('action-container-kelola');
+        
+        if(!actionContainer) {
+            // Buat kontainer untuk tombol-tombol aksi
+            actionContainer = document.createElement('div');
+            actionContainer.id = 'action-container-kelola';
+            actionContainer.style.display = 'flex';
+            actionContainer.style.gap = '10px';
+            actionContainer.style.alignItems = 'center';
+
+            // 1. Tombol Atur Bobot Massal
+            let btnBobot = document.createElement('button');
+            btnBobot.className = 'btn-3d';
+            btnBobot.style.backgroundColor = 'var(--warning)';
+            btnBobot.style.padding = '8px 18px';
+            btnBobot.style.margin = '0';
+            btnBobot.style.fontSize = '0.9rem';
+            btnBobot.innerHTML = '<i class="fas fa-balance-scale"></i> Atur Bobot';
+            btnBobot.onclick = () => {
+                document.getElementById('modal-atur-bobot-massal').style.display = 'flex';
+            };
+
+            // 2. Tombol Selesai Mengelola
+            let existingBtn = document.createElement('button');
             existingBtn.id = 'btn-selesai-kelola';
             existingBtn.className = 'btn-3d';
             existingBtn.style.backgroundColor = 'var(--success)';
             existingBtn.style.padding = '8px 18px';
             existingBtn.style.margin = '0';
             existingBtn.style.fontSize = '0.9rem';
-            existingBtn.innerHTML = '<i class="fas fa-check-circle"></i> Selesai Mengelola';
+            existingBtn.innerHTML = '<i class="fas fa-check-circle"></i> Selesai';
             existingBtn.onclick = () => {
                 window.customAlert("Perubahan bank soal telah tersimpan otomatis.", "success", "Tersimpan");
                 document.getElementById('btn-back-mapel-list').click();
             };
-            headerDiv.appendChild(existingBtn);
+
+            actionContainer.appendChild(btnBobot);
+            actionContainer.appendChild(existingBtn);
+            headerDiv.appendChild(actionContainer);
         }
 
         document.getElementById('label-mapel-edit').innerText = `Kelola Paket: ${mapel} (${kelasKey})`;
