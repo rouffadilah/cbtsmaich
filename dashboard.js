@@ -1341,6 +1341,8 @@ window.parseDocTextToJSON = (text) => {
         let line = lines[i];
         if (line.match(/^[A-Z]\.\s*(Pilihan Ganda|PG)/i)) { currentTipe = 'PG'; continue; }
         if (line.match(/^[A-Z]\.\s*(Esai|Essay|Uraian)/i)) { currentTipe = 'Essay'; continue; }
+        if (line.match(/^[A-Z]\.\s*(Pilihan Ganda Kompleks|PGK)/i)) { currentTipe = 'PGK'; continue; }
+        if (line.match(/^[A-Z]\.\s*(Menjodohkan|Jodohkan)/i)) { currentTipe = 'Menjodohkan'; continue; }
         const questionMatch = line.match(/^(\d+)\.\s*(.*)/);
         if (questionMatch) {
             if (currentSoal) jsonData.push(currentSoal);
