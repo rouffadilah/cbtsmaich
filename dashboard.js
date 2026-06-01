@@ -1350,7 +1350,7 @@ window.parseDocTextToJSON = (text) => {
             continue;
         }
         const optionMatch = line.match(/^-?\s*([A-Ea-e])\.\s*(.*)/);
-        if (optionMatch && currentSoal && currentSoal["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] === 'PG') {
+        if (optionMatch && currentSoal && (currentSoal["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] === 'PG' || currentSoal["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] === 'PGK')) {
             currentSoal[`Opsi ${optionMatch[1].toUpperCase()}`] = optionMatch[2]; continue;
         }
         const kunciMatch = line.match(/^(?:Kunci|Jawaban|Kunci Jawaban)\s*:\s*(.*)/i);
