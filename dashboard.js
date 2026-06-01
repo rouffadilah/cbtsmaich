@@ -621,6 +621,56 @@ const SoalManager = {
     }
 };
 
+terapkanBobotMassal: async function() {
+        const mapel = document.getElementById('filter-soal-mapel').value;
+        const kelasKey = document.getElementById('filter-soal-mapel').dataset.kelasKey;
+
+        const bPG = parseFloat(document.getElementById('mass-bobot-pg').value) || 1;
+        const bPGK = parseFloat(document.getElementById('mass-bobot-pgk').value) || 1;
+        const bJodoh = parseFloat(document.getElementById('mass-bobot-jodoh').value) || 1;
+        const bEssay = parseFloat(document.getElementById('mass-bobot-essay').value) || 1;
+
+        const btn = document.getElementById('btn-simpan-bobot-massal');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+        btn.disabled = true;
+
+        try {
+            let updates = [];
+            
+            // Looping semua soal yang sedang tampil
+            this.tempDataKelola.forEach(s => {
+                let tipe = s.tipe || 'PG';
+                let targetBobot = 1;
+
+                if (tipe === 'PG') targetBobot = bPG;
+                else if (tipe === 'PGK') targetBobot = bPGK;
+                else if (tipe === 'Menjodohkan') targetBobot = bJodoh;
+                else if (tipe === 'Essay') targetBobot = bEssay;
+
+                // Hanya kirim update ke server jika bobotnya berbeda (hemat kuota database)
+                if (parseFloat(s.bobot) !== targetBobot) {
+                    updates.push(updateDoc(doc(db, "bank_soal", s.id), { bobot: targetBobot }));
+                }
+            });
+
+            if (updates.length > 0) {
+                await Promise.all(updates); // Eksekusi update massal
+                await window.customAlert(`${updates.length} soal berhasil diperbarui bobotnya!`, "success");
+                this.loadDaftarSoal(mapel, kelasKey); // Refresh tampilan soal
+            } else {
+                await window.customAlert("Semua soal sudah memiliki bobot yang sesuai. Tidak ada perubahan dilakukan.", "info");
+            }
+
+            document.getElementById('modal-atur-bobot-massal').style.display = 'none';
+        } catch(e) {
+            window.customAlert("Gagal memperbarui bobot: " + e.message, "error");
+        } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        }
+    },
+
 window.SoalManager = SoalManager;
 
 // ==========================================
@@ -759,6 +809,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('input-custom-role').value = ''; window.handleRoleChange();
     });
 
+    document.getElementById('btn-simpan-bobot-massal')?.addEventListener('click', () => {
+        SoalManager.terapkanBobotMassal();
+    });
+    
     document.addEventListener('click', (e) => {
         const header = e.target.closest('.toggle-accordion');
         if (header) {
