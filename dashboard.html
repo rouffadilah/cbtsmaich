@@ -55,7 +55,6 @@
                     else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
                 }
             }
-            // HANYA GUNAKAN EVENT KLIK/SENTUH AGAR TIDAK ERROR DI CONSOLE
             ['click', 'touchstart', 'keydown', 'dblclick'].forEach(evt => {
                 document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
             });
@@ -76,6 +75,7 @@
             document.addEventListener('DOMContentLoaded', inisialisasiJamSistem);
         })();
     </script>
+
     <div class="app-layout">
         <header class="app-header" style="position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); z-index: 1000; width: 100%;">
             <div style="width: 40px;"></div> 
@@ -259,6 +259,7 @@
                                     <h2 id="label-mapel-detail" style="margin: 0; font-size: 1.15rem; color: var(--secondary); font-weight: 700;">MAPEL</h2>
                                 </div>
                                 <div style="display: flex; gap: 10px;">
+                                    <button id="btn-hapus-semua-hasil" class="btn-3d" style="background-color: var(--danger); margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-trash-alt"></i> KOSONGKAN HASIL</button>
                                     <button onclick="window.downloadExcelHasil()" class="btn-3d" style="background-color: #2563eb; margin: 0; padding: 6px 15px; font-size: 0.85rem;"><i class="fas fa-file-excel"></i> DOWNLOAD EXCEL</button>
                                 </div>
                             </div>
@@ -331,6 +332,28 @@
         </div>
     </div>
 
+    <div id="modal-edit-akun" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
+        <div class="modal-content" style="background: white; width: 500px; max-width: 90%; padding: 35px 25px; border-radius: 10px;">
+            <span class="close-btn" id="close-modal-edit-akun" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-top: 0; margin-bottom: 20px;"><i class="fas fa-user-cog"></i> Edit Akun Pengguna</h3>
+            <input type="hidden" id="edit-uid">
+            <div class="input-group"><label>Nama Lengkap</label><input type="text" id="edit-nama" class="input-text" required></div>
+            <div class="input-group"><label>Username / NIS</label><input type="text" id="edit-username" class="input-text" required></div>
+            <div class="input-group" id="admin-custom-role-group"><label>Hak Akses / Role (Multi-role)</label><div id="edit-role-container" class="checkbox-container"></div></div>
+            <div style="display: flex; gap: 10px; margin-top: -10px; margin-bottom: 15px;" id="wrap-custom-role-input">
+                <input type="text" id="input-custom-role" class="input-text" placeholder="Custom role baru..." style="padding: 8px 12px; font-size: 0.85rem;">
+                <button type="button" id="btn-add-custom-role" class="btn-3d btn-secondary" style="white-space: nowrap; padding: 0 15px; font-size: 0.85rem; margin: 0;">+ Role</button>
+            </div>
+            <div class="input-group" id="group-edit-kelas-siswa" style="display: none;"><label>Kelas Target (Siswa)</label><select id="edit-kelas-siswa" class="input-text"></select></div>
+            <div id="group-edit-guru" style="display: none; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <div class="input-group" style="margin: 0;"><label>Mata Pelajaran yang Diampu</label><div id="edit-mapel-container" class="checkbox-container"></div></div>
+                <div class="input-group" style="margin: 0;"><label>Kelas yang Diajar</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
+            </div>
+            <div class="input-group"><label>Ganti Password Baru (Opsional)</label><input type="password" id="edit-pass" class="input-text" placeholder="Kosongkan jika tidak diubah"></div>
+            <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; background-color: var(--success);"><i class="fas fa-save"></i> Perbarui Akun</button>
+        </div>
+    </div>
+
     <div id="modal-detail-jawaban" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
         <div class="modal-content" style="background: white; width: 800px; max-width: 95%; max-height: 90vh; overflow-y: auto; padding: 35px 25px; border-radius: 10px;">
             <span class="close-btn" onclick="document.getElementById('modal-detail-jawaban').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
@@ -363,11 +386,8 @@
 
             <form id="form-tambah-soal" style="padding: 22px 24px; overflow-y:auto; flex:1;">
                 <input type="hidden" id="edit-soal-id">
-                
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;">
-                    <div class="input-group" style="margin:0;">
-                        <select id="soal-mapel" class="input-text" required style="background:white; padding:11px 14px; font-weight: 600;"></select>
-                    </div>
+                    <div class="input-group" style="margin:0;"><select id="soal-mapel" class="input-text" required style="background:white; padding:11px 14px; font-weight: 600;"></select></div>
                     <div class="input-group" id="group-soal-kelas" style="margin:0;">
                         <div class="dropdown-check" id="dd-soal-kelas">
                             <button type="button" class="dropdown-check-btn" onclick="window.toggleDropdownCheck('dd-soal-kelas')" style="padding:11px 14px; border-color:var(--border-color); background:white;">
@@ -445,8 +465,7 @@
                                         <input type="text" id="soal-opsi-A" class="input-text" placeholder="Opsi A..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
                                         <div style="display:flex; gap:10px; align-items:center;">
                                             <select id="tipe-media-opsi-A" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-A').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-A').style.display = this.value === 'url' ? 'block' : 'none';">
-                                                <option value="file">File</option>
-                                                <option value="url">URL</option>
+                                                <option value="file">File</option><option value="url">URL</option>
                                             </select>
                                             <input type="file" id="media-opsi-A" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
                                             <input type="text" id="media-url-opsi-A" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
@@ -463,8 +482,7 @@
                                         <input type="text" id="soal-opsi-B" class="input-text" placeholder="Opsi B..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
                                         <div style="display:flex; gap:10px; align-items:center;">
                                             <select id="tipe-media-opsi-B" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-B').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-B').style.display = this.value === 'url' ? 'block' : 'none';">
-                                                <option value="file">File</option>
-                                                <option value="url">URL</option>
+                                                <option value="file">File</option><option value="url">URL</option>
                                             </select>
                                             <input type="file" id="media-opsi-B" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
                                             <input type="text" id="media-url-opsi-B" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
@@ -481,8 +499,7 @@
                                         <input type="text" id="soal-opsi-C" class="input-text" placeholder="Opsi C..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
                                         <div style="display:flex; gap:10px; align-items:center;">
                                             <select id="tipe-media-opsi-C" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-C').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-C').style.display = this.value === 'url' ? 'block' : 'none';">
-                                                <option value="file">File</option>
-                                                <option value="url">URL</option>
+                                                <option value="file">File</option><option value="url">URL</option>
                                             </select>
                                             <input type="file" id="media-opsi-C" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
                                             <input type="text" id="media-url-opsi-C" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
@@ -499,8 +516,7 @@
                                         <input type="text" id="soal-opsi-D" class="input-text" placeholder="Opsi D..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
                                         <div style="display:flex; gap:10px; align-items:center;">
                                             <select id="tipe-media-opsi-D" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-D').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-D').style.display = this.value === 'url' ? 'block' : 'none';">
-                                                <option value="file">File</option>
-                                                <option value="url">URL</option>
+                                                <option value="file">File</option><option value="url">URL</option>
                                             </select>
                                             <input type="file" id="media-opsi-D" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
                                             <input type="text" id="media-url-opsi-D" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
@@ -517,8 +533,7 @@
                                         <input type="text" id="soal-opsi-E" class="input-text" placeholder="Opsi E..." style="margin-bottom:6px; padding:8px 10px; font-size:0.9rem; background:#fcfcfc;">
                                         <div style="display:flex; gap:10px; align-items:center;">
                                             <select id="tipe-media-opsi-E" class="input-text" style="width: 70px; padding: 4px; font-size: 0.75rem;" onchange="document.getElementById('media-opsi-E').style.display = this.value === 'file' ? 'block' : 'none'; document.getElementById('media-url-opsi-E').style.display = this.value === 'url' ? 'block' : 'none';">
-                                                <option value="file">File</option>
-                                                <option value="url">URL</option>
+                                                <option value="file">File</option><option value="url">URL</option>
                                             </select>
                                             <input type="file" id="media-opsi-E" accept="image/*,video/*,audio/*" style="flex:1; font-size:0.75rem;">
                                             <input type="text" id="media-url-opsi-E" class="input-text" placeholder="https://..." style="flex:1; font-size:0.75rem; display:none;">
@@ -539,7 +554,6 @@
                         <div class="input-group"><label>Kunci / Rubrik</label><textarea id="soal-kunci-essay" class="input-text" rows="2" placeholder="Opsional..."></textarea></div>
                     </div>
                 </div>
-
                 <button type="submit" class="btn-3d" style="width:100%; margin-top:24px; padding:13px; font-size:0.98rem; font-weight:700; background:linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius:10px;"><i class="fas fa-save"></i> Simpan Soal</button>
             </form>
         </div>
@@ -575,7 +589,7 @@
     </div>
 
     <div id="modal-preview-soal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; align-items:center; justify-content:center; z-index:10001; background:rgba(15,23,42,0.8); backdrop-filter:blur(6px);">
-        <div style="background:white; width:880px; max-width:96%; max-height:90vh; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
+        <div style="background:white; width:880px; max-width:96%; max-height:90vh; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 2px 50px -12px rgba(0,0,0,0.3);">
             <div style="padding:16px 22px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(to right, #f8fafc, #ffffff);">
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div style="width:38px; height:38px; background:#dbeafe; color:#2563eb; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem;"><i class="fas fa-eye"></i></div>
@@ -602,65 +616,41 @@
             <i class="fab fa-google-drive fa-4x" style="color: var(--warning); margin-bottom: 15px;"></i>
             <h3 style="margin-top: 0; color: var(--secondary); margin-bottom: 10px;">Import dari Google Drive</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Masukkan link Google Sheets / Docs yang telah diatur ke "Siapa saja yang memiliki link" (Public).</p>
-            <div class="input-group" style="text-align: left;">
-                <input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/..." style="width: 100%;">
-            </div>
+            <div class="input-group" style="text-align: left;"><input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/..." style="width: 100%;"></div>
             <button id="btn-proses-gdrive" class="btn-3d" style="width: 100%; margin-top: 10px;"><i class="fas fa-cloud-download-alt"></i> Proses & Import</button>
         </div>
     </div>
 
-    <div id="modal-atur-bobot-massal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
+    <div id="modal-atur-bobot-massal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10006; background: rgba(15,23,42,0.8);">
         <div class="modal-content" style="background: white; width: 450px; max-width: 90%; padding: 35px 25px; border-radius: 10px;">
             <span class="close-btn" onclick="document.getElementById('modal-atur-bobot-massal').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
             <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--secondary);"><i class="fas fa-balance-scale"></i> Atur Bobot Massal</h3>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Tentukan bobot poin otomatis berdasarkan tipe soal untuk paket ini.</p>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                <div class="input-group" style="margin: 0;">
-                    <label>Pilihan Ganda (PG)</label>
-                    <input type="number" id="mass-bobot-pg" class="input-text" value="2" min="1">
-                </div>
-                <div class="input-group" style="margin: 0;">
-                    <label>PG Kompleks (PGK)</label>
-                    <input type="number" id="mass-bobot-pgk" class="input-text" value="3" min="1">
-                </div>
-                <div class="input-group" style="margin: 0;">
-                    <label>Menjodohkan</label>
-                    <input type="number" id="mass-bobot-jodoh" class="input-text" value="4" min="1">
-                </div>
-                <div class="input-group" style="margin: 0;">
-                    <label>Essay / Uraian</label>
-                    <input type="number" id="mass-bobot-essay" class="input-text" value="5" min="1">
-                </div>
+                <div class="input-group" style="margin: 0;"><label>Pilihan Ganda (PG)</label><input type="number" id="mass-bobot-pg" class="input-text" value="2" min="1"></div>
+                <div class="input-group" style="margin: 0;"><label>PG Kompleks (PGK)</label><input type="number" id="mass-bobot-pgk" class="input-text" value="3" min="1"></div>
+                <div class="input-group" style="margin: 0;"><label>Menjodohkan</label><input type="number" id="mass-bobot-jodoh" class="input-text" value="4" min="1"></div>
+                <div class="input-group" style="margin: 0;"><label>Essay / Uraian</label><input type="number" id="mass-bobot-essay" class="input-text" value="5" min="1"></div>
             </div>
-
             <button id="btn-simpan-bobot-massal" class="btn-3d" style="width: 100%; background-color: var(--warning);"><i class="fas fa-sync-alt"></i> Terapkan Bobot</button>
         </div>
     </div>
-    
+
+    <script type="module" src="dashboard.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             try {
                 const roles = JSON.parse(localStorage.getItem('userRole')) || [];
                 const isStaff = roles.includes('admin') || roles.includes('guru');
-                
                 if (isStaff) {
-                    // Membuka kunci blokir seleksi teks
                     document.body.style.userSelect = "auto";
                     document.body.style.webkitUserSelect = "auto";
                     document.body.style.mozUserSelect = "auto";
                     document.body.style.msUserSelect = "auto";
-                    
-                    // Membuka kunci blokir klik kanan
-                    window.addEventListener('contextmenu', function(e) {
-                        e.stopPropagation();
-                    }, true);
+                    window.addEventListener('contextmenu', function(e) { e.stopPropagation(); }, true);
                 }
             } catch(e) {}
         });
     </script>
-    
-    <script type="module" src="dashboard.js"></script>
- 
 </body>
 </html>
