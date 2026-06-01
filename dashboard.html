@@ -574,8 +574,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js"></script>
-
     <div id="modal-preview-soal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; align-items:center; justify-content:center; z-index:10001; background:rgba(15,23,42,0.8); backdrop-filter:blur(6px);">
         <div style="background:white; width:880px; max-width:96%; max-height:90vh; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
             <div style="padding:16px 22px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(to right, #f8fafc, #ffffff);">
@@ -595,6 +593,48 @@
                 <button onclick="document.getElementById('modal-preview-soal').style.display='none'" class="btn-3d btn-secondary" style="padding:8px 16px; font-size:0.85rem; background:#475569;"><i class="fas fa-times"></i> Tutup</button>
                 <button onclick="document.getElementById('modal-preview-soal').style.display='none'; const id=window.tempDataSoalKelola.find(s=>s.nomor_soal==document.getElementById('preview-title').innerText.match(/\d+/)[0])?.id; if(id) window.editDataSoal(id);" class="btn-3d" style="padding:8px 16px; font-size:0.85rem; background:var(--primary);"><i class="fas fa-pen"></i> Edit Soal</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-import-gdrive" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10005; background: rgba(15,23,42,0.8);">
+        <div class="modal-content" style="background: white; width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-radius: 10px;">
+            <span class="close-btn" onclick="document.getElementById('modal-import-gdrive').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
+            <i class="fab fa-google-drive fa-4x" style="color: var(--warning); margin-bottom: 15px;"></i>
+            <h3 style="margin-top: 0; color: var(--secondary); margin-bottom: 10px;">Import dari Google Drive</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Masukkan link Google Sheets / Docs yang telah diatur ke "Siapa saja yang memiliki link" (Public).</p>
+            <div class="input-group" style="text-align: left;">
+                <input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/..." style="width: 100%;">
+            </div>
+            <button id="btn-proses-gdrive" class="btn-3d" style="width: 100%; margin-top: 10px;"><i class="fas fa-cloud-download-alt"></i> Proses & Import</button>
+        </div>
+    </div>
+
+    <div id="modal-atur-bobot-massal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
+        <div class="modal-content" style="background: white; width: 450px; max-width: 90%; padding: 35px 25px; border-radius: 10px;">
+            <span class="close-btn" onclick="document.getElementById('modal-atur-bobot-massal').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
+            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--secondary);"><i class="fas fa-balance-scale"></i> Atur Bobot Massal</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Tentukan bobot poin otomatis berdasarkan tipe soal untuk paket ini.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div class="input-group" style="margin: 0;">
+                    <label>Pilihan Ganda (PG)</label>
+                    <input type="number" id="mass-bobot-pg" class="input-text" value="2" min="1">
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>PG Kompleks (PGK)</label>
+                    <input type="number" id="mass-bobot-pgk" class="input-text" value="3" min="1">
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>Menjodohkan</label>
+                    <input type="number" id="mass-bobot-jodoh" class="input-text" value="4" min="1">
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>Essay / Uraian</label>
+                    <input type="number" id="mass-bobot-essay" class="input-text" value="5" min="1">
+                </div>
+            </div>
+
+            <button id="btn-simpan-bobot-massal" class="btn-3d" style="width: 100%; background-color: var(--warning);"><i class="fas fa-sync-alt"></i> Terapkan Bobot</button>
         </div>
     </div>
     
@@ -619,17 +659,8 @@
             } catch(e) {}
         });
     </script>
-    <div id="modal-import-gdrive" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10005; background: rgba(15,23,42,0.8);">
-        <div class="modal-content" style="background: white; width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-radius: 10px;">
-            <span class="close-btn" onclick="document.getElementById('modal-import-gdrive').style.display='none'" style="float: right; cursor: pointer; font-size: 1.5rem;">&times;</span>
-            <i class="fab fa-google-drive fa-4x" style="color: var(--warning); margin-bottom: 15px;"></i>
-            <h3 style="margin-top: 0; color: var(--secondary); margin-bottom: 10px;">Import dari Google Drive</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Masukkan link Google Sheets / Docs yang telah diatur ke "Siapa saja yang memiliki link" (Public).</p>
-            <div class="input-group" style="text-align: left;">
-                <input type="text" id="input-gdrive-url" class="input-text" placeholder="https://docs.google.com/..." style="width: 100%;">
-            </div>
-            <button id="btn-proses-gdrive" class="btn-3d" style="width: 100%; margin-top: 10px;"><i class="fas fa-cloud-download-alt"></i> Proses & Import</button>
-        </div>
-    </div>
+    
+    <script type="module" src="dashboard.js"></script>
+ 
 </body>
 </html>
