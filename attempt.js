@@ -685,6 +685,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         elKelas.parentNode.replaceChild(newSelect, elKelas);
     }
 
+    // ==========================================
+    // OVERRIDE: KELAS MANUAL, BYPASS TOKEN & AUTO-SELECT LINK
+    // ==========================================
+    // ... (kode dropdown-check bawaan tetap biarkan) ...
+
     const selectKelas = document.getElementById('student-class') || document.querySelector('select[id*="kelas"]');
     const selectMapel = document.getElementById('select-mapel') || document.querySelector('select[id*="mapel"]');
     const inputToken = document.getElementById('input-token') || document.querySelector('input[placeholder*="Token"]'); 
@@ -695,10 +700,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Baca Parameter URL
     const urlParams = new URLSearchParams(window.location.search);
     const urlMapel = urlParams.get('mapel');
-    const urlKelas = urlParams.get('kelas');
+    const urlTingkat = urlParams.get('tingkat'); // 🌟 TAMBAHAN: Ambil info tingkat (X / XI)
 
     // 3. Sembunyikan Token SEPENUHNYA jika menggunakan Link Mode
-    if (urlMapel || urlKelas) {
+    if (urlMapel) {
         if (containerToken) containerToken.style.display = 'none';
         if (inputToken) inputToken.value = 'BYPASS';
     }
@@ -711,8 +716,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             
+            // 🌟 MODIFIKASI: Filter Dropdown Kelas Berdasarkan Parameter Tingkat URL
             if (data.list_kelas) {
-                selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + data.list_kelas.map(k => `<option value="${k}">${k}</option>`).join('');
+                let kelasTerfilter = data.list_kelas;
+                
+                if (urlTingkat) {
+                    // Hanya mengambil kelas yang depannya sesuai dengan tingkat (cth: "X-1" diawali "X-")
+                    kelasTerfilter = data.list_kelas.filter(k => 
+                        k.toUpperCase().startsWith(urlTingkat.toUpperCase() + "-") || 
+                        k.toUpperCase().startsWith(urlTingkat.toUpperCase() + " ")
+                    );
+                }
+                
+                selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + 
+                    kelasTerfilter.map(k => `<option value="${k}">${k}</option>`).join('');
                 selectKelas.disabled = false;
             }
             
@@ -730,23 +747,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         let match = options.find(opt => opt.value.toLowerCase().includes(urlMapel.toLowerCase()));
         if (match) {
             selectMapel.value = match.value;
-            // Kunci dropdown agar siswa tidak bisa asal mengganti mapel
+            // Kunci dropdown MAPEL agar siswa tidak bisa asal mengganti mapel
             selectMapel.style.pointerEvents = 'none';
             selectMapel.style.backgroundColor = '#f1f5f9';
         }
     }
     
-    if (urlKelas) {
-        let options = Array.from(selectKelas.options);
-        let match = options.find(opt => opt.value.toLowerCase() === urlKelas.toLowerCase() || opt.value.toLowerCase().includes(urlKelas.toLowerCase()));
-        if (match) {
-            selectKelas.value = match.value;
-            // Kunci dropdown agar siswa tidak bisa asal mengganti kelas
-            selectKelas.style.pointerEvents = 'none';
-            selectKelas.style.backgroundColor = '#f1f5f9';
-        }
-    }
-
     // 6. Logika Pengecekan Token (Hanya dijalankan jika BUKAN Link Mode)
     const checkTokenStatus = async () => {
         // Jika sedang pakai mode link URL, abaikan dan biarkan token disembunyikan
