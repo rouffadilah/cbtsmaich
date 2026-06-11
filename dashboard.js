@@ -184,11 +184,19 @@ const SoalManager = {
                 const expiredAt = new Date().getTime() + (15 * 60 * 1000); 
 
                 classesToUpdate.forEach(cls => { 
+                    // JIKA DURASI DIISI MAKA SIMPAN, JIKA KOSONG MAKA HAPUS DARI DATABASE
                     if(durasiVal) wUpdates[`${mapel}_${cls}`] = durasiVal; 
+                    else wUpdates[`${mapel}_${cls}`] = deleteField();
+
+                    // JIKA JADWAL DIISI MAKA SIMPAN, JIKA KOSONG MAKA HAPUS DARI DATABASE
                     if(jadwalVal) jUpdates[`${mapel}_${cls}`] = jadwalVal;
+                    else jUpdates[`${mapel}_${cls}`] = deleteField();
+                    
+                    // PERUBAHAN LOGIKA PENGHAPUSAN TOKEN
                     if(tokenVal) {
                         tUpdates[`token_${mapel}_${cls}`] = { code: tokenVal, active: true, expiredAt }; 
                     } else {
+                        // Jika kolom dikosongkan (atau tekan tombol power), hapus token dari database
                         tUpdates[`token_${mapel}_${cls}`] = deleteField(); 
                     }
                 });
