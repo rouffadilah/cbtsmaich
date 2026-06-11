@@ -8,6 +8,18 @@ const examState = {
     pelanggaran: 0, maxPelanggaran: 3, isExamActive: false
 };
 
+// --- FUNGSI AUTOSAVE PENYIMPANAN LOKAL ---
+const simpanJawabanLokal = () => {
+    if (!examState.student || !examState.mapelTerpilih) return;
+    // Buat kunci unik berdasarkan ID siswa dan Mapel
+    const localKey = `cbt_ans_${examState.student.uid}_${examState.mapelTerpilih}`;
+    const dataToSave = {
+        jawabanSiswa: examState.jawabanSiswa,
+        raguRagu: examState.raguRagu
+    };
+    localStorage.setItem(localKey, JSON.stringify(dataToSave));
+};
+
 window.customAlert = (msg, title = 'Informasi') => {
     return new Promise(res => {
         const modal = document.getElementById('modal-custom-alert');
@@ -303,6 +315,17 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         if (examState.arraySoal.length === 0) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
         examState.arraySoal.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
 
+        // --- MUAT JAWABAN TERSIMPAN (AUTOSAVE) ---
+        const localKey = `cbt_ans_${examState.student.uid}_${examState.mapelTerpilih}`;
+        const savedData = localStorage.getItem(localKey);
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                if (parsed.jawabanSiswa) examState.jawabanSiswa = parsed.jawabanSiswa;
+                if (parsed.raguRagu) examState.raguRagu = parsed.raguRagu;
+            } catch(e) { console.error("Gagal memuat autosave", e); }
+        }
+
         // --- MASUK KE RUANG UJIAN ---
         SecurityManager.startStrictExamMode();
         examState.isExamActive = true;
@@ -470,6 +493,7 @@ function tampilkanSoal(idx) {
                 examState.jawabanSiswa[soal.id] = e.target.value; 
                 container.querySelectorAll('.option-label').forEach(lbl => lbl.classList.remove('selected'));
                 e.target.closest('.option-label').classList.add('selected');
+                simpanJawabanLokal();
                 renderNavigasi(); 
             };
         });
@@ -486,6 +510,7 @@ function tampilkanSoal(idx) {
                     e.target.closest('.option-label').classList.remove('selected');
                 }
                 examState.jawabanSiswa[soal.id] = arr;
+                simpanJawabanLokal();
                 renderNavigasi();
             };
         });
@@ -496,6 +521,7 @@ function tampilkanSoal(idx) {
                 let jwbSiswaObj = examState.jawabanSiswa[soal.id] || {};
                 jwbSiswaObj[e.target.getAttribute('data-kiri')] = e.target.value;
                 examState.jawabanSiswa[soal.id] = jwbSiswaObj;
+                simpanJawabanLokal();
                 renderNavigasi();
             };
         });
@@ -503,14 +529,22 @@ function tampilkanSoal(idx) {
     else {
         const tx = document.getElementById('essay-ans');
         if (tx) {
-            tx.oninput = (e) => { examState.jawabanSiswa[soal.id] = e.target.value; renderNavigasi(); };
+            tx.oninput = (e) => { 
+                examState.jawabanSiswa[soal.id] = e.target.value; 
+                simpanJawabanLokal();
+                renderNavigasi(); 
+            };
         }
     }
 
     const cbRagu = document.getElementById('cb-ragu');
     if (cbRagu) {
         cbRagu.checked = !!examState.raguRagu[soal.id];
-        cbRagu.onchange = (e) => { examState.raguRagu[soal.id] = e.target.checked; renderNavigasi(); };
+        cbRagu.onchange = (e) => { 
+            examState.raguRagu[soal.id] = e.target.checked; 
+            simpanJawabanLokal();
+            renderNavigasi(); 
+        };
     }
 
     const btnPrev = document.getElementById('btn-prev');
@@ -639,6 +673,9 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
         // SIMPAN KE FIREBASE
         await addDoc(collection(db, "hasil_ujian"), payload);
         
+        // HAPUS AUTOSAVE LOKAL KARENA UJIAN SELESAI
+        localStorage.removeItem(`cbt_ans_${examState.student.uid}_${examState.mapelTerpilih}`);
+        
         // SIMPAN KE GOOGLE SHEETS
         const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycby5mtBZIaTKv91Fx9qYNbcLCEql-1Rst3gyKIg0rXvULqd0F-uDe553ifSmUW_lly_g/exec"; 
         
@@ -685,11 +722,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         elKelas.parentNode.replaceChild(newSelect, elKelas);
     }
 
-    // ==========================================
-    // OVERRIDE: KELAS MANUAL, BYPASS TOKEN & AUTO-SELECT LINK
-    // ==========================================
-    // ... (kode dropdown-check bawaan tetap biarkan) ...
-
     const selectKelas = document.getElementById('student-class') || document.querySelector('select[id*="kelas"]');
     const selectMapel = document.getElementById('select-mapel') || document.querySelector('select[id*="mapel"]');
     const inputToken = document.getElementById('input-token') || document.querySelector('input[placeholder*="Token"]'); 
@@ -700,10 +732,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Baca Parameter URL
     const urlParams = new URLSearchParams(window.location.search);
     const urlMapel = urlParams.get('mapel');
-    const urlTingkat = urlParams.get('tingkat'); // 🌟 TAMBAHAN: Ambil info tingkat (X / XI)
+    const urlKelas = urlParams.get('kelas');
 
     // 3. Sembunyikan Token SEPENUHNYA jika menggunakan Link Mode
-    if (urlMapel) {
+    if (urlMapel || urlKelas) {
         if (containerToken) containerToken.style.display = 'none';
         if (inputToken) inputToken.value = 'BYPASS';
     }
@@ -716,20 +748,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             
-            // 🌟 MODIFIKASI: Filter Dropdown Kelas Berdasarkan Parameter Tingkat URL
             if (data.list_kelas) {
-                let kelasTerfilter = data.list_kelas;
-                
-                if (urlTingkat) {
-                    // Hanya mengambil kelas yang depannya sesuai dengan tingkat (cth: "X-1" diawali "X-")
-                    kelasTerfilter = data.list_kelas.filter(k => 
-                        k.toUpperCase().startsWith(urlTingkat.toUpperCase() + "-") || 
-                        k.toUpperCase().startsWith(urlTingkat.toUpperCase() + " ")
-                    );
-                }
-                
-                selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + 
-                    kelasTerfilter.map(k => `<option value="${k}">${k}</option>`).join('');
+                selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + data.list_kelas.map(k => `<option value="${k}">${k}</option>`).join('');
                 selectKelas.disabled = false;
             }
             
@@ -747,12 +767,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         let match = options.find(opt => opt.value.toLowerCase().includes(urlMapel.toLowerCase()));
         if (match) {
             selectMapel.value = match.value;
-            // Kunci dropdown MAPEL agar siswa tidak bisa asal mengganti mapel
+            // Kunci dropdown agar siswa tidak bisa asal mengganti mapel
             selectMapel.style.pointerEvents = 'none';
             selectMapel.style.backgroundColor = '#f1f5f9';
         }
     }
     
+    if (urlKelas) {
+        let options = Array.from(selectKelas.options);
+        let match = options.find(opt => opt.value.toLowerCase() === urlKelas.toLowerCase() || opt.value.toLowerCase().includes(urlKelas.toLowerCase()));
+        if (match) {
+            selectKelas.value = match.value;
+            // Kunci dropdown agar siswa tidak bisa asal mengganti kelas
+            selectKelas.style.pointerEvents = 'none';
+            selectKelas.style.backgroundColor = '#f1f5f9';
+        }
+    }
+
     // 6. Logika Pengecekan Token (Hanya dijalankan jika BUKAN Link Mode)
     const checkTokenStatus = async () => {
         // Jika sedang pakai mode link URL, abaikan dan biarkan token disembunyikan
