@@ -251,53 +251,62 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         const isLinkMode = (new URLSearchParams(window.location.search)).get('mapel') != null;
         const jadwalKey = `${examState.mapelTerpilih}_${kelasSiswa}`;
 
-        // --- OTOMATISASI JADWAL UJIAN ---
+     // --- OTOMATISASI JADWAL UJIAN ---
         const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
         const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
 
         const jadwalMulaiStr = jadwalSnap.exists() ? jadwalSnap.data()[jadwalKey] : null;
-        let durasiMenit = 90; // Default 90 menit jika tidak diatur di dashboard
+        let durasiMenit = 90; // Default 90 menit jika tidak diatur
         
         if (timeSnap.exists() && timeSnap.data()[jadwalKey]) {
             durasiMenit = parseInt(timeSnap.data()[jadwalKey]);
         }
         
-        // Simpan durasi ke variabel global agar timer countdown ujian berjalan sesuai aturan
+        // Simpan durasi ke variabel global agar timer countdown ujian berjalan
         examState.durasiDetik = durasiMenit * 60;
 
-        // Jika Guru belum pernah mensetting tanggal dan jam sama sekali di dashboard
-        if (!jadwalMulaiStr) {
-            throw new Error("Akses Ditolak: Jadwal ujian untuk mapel dan kelas ini belum diatur oleh Pengawas di Dashboard.");
+        // 4. PENGECEKAN WAKTU UJIAN (Hanya dicek jika guru MENGISI jadwal)
+        if (jadwalMulaiStr) {
+            const waktuMulai = new Date(jadwalMulaiStr).getTime();
+            const waktuSelesai = waktuMulai + (durasiMenit * 60 * 1000);
+            const waktuSekarang = new Date().getTime();
+
+            if (waktuSekarang < waktuMulai) {
+                const formatJadwal = new Date(jadwalMulaiStr).toLocaleString('id-ID', {day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+                throw new Error(`Akses Ditolak: Ujian belum dimulai! Ujian ini dijadwalkan terbuka otomatis pada:\n${formatJadwal} WIB.`);
+            }
+
+            if (waktuSekarang > waktuSelesai) {
+                throw new Error("Akses Ditolak: Waktu pelaksanaan ujian ini sudah berakhir dan link telah otomatis ditutup.");
+            }
         }
 
-        const waktuMulai = new Date(jadwalMulaiStr).getTime();
-        const waktuSelesai = waktuMulai + (durasiMenit * 60 * 1000);
-        const waktuSekarang = new Date().getTime();
-
-        // 4. PENGECEKAN WAKTU UJIAN
-        if (waktuSekarang < waktuMulai) {
-            const formatJadwal = new Date(jadwalMulaiStr).toLocaleString('id-ID', {day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
-            throw new Error(`Akses Ditolak: Ujian belum dimulai! Ujian ini dijadwalkan terbuka otomatis pada:\n${formatJadwal} WIB.`);
-        }
-
-        if (waktuSekarang > waktuSelesai) {
-            throw new Error("Akses Ditolak: Waktu pelaksanaan ujian ini sudah berakhir dan link telah otomatis ditutup.");
-        }
-
-        // 5. PENGECEKAN TOKEN (Hanya berlaku bagi siswa yang masuk tanpa mode link)
+        // 5. PENGECEKAN TOKEN (Hanya dicek jika guru MENGISI token di dashboard)
         if (!isLinkMode) {
             const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
             const tokenKeyDb = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
-            if (!tokenSnap.exists() || !tokenSnap.data()[tokenKeyDb] || !tokenSnap.data()[tokenKeyDb].code) {
-                 throw new Error("Token ujian belum dibuka oleh Pengawas.");
+            
+            let isTokenRequired = false;
+            let currentTokenDb = "";
+
+            if (tokenSnap.exists() && tokenSnap.data()[tokenKeyDb]) {
+                const tokenData = tokenSnap.data()[tokenKeyDb];
+                currentTokenDb = typeof tokenData === 'object' ? tokenData.code : tokenData;
+                
+                // Cek apakah di database ada kodenya
+                if (currentTokenDb && currentTokenDb.trim() !== "") {
+                    isTokenRequired = true;
+                }
             }
-            const tokenData = tokenSnap.data()[tokenKeyDb];
-            const tokenCode = typeof tokenData === 'object' ? tokenData.code : tokenData;
-            if (tokenInput !== tokenCode) {
-                throw new Error("Token yang Anda masukkan SALAH!");
+
+            // Jika Pengawas mengaktifkan token, maka wajib mencocokkan input siswa
+            if (isTokenRequired) {
+                if (tokenInput !== currentTokenDb) {
+                    throw new Error("Token yang Anda masukkan SALAH!");
+                }
             }
         }
-
+        
         // --- AMBIL SOAL DARI DATABASE ---
         const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", examState.mapelTerpilih));
         const soalSnap = await getDocs(qSoal);
