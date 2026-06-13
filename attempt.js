@@ -322,7 +322,23 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         });
 
         if (examState.arraySoal.length === 0) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
-        examState.arraySoal.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
+
+        // --- LOGIKA CEK STATUS ACAK SOAL ---
+        const acakSnap = await getDoc(doc(db, "pengaturan", "acak_soal"));
+        let isAcak = false;
+        if (acakSnap.exists() && acakSnap.data()[jadwalKey]) {
+            isAcak = acakSnap.data()[jadwalKey];
+        }
+
+        if (isAcak) {
+            // Algoritma Fisher-Yates Shuffle
+            for (let i = examState.arraySoal.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [examState.arraySoal[i], examState.arraySoal[j]] = [examState.arraySoal[j], examState.arraySoal[i]];
+            }
+        } else {
+            examState.arraySoal.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
+        }
 
         // --- MUAT JAWABAN TERSIMPAN (AUTOSAVE) ---
         const localKey = `cbt_ans_${examState.student.uid}_${examState.mapelTerpilih}`;
