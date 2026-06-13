@@ -109,6 +109,8 @@ const SoalManager = {
             const jadwalData = jadwalSnap.exists() ? jadwalSnap.data() : {};
             const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian")); 
             const tokenData = tokenSnap.exists() ? tokenSnap.data() : {};
+            const acakSnap = await getDoc(doc(db, "pengaturan", "acak_soal"));
+            const acakData = acakSnap.exists() ? acakSnap.data() : {};
             
             let html = ''; 
             let rowIdx = 0;
@@ -128,6 +130,9 @@ const SoalManager = {
                     token = typeof tData === 'object' ? tData.code : tData; 
                 }
                 
+                let isAcakAktif = jadwalKey && acakData[jadwalKey] ? 'checked' : '';
+                let acakInputId = `acak-${rowIdx}`;
+                
                 let canEdit = isAdmin || (isGuru && userMapel.includes(d.mapel));
                 let labelKelas = d.classes.length > 0 ? d.classes.join(', ') : '<i style="color:#94a3b8;">Belum ada kelas</i>';
                 let kelasHtml = `<span style="font-weight:600; color:var(--secondary); font-size:0.85rem;">${labelKelas}</span>`;
@@ -140,14 +145,19 @@ const SoalManager = {
                 let durasiInput = canEdit ? `<input type="number" id="${durasiInputId}" class="ghost-input" value="${durasi}" placeholder="Menit" style="min-width: 80px; text-align: center;">` : (durasi || '-');
                 
                 let tokenInput = canEdit ? `
-                    <div style="display:flex; align-items:center; gap:5px; justify-content:center;">
-                        <input type="text" id="${tokenInputId}" class="ghost-input" value="${token}" placeholder="KODE" style="text-transform:uppercase; font-weight:bold; color:var(--danger); width: 80px; text-align: center; border: 1px solid #e2e8f0; padding: 4px;">
-                        <button onclick="document.getElementById('${tokenInputId}').value=''; SoalManager.simpanPengaturanBaris('${d.mapel}', '${d.kelasKey}', '${jadwalInputId}', '${durasiInputId}', '${tokenInputId}', this)" class="btn-icon" style="color:white; background:var(--danger); border-radius:4px; padding:4px 8px; font-size:0.8rem; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);" title="Nonaktifkan Token"><i class="fas fa-power-off"></i></button>
-                    </div>` : `<span style="display:inline-block; min-width:120px; text-align:center;">${token || '<span style="color:var(--success); font-size:0.8rem; font-weight:bold;">Tanpa Token</span>'}</span>`;
+                    <div style="display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center;">
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="text" id="${tokenInputId}" class="ghost-input" value="${token}" placeholder="KODE" style="text-transform:uppercase; font-weight:bold; color:var(--danger); width: 80px; text-align: center; border: 1px solid #e2e8f0; padding: 4px;">
+                            <button onclick="document.getElementById('${tokenInputId}').value=''; SoalManager.simpanPengaturanBaris('${d.mapel}', '${d.kelasKey}', '${jadwalInputId}', '${durasiInputId}', '${tokenInputId}', '${acakInputId}', this)" class="btn-icon" style="color:white; background:var(--danger); border-radius:4px; padding:4px 8px; font-size:0.8rem; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);" title="Nonaktifkan Token"><i class="fas fa-power-off"></i></button>
+                        </div>
+                        <label style="font-size: 0.75rem; font-weight: bold; color: var(--info); display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="checkbox" id="${acakInputId}" ${isAcakAktif} style="transform: scale(1.2);"> Acak Soal
+                        </label>
+                    </div>` : `<span style="display:inline-block; min-width:120px; text-align:center;">${token || '<span style="color:var(--success); font-size:0.8rem; font-weight:bold;">Tanpa Token</span>'}<br><small style="color:var(--info); font-weight:bold;">${isAcakAktif ? '🔀 Diacak' : '➡️ Berurut'}</small></span>`;
 
                 let actionBtn = canEdit ? `
                     <div style="display:flex; gap:5px; justify-content:center;">
-                        <button onclick="SoalManager.simpanPengaturanBaris('${d.mapel}', '${d.kelasKey}', '${jadwalInputId}', '${durasiInputId}', '${tokenInputId}', this)" class="btn-icon" style="color: var(--success);" title="Simpan Jadwal, Durasi & Token"><i class="fas fa-save"></i></button>
+                        <button onclick="SoalManager.simpanPengaturanBaris('${d.mapel}', '${d.kelasKey}', '${jadwalInputId}', '${durasiInputId}', '${tokenInputId}', '${acakInputId}', this)" class="btn-icon" style="color: var(--success);" title="Simpan Pengaturan"><i class="fas fa-save"></i></button>
                         <button onclick="SoalManager.bukaDetailSoal('${d.mapel}', '${d.kelasKey}')" class="btn-icon" title="Kelola Soal"><i class="fas fa-cog"></i></button>
                         <button onclick="SoalManager.hapusKeseluruhan('${d.mapel}', '${d.kelasKey}')" class="btn-icon text-danger" title="Hapus Paket Mapel Ini"><i class="fas fa-trash-alt"></i></button>
                     </div>` : `<span style="color:var(--text-muted);"><i class="fas fa-lock"></i></span>`;
@@ -169,10 +179,11 @@ const SoalManager = {
         }
     },
 
-    simpanPengaturanBaris: async function(mapel, kelasKey, jadwalId, durasiId, tokenId, btnEl) {
+    simpanPengaturanBaris: async function(mapel, kelasKey, jadwalId, durasiId, tokenId, acakId, btnEl) {
         const jadwalVal = document.getElementById(jadwalId).value;
         const durasiVal = document.getElementById(durasiId).value;
         const tokenVal = document.getElementById(tokenId).value.toUpperCase().trim();
+        const acakVal = document.getElementById(acakId) ? document.getElementById(acakId).checked : false;
         const origHtml = btnEl.innerHTML;
         btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btnEl.disabled = true;
@@ -180,30 +191,30 @@ const SoalManager = {
         try {
             let classesToUpdate = kelasKey.split(', ');
             if (classesToUpdate.length > 0 && classesToUpdate[0] !== "") {
-                let wUpdates = {}; let jUpdates = {}; let tUpdates = {};
+                let wUpdates = {}; let jUpdates = {}; let tUpdates = {}; let aUpdates = {};
                 const expiredAt = new Date().getTime() + (15 * 60 * 1000); 
 
                 classesToUpdate.forEach(cls => { 
-                    // JIKA DURASI DIISI MAKA SIMPAN, JIKA KOSONG MAKA HAPUS DARI DATABASE
-                    if(durasiVal) wUpdates[`${mapel}_${cls}`] = durasiVal; 
-                    else wUpdates[`${mapel}_${cls}`] = deleteField();
+                    const dbKey = `${mapel}_${cls}`;
+                    if(durasiVal) wUpdates[dbKey] = durasiVal; 
+                    else wUpdates[dbKey] = deleteField();
 
-                    // JIKA JADWAL DIISI MAKA SIMPAN, JIKA KOSONG MAKA HAPUS DARI DATABASE
-                    if(jadwalVal) jUpdates[`${mapel}_${cls}`] = jadwalVal;
-                    else jUpdates[`${mapel}_${cls}`] = deleteField();
+                    if(jadwalVal) jUpdates[dbKey] = jadwalVal;
+                    else jUpdates[dbKey] = deleteField();
                     
-                    // PERUBAHAN LOGIKA PENGHAPUSAN TOKEN
                     if(tokenVal) {
-                        tUpdates[`token_${mapel}_${cls}`] = { code: tokenVal, active: true, expiredAt }; 
+                        tUpdates[`token_${dbKey}`] = { code: tokenVal, active: true, expiredAt }; 
                     } else {
-                        // Jika kolom dikosongkan (atau tekan tombol power), hapus token dari database
-                        tUpdates[`token_${mapel}_${cls}`] = deleteField(); 
+                        tUpdates[`token_${dbKey}`] = deleteField(); 
                     }
+
+                    aUpdates[dbKey] = acakVal;
                 });
 
                 if(Object.keys(wUpdates).length > 0) await setDoc(doc(db, "pengaturan", "waktu_ujian"), wUpdates, { merge: true });
                 if(Object.keys(jUpdates).length > 0) await setDoc(doc(db, "pengaturan", "jadwal_ujian"), jUpdates, { merge: true });
                 if(Object.keys(tUpdates).length > 0) await setDoc(doc(db, "pengaturan", "token_ujian"), tUpdates, { merge: true });
+                if(Object.keys(aUpdates).length > 0) await setDoc(doc(db, "pengaturan", "acak_soal"), aUpdates, { merge: true });
             }
             
             const icon = btnEl.querySelector('i');
@@ -212,7 +223,7 @@ const SoalManager = {
             if(origHtml.includes('fa-power-off')) {
                 await window.customAlert("Token dinonaktifkan! Siswa bisa langsung masuk ujian.", "success", "Token Dihapus");
             } else {
-                await window.customAlert("Pengaturan Jadwal, Durasi, dan Token berhasil disimpan!", "success", "Tersimpan");
+                await window.customAlert("Pengaturan Jadwal, Durasi, Token, dan Acak Soal berhasil disimpan!", "success", "Tersimpan");
             }
             this.loadSummary();
         } catch (e) { 
@@ -807,6 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    document.getElementById('btn-open-data-master');
     document.getElementById('btn-open-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'flex'; editMasterMode = false; window.renderTableMaster(); });
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { SoalManager.bukaModalTambah(); });
     document.getElementById('close-modal-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'none'; });
@@ -861,7 +873,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('view-summary-bank-soal').style.display = 'block'; document.getElementById('view-soal-list').style.display = 'none'; SoalManager.loadSummary();
     });
 
-    // Event handler klik simpan bobot massal
     document.getElementById('btn-simpan-bobot-massal')?.addEventListener('click', () => {
         SoalManager.terapkanBobotMassal();
     });
@@ -1152,7 +1163,7 @@ document.getElementById('btn-save-edit-akun')?.addEventListener('click', async (
         const newPass = document.getElementById('edit-pass').value;
         const roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
 
-        if(!newNama || !newUsername || roles.length === 0) { throw new Error("Nama, Username, dan minimal 1 Role harus diisi!"); }
+        if(!newNama || !newUsername || roles.length === 0) { throw new Error("Nama, Username, and minimal 1 Role harus diisi!"); }
 
         let payload = { nama: newNama, username: newUsername, role: roles };
 
@@ -1755,7 +1766,7 @@ window.previewSoal = (id) => {
             }
         });
         html += '</div>';
-    } else if(s.tipe === 'Menjodohkan'){ html += '<div style="margin-top:20px; padding:16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; color:#92400e; font-size:0.9rem;"><i class="fas fa-link"></i> Soal Menjodohkan - siswa akan memasangkan jawaban di aplikasi</div>'; } 
+    } else if(s.tipe === 'Menjodohkan'){ html += '<div style="margin-top:20px; padding:16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; color:#92400e; font-size:0.9rem;"><i class="fas fa-link"></i> Soal Menjodohkan - siswa akan memasangkan jawaban di application</div>'; } 
     else if(s.tipe === 'Essay'){ html += `<div style="margin-top:24px;"><label style="display:block; font-weight:600; margin-bottom:8px; color:#475569; font-size:0.9rem;">Jawaban siswa:</label><div style="min-height:120px; border:1.5px dashed #cbd5e1; border-radius:10px; background:#f8fafc;"></div>${s.kunci_jawaban ? `<div style="margin-top:16px; padding:12px; background:#f0f9ff; border-left:3px solid #0ea5e9; border-radius:6px;"><strong style="font-size:0.85rem; color:#0369a1;">Kunci/Rubrik:</strong><div style="margin-top:4px; color:#0c4a6e; font-size:0.9rem;">${s.kunci_jawaban}</div></div>` : ''}</div>`; }
     
     document.getElementById('preview-content').innerHTML = html; document.getElementById('modal-preview-soal').style.display = 'flex';
