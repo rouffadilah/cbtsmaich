@@ -9,12 +9,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        /* --- KEAMANAN GLOBAL: ANTI COPAS, AI, & CETAK --- */
-        body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
-        input, textarea, select { -webkit-user-select: auto !important; -ms-user-select: auto !important; user-select: auto !important; }
-        @media print { body { display: none !important; } }
-    </style>
 </head>
 <body class="login-page-bg">
     <script>
@@ -31,9 +25,7 @@
                 if (!savedTheme) localStorage.setItem('theme', 'light');
             }
 
-            // 2. Logika Fullscreen Otomatis Giras (Mode ANBK)
-            
-            // 3. Logika Jam & Tanggal Real-time di Bawah Logo
+            // 2. Logika Jam & Tanggal Real-time di Bawah Logo
             function inisialisasiJamSistem() {
                 const clockEl = document.getElementById('realtime-clock');
                 if (!clockEl) return;
@@ -108,63 +100,6 @@
             <div class="login-footer">&copy; 2026 IT Support SMAICH. All rights reserved.</div>
         </div>
     </div>
-
-    <script>
-        function isStaff() {
-            try {
-                let roles = JSON.parse(localStorage.getItem("userRole") || "[]");
-                return roles.includes("admin") || roles.includes("guru");
-            } catch(e) { return false; }
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            if(isStaff()) {
-                document.body.style.userSelect = "auto";
-                document.body.style.webkitUserSelect = "auto";
-                document.body.style.mozUserSelect = "auto";
-                document.body.style.msUserSelect = "auto";
-            }
-        });
-
-        document.addEventListener('contextmenu', event => { if(!isStaff()) event.preventDefault(); });
-        ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(evt => document.addEventListener(evt, event => { 
-            if (!isStaff() && event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); } 
-        }));
-        
-        document.addEventListener('keydown', event => {
-            if(!isStaff()) {
-                if (event.key === 'F12' || event.key === 'PrintScreen' || (event.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a', 'f'].includes(event.key.toLowerCase())) || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c', 's'].includes(event.key.toLowerCase()))) { 
-                    event.preventDefault(); 
-                }
-            }
-        });
-        
-        window.addEventListener('blur', () => { if(!isStaff()) document.body.style.filter = "blur(15px)"; });
-        window.addEventListener('focus', () => { if(!isStaff()) document.body.style.filter = "none"; });
-    </script>
-
     <script type="module" src="registrasi.js"></script>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            try {
-                const roles = JSON.parse(localStorage.getItem('userRole')) || [];
-                const isStaff = roles.includes('admin') || roles.includes('guru');
-                
-                if (isStaff) {
-                    // Membuka kunci blokir seleksi teks
-                    document.body.style.userSelect = "auto";
-                    document.body.style.webkitUserSelect = "auto";
-                    document.body.style.mozUserSelect = "auto";
-                    document.body.style.msUserSelect = "auto";
-                    
-                    // Membuka kunci blokir klik kanan
-                    window.addEventListener('contextmenu', function(e) {
-                        e.stopPropagation();
-                    }, true);
-                }
-            } catch(e) {}
-        });
-    </script>
 </body>
 </html>
