@@ -1680,7 +1680,7 @@ document.getElementById('upload-excel-soal')?.addEventListener('change', async (
 // ==========================================
 // 11. HASIL UJIAN (CAPAIAN SISWA)
 // ==========================================
-window.chartPartisipasi = null; // Variabel global untuk menyimpan grafik
+window.chartPartisipasi = null;
 
 window.loadDataHasil = async () => {
     try {
@@ -1745,20 +1745,28 @@ window.loadDataHasil = async () => {
     } catch(e) { console.error("Gagal memuat hasil ujian:", e); }
 };
 
-window.renderChartPartisipasi = (dataObj) => {
+window.renderChartPartisipasi = async (dataObj) => {
     const ctx = document.getElementById('chartPartisipasiMapel');
     if (!ctx) return;
 
-    // Ekstrak Label (Mapel) dan Data (Jumlah Siswa)
+    // OTOMATIS: Memuat Chart.js dari internet jika terdeteksi belum ada di HTML
+    if (typeof Chart === 'undefined') {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
     const labels = Object.keys(dataObj);
     const dataVals = Object.values(dataObj);
 
-    // Hancurkan grafik lama jika sudah ada (mencegah tumpuk / bug hover)
     if (window.chartPartisipasi) {
         window.chartPartisipasi.destroy();
     }
 
-    // Deteksi tema (Terang / Gelap) agar garis dan teks pada grafik terlihat jelas
     const isDark = document.body.classList.contains('dark-mode');
     const textColor = isDark ? '#cbd5e1' : '#475569';
     const gridColor = isDark ? '#334155' : '#e2e8f0';
@@ -1770,32 +1778,23 @@ window.renderChartPartisipasi = (dataObj) => {
             datasets: [{
                 label: 'Jumlah Siswa Selesai',
                 data: dataVals,
-                backgroundColor: 'rgba(16, 185, 129, 0.85)', // Warna hijau primary (var(--success))
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
                 borderColor: '#059669',
                 borderWidth: 1,
-                borderRadius: 8, // Ujung bar agak melengkung agar modern
-                barPercentage: 0.5 // Lebar bar
+                borderRadius: 8,
+                barPercentage: 0.5
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }, // Sembunyikan legenda karena judul sudah jelas
-                tooltip: {
-                    callbacks: { label: function(context) { return context.parsed.y + ' Siswa'; } }
-                }
+                legend: { display: false },
+                tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' Siswa'; } } }
             },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1, color: textColor },
-                    grid: { color: gridColor, drawBorder: false }
-                },
-                x: {
-                    ticks: { color: textColor, font: { weight: 'bold' } },
-                    grid: { display: false, drawBorder: false }
-                }
+                y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor, drawBorder: false } },
+                x: { ticks: { color: textColor, font: { weight: 'bold' } }, grid: { display: false, drawBorder: false } }
             }
         }
     });
