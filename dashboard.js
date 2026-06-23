@@ -1018,9 +1018,44 @@ window.loadDataPengguna = async () => {
             const data = doc.data(); data.uid = doc.id; allUsersData.push(data);
         });
         allUsersData.sort((a, b) => {
-            const namaA = (a.nama || "").toLowerCase(); const namaB = (b.nama || "").toLowerCase();
-            if (namaA < namaB) return -1; if (namaA > namaB) return 1;
-            return (a.username || "").toLowerCase().localeCompare((b.username || "").toLowerCase());
+            const roleA = Array.isArray(a.role) ? a.role : [a.role];
+            const roleB = Array.isArray(b.role) ? b.role : [b.role];
+            
+            // Deteksi apakah user adalah guru
+            const isGuruA = roleA.includes("guru") || roleA.some(r => r !== 'siswa' && r !== 'admin');
+            const isGuruB = roleB.includes("guru") || roleB.some(r => r !== 'siswa' && r !== 'admin');
+        
+            // Jika keduanya adalah guru, terapkan pengurutan khusus
+            if (isGuruA && isGuruB) {
+                const idA = (a.username || "").toUpperCase();
+                const idB = (b.username || "").toUpperCase();
+        
+                // Aturan 1: ID E98T6-069 mutlak di urutan paling atas
+                if (idA === "E98T6-069" && idB !== "E98T6-069") return -1;
+                if (idB === "E98T6-069" && idA !== "E98T6-069") return 1;
+        
+                // Aturan 2: Karakter ke-4 (T lebih dulu dari H)
+                const charA = idA.length >= 4 ? idA.charAt(3) : "";
+                const charB = idB.length >= 4 ? idB.charAt(3) : "";
+                
+                if (charA === 'T' && charB !== 'T') return -1;
+                if (charB === 'T' && charA !== 'T') return 1;
+        
+                // Aturan 3: Urutkan berdasarkan alfabet nama
+                const namaA = (a.nama || "").toLowerCase();
+                const namaB = (b.nama || "").toLowerCase();
+                if (namaA < namaB) return -1;
+                if (namaA > namaB) return 1;
+                
+                return idA.localeCompare(idB);
+            } else {
+                // Pengurutan default untuk selain guru (Siswa / Admin)
+                const namaA = (a.nama || "").toLowerCase();
+                const namaB = (b.nama || "").toLowerCase();
+                if (namaA < namaB) return -1;
+                if (namaA > namaB) return 1;
+                return (a.username || "").toLowerCase().localeCompare((b.username || "").toLowerCase());
+            }
         });
         const elStatSiswa = document.getElementById("stat-siswa"); if (elStatSiswa) elStatSiswa.innerText = allUsersData.length;
         window.renderTablePengguna();
