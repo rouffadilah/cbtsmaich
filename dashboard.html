@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .switch { position: relative; display: inline-block; width: 44px; height: 22px; margin: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -97,6 +98,12 @@
                         </div>
                         <div class="stat-card" onclick="window.location.hash='section-hasil'">
                             <div><p>Capaian Siswa</p><h3 id="stat-ujian">0</h3></div><div style="color: var(--success);"><i class="fas fa-chart-bar"></i></div>
+                        </div>
+                    </div>
+                    <div class="card" style="padding: 25px; margin-bottom: 20px;">
+                        <h3 style="margin-top: 0; font-size: 1.15rem; color: var(--secondary); margin-bottom: 20px;"><i class="fas fa-chart-line"></i> Grafik Partisipasi Siswa per Mata Pelajaran</h3>
+                        <div style="position: relative; height: 350px; width: 100%;">
+                            <canvas id="chartPartisipasiMapel"></canvas>
                         </div>
                     </div>
                 </div>
