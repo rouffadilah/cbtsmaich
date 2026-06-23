@@ -772,6 +772,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         if (isDark) { iconDarkMode?.classList.replace('fa-moon', 'fa-sun'); } 
         else { iconDarkMode?.classList.replace('fa-sun', 'fa-moon'); }
+        
+        // Render ulang grafik agar warna teks dan garisnya menyesuaikan tema
+        if (typeof window.loadDataHasil === 'function') { window.loadDataHasil(); }
     });
 
     const filterKelas = document.getElementById('filter-kelas-pengguna');
@@ -1677,6 +1680,8 @@ document.getElementById('upload-excel-soal')?.addEventListener('change', async (
 // ==========================================
 // 11. HASIL UJIAN (CAPAIAN SISWA)
 // ==========================================
+window.chartPartisipasi = null; // Variabel global untuk menyimpan grafik
+
 window.loadDataHasil = async () => {
     try {
         const snap = await getDocs(collection(db, "hasil_ujian")); 
@@ -1690,18 +1695,27 @@ window.loadDataHasil = async () => {
         if(!gridMapel) return;
 
         let summaryMapel = {};
+        let chartDataMapel = {}; // Data khusus untuk grafik
+
         allHasilUjian.forEach(h => {
             const isAuthorized = isAdmin || (isGuru && userMapel.includes(h.mataPelajaran));
             if (isAuthorized) {
+                // 1. Data untuk Kartu Rincian Kelas
                 const kelasStr = Array.isArray(h.kelas) ? h.kelas.join(', ') : (h.kelas || "-");
                 let key = `${h.mataPelajaran} - Kelas ${kelasStr}`;
                 if(!summaryMapel[key]) summaryMapel[key] = { mapel: h.mataPelajaran, kelas: kelasStr, count: 0, totalNilai: 0 };
                 summaryMapel[key].count++; 
                 let nilaiSiswa = h.skorPG !== undefined ? h.skorPG : (h.skor !== undefined ? h.skor : (h.nilai || 0));
                 summaryMapel[key].totalNilai += parseFloat(nilaiSiswa);
+
+                // 2. Data Agregat Murni per Mapel untuk Grafik
+                let mapelName = h.mataPelajaran || "Tanpa Mapel";
+                if(!chartDataMapel[mapelName]) chartDataMapel[mapelName] = 0;
+                chartDataMapel[mapelName]++;
             }
         });
 
+        // Render Kartu Detail
         gridMapel.innerHTML = '';
         for (let key in summaryMapel) {
             let s = summaryMapel[key]; 
@@ -1722,7 +1736,69 @@ window.loadDataHasil = async () => {
             </div>`;
         }
         if(gridMapel.innerHTML === '') { gridMapel.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:var(--text-muted);">Belum ada data hasil ujian untuk mapel yang Anda ampu.</p>'; }
-    } catch(e) {}
+
+        // Panggil fungsi render grafik
+        if (document.getElementById('chartPartisipasiMapel')) {
+            window.renderChartPartisipasi(chartDataMapel);
+        }
+        
+    } catch(e) { console.error("Gagal memuat hasil ujian:", e); }
+};
+
+window.renderChartPartisipasi = (dataObj) => {
+    const ctx = document.getElementById('chartPartisipasiMapel');
+    if (!ctx) return;
+
+    // Ekstrak Label (Mapel) dan Data (Jumlah Siswa)
+    const labels = Object.keys(dataObj);
+    const dataVals = Object.values(dataObj);
+
+    // Hancurkan grafik lama jika sudah ada (mencegah tumpuk / bug hover)
+    if (window.chartPartisipasi) {
+        window.chartPartisipasi.destroy();
+    }
+
+    // Deteksi tema (Terang / Gelap) agar garis dan teks pada grafik terlihat jelas
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#cbd5e1' : '#475569';
+    const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+    window.chartPartisipasi = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Jumlah Siswa Selesai',
+                data: dataVals,
+                backgroundColor: 'rgba(16, 185, 129, 0.85)', // Warna hijau primary (var(--success))
+                borderColor: '#059669',
+                borderWidth: 1,
+                borderRadius: 8, // Ujung bar agak melengkung agar modern
+                barPercentage: 0.5 // Lebar bar
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }, // Sembunyikan legenda karena judul sudah jelas
+                tooltip: {
+                    callbacks: { label: function(context) { return context.parsed.y + ' Siswa'; } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, color: textColor },
+                    grid: { color: gridColor, drawBorder: false }
+                },
+                x: {
+                    ticks: { color: textColor, font: { weight: 'bold' } },
+                    grid: { display: false, drawBorder: false }
+                }
+            }
+        }
+    });
 };
 
 window.bukaDetailHasil = (mapel, kelas) => { 
