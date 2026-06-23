@@ -1025,7 +1025,12 @@ window.loadDataPengguna = async () => {
             const isGuruA = roleA.includes("guru") || roleA.some(r => r !== 'siswa' && r !== 'admin');
             const isGuruB = roleB.includes("guru") || roleB.some(r => r !== 'siswa' && r !== 'admin');
 
-            // Jika keduanya adalah guru, terapkan pengurutan khusus
+            // PENTING: Pisahkan dulu antara Guru dan Bukan Guru saat membandingkan
+            // Ini mencegah algoritma sorting browser kebingungan saat datanya acak
+            if (isGuruA && !isGuruB) return -1;
+            if (!isGuruA && isGuruB) return 1;
+
+            // Jika KEDUANYA adalah guru, terapkan pengurutan khusus
             if (isGuruA && isGuruB) {
                 const idA = (a.username || "").toUpperCase();
                 const idB = (b.username || "").toUpperCase();
@@ -1041,16 +1046,16 @@ window.loadDataPengguna = async () => {
                 if (charA === 'T' && charB === 'H') return -1;
                 if (charA === 'H' && charB === 'T') return 1;
 
-                // Aturan 3: Urutkan berdasarkan ID secara alfanumerik (A-Z)
-                return idA.localeCompare(idB);
-            } else {
-                // Pengurutan default untuk selain guru (Siswa / Admin) berdasarkan Nama
-                const namaA = (a.nama || "").toLowerCase();
-                const namaB = (b.nama || "").toLowerCase();
-                if (namaA < namaB) return -1;
-                if (namaA > namaB) return 1;
-                return (a.username || "").toLowerCase().localeCompare((b.username || "").toLowerCase());
-            }
+                // Aturan 3: Urutkan berdasarkan ID menggunakan Natural Sort (agar E2 sebelum E10)
+                return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
+            } 
+            
+            // Pengurutan default untuk selain guru (Siswa / Admin) berdasarkan Nama
+            const namaA = (a.nama || "").toLowerCase();
+            const namaB = (b.nama || "").toLowerCase();
+            if (namaA < namaB) return -1;
+            if (namaA > namaB) return 1;
+            return (a.username || "").toLowerCase().localeCompare((b.username || "").toLowerCase());
         });
         const elStatSiswa = document.getElementById("stat-siswa"); if (elStatSiswa) elStatSiswa.innerText = allUsersData.length;
         window.renderTablePengguna();
