@@ -1378,64 +1378,111 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
 window.downloadTemplate = (type) => {
     if(type === 'excel') {
         const data = [
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Nomor Soal": 1, "Bobot Soal": 1, "Teks Pertanyaan": "Siapa penemu lampu pijar?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Thomas Alva Edison", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "Nikola Tesla", "Opsi C": "Albert Einstein", "Opsi D": "Isaac Newton", "Opsi E": "Michael Faraday", "Kunci Jawaban / Pasangan Menjodohkan": "A"},
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Nomor Soal": 2, "Bobot Soal": 2, "Teks Pertanyaan": "Manakah yang merupakan perangkat keras komputer?", "Opsi A": "Mouse", "Opsi B": "Sistem Operasi", "Opsi C": "Keyboard", "Opsi D": "Aplikasi Web", "Opsi E": "Monitor", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E"}
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Nomor Soal": 1, "Bobot Soal": 1, "Teks Pertanyaan": "Siapa presiden pertama Republik Indonesia?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Soeharto", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "B.J. Habibie", "Opsi C": "Soekarno", "Opsi D": "Joko Widodo", "Opsi E": "Susilo Bambang Yudhoyono", "Kunci Jawaban / Pasangan Menjodohkan": "C"},
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Nomor Soal": 2, "Bobot Soal": 2, "Teks Pertanyaan": "Manakah dari perangkat berikut yang merupakan perangkat keras (hardware) komputer? (Pilih lebih dari satu)", "Opsi A": "Monitor", "Opsi B": "Sistem Operasi Windows", "Opsi C": "Keyboard", "Opsi D": "Microsoft Word", "Opsi E": "Mouse", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E"},
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Menjodohkan", "Nomor Soal": 3, "Bobot Soal": 3, "Teks Pertanyaan": "Pasangkan ibu kota berikut dengan negaranya yang tepat!", "Opsi A": "", "Opsi B": "", "Opsi C": "", "Opsi D": "", "Opsi E": "", "Kunci Jawaban / Pasangan Menjodohkan": "Jakarta=Indonesia; Tokyo=Jepang; Paris=Prancis; London=Inggris"},
+            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Essay", "Nomor Soal": 4, "Bobot Soal": 5, "Teks Pertanyaan": "Jelaskan secara singkat proses terjadinya fotosintesis pada tumbuhan!", "Opsi A": "", "Opsi B": "", "Opsi C": "", "Opsi D": "", "Opsi E": "", "Kunci Jawaban / Pasangan Menjodohkan": "Tumbuhan mengubah sinar matahari, air, dan karbon dioksida menjadi glukosa dan oksigen."}
         ];
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
+        
+        // Memperlebar kolom agar template mudah dibaca
+        const cols = [{wch: 38}, {wch: 12}, {wch: 12}, {wch: 45}, {wch: 40}, {wch: 25}, {wch: 30}, {wch: 25}, {wch: 25}, {wch: 25}, {wch: 25}, {wch: 45}];
+        ws['!cols'] = cols;
+
         XLSX.utils.book_append_sheet(wb, ws, "Template Soal");
         XLSX.writeFile(wb, "Template_Soal_CBT.xlsx");
     } else if (type === 'word') {
         const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head><meta charset='utf-8'><title>Template Soal CBT</title></head><body>
         <h2>FORMAT PENULISAN SOAL CBT (DIBACA OLEH SISTEM)</h2>
-        <p>Pastikan tidak menghapus teks penanda seperti "A. Pilihan Ganda", "B. Essay", atau "Kunci Jawaban:".</p>
+        <p><b>PENTING:</b> Jangan mengubah teks judul bagian seperti "A. Pilihan Ganda", "B. Pilihan Ganda Kompleks", dll. Sistem membaca judul tersebut untuk menentukan tipe soal. Gunakan format "Kunci Jawaban: " untuk mendefinisikan kunci.</p>
         <br>
         <h2>A. Pilihan Ganda</h2>
-        <p>1. Pendekatan memecahkan masalah besar dan kompleks dengan cara membaginya menjadi bagian-bagian kecil yang lebih mudah dikelola disebut...</p>
-        <p>A. Pengenalan Pola</p><p>B. Abstraksi</p><p>C. Dekomposisi</p><p>D. Algoritma</p><p>E. Komputasi Awan</p>
+        <p>1. Siapa presiden pertama Republik Indonesia?</p>
+        <p>A. Soeharto</p><p>B. B.J. Habibie</p><p>C. Soekarno</p><p>D. Joko Widodo</p><p>E. Susilo Bambang Yudhoyono</p>
         <p>Kunci Jawaban: C</p>
         <br>
-        <h2>B. Essay</h2>
-        <p>1. Jelaskan secara singkat apa yang dimaksud dengan 4 (empat) pilar utama Berpikir Komputasional!</p>
-        <p>Kunci Jawaban: Dekomposisi (Memecah masalah), Pengenalan Pola (Mencari kesamaan tren), Abstraksi (Fokus pada info penting saja), Algoritma (Menyusun langkah penyelesaian berurut).</p>
+        <h2>B. Pilihan Ganda Kompleks</h2>
+        <p>1. Manakah dari perangkat berikut yang merupakan perangkat keras komputer?</p>
+        <p>A. Monitor</p><p>B. Sistem Operasi Windows</p><p>C. Keyboard</p><p>D. Microsoft Word</p><p>E. Mouse</p>
+        <p>Kunci Jawaban: A, C, E</p>
+        <br>
+        <h2>C. Menjodohkan</h2>
+        <p>1. Pasangkan ibu kota berikut dengan negaranya yang tepat!</p>
+        <p>Kunci Jawaban: Jakarta=Indonesia; Tokyo=Jepang; Paris=Prancis</p>
+        <br>
+        <h2>D. Essay</h2>
+        <p>1. Jelaskan secara singkat proses terjadinya fotosintesis pada tumbuhan!</p>
+        <p>Kunci Jawaban: Tumbuhan mengubah sinar matahari, air, dan karbon dioksida menjadi glukosa dan oksigen.</p>
         </body></html>`;
         const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = url; link.download = 'Template_Upload_CBT.doc';
+        link.href = url; link.download = 'Template_Soal_CBT.doc';
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 };
 
 window.parseDocTextToJSON = (text) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0); const jsonData = [];
-    let currentTipe = 'PG'; let currentSoal = null; let nomorPG = 1; let nomorEssay = 1;
+    let currentTipe = 'PG'; let currentSoal = null; let nomorCounter = { 'PG': 1, 'PGK': 1, 'Menjodohkan': 1, 'Essay': 1 };
+    
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i];
+        
+        // Pengecekan Kategori / Tipe Soal
+        if (line.match(/^[A-Z]\.\s*(Pilihan Ganda Kompleks|PGK)/i)) { currentTipe = 'PGK'; continue; }
         if (line.match(/^[A-Z]\.\s*(Pilihan Ganda|PG)/i)) { currentTipe = 'PG'; continue; }
         if (line.match(/^[A-Z]\.\s*(Esai|Essay|Uraian)/i)) { currentTipe = 'Essay'; continue; }
-        if (line.match(/^[A-Z]\.\s*(Pilihan Ganda Kompleks|PGK)/i)) { currentTipe = 'PGK'; continue; }
         if (line.match(/^[A-Z]\.\s*(Menjodohkan|Jodohkan)/i)) { currentTipe = 'Menjodohkan'; continue; }
+        
+        // Mendeteksi Nomor Soal
         const questionMatch = line.match(/^(\d+)\.\s*(.*)/);
         if (questionMatch) {
             if (currentSoal) jsonData.push(currentSoal);
-            currentSoal = { "Tipe Soal (PG / PGK / Menjodohkan / Essay)": currentTipe, "Nomor Soal": currentTipe === 'PG' ? nomorPG++ : nomorEssay++, "Bobot Soal": currentTipe === 'PG' ? 1 : 5, "Teks Pertanyaan": questionMatch[2], "Kunci Jawaban / Pasangan Menjodohkan": "" };
+            currentSoal = { 
+                "Tipe Soal (PG / PGK / Menjodohkan / Essay)": currentTipe, 
+                "Nomor Soal": nomorCounter[currentTipe]++, 
+                "Bobot Soal": (currentTipe === 'Essay') ? 5 : ((currentTipe === 'Menjodohkan') ? 4 : ((currentTipe === 'PGK') ? 2 : 1)), 
+                "Teks Pertanyaan": questionMatch[2], 
+                "Kunci Jawaban / Pasangan Menjodohkan": "" 
+            };
             continue;
         }
+        
+        // Mendeteksi Opsi Jawaban (A-E)
         const optionMatch = line.match(/^-?\s*([A-Ea-e])\.\s*(.*)/);
         if (optionMatch && currentSoal && (currentSoal["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] === 'PG' || currentSoal["Tipe Soal (PG / PGK / Menjodohkan / Essay)"] === 'PGK')) {
             currentSoal[`Opsi ${optionMatch[1].toUpperCase()}`] = optionMatch[2]; continue;
         }
+        
+        // Mendeteksi Kunci Jawaban
         const kunciMatch = line.match(/^(?:Kunci|Jawaban|Kunci Jawaban)\s*:\s*(.*)/i);
-        if (kunciMatch && currentSoal) { currentSoal["Kunci Jawaban / Pasangan Menjodohkan"] = kunciMatch[1].trim().toUpperCase(); continue; }
+        if (kunciMatch && currentSoal) { 
+            let jwbStr = kunciMatch[1].trim();
+            // Kapitalisasi otomatis khusus untuk PG dan PGK
+            if (currentTipe === 'PG' || currentTipe === 'PGK') {
+                jwbStr = jwbStr.toUpperCase();
+            }
+            currentSoal["Kunci Jawaban / Pasangan Menjodohkan"] = jwbStr; 
+            continue; 
+        }
+        
+        // Memasukkan Teks Tambahan ke Soal atau Opsi
         if (currentSoal) {
             let hasOptions = currentSoal['Opsi A'] || currentSoal['Opsi B'];
-            if (!hasOptions) { currentSoal["Teks Pertanyaan"] += '\n' + line; } 
-            else { let lastOpt = ['E', 'D', 'C', 'B', 'A'].find(o => currentSoal[`Opsi ${o}`]); if (lastOpt) currentSoal[`Opsi ${lastOpt}`] += '\n' + line; }
+            if (!hasOptions) { 
+                currentSoal["Teks Pertanyaan"] += '\n' + line; 
+            } else { 
+                let lastOpt = ['E', 'D', 'C', 'B', 'A'].find(o => currentSoal[`Opsi ${o}`]); 
+                if (lastOpt) currentSoal[`Opsi ${lastOpt}`] += '\n' + line; 
+            }
         }
     }
-    if (currentSoal) jsonData.push(currentSoal); return jsonData;
+    
+    if (currentSoal) jsonData.push(currentSoal); 
+    return jsonData;
 };
 
 window.prosesUploadMassal = async (jsonData, mapel, kelasArray) => {
