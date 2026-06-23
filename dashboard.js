@@ -938,14 +938,16 @@ window.loadDataMaster = async () => {
         const docSnap = await getDoc(docRef);
         let currentMapel = []; let currentKelas = [];
         
+        // Tarik data master yang sudah tersimpan sebelumnya
         if (docSnap.exists()) {
             currentMapel = docSnap.data().list_mapel || [];
             currentKelas = docSnap.data().list_kelas || [];
         }
 
-        const usersSnap = await getDocs(collection(db, "users"));
         let masterBerubah = false;
 
+        // 1. Ekstrak dari koleksi "users" (Akun Guru & Siswa)
+        const usersSnap = await getDocs(collection(db, "users"));
         usersSnap.forEach((uDoc) => {
             const uData = uDoc.data();
             if (uData.mapel) {
@@ -964,10 +966,56 @@ window.loadDataMaster = async () => {
             }
         });
 
-        if (masterBerubah) await setDoc(docRef, { list_mapel: currentMapel, list_kelas: currentKelas }, { merge: true });
-        listMapel = currentMapel; listKelas = currentKelas;
-        window.renderTableMaster(); window.populateSemuaDropdown();
-    } catch (e) {}
+        // 2. Ekstrak dari koleksi "bank_soal"
+        const soalSnap = await getDocs(collection(db, "bank_soal"));
+        soalSnap.forEach((sDoc) => {
+            const sData = sDoc.data();
+            if (sData.mataPelajaran) {
+                const mTrim = String(sData.mataPelajaran).trim();
+                if (mTrim && !currentMapel.includes(mTrim)) { currentMapel.push(mTrim); masterBerubah = true; }
+            }
+            if (sData.kelas) {
+                const kelasArr = Array.isArray(sData.kelas) ? sData.kelas : [sData.kelas];
+                kelasArr.forEach(k => {
+                    const kTrim = String(k).trim();
+                    if (kTrim && !currentKelas.includes(kTrim)) { currentKelas.push(kTrim); masterBerubah = true; }
+                });
+            }
+        });
+
+        // 3. Ekstrak dari koleksi "hasil_ujian"
+        const hasilSnap = await getDocs(collection(db, "hasil_ujian"));
+        hasilSnap.forEach((hDoc) => {
+            const hData = hDoc.data();
+            if (hData.mataPelajaran) {
+                const mTrim = String(hData.mataPelajaran).trim();
+                if (mTrim && !currentMapel.includes(mTrim)) { currentMapel.push(mTrim); masterBerubah = true; }
+            }
+            if (hData.kelas) {
+                const kelasArr = Array.isArray(hData.kelas) ? hData.kelas : [hData.kelas];
+                kelasArr.forEach(k => {
+                    const kTrim = String(k).trim();
+                    if (kTrim && !currentKelas.includes(kTrim)) { currentKelas.push(kTrim); masterBerubah = true; }
+                });
+            }
+        });
+
+        // Urutkan sesuai Abjad / Alfanumerik (Natural Sort untuk kelas seperti X-1, X-2, XI-1)
+        currentMapel.sort();
+        currentKelas.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+        // Jika ada data baru yang ditemukan dari proses ekstrak di atas, simpan pembaruannya ke database
+        if (masterBerubah) {
+            await setDoc(docRef, { list_mapel: currentMapel, list_kelas: currentKelas }, { merge: true });
+        }
+        
+        listMapel = currentMapel; 
+        listKelas = currentKelas;
+        window.renderTableMaster(); 
+        window.populateSemuaDropdown();
+    } catch (e) {
+        console.error("Gagal memuat Data Master:", e);
+    }
 };
 
 window.renderTableMaster = () => {
