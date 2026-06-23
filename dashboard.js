@@ -784,6 +784,22 @@ document.addEventListener('DOMContentLoaded', () => {
     filterSiswaInputs.forEach(id => { document.getElementById(id)?.addEventListener('input', window.renderTablePengguna); });
 
     document.getElementById('close-modal-edit-akun')?.addEventListener('click', () => { document.getElementById('modal-edit-akun').style.display = 'none'; });
+    // --- FITUR SIMPAN STATUS OPEN REGISTRASI ---
+    document.getElementById('status-reg-all')?.addEventListener('change', async (e) => {
+        const isActive = e.target.checked;
+        try {
+            // Menyimpan status buka/tutup ke dalam database Firestore
+            await setDoc(doc(db, "pengaturan", "status_registrasi"), {
+                siswa_aktif: isActive,
+                guru_aktif: isActive
+            }, { merge: true });
+            
+            window.customAlert(`Pendaftaran berhasil ${isActive ? 'DIBUKA' : 'DITUTUP'}.`, "success");
+        } catch (error) {
+            e.target.checked = !isActive; // Kembalikan posisi sakelar jika gagal
+            window.customAlert("Gagal mengubah status pendaftaran: " + error.message, "error");
+        }
+    });
 
     document.getElementById('btn-add-custom-role')?.addEventListener('click', () => {
         const roleVal = document.getElementById('input-custom-role').value.trim().toLowerCase();
