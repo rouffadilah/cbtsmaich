@@ -31,20 +31,7 @@
             }
 
             // 2. Logika Fullscreen Otomatis Giras (Mode ANBK)
-            function pemicuFullscreenANBK() {
-                const docEl = document.documentElement;
-                const isFull = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-                if (!isFull) {
-                    if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(() => {}); }
-                    else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
-                    else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
-                }
-            }
-            // HANYA GUNAKAN EVENT KLIK/SENTUH AGAR TIDAK ERROR DI CONSOLE
-            ['click', 'touchstart', 'keydown', 'dblclick'].forEach(evt => {
-                document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
-            });
-
+            
             // 3. Logika Jam & Tanggal Real-time di Bawah Logo
             function inisialisasiJamSistem() {
                 const clockEl = document.getElementById('realtime-clock');
