@@ -45,20 +45,7 @@
                 document.body.classList.remove('dark-mode');
                 if (!savedTheme) localStorage.setItem('theme', 'light');
             }
-
-            function pemicuFullscreenANBK() {
-                const docEl = document.documentElement;
-                const isFull = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-                if (!isFull) {
-                    if (docEl.requestFullscreen) { docEl.requestFullscreen().catch(() => {}); }
-                    else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
-                    else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
-                }
-            }
-            ['click', 'touchstart', 'keydown', 'dblclick'].forEach(evt => {
-                document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
-            });
-
+            
             function inisialisasiJamSistem() {
                 const clockEl = document.getElementById('realtime-clock');
                 if (!clockEl) return;
