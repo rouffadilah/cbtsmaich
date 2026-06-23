@@ -1021,36 +1021,56 @@ window.loadDataPengguna = async () => {
             const roleA = Array.isArray(a.role) ? a.role : [a.role];
             const roleB = Array.isArray(b.role) ? b.role : [b.role];
             
-            // Deteksi apakah user adalah guru
+            // Deteksi role khusus
             const isGuruA = roleA.includes("guru") || roleA.some(r => r !== 'siswa' && r !== 'admin');
             const isGuruB = roleB.includes("guru") || roleB.some(r => r !== 'siswa' && r !== 'admin');
+            const isSiswaA = roleA.includes("siswa");
+            const isSiswaB = roleB.includes("siswa");
 
-            // PENTING: Pisahkan dulu antara Guru dan Bukan Guru saat membandingkan
-            // Ini mencegah algoritma sorting browser kebingungan saat datanya acak
+            // 1. PISAHKAN KELOMPOK UTAMA: Guru berada di atas, diikuti Siswa, lalu Admin
             if (isGuruA && !isGuruB) return -1;
             if (!isGuruA && isGuruB) return 1;
+            if (isSiswaA && !isSiswaB && !isGuruB) return -1;
+            if (!isSiswaA && isSiswaB && !isGuruA) return 1;
 
-            // Jika KEDUANYA adalah guru, terapkan pengurutan khusus
+            // 2. LOGIKA KHUSUS AKUN GURU (Urut ID, T/H)
             if (isGuruA && isGuruB) {
                 const idA = (a.username || "").toUpperCase();
                 const idB = (b.username || "").toUpperCase();
 
-                // Aturan 1: ID E98T6-069 mutlak di urutan paling atas
+                // Mutlak ID tertentu paling atas
                 if (idA === "E98T6-069" && idB !== "E98T6-069") return -1;
                 if (idB === "E98T6-069" && idA !== "E98T6-069") return 1;
 
-                // Aturan 2: Karakter ke-4 (T 'Tetap' lebih dulu dari H 'Honorer')
+                // Karakter ke-4 (T 'Tetap' sebelum H 'Honorer')
                 const charA = idA.length >= 4 ? idA.charAt(3) : "";
                 const charB = idB.length >= 4 ? idB.charAt(3) : "";
                 
                 if (charA === 'T' && charB === 'H') return -1;
                 if (charA === 'H' && charB === 'T') return 1;
 
-                // Aturan 3: Urutkan berdasarkan ID menggunakan Natural Sort (agar E2 sebelum E10)
+                // Urutan Alfanumerik ID Guru
                 return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
             } 
             
-            // Pengurutan default untuk selain guru (Siswa / Admin) berdasarkan Nama
+            // 3. LOGIKA KHUSUS AKUN SISWA (Urut Kelas -> Urut Nama)
+            if (isSiswaA && isSiswaB) {
+                const kelasA = Array.isArray(a.kelas) ? a.kelas.join(", ") : (a.kelas || "");
+                const kelasB = Array.isArray(b.kelas) ? b.kelas.join(", ") : (b.kelas || "");
+
+                // Urutkan berdasarkan nama Kelas secara alami (X-1, X-2, XI-1, XII-1)
+                const urutanKelas = kelasA.localeCompare(kelasB, undefined, { numeric: true, sensitivity: 'base' });
+                if (urutanKelas !== 0) return urutanKelas;
+
+                // Jika Kelasnya sama, urutkan berdasarkan Nama Lengkap (A-Z)
+                const namaA = (a.nama || "").toLowerCase();
+                const namaB = (b.nama || "").toLowerCase();
+                if (namaA < namaB) return -1;
+                if (namaA > namaB) return 1;
+                return (a.username || "").toLowerCase().localeCompare((b.username || "").toLowerCase());
+            }
+
+            // 4. Pengurutan default untuk selain Guru & Siswa (misal Admin murni)
             const namaA = (a.nama || "").toLowerCase();
             const namaB = (b.nama || "").toLowerCase();
             if (namaA < namaB) return -1;
