@@ -705,13 +705,9 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
         const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycby5mtBZIaTKv91Fx9qYNbcLCEql-1Rst3gyKIg0rXvULqd0F-uDe553ifSmUW_lly_g/exec"; 
         
         if (URL_GOOGLE_SCRIPT.startsWith("http")) {
-            // Gunakan FormData agar lolos blokir CORS
             const formData = new URLSearchParams();
             formData.append("nama", payload.nama);
-            
-            // 👇 TAMBAHAN MENGIRIM EMAIL / USERNAME KE SCRIPT GOOGLE 👇
             formData.append("email", payload.username); 
-            
             formData.append("kelas", payload.kelas);
             formData.append("mapel", payload.mataPelajaran);
             formData.append("nilai", payload.skor);
@@ -724,13 +720,36 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
             }).catch(err => console.log("Gagal sync ke Drive", err));
         }
 
-        alert("PEMBERITAHUAN:\nLembar jawaban Anda berhasil direkam dengan aman oleh server.");
-        window.location.replace("index.html");
+        // --- TAMPILAN HALAMAN SUKSES ---
+        document.body.innerHTML = `
+            <div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main); text-align:center; padding: 20px;">
+                <i class="fas fa-check-circle fa-5x" style="color:var(--success); margin-bottom:20px;"></i>
+                <h2 style="color:var(--secondary); font-family:sans-serif; margin-bottom: 10px; font-size: 2rem;">Selamat!</h2>
+                <p style="color:var(--text-muted); font-size: 1.1rem; max-width: 500px;">Jawaban Anda telah berhasil direkam dengan aman oleh server.</p>
+                <div style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px 25px; border-radius: 8px; margin-top: 25px;">
+                    <p style="color:#166534; font-size: 0.95rem; font-weight: 600; margin: 0;">Anda sudah bisa menutup tab browser ini atau menekan tombol di bawah untuk keluar dari akun.</p>
+                </div>
+                <button onclick="localStorage.clear(); window.location.replace('index.html')" class="btn-3d" style="margin-top: 25px; padding: 12px 25px; font-size: 1rem;"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+            </div>
+        `;
+        
+        // (Opsional) Logout otomatis di latar belakang agar siswa tidak bisa menekan "Back"
+        if (examState.student && !examState.student.uid.startsWith("publik-")) {
+            signOut(auth).catch(()=>{});
+        }
+
     } catch(e) {
-        alert("GAGAL MENYIMPAN!\nTerjadi kesalahan koneksi internet atau server sibuk. Silakan panggil pengawas ruangan dan JANGAN tutup halaman ini.");
-        window.location.replace("index.html");
+        // --- TAMPILAN HALAMAN GAGAL ---
+        document.body.innerHTML = `
+            <div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main); text-align:center; padding: 20px;">
+                <i class="fas fa-exclamation-triangle fa-5x" style="color:var(--danger); margin-bottom:20px;"></i>
+                <h2 style="color:var(--secondary); font-family:sans-serif; margin-bottom: 10px;">Gagal Menyimpan!</h2>
+                <p style="color:var(--text-muted); font-size: 1.1rem; max-width: 500px;">Terjadi kesalahan koneksi internet atau server sedang sibuk.</p>
+                <p style="color:var(--danger); font-size: 1rem; margin-top: 10px; font-weight: bold;">Silakan panggil pengawas ruangan dan JANGAN tutup halaman ini.</p>
+                <button onclick="window.location.reload()" class="btn-3d" style="margin-top: 30px; padding: 10px 20px; font-size: 1rem; background-color: var(--warning);"><i class="fas fa-sync-alt"></i> Coba Kirim Ulang</button>
+            </div>
+        `;
     }
-}
 
 // ==========================================
 // OVERRIDE: KELAS MANUAL, BYPASS TOKEN & AUTO-SELECT LINK
