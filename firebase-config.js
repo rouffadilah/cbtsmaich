@@ -15,6 +15,10 @@ const firebaseConfig = {
     measurementId: "G-GF6PJWK2S5"
 };
 
+// Penanda konfigurasi aktif — harus cocok dengan project Firebase sekolah.
+export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
+export const FIREBASE_APP_ID = firebaseConfig.appId;
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 

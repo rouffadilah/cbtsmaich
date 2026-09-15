@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function hasRole(role) {
+      return signedIn() &&
+        role in userDoc(request.auth.uid).data.role;
+    }
+
+    function isAdmin() { return hasRole('admin'); }
+    function isStaff() { return isAdmin() || hasRole('guru'); }
+    function isStudent() { return hasRole('siswa'); }
+
+    // Config yang diperlukan halaman login/registrasi. Hanya data konfigurasi non-rahasia.
+    match /pengaturan/{docId} {
+      allow read: if docId in ['status_registrasi', 'data_akademik'];
+      allow read, write: if isAdmin();
+      allow write: if false;
+    }
+
+    // Profil pengguna. Pengguna boleh membuat profilnya sendiri setelah Firebase Auth sukses.
+    // Role admin tidak boleh dibuat dari browser oleh pengguna biasa.
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow create: if isSelf(uid) &&
+        request.resource.data.role is list &&
+        ('admin' in request.resource.data.role) == false &&
+        request.resource.data.username is string &&
+        request.resource.data.nama is string;
+      allow update: if isAdmin() || (
+        isSelf(uid) &&
+        resource.data.role == request.resource.data.role
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Bank soal: siswa/staf terautentikasi boleh membaca. Hanya admin/guru yang menulis.
+    match /bank_soal/{soalId} {
+      allow read: if signedIn() && (isStaff() || isStudent());
+      allow create, update, delete: if isStaff();
+    }
+
+    // Hasil ujian: siswa hanya boleh membuat hasil untuk UID sendiri dan membaca hasilnya sendiri.
+    // Guru/admin boleh membaca semua dan menghapus semua.
+    match /hasil_ujian/{hasilId} {
+      allow create: if signedIn() &&
+        request.resource.data.uid == request.auth.uid;
+      allow read: if signedIn() &&
+        (isStaff() || resource.data.uid == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

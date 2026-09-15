@@ -158,11 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
     SecurityManager.initGlobal();
 
     onAuthStateChanged(auth, async (user) => {
-        // Jika tidak login, biarkan sistem berjalan (Mode Publik)
-        if (!user) { 
-            console.log("Mode Ujian Tanpa Login Aktif");
-            examState.student = null;
-            return; 
+        // Semua akses soal/hasil kini mensyaratkan Firebase Authentication.
+        if (!user) {
+            window.location.replace("index.html");
+            return;
         }
         
         try {
@@ -215,8 +214,8 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     const inputNamaEl = document.getElementById('input-nama-siswa');
     const namaSiswa = inputNamaEl ? inputNamaEl.value.trim() : "";
 
-    if (!examState.student && !namaSiswa) {
-        return window.customAlert("Silakan isi Nama Lengkap Anda terlebih dahulu!", "Peringatan");
+    if (!examState.student) {
+        return window.customAlert("Sesi login belum siap. Silakan masuk kembali.", "Peringatan");
     }
 
     // 2. CEK PILIHAN MAPEL & KELAS
@@ -230,17 +229,8 @@ document.getElementById('btn-verifikasi').onclick = async () => {
 
     if(!examState.mapelTerpilih || !kelasSiswa) return window.customAlert("Pilih Mapel dan Kelas Anda terlebih dahulu!", "Peringatan");
     
-    // 3. SET DATA SISWA JIKA MODE PUBLIK
-    if (!examState.student) {
-        examState.student = {
-            uid: "publik-" + new Date().getTime(),
-            nama: namaSiswa || "Siswa Anonim",
-            username: "Tanpa Akun",
-            kelas: kelasSiswa
-        };
-    } else if (namaSiswa) {
-        examState.student.nama = namaSiswa;
-    }
+    // 3. Gunakan identitas dari Firebase Auth + profil Firestore sebagai sumber data utama.
+    if (namaSiswa && examState.student) examState.student.nama = namaSiswa;
 
     SecurityManager.openFullscreen();
 

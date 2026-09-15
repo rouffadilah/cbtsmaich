@@ -905,13 +905,19 @@ document.addEventListener('DOMContentLoaded', () => {
 onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.replace("index.html"); return; }
     try {
-        const roles = JSON.parse(localStorage.getItem("userRole") || "[]");
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        if (!userSnap.exists()) { await signOut(auth); localStorage.clear(); window.location.replace("index.html"); return; }
+        const profile = userSnap.data();
+        const roles = Array.isArray(profile.role) ? profile.role : [profile.role];
         isAdmin = roles.includes("admin");
         isGuru = roles.includes("guru");
-        userMapel = JSON.parse(localStorage.getItem("userMapel") || "[]");
-        userKelas = JSON.parse(localStorage.getItem("userKelas") || "[]");
+        userMapel = Array.isArray(profile.mapel) ? profile.mapel : (profile.mapel ? [profile.mapel] : []);
+        userKelas = Array.isArray(profile.kelas) ? profile.kelas : (profile.kelas ? [profile.kelas] : []);
+        localStorage.setItem("userRole", JSON.stringify(roles));
+        localStorage.setItem("userMapel", JSON.stringify(userMapel));
+        localStorage.setItem("userKelas", JSON.stringify(userKelas));
         if (!isAdmin && !isGuru) { window.location.replace("attempt.html"); return; }
-    } catch(e) { window.location.replace("index.html"); return; }
+    } catch(e) { console.error("Gagal memverifikasi role dashboard:", e); window.location.replace("index.html"); return; }
 
     let finalDisplayName = user.displayName;
     if (!finalDisplayName) { 
@@ -934,7 +940,7 @@ onAuthStateChanged(auth, async (user) => {
     handleRouting(); 
     await window.loadDataMaster(); 
     window.loadDataHasil(); 
-    window.loadDataPengguna(); 
+    if (isAdmin) window.loadDataPengguna(); 
     SoalManager.loadSummary(); 
 });
 
@@ -965,25 +971,28 @@ window.loadDataMaster = async () => {
 
         let masterBerubah = false;
 
-        // 1. Ekstrak dari koleksi "users" (Akun Guru & Siswa)
-        const usersSnap = await getDocs(collection(db, "users"));
-        usersSnap.forEach((uDoc) => {
-            const uData = uDoc.data();
-            if (uData.mapel) {
-                const mapelArr = Array.isArray(uData.mapel) ? uData.mapel : [uData.mapel];
-                mapelArr.forEach(m => {
-                    const mTrim = String(m).trim();
-                    if (mTrim && !currentMapel.includes(mTrim)) { currentMapel.push(mTrim); masterBerubah = true; }
-                });
-            }
-            if (uData.kelas) {
-                const kelasArr = Array.isArray(uData.kelas) ? uData.kelas : [uData.kelas];
-                kelasArr.forEach(k => {
-                    const kTrim = String(k).trim();
-                    if (kTrim && !currentKelas.includes(kTrim)) { currentKelas.push(kTrim); masterBerubah = true; }
-                });
-            }
-        });
+        // 1. Ekstrak dari koleksi "users" hanya untuk Admin.
+        // Guru tidak perlu membaca seluruh akun pengguna.
+        if (isAdmin) {
+            const usersSnap = await getDocs(collection(db, "users"));
+            usersSnap.forEach((uDoc) => {
+                const uData = uDoc.data();
+                if (uData.mapel) {
+                    const mapelArr = Array.isArray(uData.mapel) ? uData.mapel : [uData.mapel];
+                    mapelArr.forEach(m => {
+                        const mTrim = String(m).trim();
+                        if (mTrim && !currentMapel.includes(mTrim)) { currentMapel.push(mTrim); masterBerubah = true; }
+                    });
+                }
+                if (uData.kelas) {
+                    const kelasArr = Array.isArray(uData.kelas) ? uData.kelas : [uData.kelas];
+                    kelasArr.forEach(k => {
+                        const kTrim = String(k).trim();
+                        if (kTrim && !currentKelas.includes(kTrim)) { currentKelas.push(kTrim); masterBerubah = true; }
+                    });
+                }
+            });
+        }
 
         // 2. Ekstrak dari koleksi "bank_soal"
         const soalSnap = await getDocs(collection(db, "bank_soal"));
@@ -1078,6 +1087,11 @@ window.populateSemuaDropdown = () => {
 // 8. FUNGSI PENGGUNA (GURU & SISWA)
 // ==========================================
 window.loadDataPengguna = async () => {
+    if (!isAdmin) {
+        allUsersData = [];
+        window.renderTablePengguna();
+        return;
+    }
     try {
         const querySnapshot = await getDocs(collection(db, "users"));
         allUsersData = [];

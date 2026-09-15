@@ -42,14 +42,23 @@ const normalizeArrayData = (data) => {
 // 3. CEK STATUS LOGIN OTOMATIS
 // ==========================================
 // Jika user sebenarnya sudah berhasil login, langsung arahkan ke halamannya
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        const roles = JSON.parse(localStorage.getItem("userRole") || "[]");
+onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (!snap.exists()) return;
+        const userData = snap.data();
+        const roles = normalizeArrayData(userData.role);
+        localStorage.setItem("userRole", JSON.stringify(roles));
+        localStorage.setItem("userMapel", JSON.stringify(normalizeArrayData(userData.mapel)));
+        localStorage.setItem("userKelas", JSON.stringify(normalizeArrayData(userData.kelas)));
         if (roles.includes("admin") || roles.includes("guru")) {
             window.location.replace("dashboard.html");
         } else if (roles.includes("siswa")) {
             window.location.replace("attempt.html");
         }
+    } catch (error) {
+        console.error("Gagal memuat profil login:", error);
     }
 });
 
