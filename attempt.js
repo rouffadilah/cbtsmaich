@@ -740,6 +740,7 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
             </div>
         `;
     }
+}
 
 // ==========================================
 // OVERRIDE: KELAS MANUAL, BYPASS TOKEN & AUTO-SELECT LINK

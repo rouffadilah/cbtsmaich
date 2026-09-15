@@ -1,61 +1,37 @@
-# CBT SMAICH — Firebase Backend Setup
+# Firebase / CBT SMAICH Setup
 
-Project Firebase: `cbt-sekolah-7fed0`  
-Firebase App ID: `1:289218396137:web:366383efd1348edad3d578`
+Project: `cbt-sekolah-7fed0`
+App ID: `1:289218396137:web:366383efd1348edad3d578`
 
 ## 1. Authentication
-Di Firebase Console buka **Authentication → Sign-in method** lalu aktifkan **Email/Password**.
+Firebase Console → Authentication → Sign-in method → enable **Email/Password**.
 
-Username CBT tetap dipakai oleh aplikasi, tetapi di Firebase Auth disimpan sebagai email teknis dengan pola:
+Create each user in Firebase Authentication, then create a matching document:
+`users/{uid}`
 
-`USERNAME@cbt.smaich.id`
+Example:
+```json
+{
+  "nama": "Nama Siswa",
+  "username": "username@cbt.smaich.id",
+  "role": ["siswa"],
+  "kelas": ["X IPA 1"]
+}
+```
 
-Contoh NIS `1234567890` menjadi `1234567890@cbt.smaich.id`.
+Guru/admin profiles use `role: ["guru"]` or `role: ["admin"]`.
 
-## 2. Firestore
-Buka **Firestore Database** pada project `cbt-sekolah-7fed0` dan pastikan database sudah dibuat.
-
-File `firestore.rules` sudah disiapkan untuk koleksi:
-- `users`
-- `pengaturan`
-- `bank_soal`
-- `hasil_ujian`
-
-## 3. Deploy Rules
-Jalankan dari folder proyek:
-
+## 2. Firestore Rules
+Deploy `firestore.rules` after reviewing the permissions:
 ```bash
 firebase use cbt-sekolah-7fed0
 firebase deploy --only firestore:rules
 ```
 
-File `firebase.json` sudah diarahkan ke `firestore.rules`.
+## 3. Important fix for the stuck exam page
+`attempt.js` previously had the final closing brace for `selesaiUjian()` missing before the `DOMContentLoaded` override. This caused the browser error:
+`Uncaught SyntaxError: Unexpected end of input`.
 
-## 4. Struktur data users
-Profil pengguna dibuat di `users/{FirebaseAuthUID}`. Contoh siswa:
+The current `attempt.js` closes the function correctly. `attempt.html` also uses a versioned script URL and the service worker cache version is bumped so GitHub Pages is less likely to serve an old JavaScript file.
 
-```json
-{
-  "nama": "Nama Siswa",
-  "username": "1234567890",
-  "role": ["siswa"],
-  "kelas": "X-1"
-}
-```
-
-Contoh guru:
-
-```json
-{
-  "nama": "Nama Guru",
-  "username": "E24H6-223",
-  "role": ["guru"],
-  "mapel": ["Informatika"],
-  "kelas": ["X-1", "X-2"]
-}
-```
-
-Admin harus dipromosikan oleh admin yang sudah ada atau dibuat melalui kanal administrasi Firebase yang aman; browser biasa tidak diizinkan membuat role `admin`.
-
-## 5. Penting setelah update
-Service worker sudah dinaikkan ke versi `v5` agar cache HTML/JS lama dibuang. Setelah deploy GitHub Pages, lakukan hard refresh sekali pada browser yang sebelumnya pernah membuka aplikasi.
+After deploying, hard-refresh the site once (Ctrl+Shift+R) and, on phones, close the old PWA/browser tab and reopen the site.
