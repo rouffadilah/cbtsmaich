@@ -1244,7 +1244,9 @@ window.bukaModalEditAkun = async (uid) => {
         const data = userDoc.data();
         
         document.getElementById('edit-uid').value = uid; document.getElementById('edit-nama').value = data.nama || '';
-        document.getElementById('edit-username').value = data.username || ''; document.getElementById('edit-pass').value = ''; 
+        const editUsername = document.getElementById('edit-username');
+        editUsername.value = data.username || '';
+        editUsername.readOnly = true;
         
         const roles = Array.isArray(data.role) ? data.role : [data.role];
         document.getElementById('admin-custom-role-group').style.display = isAdmin ? 'flex' : 'none';
@@ -1296,7 +1298,6 @@ document.getElementById('btn-save-edit-akun')?.addEventListener('click', async (
     try {
         const newNama = document.getElementById('edit-nama').value.trim();
         const newUsername = document.getElementById('edit-username').value.trim().toUpperCase();
-        const newPass = document.getElementById('edit-pass').value;
         const roles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
 
         if(!newNama || !newUsername || roles.length === 0) { throw new Error("Nama, Username, and minimal 1 Role harus diisi!"); }
@@ -1312,11 +1313,7 @@ document.getElementById('btn-save-edit-akun')?.addEventListener('click', async (
 
         await updateDoc(doc(db, "users", uid), payload);
 
-        if(newPass) {
-            window.customAlert("Data profil diperbarui!\n\nCatatan: Update password tidak dapat diterapkan otomatis dari halaman ini. Gunakan konsol Admin Firebase untuk reset password.", "warning", "Info Pembaruan");
-        } else {
-            window.customAlert("Data akun berhasil diperbarui!", "success");
-        }
+        window.customAlert("Data akun berhasil diperbarui. Password pengguna diubah dari menu Akun Saya pada akun masing-masing.", "success");
 
         document.getElementById('modal-edit-akun').style.display = 'none';
         window.loadDataPengguna();

@@ -41,7 +41,8 @@ service cloud.firestore {
         request.resource.data.nama is string;
       allow update: if isAdmin() || (
         isSelf(uid) &&
-        resource.data.role == request.resource.data.role
+        resource.data.role == request.resource.data.role &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nama', 'username', 'updatedAt'])
       );
       allow delete: if isAdmin();
     }

@@ -72,9 +72,12 @@
                 <img src="logo-smaich.png" alt="Logo" class="brand-logo" onerror="this.src='https://via.placeholder.com/40x40?text=CBT'" style="height: 45px; margin: 0 auto;">
                 <div id="realtime-clock" style="font-size: 0.72rem; font-weight: 800; color: var(--text-muted); margin-top: 3px; letter-spacing: 0.2px; text-transform: uppercase;">...</div>
             </div>
-            <button id="btn-global-dark-mode" class="btn-icon" title="Mode Gelap/Terang" style="font-size: 1.4rem; color: var(--text-muted); border: none; background: transparent; cursor: pointer; padding: 5px; transition: 0.3s;">
-                <i class="fas fa-moon"></i>
-            </button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button id="btn-open-akun-saya" class="btn-icon" title="Akun Saya" style="font-size: 1.2rem;"><i class="fas fa-user-circle"></i></button>
+                <button id="btn-global-dark-mode" class="btn-icon" title="Mode Gelap/Terang" style="font-size: 1.4rem; color: var(--text-muted); border: none; background: transparent; cursor: pointer; padding: 5px; transition: 0.3s;">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
         </header>
 
         <div class="main-wrapper">
@@ -286,6 +289,31 @@
         <i class="fas fa-sign-out-alt"></i>
     </button>
 
+    <div id="modal-akun-saya" class="modal" style="display: none; position: fixed; inset: 0; align-items: center; justify-content: center; z-index: 11000; background: rgba(15,23,42,0.82); padding: 20px;">
+        <div class="modal-content" style="background: var(--card-bg, #fff); width: 520px; max-width: 100%; max-height: 90vh; overflow-y: auto; padding: 28px 24px; border-radius: 14px; box-shadow: var(--shadow-lg);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px;">
+                <h3 style="margin:0; color:var(--secondary);"><i class="fas fa-user-circle"></i> Akun Saya</h3>
+                <button type="button" id="btn-close-akun-saya" class="btn-icon" title="Tutup"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="account-status" class="auth-status info" role="status" aria-live="polite">Perbarui data akun Anda.</div>
+            <form id="form-akun-saya">
+                <div class="input-group"><label>Nama Lengkap</label><input type="text" id="account-name" class="input-text" autocomplete="name" required></div>
+                <div class="input-group"><label>Username / NIS / ID Guru</label><input type="text" id="account-username" class="input-text" autocomplete="username" required></div>
+                <div class="input-group"><label>Role</label><input type="text" id="account-role" class="input-text" readonly style="background:var(--bg-main,#f8fafc); font-weight:700;"></div>
+
+                <div id="account-password-section" style="display:none; margin-top: 22px; padding-top: 18px; border-top:1px solid var(--border-color);">
+                    <h4 style="margin:0 0 12px; color:var(--secondary);"><i class="fas fa-key"></i> Keamanan Password</h4>
+                    <p style="font-size:.8rem; color:var(--text-muted); margin:0 0 12px;">Password lama diperlukan saat mengganti username atau password.</p>
+                    <div class="input-group"><label>Password Lama</label><input type="password" id="account-current-password" class="input-text" autocomplete="current-password" placeholder="Masukkan password lama"></div>
+                    <div class="input-group"><label>Password Baru (opsional)</label><input type="password" id="account-new-password" class="input-text" autocomplete="new-password" placeholder="Minimal 6 karakter"></div>
+                    <div class="input-group"><label>Konfirmasi Password Baru</label><input type="password" id="account-confirm-password" class="input-text" autocomplete="new-password" placeholder="Ulangi password baru"></div>
+                </div>
+
+                <button type="submit" id="btn-save-akun-saya" class="btn-3d" style="width:100%; margin-top:10px; background-color:var(--success);"><i class="fas fa-save"></i> Simpan Perubahan</button>
+            </form>
+        </div>
+    </div>
+
     <div id="modal-custom-alert" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; align-items: center; justify-content: center; z-index: 10000; background: rgba(15,23,42,0.8);">
         <div class="modal-content" style="background: white; width: 400px; max-width: 90%; text-align: center; padding: 35px 25px; border-radius: 10px;">
             <i id="alert-icon" class="fas fa-info-circle fa-4x" style="color: var(--info); margin-bottom: 15px;"></i>
@@ -333,7 +361,8 @@
             <h3 style="margin-top: 0; margin-bottom: 20px;"><i class="fas fa-user-cog"></i> Edit Akun Pengguna</h3>
             <input type="hidden" id="edit-uid">
             <div class="input-group"><label>Nama Lengkap</label><input type="text" id="edit-nama" class="input-text" required></div>
-            <div class="input-group"><label>Username / NIS</label><input type="text" id="edit-username" class="input-text" required></div>
+            <div class="input-group"><label>Username / NIS</label><input type="text" id="edit-username" class="input-text" required readonly style="background:var(--bg-main,#f8fafc);"></div>
+            <p style="font-size:.76rem;color:var(--text-muted);margin:-8px 0 15px;">Username login hanya dapat diubah oleh pemilik akun melalui menu <b>Akun Saya</b> agar Firebase Authentication dan profil tetap sinkron.</p>
             <div class="input-group" id="admin-custom-role-group"><label>Hak Akses / Role (Multi-role)</label><div id="edit-role-container" class="checkbox-container"></div></div>
             <div style="display: flex; gap: 10px; margin-top: -10px; margin-bottom: 15px;" id="wrap-custom-role-input">
                 <input type="text" id="input-custom-role" class="input-text" placeholder="Custom role baru..." style="padding: 8px 12px; font-size: 0.85rem;">
@@ -344,7 +373,7 @@
                 <div class="input-group" style="margin: 0;"><label>Mata Pelajaran yang Diampu</label><div id="edit-mapel-container" class="checkbox-container"></div></div>
                 <div class="input-group" style="margin: 0;"><label>Kelas yang Diajar</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
             </div>
-            <div class="input-group"><label>Ganti Password Baru (Opsional)</label><input type="password" id="edit-pass" class="input-text" placeholder="Kosongkan jika tidak diubah"></div>
+            <div style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:10px 12px;border-radius:8px;font-size:.8rem;margin-bottom:15px;">Password pengguna diubah dari menu <b>Akun Saya</b> pada akun masing-masing. Admin tidak menyimpan password melalui Firestore.</div>
             <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; background-color: var(--success);"><i class="fas fa-save"></i> Perbarui Akun</button>
         </div>
     </div>
@@ -631,6 +660,7 @@
         </div>
     </div>
 
+    <script type="module" src="akun.js"></script>
     <script type="module" src="dashboard.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {

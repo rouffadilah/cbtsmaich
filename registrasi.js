@@ -250,13 +250,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         });
                     }
 
-                    const dummyEmail = `${username}@cbt.smaich.id`;
+                    const dummyEmail = `${username.toLowerCase()}@cbt.smaich.id`;
 
                     try {
                         const userCred = await createUserWithEmailAndPassword(auth, dummyEmail, password);
-                        await updateProfile(userCred.user, { displayName: nama });
-                        await setDoc(doc(db, "users", userCred.user.uid), payload);
-                        successCount++;
+                        try {
+                            await updateProfile(userCred.user, { displayName: nama });
+                            await setDoc(doc(db, "users", userCred.user.uid), payload);
+                            successCount++;
+                        } catch (saveError) {
+                            try { await userCred.user.delete(); } catch (_) {}
+                            throw saveError;
+                        }
                     } catch(err) {
                         console.error("Gagal mendaftarkan:", username, err);
                         errorCount++;
@@ -272,8 +277,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     }, { merge: true });
                 }
 
-                setRegMessage('success', `Registrasi massal selesai. Berhasil: ${successCount} akun, gagal: ${errorCount}. Sistem memperbarui data master jika diperlukan.`);
-                window.location.href = "index.html";
+                await auth.signOut();
+                setRegMessage('success', `Registrasi massal selesai. Berhasil: ${successCount} akun, gagal: ${errorCount}. Silakan kembali ke halaman login.`);
+                setTimeout(() => { window.location.href = "index.html"; }, 700);
 
             } catch (error) {
                 setRegMessage('error', 'Gagal memproses file Excel: ' + error.message);
@@ -337,10 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        setSubmittingState(true);
-        setRegMessage('info', 'Mendaftarkan akun baru...');
-
-        const dummyEmail = `${username}@cbt.smaich.id`;
+        const dummyEmail = `${username.toLowerCase()}@cbt.smaich.id`;
 
         try {
             let payload = {
@@ -367,14 +370,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 payload.kelas = kelasTerpilih;
             }
 
+            setSubmittingState(true);
+            setRegMessage('info', 'Mendaftarkan akun baru...');
             const userCred = await createUserWithEmailAndPassword(auth, dummyEmail, password);
             const user = userCred.user;
-            await updateProfile(user, { displayName: name });
+            try {
+                await updateProfile(user, { displayName: name });
+                await setDoc(doc(db, "users", user.uid), payload);
+            } catch (saveError) {
+                // Jangan meninggalkan akun Auth tanpa profil Firestore.
+                try { await user.delete(); } catch (_) {}
+                throw saveError;
+            }
 
-            await setDoc(doc(db, "users", user.uid), payload);
-
-            setRegMessage('success', `Akun ${role.toUpperCase()} berhasil dibuat. Anda akan diarahkan ke halaman masuk.`);
-            window.location.href = "index.html";
+            // createUserWithEmailAndPassword otomatis membuat sesi login.
+            // Logout dulu supaya halaman login benar-benar menampilkan form login.
+            await auth.signOut();
+            setRegMessage('success', `Akun ${role.toUpperCase()} berhasil dibuat. Silakan login dengan username dan password baru.`);
+            setTimeout(() => { window.location.href = "index.html"; }, 700);
 
         } catch (error) {
             let msg = "Terjadi kesalahan saat menyimpan akun.";

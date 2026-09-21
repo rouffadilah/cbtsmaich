@@ -37,3 +37,12 @@ File yang dipakai adalah `firestore.rules`.
 GitHub Pages hanya menjadi frontend. Firestore tetap berada di Firebase. Karena itu, setelah file rules diperbaiki, rules tersebut tetap harus dipublish ke project Firebase.
 
 Jangan menaruh service-account private key atau credential rahasia di repository GitHub.
+
+
+## 5. Pengelolaan akun mandiri
+
+Halaman `registrasi.html` membuat akun Firebase Authentication dan profil `users/{uid}` secara bersamaan. Setelah pendaftaran berhasil, sesi akun baru otomatis di-logout agar pengguna kembali ke halaman login.
+
+Pengguna yang sudah login dapat membuka menu **Akun Saya** di `dashboard.html` (guru/admin) atau `attempt.html` (siswa) untuk mengubah nama, username/ID, dan password. Perubahan username atau password memerlukan password lama untuk re-authentication. Password tidak disimpan di Firestore.
+
+Setelah mengganti username, pengguna harus login berikutnya memakai username baru.
