@@ -703,14 +703,24 @@ const SoalManager = {
             const m = s.opsi_media && s.opsi_media[k];
             opsiMedia[k] = m ? (typeof m === 'object' ? (m.url || '') : m) : '';
         });
+        // Pada tipe Menjodohkan, Opsi A-E adalah daftar pilihan kanan (1-5).
+        const templateOpsi = { A: String(opsi.A || ''), B: String(opsi.B || ''), C: String(opsi.C || ''), D: String(opsi.D || ''), E: String(opsi.E || '') };
+        if (tipe === 'Menjodohkan' && Array.isArray(s.pasangan)) {
+            s.pasangan.forEach((p, i) => {
+                const n = parseInt(p?.nomor_kanan, 10) || (i + 1);
+                if (n >= 1 && n <= 5) templateOpsi[String.fromCharCode(64 + n)] = String(p?.kanan ?? '').trim();
+            });
+        }
         let kunci = '';
         if (tipe === 'Menjodohkan' && Array.isArray(s.pasangan)) {
             kunci = s.pasangan.map((p, i) => {
                 const kiri = String(p?.kiri ?? '').trim();
                 const kanan = String(p?.kanan ?? '').trim();
                 if (!kiri && !kanan) return '';
-                // Format di template: pasangan dipisahkan ';' dan sisi kiri/kanan '='
-                return `${kiri}=${kanan}`;
+                // Format template menjodohkan menggunakan nomor pilihan kanan (A=1; B=2; ...).
+                const kananKunci = (p?.nomor_kanan !== undefined && p?.nomor_kanan !== null && String(p.nomor_kanan).trim() !== '')
+                    ? String(p.nomor_kanan).trim() : kanan;
+                return `${kiri}=${kananKunci}`;
             }).filter(Boolean).join('; ');
         } else if (Array.isArray(s.kunci_jawaban)) {
             kunci = s.kunci_jawaban.join(',');
@@ -724,15 +734,15 @@ const SoalManager = {
             Number(s.bobot ?? 1),
             String(s.teks_soal || ''),
             mediaUtama,
-            String(opsi.A || ''),
+            templateOpsi.A,
             opsiMedia.A,
-            String(opsi.B || ''),
+            templateOpsi.B,
             opsiMedia.B,
-            String(opsi.C || ''),
+            templateOpsi.C,
             opsiMedia.C,
-            String(opsi.D || ''),
+            templateOpsi.D,
             opsiMedia.D,
-            String(opsi.E || ''),
+            templateOpsi.E,
             opsiMedia.E,
             kunci
         ];
@@ -2009,8 +2019,39 @@ window.prosesUploadMassal = async (jsonData, mapel, kelasArray) => {
             let kunci = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || "").trim().toUpperCase();
             if (tipeFormat === 'PGK') { payload.kunci_jawaban = kunci.split(',').map(k => k.trim()); } else { payload.kunci_jawaban = kunci; }
         } else if (tipeFormat === 'Menjodohkan') {
-            let kunciRaw = row["Kunci Jawaban / Pasangan Menjodohkan"] ? String(row["Kunci Jawaban / Pasangan Menjodohkan"]).trim() : ""; let pasanganArr = [];
-            if (kunciRaw) { kunciRaw.split(';').forEach(p => { let splitPair = p.split('='); if (splitPair.length === 2) { pasanganArr.push({ kiri: splitPair[0].trim(), kanan: splitPair[1].trim() }); } }); }
+            // Template menjodohkan: Opsi A-E adalah bank pilihan kanan, sedangkan
+            // kolom kunci berisi pasangan seperti A=1; B=2; C=3; D=4.
+            const opsiKanan = {};
+            ['A','B','C','D','E'].forEach((kode, idx) => {
+                const teks = row[`Opsi ${kode}`];
+                if (teks !== undefined && teks !== null && String(teks).trim() !== '') {
+                    opsiKanan[String(idx + 1)] = String(teks).trim();
+                }
+            });
+
+            let kunciRaw = row["Kunci Jawaban / Pasangan Menjodohkan"] ? String(row["Kunci Jawaban / Pasangan Menjodohkan"]).trim() : "";
+            let pasanganArr = [];
+            if (kunciRaw) {
+                kunciRaw.split(';').forEach(p => {
+                    const splitPair = p.split('=');
+                    if (splitPair.length === 2) {
+                        const kiri = splitPair[0].trim();
+                        const kodeKanan = splitPair[1].trim();
+                        const teksKanan = opsiKanan[kodeKanan] || kodeKanan;
+                        pasanganArr.push({ kiri, kanan: teksKanan, nomor_kanan: kodeKanan });
+                    }
+                });
+            }
+
+            // Fallback untuk template lama/berkas yang tidak memakai nomor pilihan.
+            if (pasanganArr.length === 0) {
+                ['A','B','C','D','E'].forEach(kode => {
+                    const teksKiri = row[`Opsi ${kode}`];
+                    if (teksKiri && String(teksKiri).trim()) {
+                        pasanganArr.push({ kiri: kode, kanan: String(teksKiri).trim() });
+                    }
+                });
+            }
             payload.pasangan = pasanganArr;
         } else if (tipeFormat === 'Essay') { payload.kunci_jawaban = String(row["Kunci Jawaban / Pasangan Menjodohkan"] || ""); }
         updates.push(addDoc(collection(db, "bank_soal"), payload));

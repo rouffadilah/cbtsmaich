@@ -5,7 +5,8 @@ import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://
 const examState = {
     student: null, mapelTerpilih: "", arraySoal: [], currentIndex: 0,
     jawabanSiswa: {}, raguRagu: {}, timerInterval: null, durasiDetik: 0,
-    pelanggaran: 0, maxPelanggaran: 3, isExamActive: false
+    pelanggaran: 0, maxPelanggaran: 3, isExamActive: false,
+    matchingOptions: {}
 };
 
 // --- FUNGSI AUTOSAVE PENYIMPANAN LOKAL ---
@@ -471,29 +472,92 @@ function tampilkanSoal(idx) {
         htmlContent += `</div>`;
     }
     else if (tipeSoal === 'MENJODOHKAN') {
-        htmlContent += `<div style="font-size:0.85rem; color:var(--warning); font-weight:bold; margin-bottom:15px;"><i class="fas fa-hand-pointer"></i> Pilih pasangan jawaban yang tepat di kotak sebelah kanan.</div>`;
-        let pasangan = soal.pasangan || [];
-        let semuaKanan = pasangan.map(p => p.kanan).sort(() => Math.random() - 0.5); 
-        
-        htmlContent += `<div style="display:flex; flex-direction:column; gap:12px;">`;
-        pasangan.forEach(p => {
-            let jwbSiswaObj = examState.jawabanSiswa[soal.id] || {};
-            let selectedKanan = jwbSiswaObj[p.kiri] || '';
-            
+        const pasangan = Array.isArray(soal.pasangan) ? soal.pasangan.filter(p => p && p.kiri != null && p.kanan != null) : [];
+        const jwbSiswaObj = (examState.jawabanSiswa[soal.id] && typeof examState.jawabanSiswa[soal.id] === 'object')
+            ? examState.jawabanSiswa[soal.id] : {};
+
+        // Ambil label A=Teknis; B=Ekonomi; ... dari teks soal jika sisi kiri hanya berisi huruf A/B/C/D.
+        const labelMap = {};
+        const stem = String(teksSoal || '');
+        const labelRegex = /([A-E])\s*=\s*([^;,.]+?)(?=\s*(?:;|,|\.|$))/gi;
+        let labelMatch;
+        while ((labelMatch = labelRegex.exec(stem)) !== null) {
+            labelMap[labelMatch[1].toUpperCase()] = labelMatch[2].trim();
+        }
+
+        const resolveLeftLabel = (key, idx) => {
+            const raw = String(key ?? '').trim();
+            const letter = raw.toUpperCase();
+            if (/^[A-E]$/.test(letter) && labelMap[letter]) return `${letter}. ${labelMap[letter]}`;
+            if (/^[A-E]$/.test(letter)) return `${letter}.`;
+            return raw || `Pernyataan ${idx + 1}`;
+        };
+
+        // Simpan urutan pilihan sekali per soal agar tidak berubah setiap kali siswa berpindah soal.
+        if (!Array.isArray(examState.matchingOptions[soal.id])) {
+            const options = pasangan.map(p => String(p.kanan).trim()).filter(Boolean);
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            examState.matchingOptions[soal.id] = options;
+        }
+        const semuaKanan = examState.matchingOptions[soal.id];
+
+        htmlContent += `
+            <div style="font-size:0.92rem; color:var(--warning); font-weight:700; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-hand-pointer"></i> Cocokkan setiap pernyataan di sebelah kiri dengan satu pasangan jawaban di sebelah kanan.
+            </div>
+            <div style="display:grid; grid-template-columns:minmax(0, 1fr) 110px minmax(0, 1.25fr); gap:0; border:1px solid #cbd5e1; border-radius:14px; overflow:hidden; background:#fff; box-shadow:0 2px 8px rgba(15,23,42,0.05);">
+                <div style="padding:12px 16px; background:#eff6ff; border-bottom:1px solid #dbeafe; font-weight:800; color:#1e3a8a;">Pernyataan</div>
+                <div style="padding:12px 8px; background:#f8fafc; border-bottom:1px solid #dbeafe; text-align:center; font-weight:800; color:#64748b;">&nbsp;</div>
+                <div style="padding:12px 16px; background:#eff6ff; border-bottom:1px solid #dbeafe; font-weight:800; color:#1e3a8a;">Pilih Pasangan</div>`;
+
+        pasangan.forEach((p, idx) => {
+            const kiri = String(p.kiri).trim();
+            const selectedKanan = jwbSiswaObj[kiri] || '';
+            const alreadyUsedElsewhere = new Set(Object.entries(jwbSiswaObj)
+                .filter(([k, v]) => k !== kiri && v)
+                .map(([, v]) => String(v)));
+
             let optionsHtml = `<option value="">-- Pilih Pasangan --</option>`;
-            semuaKanan.forEach(k => {
-                optionsHtml += `<option value="${k}" ${selectedKanan === k ? 'selected' : ''}>${k}</option>`;
+            const optionNumberMap = new Map();
+            pasangan.forEach(p => {
+                const val = String(p.kanan).trim();
+                if (!optionNumberMap.has(val)) {
+                    const n = String(p.nomor_kanan || optionNumberMap.size + 1);
+                    optionNumberMap.set(val, n);
+                }
+            });
+            semuaKanan.forEach((k, choiceIdx) => {
+                const safeK = String(k);
+                const disabled = alreadyUsedElsewhere.has(safeK) && safeK !== selectedKanan ? 'disabled' : '';
+                const displayNo = optionNumberMap.get(safeK) || String(choiceIdx + 1);
+                optionsHtml += `<option value="${safeK.replace(/\"/g, '&quot;')}" ${selectedKanan === safeK ? 'selected' : ''} ${disabled}>${displayNo}. ${safeK}</option>`;
             });
 
             htmlContent += `
-            <div style="display:flex; flex-direction:column; background:#f8fafc; padding:15px; border:1px solid #cbd5e1; border-radius:8px;">
-                <div style="font-weight:600; margin-bottom:10px; color:var(--secondary); font-size:0.95rem;">${p.kiri}</div>
-                <select class="input-text select-jodoh" data-kiri="${p.kiri}" style="border-color:var(--primary); background:white;">
-                    ${optionsHtml}
-                </select>
-            </div>`;
+                <div style="padding:14px 16px; border-top:1px solid #e2e8f0; display:flex; align-items:center; gap:10px; background:#ffffff;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px; padding:0 8px; border-radius:8px; background:#0ea5e9; color:white; font-weight:800; flex:none;">${/^[A-E]$/.test(kiri.toUpperCase()) ? kiri.toUpperCase() : idx + 1}</span>
+                    <span style="font-weight:650; color:var(--secondary); line-height:1.5;">${resolveLeftLabel(kiri, idx)}</span>
+                </div>
+                <div style="border-top:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; color:#94a3b8; background:#f8fafc;"><i class="fas fa-arrow-right"></i></div>
+                <div style="padding:10px 14px; border-top:1px solid #e2e8f0; background:#ffffff;">
+                    <select class="input-text select-jodoh" data-kiri="${kiri.replace(/\"/g, '&quot;')}" style="width:100%; min-height:48px; border:2px solid #22c55e; border-radius:10px; background:#fff; padding:10px 12px; font-weight:600; color:#0f172a;">
+                        ${optionsHtml}
+                    </select>
+                </div>`;
         });
+
         htmlContent += `</div>`;
+        if (semuaKanan.length) {
+            const summaryMap = new Map();
+            pasangan.forEach((p, i) => {
+                const val = String(p.kanan).trim();
+                if (!summaryMap.has(val)) summaryMap.set(val, String(p.nomor_kanan || summaryMap.size + 1));
+            });
+            htmlContent += `<div style="margin-top:14px; padding:12px 14px; border:1px dashed #94a3b8; border-radius:10px; background:#f8fafc; font-size:0.86rem; color:#475569;"><b>Daftar pilihan:</b> ${semuaKanan.map(k => `<span style="display:inline-block; margin:4px 4px 0 0; padding:5px 9px; border-radius:999px; background:#e2e8f0;">${summaryMap.get(String(k).trim()) || ''}. ${k}</span>`).join('')}</div>`;
+        }
     }
     else {
         const nilaiInput = examState.jawabanSiswa[soal.id] || '';
