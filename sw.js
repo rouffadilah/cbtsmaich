@@ -1,5 +1,5 @@
 // Naikkan versi ini (misal v3, v4) setiap kali Anda melakukan update besar pada HTML/JS/CSS
-const CACHE_NAME = 'cbt-smaich-v7'; 
+const CACHE_NAME = 'cbt-smaich-v8'; 
 const DYNAMIC_CACHE = 'cbt-smaich-dynamic-v1';
 
 // Aset inti yang wajib disimpan di memori HP saat pertama kali aplikasi dibuka

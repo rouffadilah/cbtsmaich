@@ -76,6 +76,7 @@ function applyAcademicMaster(mapel, kelas) {
 const SoalManager = {
     allSummary: {},
     tempDataKelola: [],
+    allQuestionsCache: [],
 
     getTingkatan: function(kelas) {
         if (!kelas) return "Lainnya"; 
@@ -116,10 +117,12 @@ const SoalManager = {
         
         try {
             const snap = await getDocs(collection(db, "bank_soal"));
-            this.allSummary = {}; 
+            this.allSummary = {};
+            this.allQuestionsCache = [];
             
             snap.forEach(d => {
                 let data = d.data();
+                this.allQuestionsCache.push({ id: d.id, ...data });
                 let mapel = data.mataPelajaran || "Tanpa Mapel"; 
                 let kelasArray = Array.isArray(data.kelas) ? data.kelas : [data.kelas || "Umum"];
                 let kelasKey = [...kelasArray].sort().join(', ');
@@ -189,6 +192,7 @@ const SoalManager = {
                 let actionBtn = canEdit ? `
                     <div style="display:flex; gap:5px; justify-content:center;">
                         <button onclick="SoalManager.simpanPengaturanBaris('${d.mapel}', '${d.kelasKey}', '${jadwalInputId}', '${durasiInputId}', '${tokenInputId}', '${acakInputId}', this)" class="btn-icon" style="color: var(--success);" title="Simpan Pengaturan"><i class="fas fa-save"></i></button>
+                        <button onclick="SoalManager.downloadPaket('${d.mapel}', '${d.kelasKey}', this)" class="btn-icon" style="color:#0f766e;" title="Download paket soal ini ke Excel"><i class="fas fa-file-excel"></i></button>
                         <button onclick="SoalManager.bukaDetailSoal('${d.mapel}', '${d.kelasKey}')" class="btn-icon" title="Kelola Soal"><i class="fas fa-cog"></i></button>
                         <button onclick="SoalManager.hapusKeseluruhan('${d.mapel}', '${d.kelasKey}')" class="btn-icon text-danger" title="Hapus Paket Mapel Ini"><i class="fas fa-trash-alt"></i></button>
                     </div>` : `<span style="color:var(--text-muted);"><i class="fas fa-lock"></i></span>`;
@@ -661,6 +665,130 @@ const SoalManager = {
         } catch(e) { window.customAlert("Gagal menghapus soal.", "error"); }
     },
 
+    _normalisasiKelasKey: function(kelasKey) {
+        return String(kelasKey || "").split(',').map(v => v.trim()).filter(Boolean).sort().join(', ');
+    },
+
+    _sanitizeFilename: function(value) {
+        return String(value || "data").replace(/[^a-z0-9\-_\s,]/gi, '').replace(/\s+/g, '_').replace(/,+/g, '-').slice(0, 90) || 'data';
+    },
+
+    _soalKeBarisExcel: function(s, idx = 0) {
+        const tipe = s.tipe || 'PG';
+        const kelas = Array.isArray(s.kelas) ? s.kelas.join(', ') : (s.kelas || 'Umum');
+        const kunci = Array.isArray(s.kunci_jawaban) ? s.kunci_jawaban.join(', ') : (s.kunci_jawaban || '');
+        const pasangan = Array.isArray(s.pasangan) ? s.pasangan.map(p => `${p.kiri || ''} => ${p.kanan || ''}`).join(' | ') : '';
+        const mediaUtama = s.media_soal ? (typeof s.media_soal === 'object' ? (s.media_soal.url || '') : s.media_soal) : '';
+        const mediaTipe = s.media_soal && typeof s.media_soal === 'object' ? (s.media_soal.type || '') : '';
+        const opsiMedia = {};
+        ['A','B','C','D','E'].forEach(k => {
+            const m = s.opsi_media && s.opsi_media[k];
+            opsiMedia[k] = m ? (typeof m === 'object' ? (m.url || '') : m) : '';
+        });
+        return {
+            'No': s.nomor_soal || (idx + 1),
+            'Mata Pelajaran': s.mataPelajaran || '',
+            'Kelas': kelas,
+            'Tipe Soal': tipe,
+            'Bobot': s.bobot ?? 1,
+            'Pertanyaan': s.teks_soal || '',
+            'Opsi A': s.opsi?.A || '',
+            'Opsi B': s.opsi?.B || '',
+            'Opsi C': s.opsi?.C || '',
+            'Opsi D': s.opsi?.D || '',
+            'Opsi E': s.opsi?.E || '',
+            'Kunci Jawaban': kunci,
+            'Pasangan Menjodohkan': pasangan,
+            'Media Pertanyaan': mediaUtama,
+            'Tipe Media Pertanyaan': mediaTipe,
+            'Media Opsi A': opsiMedia.A,
+            'Media Opsi B': opsiMedia.B,
+            'Media Opsi C': opsiMedia.C,
+            'Media Opsi D': opsiMedia.D,
+            'Media Opsi E': opsiMedia.E
+        };
+    },
+
+    _downloadExcel: function(rows, filename, sheetName = 'Bank Soal') {
+        if (typeof XLSX === 'undefined') throw new Error('Library Excel belum siap. Silakan muat ulang halaman.');
+        if (!Array.isArray(rows) || rows.length === 0) throw new Error('Tidak ada soal yang dapat diunduh.');
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [
+            { wch: 6 }, { wch: 28 }, { wch: 22 }, { wch: 16 }, { wch: 8 }, { wch: 55 },
+            { wch: 24 }, { wch: 24 }, { wch: 24 }, { wch: 24 }, { wch: 24 }, { wch: 18 },
+            { wch: 40 }, { wch: 42 }, { wch: 18 }, { wch: 32 }, { wch: 32 }, { wch: 32 }, { wch: 32 }, { wch: 32 }
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
+        XLSX.writeFile(wb, filename);
+    },
+
+    downloadPaket: async function(mapel, kelasKey, btnEl = null) {
+        const canDownload = isAdmin || (isGuru && userMapel.includes(mapel));
+        if (!canDownload) return window.customAlert('Anda tidak memiliki akses untuk mengunduh paket soal mapel ini.', 'warning');
+        const original = btnEl?.innerHTML;
+        try {
+            if (btnEl) { btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btnEl.disabled = true; }
+            const targetKey = this._normalisasiKelasKey(kelasKey);
+            let questions = this.allQuestionsCache.filter(s => {
+                const mk = s.mataPelajaran || 'Tanpa Mapel';
+                const arr = Array.isArray(s.kelas) ? s.kelas : [s.kelas || 'Umum'];
+                return mk === mapel && this._normalisasiKelasKey(arr.join(', ')) === targetKey;
+            });
+            if (questions.length === 0) {
+                const q = query(collection(db, 'bank_soal'), where('mataPelajaran', '==', mapel));
+                const snap = await getDocs(q);
+                questions = [];
+                snap.forEach(d => {
+                    const data = d.data();
+                    const arr = Array.isArray(data.kelas) ? data.kelas : [data.kelas || 'Umum'];
+                    if (this._normalisasiKelasKey(arr.join(', ')) === targetKey) questions.push({ id: d.id, ...data });
+                });
+            }
+            questions.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
+            const rows = questions.map((s, i) => this._soalKeBarisExcel(s, i));
+            const filename = `Bank_Soal_${this._sanitizeFilename(mapel)}_${this._sanitizeFilename(kelasKey)}.xlsx`;
+            this._downloadExcel(rows, filename, 'Soal');
+            await window.customAlert(`Berhasil mengunduh ${rows.length} soal untuk ${mapel} (${kelasKey}).`, 'success');
+        } catch (e) {
+            console.error('Download paket soal gagal:', e);
+            window.customAlert('Gagal mengunduh paket soal: ' + e.message, 'error');
+        } finally {
+            if (btnEl) { btnEl.innerHTML = original || '<i class="fas fa-file-excel"></i>'; btnEl.disabled = false; }
+        }
+    },
+
+    downloadSemua: async function(btnEl = null) {
+        if (!isAdmin) return window.customAlert('Download keseluruhan bank soal hanya tersedia untuk Admin.', 'warning');
+        const original = btnEl?.innerHTML;
+        try {
+            if (btnEl) { btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyiapkan...'; btnEl.disabled = true; }
+            let questions = Array.isArray(this.allQuestionsCache) ? [...this.allQuestionsCache] : [];
+            if (questions.length === 0) {
+                const snap = await getDocs(collection(db, 'bank_soal'));
+                questions = [];
+                snap.forEach(d => questions.push({ id: d.id, ...d.data() }));
+            }
+            questions.sort((a,b) => {
+                const am = String(a.mataPelajaran || '').localeCompare(String(b.mataPelajaran || ''), undefined, { sensitivity: 'base' });
+                if (am !== 0) return am;
+                const ak = this._normalisasiKelasKey(Array.isArray(a.kelas) ? a.kelas.join(', ') : (a.kelas || 'Umum'));
+                const bk = this._normalisasiKelasKey(Array.isArray(b.kelas) ? b.kelas.join(', ') : (b.kelas || 'Umum'));
+                const ck = ak.localeCompare(bk, undefined, { numeric: true, sensitivity: 'base' });
+                if (ck !== 0) return ck;
+                return (a.nomor_soal || 0) - (b.nomor_soal || 0);
+            });
+            const rows = questions.map((s, i) => this._soalKeBarisExcel(s, i));
+            this._downloadExcel(rows, `Bank_Soal_SMAICH_Seluruh_Mapel.xlsx`, 'Semua Soal');
+            await window.customAlert(`Berhasil mengunduh seluruh bank soal (${rows.length} soal).`, 'success');
+        } catch (e) {
+            console.error('Download seluruh bank soal gagal:', e);
+            window.customAlert('Gagal mengunduh seluruh bank soal: ' + e.message, 'error');
+        } finally {
+            if (btnEl) { btnEl.innerHTML = original || '<i class="fas fa-file-excel"></i> Download Semua'; btnEl.disabled = false; }
+        }
+    },
+
     hapusKeseluruhan: async function(mapel, kelasKey) {
         let confirmMsg = `PENGHAPUSAN PAKET!\n\nApakah Anda YAKIN ingin menghapus SELURUH soal untuk mapel "${mapel}" khusus di kelas sasaran (${kelasKey})?`;
         if (!(await window.customConfirm(confirmMsg, "danger", "Konfirmasi Hapus Paket"))) return;
@@ -1011,6 +1139,11 @@ onAuthStateChanged(auth, async (user) => {
         const btnHapusAll = document.getElementById('btn-hapus-semua-hasil'); if (btnHapusAll) btnHapusAll.style.display = 'none';
     } else {
         window.fetchStatusReg();
+        const btnDownloadSemua = document.getElementById('btn-download-semua-soal');
+        if (btnDownloadSemua) {
+            btnDownloadSemua.style.display = 'inline-flex';
+            btnDownloadSemua.onclick = () => SoalManager.downloadSemua(btnDownloadSemua);
+        }
     }
 
     handleRouting();

@@ -120,6 +120,7 @@
                             
                             <div id="view-summary-bank-soal">
                                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                    <button id="btn-download-semua-soal" class="btn-3d" style="margin: 0; background-color: #0f766e; display:none;" title="Download seluruh bank soal ke Excel"><i class="fas fa-file-excel"></i> Download Semua</button>
                                     <button id="btn-open-data-master" class="btn-3d" style="margin: 0; background-color: var(--info);"><i class="fas fa-database"></i> Data Master</button>
                                     <button id="btn-tambah-langsung" class="btn-3d" style="margin: 0; background-color: var(--success);"><i class="fas fa-file-import"></i> Input Soal</button>
                                 </div>
@@ -368,10 +369,10 @@
                 <input type="text" id="input-custom-role" class="input-text" placeholder="Custom role baru..." style="padding: 8px 12px; font-size: 0.85rem;">
                 <button type="button" id="btn-add-custom-role" class="btn-3d btn-secondary" style="white-space: nowrap; padding: 0 15px; font-size: 0.85rem; margin: 0;">+ Role</button>
             </div>
-            <div class="input-group" id="group-edit-kelas-siswa" style="display: none;"><label>Kelas Target (Siswa)</label><select id="edit-kelas-siswa" class="input-text"></select></div>
+            <div class="input-group" id="group-edit-kelas-siswa" style="display: none;"><label>Kelas Target (Siswa)</label><div id="edit-kelas-siswa-container" class="checkbox-container"></div></div>
             <div id="group-edit-guru" style="display: none; flex-direction: column; gap: 15px; margin-bottom: 20px;">
                 <div class="input-group" style="margin: 0;"><label>Mata Pelajaran yang Diampu</label><div id="edit-mapel-container" class="checkbox-container"></div></div>
-                <div class="input-group" style="margin: 0;"><label>Kelas yang Diajar</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
+                <div class="input-group" id="group-edit-kelas-guru" style="margin: 0;"><label>Kelas yang Diajar</label><div id="edit-kelas-guru-container" class="checkbox-container"></div></div>
             </div>
             <div style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:10px 12px;border-radius:8px;font-size:.8rem;margin-bottom:15px;">Password pengguna diubah dari menu <b>Akun Saya</b> pada akun masing-masing. Admin tidak menyimpan password melalui Firestore.</div>
             <button id="btn-save-edit-akun" class="btn-3d" style="width: 100%; background-color: var(--success);"><i class="fas fa-save"></i> Perbarui Akun</button>
