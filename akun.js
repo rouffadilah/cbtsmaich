@@ -132,13 +132,32 @@ const handleSubmit = async (event) => {
         if (!newName) throw new Error('Nama lengkap wajib diisi.');
         if (!newUsername) throw new Error('Username wajib diisi.');
 
-        const roles = normalizeRoles(activeProfile.role);
-        if (roles.includes('siswa') && !/@/.test(newUsername)) {
-            if (!/^\d{10}$/.test(newUsername)) throw new Error('NIS siswa harus berjumlah 10 digit angka.');
-        }
-        if (roles.includes('guru') && !/@/.test(newUsername)) {
-            if (!/^[A-Z]\d{2}[A-Z]\d-\d{3}$/.test(newUsername)) {
-                throw new Error('Format ID Guru tidak sesuai. Contoh: E24H6-223.');
+        const roles = normalizeRoles(activeProfile.role).map(r => String(r).toLowerCase());
+        const hasSiswa = roles.includes('siswa');
+        const hasGuru = roles.includes('guru') || roles.some(r => !['siswa', 'admin'].includes(r));
+        const hasAdmin = roles.includes('admin');
+        const isEmailIdentity = /@/.test(newUsername);
+        const isNis = /^\d{10}$/.test(newUsername);
+        const isIdGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/.test(newUsername);
+
+        // Validasi identitas mengikuti aturan registrasi:
+        // - Siswa saja: wajib NIS 10 digit.
+        // - Guru/custom saja: wajib ID Guru.
+        // - Multi-role Siswa + Guru/Admin: boleh memakai NIS ATAU ID Guru.
+        // - Akun Admin saja: username umum diperbolehkan.
+        if (!isEmailIdentity) {
+            if (hasSiswa && hasGuru) {
+                if (!(isNis || isIdGuru)) {
+                    throw new Error('Untuk akun multi-role, gunakan NIS 10 digit atau ID Guru seperti E24H6-223.');
+                }
+            } else if (hasSiswa && !hasGuru && !hasAdmin) {
+                if (!isNis) throw new Error('NIS siswa harus berjumlah 10 digit angka.');
+            } else if (hasGuru && !hasSiswa && !hasAdmin) {
+                if (!isIdGuru) throw new Error('Format ID Guru tidak sesuai. Contoh: E24H6-223.');
+            } else if (hasAdmin && !hasSiswa && !hasGuru) {
+                if (!/^[A-Z0-9._-]{3,64}$/.test(newUsername)) {
+                    throw new Error('Username admin minimal 3 karakter dan hanya boleh berisi huruf, angka, titik, garis bawah, atau tanda hubung.');
+                }
             }
         }
 
