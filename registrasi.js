@@ -1,5 +1,7 @@
-import { auth, db } from './firebase-config.js';
-import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { auth, db, firebaseConfig } from './firebase-config.js';
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { onAuthStateChanged, getAuth, signOut as signOutAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
 import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -31,107 +33,281 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let statusRegSiswa = true;
     let statusRegGuru = true;
+    let isAdminRegistrar = false;
+    let selectedAdminRoles = ['siswa'];
+    const ADMIN_CREATOR_APP_NAME = 'cbt-admin-registration-creator';
+
+    const REG_ACADEMIC_CACHE_KEY = 'cbt_academic_master_cache_v2';
+    const REG_ACADEMIC_CACHE_TTL = 10 * 60 * 1000;
+
+    function readRegistrationAcademicCache() {
+        try {
+            const raw = localStorage.getItem(REG_ACADEMIC_CACHE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !Array.isArray(parsed.listMapel) || !Array.isArray(parsed.listKelas)) return null;
+            if (parsed.savedAt && (Date.now() - parsed.savedAt) > REG_ACADEMIC_CACHE_TTL) return null;
+            return parsed;
+        } catch (e) { return null; }
+    }
+
+    function writeRegistrationAcademicCache(listMapel, listKelas) {
+        try {
+            localStorage.setItem(REG_ACADEMIC_CACHE_KEY, JSON.stringify({ listMapel, listKelas, savedAt: Date.now() }));
+        } catch (e) {}
+    }
+
+    function getAdminCreatorAuth() {
+        const existing = getApps().find(app => app.name === ADMIN_CREATOR_APP_NAME);
+        const app = existing || initializeApp(firebaseConfig, ADMIN_CREATOR_APP_NAME);
+        return getAuth(app);
+    }
+
+    const escapeHtml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const escapeAttr = (value) => escapeHtml(value).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+    function syncAdminSelectAll(allId, selector) {
+        const all = document.getElementById(allId);
+        const boxes = Array.from(document.querySelectorAll(selector));
+        if (!all) return;
+        const checkedCount = boxes.filter(cb => cb.checked).length;
+        all.checked = boxes.length > 0 && checkedCount === boxes.length;
+        all.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
+    }
+
+    function buildAdminCheckboxGroup(containerId, allId, checkboxClass, items, selectedValues = []) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const selected = new Set(selectedValues);
+        container.innerHTML = `
+            <label style="display:flex;align-items:center;gap:8px;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #bfdbfe;font-weight:800;color:#1d4ed8;">
+                <input type="checkbox" id="${allId}" class="select-all-checkbox"> <span>All</span>
+            </label>` +
+            items.map(item => `<label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" class="${checkboxClass}" value="${escapeAttr(item)}" ${selected.has(item) ? 'checked' : ''}> ${escapeHtml(item)}</label>`).join('');
+        document.querySelectorAll(`.${checkboxClass}`).forEach(cb => cb.addEventListener('change', () => syncAdminSelectAll(allId, `.${checkboxClass}`)));
+        document.getElementById(allId)?.addEventListener('change', () => {
+            document.querySelectorAll(`.${checkboxClass}`).forEach(cb => cb.checked = document.getElementById(allId).checked);
+            syncAdminSelectAll(allId, `.${checkboxClass}`);
+            if (checkboxClass === 'reg-admin-role-cb') {
+                selectedAdminRoles = Array.from(document.querySelectorAll('.reg-admin-role-cb:checked')).map(cb => cb.value);
+                syncRegistrationRoleUI();
+            }
+        });
+        syncAdminSelectAll(allId, `.${checkboxClass}`);
+    }
+
+    function getRegistrationRoles() {
+        return isAdminRegistrar
+            ? Array.from(document.querySelectorAll('.reg-admin-role-cb:checked')).map(cb => cb.value)
+            : [roleInput.value];
+    }
+
+    function syncRegistrationRoleUI() {
+        const roles = getRegistrationRoles();
+        const hasStudent = roles.includes('siswa');
+        const hasTeacher = roles.includes('guru');
+        const groupKelasSiswa = document.getElementById('group-kelas-siswa');
+        const groupKelasAdmin = document.getElementById('group-kelas-admin');
+        const groupMapelGuru = document.getElementById('group-mapel-guru');
+        const groupKelasGuru = document.getElementById('group-kelas-guru');
+        const inputKelasSiswa = document.getElementById('reg-kelas-siswa');
+        const lblRoleMassal = document.getElementById('lbl-role-massal');
+
+        const primaryRole = roles.length === 1 ? roles[0] : (hasTeacher ? 'guru' : 'siswa');
+        roleInput.value = primaryRole;
+        if (lblRoleMassal) lblRoleMassal.innerText = primaryRole === 'guru' ? 'Guru' : 'Siswa';
+
+        if (roles.length === 0) {
+            regTitle.innerText = 'REGISTRASI AKUN';
+            usernameLabel.innerText = 'Username / NIS / ID Guru';
+        } else if (roles.length === 1 && roles[0] === 'siswa') {
+            regTitle.innerText = 'REGISTRASI SISWA';
+            usernameLabel.innerText = 'Nomor Peserta / NIS';
+        } else if (roles.length === 1 && roles[0] === 'guru') {
+            regTitle.innerText = 'REGISTRASI GURU';
+            usernameLabel.innerText = 'ID Guru';
+        } else {
+            regTitle.innerText = 'REGISTRASI MULTI-ROLE';
+            usernameLabel.innerText = 'Username / NIS / ID Guru';
+        }
+
+        boxSiswa.classList.toggle('active', roles.length === 1 && roles[0] === 'siswa');
+        boxGuru.classList.toggle('active', roles.length === 1 && roles[0] === 'guru');
+
+        if (isAdminRegistrar) {
+            if (groupKelasSiswa) groupKelasSiswa.style.display = 'none';
+            if (groupKelasGuru) groupKelasGuru.style.display = 'none';
+            if (groupKelasAdmin) groupKelasAdmin.style.display = (hasStudent || hasTeacher) ? 'block' : 'none';
+            if (groupMapelGuru) groupMapelGuru.style.display = hasTeacher ? 'block' : 'none';
+            if (inputKelasSiswa) inputKelasSiswa.removeAttribute('required');
+        } else {
+            if (groupKelasAdmin) groupKelasAdmin.style.display = 'none';
+            if (groupKelasSiswa) groupKelasSiswa.style.display = hasStudent && !hasTeacher ? 'block' : 'none';
+            if (groupMapelGuru) groupMapelGuru.style.display = hasTeacher ? 'block' : 'none';
+            if (groupKelasGuru) groupKelasGuru.style.display = hasTeacher ? 'block' : 'none';
+            if (inputKelasSiswa) hasStudent && !hasTeacher ? inputKelasSiswa.setAttribute('required','true') : inputKelasSiswa.removeAttribute('required');
+        }
+
+        if (roles.includes('siswa') && roles.includes('guru')) {
+            if (groupMapelGuru) groupMapelGuru.style.display = 'block';
+        }
+
+        updateRegUI();
+    }
+
+    async function detectAdminRegistrationMode() {
+        let user = auth.currentUser;
+        if (!user) {
+            user = await new Promise(resolve => {
+                let done = false;
+                const unsub = onAuthStateChanged(auth, authUser => {
+                    if (done) return;
+                    done = true;
+                    unsub();
+                    resolve(authUser || null);
+                });
+                setTimeout(() => {
+                    if (!done) { done = true; unsub(); resolve(auth.currentUser || null); }
+                }, 2500);
+            });
+        }
+
+        try {
+            if (user) {
+                const profileSnap = await getDoc(doc(db, 'users', user.uid));
+                const roles = profileSnap.exists()
+                    ? (Array.isArray(profileSnap.data().role) ? profileSnap.data().role : [profileSnap.data().role])
+                    : [];
+                isAdminRegistrar = roles.includes('admin');
+            } else {
+                isAdminRegistrar = false;
+            }
+        } catch (e) {
+            isAdminRegistrar = false;
+        }
+
+        if (isAdminRegistrar) {
+            document.getElementById('admin-registration-options').style.display = 'block';
+            buildAdminCheckboxGroup('reg-role-admin-container', 'reg-role-all', 'reg-admin-role-cb', ['siswa','guru','admin'], ['siswa']);
+            selectedAdminRoles = ['siswa'];
+        } else {
+            document.getElementById('admin-registration-options').style.display = 'none';
+        }
+        syncRegistrationRoleUI();
+        return isAdminRegistrar;
+    }
+
+    function renderRegistrationAcademic(listKelas, listMapel) {
+        const kelas = Array.from(new Set((listKelas || []).map(v => String(v).trim()).filter(Boolean)));
+        const mapel = Array.from(new Set((listMapel || []).map(v => String(v).trim()).filter(Boolean)));
+        const selectKelasSiswa = document.getElementById('reg-kelas-siswa');
+        if (selectKelasSiswa) {
+            selectKelasSiswa.innerHTML = '<option value="" disabled selected>Pilih Kelas...</option>' +
+                kelas.map(k => `<option value="${escapeAttr(k)}">${escapeHtml(k)}</option>`).join('');
+        }
+
+        const containerMapel = document.getElementById('reg-mapel-container');
+        if (containerMapel) {
+            containerMapel.innerHTML = (isAdminRegistrar ? `<label style="display:flex;align-items:center;gap:8px;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--border-color);font-weight:800;color:var(--primary);"><input type="checkbox" id="reg-mapel-all" class="select-all-checkbox"> <span>All</span></label>` : '') +
+                mapel.map(m => `<label><input type="checkbox" class="reg-mapel-cb" value="${escapeAttr(m)}"> ${escapeHtml(m)}</label>`).join('');
+            if (isAdminRegistrar) {
+                document.querySelectorAll('.reg-mapel-cb').forEach(cb => cb.addEventListener('change', () => syncAdminSelectAll('reg-mapel-all', '.reg-mapel-cb')));
+                document.getElementById('reg-mapel-all')?.addEventListener('change', e => {
+                    document.querySelectorAll('.reg-mapel-cb').forEach(cb => cb.checked = e.target.checked);
+                    syncAdminSelectAll('reg-mapel-all', '.reg-mapel-cb');
+                });
+            }
+        }
+
+        const containerKelasGuru = document.getElementById('reg-kelas-guru-container');
+        if (containerKelasGuru) {
+            containerKelasGuru.innerHTML = (isAdminRegistrar ? `<label style="display:flex;align-items:center;gap:8px;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--border-color);font-weight:800;color:var(--primary);"><input type="checkbox" id="reg-kelas-guru-all" class="select-all-checkbox"> <span>All</span></label>` : '') +
+                kelas.map(k => `<label><input type="checkbox" class="reg-kelas-cb" value="${escapeAttr(k)}"> ${escapeHtml(k)}</label>`).join('');
+            if (isAdminRegistrar) {
+                document.querySelectorAll('.reg-kelas-cb').forEach(cb => cb.addEventListener('change', () => syncAdminSelectAll('reg-kelas-guru-all', '.reg-kelas-cb')));
+                document.getElementById('reg-kelas-guru-all')?.addEventListener('change', e => {
+                    document.querySelectorAll('.reg-kelas-cb').forEach(cb => cb.checked = e.target.checked);
+                    syncAdminSelectAll('reg-kelas-guru-all', '.reg-kelas-cb');
+                });
+            }
+        }
+
+        const containerKelasAdmin = document.getElementById('reg-kelas-admin-container');
+        if (containerKelasAdmin && isAdminRegistrar) {
+            buildAdminCheckboxGroup('reg-kelas-admin-container', 'reg-kelas-admin-all', 'reg-kelas-admin-cb', kelas, []);
+        }
+        syncRegistrationRoleUI();
+    }
 
     async function fetchRegStatus() {
-        setRegMessage('info', 'Memuat pengaturan pendaftaran dan data akademik...');
+        setRegMessage('info', 'Memuat data akademik...');
         try {
-            const regSnap = await getDoc(doc(db, "pengaturan", "status_registrasi"));
-            if(regSnap.exists()) {
-                statusRegSiswa = regSnap.data().siswa_aktif !== false; 
-                statusRegGuru = regSnap.data().guru_aktif !== false; 
+            // Tampilkan cache lebih dulu supaya daftar mapel/kelas langsung terlihat.
+            const cached = readRegistrationAcademicCache();
+            if (cached) renderRegistrationAcademic(cached.listKelas, cached.listMapel);
+
+            const adminPromise = detectAdminRegistrationMode();
+            const [regSnap, akademikSnap] = await Promise.all([
+                getDoc(doc(db, 'pengaturan', 'status_registrasi')),
+                getDoc(doc(db, 'pengaturan', 'data_akademik'))
+            ]);
+            await adminPromise;
+
+            if (regSnap.exists()) {
+                statusRegSiswa = regSnap.data().siswa_aktif !== false;
+                statusRegGuru = regSnap.data().guru_aktif !== false;
             }
 
-            const akademikSnap = await getDoc(doc(db, "pengaturan", "data_akademik"));
-            if(akademikSnap.exists()) {
-                const data = akademikSnap.data();
-                const listKelas = data.list_kelas || [];
-                const listMapel = data.list_mapel || [];
-
-                const selectKelasSiswa = document.getElementById("reg-kelas-siswa");
-                if(selectKelasSiswa) {
-                    selectKelasSiswa.innerHTML = '<option value="" disabled selected>Pilih Kelas...</option>' + 
-                        listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
-                }
-
-                const containerMapel = document.getElementById("reg-mapel-container");
-                if(containerMapel) {
-                    containerMapel.innerHTML = listMapel.map(m => `<label><input type="checkbox" class="reg-mapel-cb" value="${m}"> ${m}</label>`).join('');
-                }
-
-                const containerKelasGuru = document.getElementById("reg-kelas-guru-container");
-                if(containerKelasGuru) {
-                    containerKelasGuru.innerHTML = listKelas.map(k => `<label><input type="checkbox" class="reg-kelas-cb" value="${k}"> ${k}</label>`).join('');
-                }
+            let listKelas = cached?.listKelas || [];
+            let listMapel = cached?.listMapel || [];
+            if (akademikSnap.exists()) {
+                const data = akademikSnap.data() || {};
+                listKelas = Array.isArray(data.list_kelas) ? data.list_kelas : [];
+                listMapel = Array.isArray(data.list_mapel) ? data.list_mapel : [];
+                writeRegistrationAcademicCache(listMapel, listKelas);
             }
-            updateRegUI(roleInput.value);
-        } catch(e) { 
-            console.error("Gagal menarik data awal", e); 
+            renderRegistrationAcademic(listKelas, listMapel);
+        } catch(e) {
+            console.error('Gagal menarik data awal', e);
+            setRegMessage('error', 'Data akademik belum dapat dimuat. Silakan coba lagi.');
         }
     }
 
-    function updateRegUI(role) {
-        const warningBox = document.getElementById("reg-warning");
+    function updateRegUI() {
+        const roles = getRegistrationRoles();
+        const warningBox = document.getElementById('reg-warning');
+        const hasStudent = roles.includes('siswa');
+        const hasTeacher = roles.includes('guru');
         let isAllowed = true;
-        if (role === 'siswa' && !statusRegSiswa) isAllowed = false;
-        if (role === 'guru' && !statusRegGuru) isAllowed = false;
+        if (!isAdminRegistrar) {
+            if (hasStudent && !statusRegSiswa) isAllowed = false;
+            if (hasTeacher && !statusRegGuru) isAllowed = false;
+        }
 
         if (!isAllowed) {
             btnSubmit.disabled = true;
             btnSubmit.style.opacity = '0.5';
             btnSubmit.innerHTML = '<i class="fas fa-lock"></i> PENDAFTARAN DITUTUP';
             warningBox.style.display = 'block';
-            warningBox.innerHTML = `<i class="fas fa-lock"></i> Pendaftaran form <b>${role.toUpperCase()}</b> saat ini ditutup oleh Admin.`;
-            setRegMessage('error', `Pendaftaran ${role.toUpperCase()} sedang ditutup. Silakan kembali nanti.`);
+            warningBox.innerHTML = `<i class="fas fa-lock"></i> Pendaftaran ${hasTeacher ? 'GURU' : 'SISWA'} saat ini ditutup oleh Admin.`;
+            setRegMessage('error', 'Pendaftaran sedang ditutup. Silakan kembali nanti.');
         } else {
             btnSubmit.disabled = false;
             btnSubmit.style.opacity = '1';
-            btnSubmit.innerHTML = btnSubmit.dataset.defaultText || 'DAFTAR MANUAL'; 
+            btnSubmit.innerHTML = btnSubmit.dataset.defaultText || 'DAFTAR MANUAL';
             warningBox.style.display = 'none';
-            setRegMessage('info', `Pilih jenis akun ${role === 'guru' ? 'guru' : 'siswa'} dan lengkapi formulir di bawah ini.`);
+            setRegMessage('info', isAdminRegistrar ? 'Mode Admin aktif. Anda dapat memilih multi-role dan All untuk mapel/kelas.' : `Pilih jenis akun ${hasTeacher ? 'guru' : 'siswa'} dan lengkapi formulir di bawah ini.`);
         }
     }
 
     function setRole(role) {
         roleInput.value = role;
-        const groupKelasSiswa = document.getElementById("group-kelas-siswa");
-        const groupMapelGuru = document.getElementById("group-mapel-guru");
-        const groupKelasGuru = document.getElementById("group-kelas-guru");
-        const inputKelasSiswa = document.getElementById("reg-kelas-siswa");
-        const inputUsername = document.getElementById("reg-username");
-        const lblRoleMassal = document.getElementById("lbl-role-massal");
-
-        if (role === 'guru') {
-            regTitle.innerText = "REGISTRASI GURU";
-            usernameLabel.innerText = "ID Guru";
-            lblRoleMassal.innerText = "Guru";
-            boxGuru.classList.add('active');
-            boxSiswa.classList.remove('active');
-            
-            inputUsername.placeholder = "Contoh: E24H6-223";
-            inputUsername.removeAttribute("inputmode");
-            inputUsername.setAttribute("maxlength", "9");
-            
-            if(groupKelasSiswa) groupKelasSiswa.style.display = 'none';
-            if(groupMapelGuru) groupMapelGuru.style.display = 'block';
-            if(groupKelasGuru) groupKelasGuru.style.display = 'block';
-            if(inputKelasSiswa) inputKelasSiswa.removeAttribute("required");
-        } else {
-            regTitle.innerText = "REGISTRASI SISWA";
-            usernameLabel.innerText = "Nomor Peserta / NIS";
-            lblRoleMassal.innerText = "Siswa";
-            boxSiswa.classList.add('active');
-            boxGuru.classList.remove('active');
-            
-            inputUsername.placeholder = "Masukkan NIS (10 Digit Angka)";
-            inputUsername.setAttribute("inputmode", "numeric");
-            inputUsername.setAttribute("maxlength", "10");
-
-            if(groupKelasSiswa) groupKelasSiswa.style.display = 'block';
-            if(groupMapelGuru) groupMapelGuru.style.display = 'none';
-            if(groupKelasGuru) groupKelasGuru.style.display = 'none';
-            if(inputKelasSiswa) inputKelasSiswa.setAttribute("required", "true");
+        if (isAdminRegistrar) {
+            selectedAdminRoles = [role];
+            document.querySelectorAll('.reg-admin-role-cb').forEach(cb => cb.checked = selectedAdminRoles.includes(cb.value));
+            syncAdminSelectAll('reg-role-all', '.reg-admin-role-cb');
         }
-        updateRegUI(role); 
+        syncRegistrationRoleUI();
     }
 
     boxSiswa.addEventListener('click', () => setRole('siswa'));
@@ -171,8 +347,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!file) return;
 
         const role = roleInput.value;
-        if (role === 'siswa' && !statusRegSiswa) return alert("Pendaftaran Massal Siswa sedang ditutup!");
-        if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Massal Guru sedang ditutup!");
+        if (!isAdminRegistrar) {
+            if (role === 'siswa' && !statusRegSiswa) return alert("Pendaftaran Massal Siswa sedang ditutup!");
+            if (role === 'guru' && !statusRegGuru) return alert("Pendaftaran Massal Guru sedang ditutup!");
+        }
 
         if (!confirm(`TINDAKAN OTOMATIS: Anda yakin ingin mengimpor dan mendaftarkan banyak akun ${role.toUpperCase()} sekaligus dari file Excel ini?`)) {
             e.target.value = ''; return;
@@ -253,7 +431,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const dummyEmail = `${username.toLowerCase()}@cbt.smaich.id`;
 
                     try {
-                        const userCred = await createUserWithEmailAndPassword(auth, dummyEmail, password);
+                        const creatorAuth = isAdminRegistrar ? getAdminCreatorAuth() : auth;
+                        const userCred = await createUserWithEmailAndPassword(creatorAuth, dummyEmail, password);
                         try {
                             await updateProfile(userCred.user, { displayName: nama });
                             await setDoc(doc(db, "users", userCred.user.uid), payload);
@@ -277,9 +456,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     }, { merge: true });
                 }
 
-                await auth.signOut();
-                setRegMessage('success', `Registrasi massal selesai. Berhasil: ${successCount} akun, gagal: ${errorCount}. Silakan kembali ke halaman login.`);
-                setTimeout(() => { window.location.href = "index.html"; }, 700);
+                if (isAdminRegistrar) {
+                    try { await signOutAuth(getAdminCreatorAuth()); } catch (_) {}
+                    setRegMessage('success', `Registrasi massal selesai. Berhasil: ${successCount} akun, gagal: ${errorCount}. Sesi Admin tetap aktif.`);
+                } else {
+                    await auth.signOut();
+                    setRegMessage('success', `Registrasi massal selesai. Berhasil: ${successCount} akun, gagal: ${errorCount}. Silakan kembali ke halaman login.`);
+                    setTimeout(() => { window.location.href = "index.html"; }, 700);
+                }
 
             } catch (error) {
                 setRegMessage('error', 'Gagal memproses file Excel: ' + error.message);
@@ -294,18 +478,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // PENDAFTARAN MANUAL
     // ====================================================
     registerForm?.addEventListener("submit", async (e) => {
-        e.preventDefault(); 
-        const role = roleInput.value;
-        
-        if (role === 'siswa' && !statusRegSiswa) {
-            setRegMessage('error', 'Pendaftaran siswa sedang ditutup.');
+        e.preventDefault();
+        const roles = getRegistrationRoles();
+        const hasStudent = roles.includes('siswa');
+        const hasTeacher = roles.includes('guru');
+
+        if (!isAdminRegistrar) {
+            if (hasStudent && !statusRegSiswa) {
+                setRegMessage('error', 'Pendaftaran siswa sedang ditutup.');
+                return;
+            }
+            if (hasTeacher && !statusRegGuru) {
+                setRegMessage('error', 'Pendaftaran guru sedang ditutup.');
+                return;
+            }
+        }
+
+        if (roles.length === 0) {
+            setRegMessage('error', 'Pilih minimal 1 role akun.');
             return;
         }
-        if (role === 'guru' && !statusRegGuru) {
-            setRegMessage('error', 'Pendaftaran guru sedang ditutup.');
-            return;
-        }
-        
+
         const name = document.getElementById("reg-name").value.trim();
         const username = document.getElementById("reg-username").value.replace(/\s+/g, '').toUpperCase();
         const password = document.getElementById("reg-password").value;
@@ -314,89 +507,124 @@ document.addEventListener("DOMContentLoaded", () => {
             setRegMessage('error', 'Nama lengkap wajib diisi.');
             return;
         }
-
-        if(password !== document.getElementById("reg-confirm-password").value) {
+        if (!username) {
+            setRegMessage('error', 'Username / NIS / ID Guru wajib diisi.');
+            return;
+        }
+        if (password !== document.getElementById("reg-confirm-password").value) {
             setRegMessage('error', 'Password tidak cocok. Periksa kembali pengisian.');
             return;
         }
-
         if (password.length < 6) {
             setRegMessage('error', 'Password minimal 6 karakter untuk keamanan akun.');
             return;
         }
 
-        if (role === 'siswa') {
-            const isNumeric = /^\d+$/.test(username);
-            if (!isNumeric) {
-                setRegMessage('error', 'NIS siswa harus berupa angka.');
-                return;
-            }
-            if (username.length !== 10) {
-                setRegMessage('error', 'NIS harus berjumlah 10 digit angka.');
-                return;
-            }
-        } else if (role === 'guru') {
-            const regexGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/;
-            if (!regexGuru.test(username)) {
-                setRegMessage('error', 'Format ID Guru tidak sesuai. Contoh: E24H6-223.');
-                return;
-            }
+        const regexGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/;
+        const isNis = /^\d{10}$/.test(username);
+        const isIdGuru = regexGuru.test(username);
+
+        if (hasStudent && !hasTeacher && !roles.includes('admin') && !isNis) {
+            setRegMessage('error', 'NIS siswa harus berupa 10 digit angka.');
+            return;
+        }
+        if (hasTeacher && !hasStudent && !roles.includes('admin') && !isIdGuru) {
+            setRegMessage('error', 'Format ID Guru tidak sesuai. Contoh: E24H6-223.');
+            return;
+        }
+        if (hasStudent && hasTeacher && !roles.includes('admin') && !(isNis || isIdGuru)) {
+            setRegMessage('error', 'Untuk akun multi-role, gunakan NIS 10 digit atau ID Guru seperti E24H6-223.');
+            return;
+        }
+        if (!hasStudent && !hasTeacher && roles.includes('admin') && !/^[A-Z0-9._-]{3,64}$/.test(username)) {
+            setRegMessage('error', 'Username Admin hanya boleh berisi huruf, angka, titik, underscore, atau tanda hubung.');
+            return;
         }
 
-        const dummyEmail = `${username.toLowerCase()}@cbt.smaich.id`;
-
         try {
-            let payload = {
+            const payload = {
                 nama: name,
                 username: username,
+                role: roles,
                 createdAt: serverTimestamp()
             };
 
-            if (role === 'siswa') {
-                payload.role = ['siswa'];
-                payload.kelas = document.getElementById("reg-kelas-siswa").value;
-            } else if (role === 'guru') {
-                payload.role = ['guru'];
-
+            if (hasTeacher) {
                 const mapelTerpilih = Array.from(document.querySelectorAll('.reg-mapel-cb:checked')).map(cb => cb.value);
-                const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-cb:checked')).map(cb => cb.value);
-                
-                if (mapelTerpilih.length === 0 || kelasTerpilih.length === 0) {
-                    setRegMessage('error', 'Pilih minimal 1 mata pelajaran dan 1 kelas ajar.');
+                if (mapelTerpilih.length === 0) {
+                    setRegMessage('error', 'Pilih minimal 1 mata pelajaran. Gunakan All untuk memilih semua mapel.');
                     return;
                 }
-                
                 payload.mapel = mapelTerpilih;
-                payload.kelas = kelasTerpilih;
             }
 
+            if (hasStudent || hasTeacher) {
+                if (isAdminRegistrar) {
+                    const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-admin-cb:checked')).map(cb => cb.value);
+                    if (kelasTerpilih.length === 0) {
+                        setRegMessage('error', 'Pilih minimal 1 kelas. Gunakan All untuk memilih semua kelas.');
+                        return;
+                    }
+                    payload.kelas = kelasTerpilih;
+                } else if (hasTeacher) {
+                    const kelasTerpilih = Array.from(document.querySelectorAll('.reg-kelas-cb:checked')).map(cb => cb.value);
+                    if (kelasTerpilih.length === 0) {
+                        setRegMessage('error', 'Pilih minimal 1 kelas ajar.');
+                        return;
+                    }
+                    payload.kelas = kelasTerpilih;
+                } else {
+                    const kelasSiswa = document.getElementById("reg-kelas-siswa").value;
+                    if (!kelasSiswa) {
+                        setRegMessage('error', 'Pilih kelas siswa terlebih dahulu.');
+                        return;
+                    }
+                    payload.kelas = kelasSiswa;
+                }
+            }
+
+            const dummyEmail = `${username.toLowerCase()}@cbt.smaich.id`;
             setSubmittingState(true);
-            setRegMessage('info', 'Mendaftarkan akun baru...');
-            const userCred = await createUserWithEmailAndPassword(auth, dummyEmail, password);
-            const user = userCred.user;
+            setRegMessage('info', isAdminRegistrar ? 'Admin sedang membuat akun baru...' : 'Mendaftarkan akun baru...');
+
+            const creatorAuth = isAdminRegistrar ? getAdminCreatorAuth() : auth;
+            const userCred = await createUserWithEmailAndPassword(creatorAuth, dummyEmail, password);
+            const newUser = userCred.user;
             try {
-                await updateProfile(user, { displayName: name });
-                await setDoc(doc(db, "users", user.uid), payload);
+                await updateProfile(newUser, { displayName: name });
+                await setDoc(doc(db, "users", newUser.uid), payload);
             } catch (saveError) {
-                // Jangan meninggalkan akun Auth tanpa profil Firestore.
-                try { await user.delete(); } catch (_) {}
+                try { await newUser.delete(); } catch (_) {}
                 throw saveError;
+            } finally {
+                if (isAdminRegistrar) {
+                    try { await signOutAuth(creatorAuth); } catch (_) {}
+                }
             }
 
-            // createUserWithEmailAndPassword otomatis membuat sesi login.
-            // Logout dulu supaya halaman login benar-benar menampilkan form login.
-            await auth.signOut();
-            setRegMessage('success', `Akun ${role.toUpperCase()} berhasil dibuat. Silakan login dengan username dan password baru.`);
-            setTimeout(() => { window.location.href = "index.html"; }, 700);
+            if (isAdminRegistrar) {
+                setRegMessage('success', `Akun berhasil dibuat dengan role: ${roles.join(', ')}. Sesi Admin tetap aktif.`);
+                registerForm.reset();
+                selectedAdminRoles = ['siswa'];
+                document.querySelectorAll('.reg-admin-role-cb').forEach(cb => cb.checked = cb.value === 'siswa');
+                syncAdminSelectAll('reg-role-all', '.reg-admin-role-cb');
+                document.querySelectorAll('.reg-mapel-cb, .reg-kelas-admin-cb, .reg-kelas-cb').forEach(cb => cb.checked = false);
+                document.getElementById('reg-kelas-siswa').value = '';
+                syncRegistrationRoleUI();
+            } else {
+                await auth.signOut();
+                setRegMessage('success', `Akun ${roles[0].toUpperCase()} berhasil dibuat. Silakan login dengan username dan password baru.`);
+                setTimeout(() => { window.location.href = "index.html"; }, 700);
+            }
 
         } catch (error) {
             let msg = "Terjadi kesalahan saat menyimpan akun.";
             if (error.code === 'auth/email-already-in-use') msg = "ID/Username sudah terdaftar!";
             if (error.code === 'auth/weak-password') msg = "Password minimal 6 karakter!";
-            
+            if (error.code === 'permission-denied') msg = "Akses ditolak. Pastikan akun Admin memang memiliki role admin.";
             setRegMessage('error', msg);
         } finally {
             setSubmittingState(false);
         }
-    });
+    }););
 });

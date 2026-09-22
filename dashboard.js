@@ -19,6 +19,7 @@ if (!document.getElementById('cbt-custom-css')) {
         .dropdown-check-content input[type="checkbox"] { transform: scale(1.3); cursor: pointer; }
         .dropdown-check.show .dropdown-check-content { display: block; }
         .card { overflow: visible !important; }
+        .select-all-checkbox { accent-color: var(--primary); }
         #view-summary-bank-soal .table-container { min-height: 350px; padding-bottom: 120px; }
     `;
     document.head.appendChild(style);
@@ -38,6 +39,36 @@ let userKelas = [];
 let editMasterMode = false;
 let currentMapelDetail = ""; 
 let currentKelasDetail = ""; 
+
+// Cache lokal membuat data Mapel/Kelas tersedia hampir seketika saat modal akun dibuka.
+const ACADEMIC_CACHE_KEY = 'cbt_academic_master_cache_v2';
+const ACADEMIC_CACHE_TTL = 10 * 60 * 1000;
+
+function readAcademicCache() {
+    try {
+        const raw = localStorage.getItem(ACADEMIC_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.listMapel) || !Array.isArray(parsed.listKelas)) return null;
+        if (parsed.savedAt && (Date.now() - parsed.savedAt) > ACADEMIC_CACHE_TTL) return null;
+        return parsed;
+    } catch (e) { return null; }
+}
+
+function writeAcademicCache(mapel, kelas) {
+    try {
+        localStorage.setItem(ACADEMIC_CACHE_KEY, JSON.stringify({ listMapel: mapel, listKelas: kelas, savedAt: Date.now() }));
+    } catch (e) {}
+}
+
+function applyAcademicMaster(mapel, kelas) {
+    listMapel = Array.from(new Set(Array.isArray(mapel) ? mapel.map(v => String(v).trim()).filter(Boolean) : []));
+    listKelas = Array.from(new Set(Array.isArray(kelas) ? kelas.map(v => String(v).trim()).filter(Boolean) : []));
+    listMapel.sort((a,b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    listKelas.sort((a,b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    window.renderTableMaster();
+    window.populateSemuaDropdown();
+}
 
 // ==========================================
 // 2. MODUL SOAL MANAGER
@@ -747,8 +778,56 @@ window.addEventListener('popstate', function() { if (!window.location.hash || wi
 // ==========================================
 window.handleRoleChange = () => {
     const selectedRoles = Array.from(document.querySelectorAll('.edit-role-cb:checked')).map(el => el.value);
-    document.getElementById('group-edit-guru').style.display = (selectedRoles.includes('guru') || selectedRoles.some(r => r !== 'siswa' && r !== 'admin')) ? 'flex' : 'none';
-    document.getElementById('group-edit-kelas-siswa').style.display = selectedRoles.includes('siswa') ? 'block' : 'none';
+    const hasStudent = selectedRoles.includes('siswa');
+    const hasGuru = selectedRoles.includes('guru') || selectedRoles.some(r => !['siswa', 'admin'].includes(r));
+    const groupGuru = document.getElementById('group-edit-guru');
+    const groupStudentClass = document.getElementById('group-edit-kelas-siswa');
+    const groupGuruClass = document.getElementById('group-edit-kelas-guru');
+    if (groupGuru) groupGuru.style.display = hasGuru ? 'flex' : 'none';
+    if (groupStudentClass) groupStudentClass.style.display = hasStudent ? 'block' : 'none';
+    // Jika satu akun punya role Siswa + Guru, cukup gunakan satu pilihan kelas agar tidak terjadi perbedaan data.
+    if (groupGuruClass) groupGuruClass.style.display = hasGuru && !hasStudent ? 'block' : 'none';
+};
+
+
+window.syncSelectAllState = (allId, selector) => {
+    const all = document.getElementById(allId);
+    const boxes = Array.from(document.querySelectorAll(selector));
+    if (!all) return;
+    if (!boxes.length) { all.checked = false; all.indeterminate = false; return; }
+    const checkedCount = boxes.filter(cb => cb.checked).length;
+    all.checked = checkedCount === boxes.length;
+    all.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
+};
+
+window.bindSelectAll = (allId, selector) => {
+    const all = document.getElementById(allId);
+    if (!all) return;
+    all.onchange = () => {
+        document.querySelectorAll(selector).forEach(cb => { cb.checked = all.checked; cb.dispatchEvent(new Event('change', { bubbles: false })); });
+        window.syncSelectAllState(allId, selector);
+    };
+    window.syncSelectAllState(allId, selector);
+};
+
+window.renderAdminCheckboxGroup = (containerId, allId, checkboxClass, items, selectedValues = [], labelPrefix = 'Pilih semua') => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const selected = Array.isArray(selectedValues) ? selectedValues : [];
+    const escapeHtml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const escapeAttr = (value) => escapeHtml(value).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    container.innerHTML = `
+        <label style="display:flex; align-items:center; gap:8px; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid var(--border-color); font-weight:800; color:var(--primary);">
+            <input type="checkbox" id="${allId}" class="select-all-checkbox" aria-label="${escapeAttr(labelPrefix)}">
+            <span>All</span>
+        </label>` +
+        items.map(item => {
+            const safe = escapeHtml(item);
+            const attr = escapeAttr(item);
+            return `<label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="${checkboxClass}" value="${attr}" ${selected.includes(item) ? 'checked' : ''}> ${safe}</label>`;
+        }).join('');
+    document.querySelectorAll(`.${checkboxClass}`).forEach(cb => cb.addEventListener('change', () => window.syncSelectAllState(allId, `.${checkboxClass}`)));
+    window.bindSelectAll(allId, `.${checkboxClass}`);
 };
 
 window.toggleDropdownCheck = (id) => {
@@ -813,8 +892,9 @@ document.addEventListener('DOMContentLoaded', () => {
             label.innerHTML = `<input type="checkbox" class="edit-role-cb" value="${roleVal}" checked> <span style="text-transform:capitalize;">${roleVal}</span>`;
             container.appendChild(label);
             label.querySelector('input').addEventListener('change', window.handleRoleChange);
+            label.querySelector('input').addEventListener('change', () => window.syncSelectAllState('edit-role-all', '.edit-role-cb'));
         }
-        document.getElementById('input-custom-role').value = ''; window.handleRoleChange();
+        document.getElementById('input-custom-role').value = ''; window.handleRoleChange(); window.syncSelectAllState('edit-role-all', '.edit-role-cb');
     });
 
     document.addEventListener('click', (e) => {
@@ -838,7 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('btn-open-data-master');
-    document.getElementById('btn-open-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'flex'; editMasterMode = false; window.renderTableMaster(); });
+    document.getElementById('btn-open-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'flex'; editMasterMode = false; window.renderTableMaster(); window.loadDataMaster({ syncLegacy: true }); });
     document.getElementById('btn-tambah-langsung')?.addEventListener('click', () => { SoalManager.bukaModalTambah(); });
     document.getElementById('close-modal-data-master')?.addEventListener('click', () => { document.getElementById('modal-data-master').style.display = 'none'; });
     
@@ -860,7 +940,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (listKelas.includes(val)) return await window.customAlert("Kelas sudah ada!", "warning");
             listKelas.push(val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true });
         }
-        document.getElementById('input-master-name').value = ''; window.loadDataMaster(); await window.customAlert("Data berhasil ditambahkan!", "success");
+        document.getElementById('input-master-name').value = ''; applyAcademicMaster(listMapel, listKelas); writeAcademicCache(listMapel, listKelas); window.loadDataMaster(); await window.customAlert("Data berhasil ditambahkan!", "success");
     });
     
     document.getElementById('soal-tipe')?.addEventListener('change', (e) => {
@@ -919,11 +999,7 @@ onAuthStateChanged(auth, async (user) => {
         if (!isAdmin && !isGuru) { window.location.replace("attempt.html"); return; }
     } catch(e) { console.error("Gagal memverifikasi role dashboard:", e); window.location.replace("index.html"); return; }
 
-    let finalDisplayName = user.displayName;
-    if (!finalDisplayName) { 
-        try { const userDoc = await getDoc(doc(db, "users", user.uid)); if (userDoc.exists()) finalDisplayName = userDoc.data().nama; } catch(e) {} 
-    }
-    finalDisplayName = finalDisplayName || "Pengguna";
+    const finalDisplayName = user.displayName || profile.nama || "Pengguna";
 
     const greetingText = document.getElementById('greeting-text'); 
     if (greetingText) greetingText.innerHTML = `Assalamu'alaikum, <span style="display: inline-block;">${finalDisplayName}! 🙏</span>`;
@@ -937,11 +1013,13 @@ onAuthStateChanged(auth, async (user) => {
         window.fetchStatusReg();
     }
 
-    handleRouting(); 
-    await window.loadDataMaster(); 
-    window.loadDataHasil(); 
-    if (isAdmin) window.loadDataPengguna(); 
-    SoalManager.loadSummary(); 
+    handleRouting();
+    // Data master tidak lagi memblokir dashboard. Ia mengambil 1 dokumen ringan terlebih dahulu
+    // dan menampilkan cache segera; sinkronisasi koleksi besar dilakukan hanya saat diperlukan.
+    window.loadDataMaster();
+    window.loadDataHasil();
+    if (isAdmin) window.loadDataPengguna();
+    SoalManager.loadSummary();
 });
 
 // ==========================================
@@ -957,92 +1035,77 @@ window.fetchStatusReg = async () => {
     } catch (e) {}
 };
 
-window.loadDataMaster = async () => {
+window.loadDataMaster = async (options = {}) => {
+    const { syncLegacy = false } = options;
     try {
+        // 1) Cache lokal: tampilkan data seketika tanpa menunggu jaringan.
+        const cached = readAcademicCache();
+        if (cached) {
+            applyAcademicMaster(cached.listMapel, cached.listKelas);
+        }
+
+        // 2) Sumber utama hanya 1 dokumen Firestore.
         const docRef = doc(db, "pengaturan", "data_akademik");
         const docSnap = await getDoc(docRef);
-        let currentMapel = []; let currentKelas = [];
-        
-        // Tarik data master yang sudah tersimpan sebelumnya
+        let currentMapel = [];
+        let currentKelas = [];
         if (docSnap.exists()) {
-            currentMapel = docSnap.data().list_mapel || [];
-            currentKelas = docSnap.data().list_kelas || [];
+            const data = docSnap.data() || {};
+            currentMapel = Array.isArray(data.list_mapel) ? data.list_mapel : [];
+            currentKelas = Array.isArray(data.list_kelas) ? data.list_kelas : [];
         }
 
-        let masterBerubah = false;
+        applyAcademicMaster(currentMapel, currentKelas);
+        writeAcademicCache(listMapel, listKelas);
 
-        // 1. Ekstrak dari koleksi "users" hanya untuk Admin.
-        // Guru tidak perlu membaca seluruh akun pengguna.
-        if (isAdmin) {
-            const usersSnap = await getDocs(collection(db, "users"));
-            usersSnap.forEach((uDoc) => {
-                const uData = uDoc.data();
-                if (uData.mapel) {
-                    const mapelArr = Array.isArray(uData.mapel) ? uData.mapel : [uData.mapel];
-                    mapelArr.forEach(m => {
-                        const mTrim = String(m).trim();
-                        if (mTrim && !currentMapel.includes(mTrim)) { currentMapel.push(mTrim); masterBerubah = true; }
-                    });
-                }
-                if (uData.kelas) {
-                    const kelasArr = Array.isArray(uData.kelas) ? uData.kelas : [uData.kelas];
-                    kelasArr.forEach(k => {
-                        const kTrim = String(k).trim();
-                        if (kTrim && !currentKelas.includes(kTrim)) { currentKelas.push(kTrim); masterBerubah = true; }
-                    });
-                }
-            });
+        // 3) Sinkronisasi legacy hanya ketika benar-benar diminta (mis. membuka Data Master),
+        // bukan setiap dashboard/login. Ini mencegah 3 koleksi besar dibaca saat startup.
+        if (syncLegacy) {
+            window.syncDataMasterFromLegacy();
         }
-
-        // 2. Ekstrak dari koleksi "bank_soal"
-        const soalSnap = await getDocs(collection(db, "bank_soal"));
-        soalSnap.forEach((sDoc) => {
-            const sData = sDoc.data();
-            if (sData.mataPelajaran) {
-                const mTrim = String(sData.mataPelajaran).trim();
-                if (mTrim && !currentMapel.includes(mTrim)) { currentMapel.push(mTrim); masterBerubah = true; }
-            }
-            if (sData.kelas) {
-                const kelasArr = Array.isArray(sData.kelas) ? sData.kelas : [sData.kelas];
-                kelasArr.forEach(k => {
-                    const kTrim = String(k).trim();
-                    if (kTrim && !currentKelas.includes(kTrim)) { currentKelas.push(kTrim); masterBerubah = true; }
-                });
-            }
-        });
-
-        // 3. Ekstrak dari koleksi "hasil_ujian"
-        const hasilSnap = await getDocs(collection(db, "hasil_ujian"));
-        hasilSnap.forEach((hDoc) => {
-            const hData = hDoc.data();
-            if (hData.mataPelajaran) {
-                const mTrim = String(hData.mataPelajaran).trim();
-                if (mTrim && !currentMapel.includes(mTrim)) { currentMapel.push(mTrim); masterBerubah = true; }
-            }
-            if (hData.kelas) {
-                const kelasArr = Array.isArray(hData.kelas) ? hData.kelas : [hData.kelas];
-                kelasArr.forEach(k => {
-                    const kTrim = String(k).trim();
-                    if (kTrim && !currentKelas.includes(kTrim)) { currentKelas.push(kTrim); masterBerubah = true; }
-                });
-            }
-        });
-
-        // Urutkan sesuai Abjad / Alfanumerik (Natural Sort untuk kelas seperti X-1, X-2, XI-1)
-        currentMapel.sort();
-        currentKelas.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
-
-        // Jika ada data baru yang ditemukan dari proses ekstrak di atas, simpan pembaruannya ke database
-        if (masterBerubah) {
-            await setDoc(docRef, { list_mapel: currentMapel, list_kelas: currentKelas }, { merge: true });
-        }
-        
-        listMapel = currentMapel; 
-        listKelas = currentKelas;
-        window.renderTableMaster(); 
-        window.populateSemuaDropdown();
     } catch (e) {
         console.error("Gagal memuat Data Master:", e);
+        // Jika Firestore sementara lambat/gagal, cache tetap dipakai.
+    }
+};
+
+window.syncDataMasterFromLegacy = async () => {
+    if (!isAdmin) return;
+    try {
+        const docRef = doc(db, "pengaturan", "data_akademik");
+        const [usersSnap, soalSnap, hasilSnap] = await Promise.all([
+            getDocs(collection(db, "users")),
+            getDocs(collection(db, "bank_soal")),
+            getDocs(collection(db, "hasil_ujian"))
+        ]);
+
+        const mergedMapel = new Set(listMapel);
+        const mergedKelas = new Set(listKelas);
+        const absorb = (data) => {
+            if (!data) return;
+            const mapelArr = Array.isArray(data.mapel) ? data.mapel : (data.mataPelajaran ? [data.mataPelajaran] : []);
+            const kelasArr = Array.isArray(data.kelas) ? data.kelas : (data.kelas ? [data.kelas] : []);
+            mapelArr.forEach(m => { const v = String(m).trim(); if (v) mergedMapel.add(v); });
+            kelasArr.forEach(k => { const v = String(k).trim(); if (v) mergedKelas.add(v); });
+            if (data.mapel === undefined && data.mataPelajaran) {
+                const v = String(data.mataPelajaran).trim(); if (v) mergedMapel.add(v);
+            }
+        };
+        usersSnap.forEach(d => absorb(d.data()));
+        soalSnap.forEach(d => absorb(d.data()));
+        hasilSnap.forEach(d => absorb(d.data()));
+
+        const nextMapel = Array.from(mergedMapel).sort((a,b) => a.localeCompare(b, undefined, { sensitivity:'base' }));
+        const nextKelas = Array.from(mergedKelas).sort((a,b) => a.localeCompare(b, undefined, { numeric:true, sensitivity:'base' }));
+        const changed = nextMapel.length !== listMapel.length || nextKelas.length !== listKelas.length ||
+            nextMapel.some((v,i) => v !== listMapel[i]) || nextKelas.some((v,i) => v !== listKelas[i]);
+        if (changed) {
+            applyAcademicMaster(nextMapel, nextKelas);
+            writeAcademicCache(listMapel, listKelas);
+            await setDoc(docRef, { list_mapel: listMapel, list_kelas: listKelas }, { merge: true });
+        }
+    } catch (e) {
+        console.error('Sinkronisasi Data Master legacy gagal:', e);
     }
 };
 
@@ -1068,20 +1131,18 @@ window.hapusMasterItem = async (type, val) => {
     try {
         if (type === 'mapel') { listMapel = listMapel.filter(item => item !== val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_mapel: listMapel }, { merge: true }); } 
         else { listKelas = listKelas.filter(item => item !== val); await setDoc(doc(db, "pengaturan", "data_akademik"), { list_kelas: listKelas }, { merge: true }); }
-        window.loadDataMaster();
+        writeAcademicCache(listMapel, listKelas); window.loadDataMaster();
     } catch (e) { window.customAlert("Gagal menghapus data.", "error"); }
 };
 
 window.populateSemuaDropdown = () => {
-    const cmbKelasSiswa = document.getElementById('edit-kelas-siswa');
-    if (cmbKelasSiswa) cmbKelasSiswa.innerHTML = listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
-    const containerMapel = document.getElementById('edit-mapel-container');
-    if (containerMapel) containerMapel.innerHTML = listMapel.map(m => `<label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="edit-mapel-cb" value="${m}"> ${m}</label>`).join('');
-    const containerKelasGuru = document.getElementById('edit-kelas-guru-container');
-    if (containerKelasGuru) containerKelasGuru.innerHTML = listKelas.map(k => `<label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="edit-kelas-guru-cb" value="${k}"> ${k}</label>`).join('');
+    window.renderAdminCheckboxGroup('edit-kelas-siswa-container', 'edit-kelas-siswa-all', 'edit-kelas-siswa-cb', listKelas, [], 'Pilih semua kelas siswa');
+    window.renderAdminCheckboxGroup('edit-mapel-container', 'edit-mapel-all', 'edit-mapel-cb', listMapel, [], 'Pilih semua mata pelajaran');
+    window.renderAdminCheckboxGroup('edit-kelas-guru-container', 'edit-kelas-guru-all', 'edit-kelas-guru-cb', listKelas, [], 'Pilih semua kelas guru');
     const filterKelasPengguna = document.getElementById('filter-kelas-pengguna');
     if (filterKelasPengguna) filterKelasPengguna.innerHTML = '<option value="all">Semua Kelas</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
 };
+
 
 // ==========================================
 // 8. FUNGSI PENGGUNA (GURU & SISWA)
@@ -1240,9 +1301,17 @@ window.hapusPengguna = async (uid) => {
 
 window.bukaModalEditAkun = async (uid) => {
     try {
-        const userDoc = await getDoc(doc(db, "users", uid)); if(!userDoc.exists()) return;
-        const data = userDoc.data();
-        
+        // Data tabel sudah berasal dari users; gunakan itu terlebih dahulu agar modal terbuka instan.
+        // Firestore hanya menjadi fallback jika baris tidak ditemukan di cache halaman.
+        let data = allUsersData.find(u => u.uid === uid);
+        if (!data) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            if (!userDoc.exists()) return;
+            data = { ...userDoc.data(), uid };
+        }
+
+        if (!listMapel.length && !listKelas.length) await window.loadDataMaster();
+
         document.getElementById('edit-uid').value = uid; document.getElementById('edit-nama').value = data.nama || '';
         const editUsername = document.getElementById('edit-username');
         editUsername.value = data.username || '';
@@ -1252,36 +1321,33 @@ window.bukaModalEditAkun = async (uid) => {
         document.getElementById('admin-custom-role-group').style.display = isAdmin ? 'flex' : 'none';
         
         const container = document.getElementById('edit-role-container');
+        const knownCustomRoles = allUsersData
+            .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
+            .filter(role => role && !['siswa','guru','admin'].includes(role));
+        const availableRoles = Array.from(new Set(['siswa','guru','admin', ...knownCustomRoles]));
+        const escapeRole = value => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
         container.innerHTML = `
-            <label><input type="checkbox" class="edit-role-cb" value="siswa"> Siswa</label>
-            <label><input type="checkbox" class="edit-role-cb" value="guru"> Guru</label>
-            <label><input type="checkbox" class="edit-role-cb" value="admin"> Admin</label>
+            <label style="display:flex; align-items:center; gap:8px; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid var(--border-color); font-weight:800; color:var(--primary);">
+                <input type="checkbox" id="edit-role-all" class="select-all-checkbox"> <span>All</span>
+            </label>
+            ${availableRoles.map(role => `<label><input type="checkbox" class="edit-role-cb" value="${escapeRole(role)}"> <span style="text-transform:capitalize;">${escapeRole(role)}</span></label>`).join('')}
         `;
-        const standardRoles = ['siswa', 'guru', 'admin'];
-        roles.forEach(r => {
-            if (!standardRoles.includes(r)) {
-                const label = document.createElement('label');
-                label.innerHTML = `<input type="checkbox" class="edit-role-cb" value="${r}" checked> <span style="text-transform:capitalize;">${r}</span>`;
-                container.appendChild(label);
-            }
-        });
-
         document.querySelectorAll('.edit-role-cb').forEach(cb => { 
-            cb.checked = roles.includes(cb.value); 
+            cb.checked = roles.includes(cb.value);
             cb.addEventListener('change', window.handleRoleChange);
+            cb.addEventListener('change', () => window.syncSelectAllState('edit-role-all', '.edit-role-cb'));
         });
+        window.bindSelectAll('edit-role-all', '.edit-role-cb');
 
-        if (roles.includes('siswa')) {
-            document.getElementById('edit-kelas-siswa').value = Array.isArray(data.kelas) ? data.kelas[0] : (data.kelas || '');
-        }
+        const kelasArr = Array.isArray(data.kelas) ? data.kelas : (data.kelas ? [data.kelas] : []);
+        const mapelArr = Array.isArray(data.mapel) ? data.mapel : [];
+        document.querySelectorAll('.edit-kelas-siswa-cb').forEach(cb => { cb.checked = kelasArr.includes(cb.value); });
+        document.querySelectorAll('.edit-mapel-cb').forEach(cb => { cb.checked = mapelArr.includes(cb.value); });
+        document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = kelasArr.includes(cb.value); });
+        window.syncSelectAllState('edit-kelas-siswa-all', '.edit-kelas-siswa-cb');
+        window.syncSelectAllState('edit-mapel-all', '.edit-mapel-cb');
+        window.syncSelectAllState('edit-kelas-guru-all', '.edit-kelas-guru-cb');
 
-        if (roles.some(r => r !== 'siswa')) {
-            const mapelArr = Array.isArray(data.mapel) ? data.mapel : [];
-            document.querySelectorAll('.edit-mapel-cb').forEach(cb => { cb.checked = mapelArr.includes(cb.value); });
-            const kelasArr = Array.isArray(data.kelas) ? data.kelas : [];
-            document.querySelectorAll('.edit-kelas-guru-cb').forEach(cb => { cb.checked = kelasArr.includes(cb.value); });
-        }
-        
         window.handleRoleChange(); document.getElementById('modal-edit-akun').style.display = 'flex';
     } catch(e) {}
 };
@@ -1303,12 +1369,18 @@ document.getElementById('btn-save-edit-akun')?.addEventListener('click', async (
         if(!newNama || !newUsername || roles.length === 0) { throw new Error("Nama, Username, and minimal 1 Role harus diisi!"); }
 
         let payload = { nama: newNama, username: newUsername, role: roles };
+        const needsGuru = roles.includes('guru') || roles.some(r => !['siswa', 'admin'].includes(r));
+        const selectedStudentClasses = Array.from(document.querySelectorAll('.edit-kelas-siswa-cb:checked')).map(el => el.value);
+        const selectedGuruClasses = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(el => el.value);
 
-        if (roles.includes('siswa')) {
-            payload.kelas = [document.getElementById('edit-kelas-siswa').value];
-        } else {
+        if (roles.includes('siswa') || needsGuru) {
+            const selectedClasses = roles.includes('siswa') && selectedStudentClasses.length ? selectedStudentClasses : selectedGuruClasses;
+            if (selectedClasses.length === 0) throw new Error('Pilih minimal 1 kelas. Gunakan All untuk memilih seluruh kelas.');
+            payload.kelas = selectedClasses;
+        }
+        if (needsGuru) {
             payload.mapel = Array.from(document.querySelectorAll('.edit-mapel-cb:checked')).map(el => el.value);
-            payload.kelas = Array.from(document.querySelectorAll('.edit-kelas-guru-cb:checked')).map(el => el.value);
+            if (payload.mapel.length === 0) throw new Error('Pilih minimal 1 mata pelajaran. Gunakan All untuk memilih seluruh mata pelajaran.');
         }
 
         await updateDoc(doc(db, "users", uid), payload);
