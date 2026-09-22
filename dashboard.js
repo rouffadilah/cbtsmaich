@@ -673,54 +673,225 @@ const SoalManager = {
         return String(value || "data").replace(/[^a-z0-9\-_\s,]/gi, '').replace(/\s+/g, '_').replace(/,+/g, '-').slice(0, 90) || 'data';
     },
 
-    _soalKeBarisExcel: function(s, idx = 0) {
-        const tipe = s.tipe || 'PG';
-        const kelas = Array.isArray(s.kelas) ? s.kelas.join(', ') : (s.kelas || 'Umum');
-        const kunci = Array.isArray(s.kunci_jawaban) ? s.kunci_jawaban.join(', ') : (s.kunci_jawaban || '');
-        const pasangan = Array.isArray(s.pasangan) ? s.pasangan.map(p => `${p.kiri || ''} => ${p.kanan || ''}`).join(' | ') : '';
+    // Format ekspor mengikuti template XLSX resmi sekolah:
+    // 16 kolom A:P, urutan dan penamaan header sama dengan file template.
+    _excelTemplateHeaders: [
+        'Tipe Soal (PG / PGK / Menjodohkan / Essay)',
+        'Nomor Soal',
+        'Bobot Soal',
+        'Teks Pertanyaan',
+        'Link Media Pertanyaan (URL Gambar/Audio/Video)',
+        'Opsi A',
+        'Link Media Opsi A (URL Gambar)',
+        'Opsi B',
+        'Link Media Opsi B (URL Gambar)',
+        'Opsi C',
+        'Link Media Opsi C (URL Gambar)',
+        'Opsi D',
+        'Link Media Opsi D (URL Gambar)',
+        'Opsi E',
+        'Link Media Opsi E (URL Gambar)',
+        'Kunci Jawaban / Pasangan Menjodohkan'
+    ],
+
+    _soalKeBarisTemplate: function(s, idx = 0) {
+        const tipe = String(s.tipe || 'PG').trim();
+        const opsi = s.opsi || {};
         const mediaUtama = s.media_soal ? (typeof s.media_soal === 'object' ? (s.media_soal.url || '') : s.media_soal) : '';
-        const mediaTipe = s.media_soal && typeof s.media_soal === 'object' ? (s.media_soal.type || '') : '';
         const opsiMedia = {};
         ['A','B','C','D','E'].forEach(k => {
             const m = s.opsi_media && s.opsi_media[k];
             opsiMedia[k] = m ? (typeof m === 'object' ? (m.url || '') : m) : '';
         });
-        return {
-            'No': s.nomor_soal || (idx + 1),
-            'Mata Pelajaran': s.mataPelajaran || '',
-            'Kelas': kelas,
-            'Tipe Soal': tipe,
-            'Bobot': s.bobot ?? 1,
-            'Pertanyaan': s.teks_soal || '',
-            'Opsi A': s.opsi?.A || '',
-            'Opsi B': s.opsi?.B || '',
-            'Opsi C': s.opsi?.C || '',
-            'Opsi D': s.opsi?.D || '',
-            'Opsi E': s.opsi?.E || '',
-            'Kunci Jawaban': kunci,
-            'Pasangan Menjodohkan': pasangan,
-            'Media Pertanyaan': mediaUtama,
-            'Tipe Media Pertanyaan': mediaTipe,
-            'Media Opsi A': opsiMedia.A,
-            'Media Opsi B': opsiMedia.B,
-            'Media Opsi C': opsiMedia.C,
-            'Media Opsi D': opsiMedia.D,
-            'Media Opsi E': opsiMedia.E
-        };
+        let kunci = '';
+        if (tipe === 'Menjodohkan' && Array.isArray(s.pasangan)) {
+            kunci = s.pasangan.map((p, i) => {
+                const kiri = String(p?.kiri ?? '').trim();
+                const kanan = String(p?.kanan ?? '').trim();
+                if (!kiri && !kanan) return '';
+                // Format di template: pasangan dipisahkan ';' dan sisi kiri/kanan '='
+                return `${kiri}=${kanan}`;
+            }).filter(Boolean).join('; ');
+        } else if (Array.isArray(s.kunci_jawaban)) {
+            kunci = s.kunci_jawaban.join(',');
+        } else {
+            kunci = String(s.kunci_jawaban ?? '').trim();
+        }
+
+        return [
+            tipe,
+            Number(s.nomor_soal || (idx + 1)),
+            Number(s.bobot ?? 1),
+            String(s.teks_soal || ''),
+            mediaUtama,
+            String(opsi.A || ''),
+            opsiMedia.A,
+            String(opsi.B || ''),
+            opsiMedia.B,
+            String(opsi.C || ''),
+            opsiMedia.C,
+            String(opsi.D || ''),
+            opsiMedia.D,
+            String(opsi.E || ''),
+            opsiMedia.E,
+            kunci
+        ];
     },
 
-    _downloadExcel: function(rows, filename, sheetName = 'Bank Soal') {
-        if (typeof XLSX === 'undefined') throw new Error('Library Excel belum siap. Silakan muat ulang halaman.');
-        if (!Array.isArray(rows) || rows.length === 0) throw new Error('Tidak ada soal yang dapat diunduh.');
-        const ws = XLSX.utils.json_to_sheet(rows);
-        ws['!cols'] = [
-            { wch: 6 }, { wch: 28 }, { wch: 22 }, { wch: 16 }, { wch: 8 }, { wch: 55 },
-            { wch: 24 }, { wch: 24 }, { wch: 24 }, { wch: 24 }, { wch: 24 }, { wch: 18 },
-            { wch: 40 }, { wch: 42 }, { wch: 18 }, { wch: 32 }, { wch: 32 }, { wch: 32 }, { wch: 32 }, { wch: 32 }
+    _makeTemplateWorkbook: async function(questions, summaryTitle = 'RINGKASAN BANK SOAL') {
+        if (typeof ExcelJS === 'undefined') {
+            throw new Error('Library Excel format template belum siap. Silakan muat ulang halaman.');
+        }
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'CBT-SMAICH';
+        workbook.company = 'SMA Islam Cikal Harapan 1';
+        workbook.subject = 'Bank Soal CBT';
+        workbook.title = 'Bank Soal CBT SMAICH';
+        workbook.created = new Date();
+
+        const ws = workbook.addWorksheet('Template Soal', {
+            views: [{ state: 'frozen', ySplit: 1 }]
+        });
+        const headers = this._excelTemplateHeaders;
+        ws.addRow(headers);
+        const bodyRows = questions.map((s, i) => this._soalKeBarisTemplate(s, i));
+        bodyRows.forEach(row => ws.addRow(row));
+
+        // Lebar kolom mengikuti template soal terlampir.
+        const widths = [
+            16, 12, 12, 48, 28, 30, 28, 30, 28, 30, 28, 30, 28, 30, 28, 45
         ];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
-        XLSX.writeFile(wb, filename);
+        widths.forEach((w, i) => ws.getColumn(i + 1).width = w);
+
+        const header = ws.getRow(1);
+        header.height = 54;
+        header.eachCell(cell => {
+            cell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            cell.border = { bottom: { style: 'thin', color: { argb: 'FFD9E2F3' } } };
+        });
+
+        const fillMap = {
+            'PG': 'FFEAF3F8',
+            'PGK': 'FFFFF2CC',
+            'Menjodohkan': 'FFE2F0D9',
+            'Essay': 'FFFFF2CC'
+        };
+        const typeCellFillMap = {
+            'PG': 'FFEAF3F8',
+            'PGK': 'FFFCE4D6',
+            'Menjodohkan': 'FFE2F0D9',
+            'Essay': 'FFFFF2CC'
+        };
+
+        for (let r = 2; r <= ws.rowCount; r++) {
+            const row = ws.getRow(r);
+            const tipe = String(row.getCell(1).value || 'PG');
+            const fullFill = fillMap[tipe] || 'FFFFFFFF';
+            const typeFill = typeCellFillMap[tipe] || fullFill;
+            row.height = tipe === 'Essay' ? 72 : (tipe === 'Menjodohkan' ? 54 : 42);
+            row.eachCell((cell, col) => {
+                cell.font = { name: 'Calibri', size: 12, color: { argb: 'FF000000' } };
+                cell.alignment = {
+                    vertical: 'middle',
+                    horizontal: [1,2,3].includes(col) ? 'center' : 'left',
+                    wrapText: true
+                };
+                cell.border = {
+                    top: { style: 'hair', color: { argb: 'FFE7EAF0' } },
+                    bottom: { style: 'hair', color: { argb: 'FFE7EAF0' } },
+                    left: { style: 'hair', color: { argb: 'FFE7EAF0' } },
+                    right: { style: 'hair', color: { argb: 'FFE7EAF0' } }
+                };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fullFill } };
+            });
+            [1,2,3].forEach(col => {
+                row.getCell(col).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: typeFill } };
+            });
+        }
+
+        // Nomor dan bobot tetap numeric agar mudah diolah saat di-import kembali.
+        for (let r = 2; r <= ws.rowCount; r++) {
+            ws.getCell(r, 2).numFmt = '0';
+            ws.getCell(r, 3).numFmt = '0';
+        }
+        ws.autoFilter = { from: 'A1', to: `P${Math.max(1, ws.rowCount)}` };
+        ws.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+        ws.pageMargins = { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 };
+
+        // Sheet Ringkasan mengikuti workbook template terlampir.
+        const summary = workbook.addWorksheet('Ringkasan');
+        summary.mergeCells('A1:D1');
+        summary.getCell('A1').value = summaryTitle;
+        summary.getCell('A1').font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+        summary.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+        summary.getCell('A1').alignment = { vertical: 'middle', horizontal: 'center' };
+        summary.getRow(1).height = 28;
+        summary.addRow(['Tipe Soal', 'Jumlah', 'Bobot/Soal', 'Total Bobot']);
+        const typeOrder = ['PG', 'PGK', 'Menjodohkan', 'Essay'];
+        const typeLabels = {
+            'PG': 'PG',
+            'PGK': 'PGK',
+            'Menjodohkan': 'Menjodohkan',
+            'Essay': 'Essay'
+        };
+        const counts = {};
+        const weights = {};
+        typeOrder.forEach(t => { counts[t] = 0; weights[t] = 0; });
+        questions.forEach(q => {
+            const t = typeOrder.includes(String(q.tipe || 'PG')) ? String(q.tipe || 'PG') : 'PG';
+            counts[t]++;
+            weights[t] += Number(q.bobot ?? 0) || 0;
+        });
+        const defaultWeights = { PG: 2, PGK: 4, Menjodohkan: 8, Essay: 12 };
+        typeOrder.forEach(t => {
+            const row = summary.addRow([typeLabels[t], counts[t], counts[t] ? Math.round(weights[t] / counts[t] * 100) / 100 : defaultWeights[t], weights[t]]);
+            row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: typeCellFillMap[t] || 'FFFFFFFF' } };
+            row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillMap[t] || 'FFFFFFFF' } };
+            row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillMap[t] || 'FFFFFFFF' } };
+            row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillMap[t] || 'FFFFFFFF' } };
+        });
+        const totalCount = questions.length;
+        const totalWeight = typeOrder.reduce((sum, t) => sum + weights[t], 0);
+        const totalRow = summary.addRow(['TOTAL', totalCount, '', totalWeight]);
+        totalRow.eachCell(cell => {
+            cell.font = { name: 'Calibri', size: 12, bold: true };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAD3' } };
+        });
+        summary.getColumn(1).width = 22;
+        summary.getColumn(2).width = 14;
+        summary.getColumn(3).width = 16;
+        summary.getColumn(4).width = 18;
+        summary.eachRow(row => row.eachCell(cell => {
+            cell.border = {
+                top: { style: 'thin', color: { argb: 'FFE7EAF0' } },
+                bottom: { style: 'thin', color: { argb: 'FFE7EAF0' } },
+                left: { style: 'thin', color: { argb: 'FFE7EAF0' } },
+                right: { style: 'thin', color: { argb: 'FFE7EAF0' } }
+            };
+            cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            if (row.number === 2) {
+                cell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+            }
+        }));
+
+        return workbook;
+    },
+
+    _downloadExcel: async function(questions, filename, summaryTitle) {
+        const workbook = await this._makeTemplateWorkbook(questions, summaryTitle);
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
     },
 
     downloadPaket: async function(mapel, kelasKey, btnEl = null) {
@@ -746,10 +917,9 @@ const SoalManager = {
                 });
             }
             questions.sort((a,b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
-            const rows = questions.map((s, i) => this._soalKeBarisExcel(s, i));
             const filename = `Bank_Soal_${this._sanitizeFilename(mapel)}_${this._sanitizeFilename(kelasKey)}.xlsx`;
-            this._downloadExcel(rows, filename, 'Soal');
-            await window.customAlert(`Berhasil mengunduh ${rows.length} soal untuk ${mapel} (${kelasKey}).`, 'success');
+            await this._downloadExcel(questions, filename, `BANK SOAL ${mapel} - ${kelasKey}`);
+            await window.customAlert(`Berhasil mengunduh ${questions.length} soal untuk ${mapel} (${kelasKey}).`, 'success');
         } catch (e) {
             console.error('Download paket soal gagal:', e);
             window.customAlert('Gagal mengunduh paket soal: ' + e.message, 'error');
@@ -778,9 +948,8 @@ const SoalManager = {
                 if (ck !== 0) return ck;
                 return (a.nomor_soal || 0) - (b.nomor_soal || 0);
             });
-            const rows = questions.map((s, i) => this._soalKeBarisExcel(s, i));
-            this._downloadExcel(rows, `Bank_Soal_SMAICH_Seluruh_Mapel.xlsx`, 'Semua Soal');
-            await window.customAlert(`Berhasil mengunduh seluruh bank soal (${rows.length} soal).`, 'success');
+            await this._downloadExcel(questions, `Bank_Soal_SMAICH_Seluruh_Mapel.xlsx`, 'RINGKASAN BANK SOAL SMAICH - SELURUH MAPEL');
+            await window.customAlert(`Berhasil mengunduh seluruh bank soal (${questions.length} soal).`, 'success');
         } catch (e) {
             console.error('Download seluruh bank soal gagal:', e);
             window.customAlert('Gagal mengunduh seluruh bank soal: ' + e.message, 'error');
@@ -1658,23 +1827,55 @@ document.getElementById('form-tambah-soal')?.addEventListener('submit', async (e
 // ==========================================
 // 10. UPLOAD MASSAL & IMPORT
 // ==========================================
-window.downloadTemplate = (type) => {
+window.downloadTemplate = async (type) => {
     if(type === 'excel') {
-        const data = [
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PG", "Nomor Soal": 1, "Bobot Soal": 1, "Teks Pertanyaan": "Siapa presiden pertama Republik Indonesia?", "Link Media Pertanyaan (URL Gambar/Audio/Video)": "", "Opsi A": "Soeharto", "Link Media Opsi A (URL Gambar)": "", "Opsi B": "B.J. Habibie", "Opsi C": "Soekarno", "Opsi D": "Joko Widodo", "Opsi E": "Susilo Bambang Yudhoyono", "Kunci Jawaban / Pasangan Menjodohkan": "C"},
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "PGK", "Nomor Soal": 2, "Bobot Soal": 2, "Teks Pertanyaan": "Manakah dari perangkat berikut yang merupakan perangkat keras (hardware) komputer? (Pilih lebih dari satu)", "Opsi A": "Monitor", "Opsi B": "Sistem Operasi Windows", "Opsi C": "Keyboard", "Opsi D": "Microsoft Word", "Opsi E": "Mouse", "Kunci Jawaban / Pasangan Menjodohkan": "A,C,E"},
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Menjodohkan", "Nomor Soal": 3, "Bobot Soal": 3, "Teks Pertanyaan": "Pasangkan ibu kota berikut dengan negaranya yang tepat!", "Opsi A": "", "Opsi B": "", "Opsi C": "", "Opsi D": "", "Opsi E": "", "Kunci Jawaban / Pasangan Menjodohkan": "Jakarta=Indonesia; Tokyo=Jepang; Paris=Prancis; London=Inggris"},
-            {"Tipe Soal (PG / PGK / Menjodohkan / Essay)": "Essay", "Nomor Soal": 4, "Bobot Soal": 5, "Teks Pertanyaan": "Jelaskan secara singkat proses terjadinya fotosintesis pada tumbuhan!", "Opsi A": "", "Opsi B": "", "Opsi C": "", "Opsi D": "", "Opsi E": "", "Kunci Jawaban / Pasangan Menjodohkan": "Tumbuhan mengubah sinar matahari, air, dan karbon dioksida menjadi glukosa dan oksigen."}
+        const sampleQuestions = [
+            {
+                tipe: 'PG', nomor_soal: 1, bobot: 2,
+                teks_soal: 'Contoh pertanyaan pilihan ganda.',
+                opsi: { A: 'Pilihan A', B: 'Pilihan B', C: 'Pilihan C', D: 'Pilihan D', E: 'Pilihan E' },
+                kunci_jawaban: 'A'
+            },
+            {
+                tipe: 'PGK', nomor_soal: 2, bobot: 4,
+                teks_soal: 'Contoh pertanyaan pilihan ganda kompleks. Pilih semua jawaban yang benar.',
+                opsi: { A: 'Pernyataan A', B: 'Pernyataan B', C: 'Pernyataan C', D: 'Pernyataan D', E: 'Pernyataan E' },
+                kunci_jawaban: ['A', 'C']
+            },
+            {
+                tipe: 'Menjodohkan', nomor_soal: 3, bobot: 8,
+                teks_soal: 'Contoh soal menjodohkan. Tulis pasangan pada kolom kunci dengan format A=B; C=D.',
+                pasangan: [
+                    { kiri: 'Istilah 1', kanan: 'Definisi 1' },
+                    { kiri: 'Istilah 2', kanan: 'Definisi 2' },
+                    { kiri: 'Istilah 3', kanan: 'Definisi 3' },
+                    { kiri: 'Istilah 4', kanan: 'Definisi 4' }
+                ]
+            },
+            {
+                tipe: 'Essay', nomor_soal: 4, bobot: 12,
+                teks_soal: 'Contoh pertanyaan essay. Jelaskan jawaban Anda secara lengkap dan sistematis.',
+                kunci_jawaban: 'Contoh jawaban / pedoman penilaian essay.'
+            }
         ];
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        
-        // Memperlebar kolom agar template mudah dibaca
-        const cols = [{wch: 38}, {wch: 12}, {wch: 12}, {wch: 45}, {wch: 40}, {wch: 25}, {wch: 30}, {wch: 25}, {wch: 25}, {wch: 25}, {wch: 25}, {wch: 45}];
-        ws['!cols'] = cols;
-
-        XLSX.utils.book_append_sheet(wb, ws, "Template Soal");
-        XLSX.writeFile(wb, "Template_Soal_CBT.xlsx");
+        try {
+            if (typeof ExcelJS !== 'undefined') {
+                await SoalManager._downloadExcel(sampleQuestions, 'Template_Soal_CBT.xlsx', 'RINGKASAN TEMPLATE SOAL CBT');
+            } else {
+                const headers = SoalManager._excelTemplateHeaders;
+                const aoa = [headers, ...sampleQuestions.map((q, i) => SoalManager._soalKeBarisTemplate(q, i))];
+                const ws = XLSX.utils.aoa_to_sheet(aoa);
+                ws['!cols'] = [
+                    {wch:16},{wch:12},{wch:12},{wch:48},{wch:28},{wch:30},{wch:28},{wch:30},{wch:28},{wch:30},{wch:28},{wch:30},{wch:28},{wch:30},{wch:28},{wch:45}
+                ];
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Template Soal');
+                XLSX.writeFile(wb, 'Template_Soal_CBT.xlsx');
+            }
+        } catch (e) {
+            console.error('Gagal membuat template Excel:', e);
+            window.customAlert('Gagal membuat template Excel: ' + e.message, 'error');
+        }
     } else if (type === 'word') {
         const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head><meta charset='utf-8'><title>Template Soal CBT</title></head><body>
