@@ -1,0 +1,8 @@
+# File sumber/data lokal yang tidak diperlukan saat runtime Vercel
+Daftar_Pengguna_SMAICH.xlsx
+com.puravidaapps.TaifunTools.aix
+FIREBASE_SETUP.md
+FIRESTORE_SETUP.md
+firebase.json
+firestore.rules
+.firebaserc

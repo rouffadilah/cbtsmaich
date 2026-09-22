@@ -53,9 +53,9 @@ onAuthStateChanged(auth, async (user) => {
         localStorage.setItem("userMapel", JSON.stringify(normalizeArrayData(userData.mapel)));
         localStorage.setItem("userKelas", JSON.stringify(normalizeArrayData(userData.kelas)));
         if (roles.includes("admin") || roles.includes("guru")) {
-            window.location.replace("dashboard.html");
+            window.location.replace("/dashboard");
         } else if (roles.includes("siswa")) {
-            window.location.replace("attempt.html");
+            window.location.replace("/attempt");
         }
     } catch (error) {
         console.error("Gagal memuat profil login:", error);
@@ -107,9 +107,9 @@ if (btnLoginGoogle) {
                 const kelases = normalizeArrayData(userData?.kelas);
                 localStorage.setItem("userMapel", JSON.stringify(mapels));
                 localStorage.setItem("userKelas", JSON.stringify(kelases));
-                window.location.replace("dashboard.html");
+                window.location.replace("/dashboard");
             } else {
-                window.location.replace("attempt.html");
+                window.location.replace("/attempt");
             }
         } catch (error) {
             console.error("Popup Error:", error);
@@ -157,10 +157,10 @@ if (loginForm) {
                 localStorage.setItem("userKelas", JSON.stringify(kelases));
                 
                 setLoginMessage('success', 'Berhasil masuk. Mengalihkan ke dashboard...');
-                window.location.replace("dashboard.html"); 
+                window.location.replace("/dashboard"); 
             } else {
                 setLoginMessage('success', 'Berhasil masuk. Mengalihkan ke ujian...');
-                window.location.replace("attempt.html"); 
+                window.location.replace("/attempt"); 
             }
 
         } catch (error) {

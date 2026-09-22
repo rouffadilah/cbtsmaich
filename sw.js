@@ -1,23 +1,22 @@
 // Naikkan versi ini (misal v3, v4) setiap kali Anda melakukan update besar pada HTML/JS/CSS
-const CACHE_NAME = 'cbt-smaich-v11'; 
+const CACHE_NAME = 'cbt-smaich-v12-vercel'; 
 const DYNAMIC_CACHE = 'cbt-smaich-dynamic-v1';
 
 // Aset inti yang wajib disimpan di memori HP saat pertama kali aplikasi dibuka
 const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './attempt.html',
-  './attempt.js',
-  './dashboard.html',
-  './dashboard.js',
-  './firebase-config.js',
-  './index.js',
-  './logo-smaich.png',
-  './registrasi.html',
-  './registrasi.js',
-  './akun.js',
-  './style.css'
+  '/',
+  '/manifest.json',
+  '/attempt',
+  '/attempt.js',
+  '/dashboard',
+  '/dashboard.js',
+  '/firebase-config.js',
+  '/index.js',
+  '/logo-smaich.png',
+  '/registrasi',
+  '/registrasi.js',
+  '/akun.js',
+  '/style.css'
 ];
 
 // 1. Event Install: Memuat cache statis dan memaksa update

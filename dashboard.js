@@ -1219,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnLogout) {
         btnLogout.onclick = async () => { 
             if (await window.customConfirm("Yakin ingin keluar dari aplikasi?", "warning", "Konfirmasi Keluar", "Ya, Keluar")) { 
-                await signOut(auth); localStorage.clear(); window.location.replace("index.html"); 
+                await signOut(auth); localStorage.clear(); window.location.replace("/"); 
             } 
         };
     }
@@ -1290,10 +1290,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // 6. FIREBASE AUTHENTICATION LISTENER
 // ==========================================
 onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.replace("index.html"); return; }
+    if (!user) { window.location.replace("/"); return; }
     try {
         const userSnap = await getDoc(doc(db, "users", user.uid));
-        if (!userSnap.exists()) { await signOut(auth); localStorage.clear(); window.location.replace("index.html"); return; }
+        if (!userSnap.exists()) { await signOut(auth); localStorage.clear(); window.location.replace("/"); return; }
         const profile = userSnap.data();
         const roles = Array.isArray(profile.role) ? profile.role : [profile.role];
         isAdmin = roles.includes("admin");
@@ -1303,8 +1303,8 @@ onAuthStateChanged(auth, async (user) => {
         localStorage.setItem("userRole", JSON.stringify(roles));
         localStorage.setItem("userMapel", JSON.stringify(userMapel));
         localStorage.setItem("userKelas", JSON.stringify(userKelas));
-        if (!isAdmin && !isGuru) { window.location.replace("attempt.html"); return; }
-    } catch(e) { console.error("Gagal memverifikasi role dashboard:", e); window.location.replace("index.html"); return; }
+        if (!isAdmin && !isGuru) { window.location.replace("/attempt"); return; }
+    } catch(e) { console.error("Gagal memverifikasi role dashboard:", e); window.location.replace("/"); return; }
 
     const finalDisplayName = user.displayName || profile.nama || "Pengguna";
 
@@ -2522,7 +2522,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.getElementById('btn-mode-siswa')?.addEventListener('click', () => { window.location.href = 'attempt.html'; });
+    document.getElementById('btn-mode-siswa')?.addEventListener('click', () => { window.location.href = '/attempt'; });
     const filterGmailInputs = ['search-gmail-email', 'search-gmail-nama', 'search-gmail-role'];
     filterGmailInputs.forEach(id => { document.getElementById(id)?.addEventListener('input', window.renderTablePengguna); });
 });

@@ -47,7 +47,7 @@
         <div class="login-card">
             <div class="login-header">
                 <span class="login-badge"><i class="fas fa-user-plus"></i> Pendaftaran</span>
-                <a href="dashboard.html" style="display: inline-block; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <a href="/dashboard" style="display: inline-block; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                     <img src="logo-smaich.png" alt="Logo SMAICH" class="main-logo" title="Kembali ke Dashboard" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
                 </a>
                 
@@ -66,6 +66,12 @@
                 <div class="role-box" id="select-guru">
                     <i class="fas fa-chalkboard-teacher"></i><span>GURU</span>
                 </div>
+            </div>
+
+            <div id="admin-registration-options" style="display:none; background:#eff6ff; border:1px solid #93c5fd; padding:12px 14px; border-radius:8px; margin-bottom:20px;">
+                <div style="font-size:.82rem; font-weight:800; color:#1d4ed8; margin-bottom:8px;"><i class="fas fa-user-shield"></i> Mode Admin: Multi-role</div>
+                <div id="reg-role-admin-container" class="checkbox-container"></div>
+                <div style="font-size:.75rem; color:#475569; margin-top:8px;">Fitur All dan multi-role hanya tampil untuk akun Admin yang sedang login.</div>
             </div>
 
             <div id="mass-upload-box" style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
@@ -87,6 +93,7 @@
                 <div class="input-group"><label>Nama Lengkap</label><input type="text" id="reg-name" class="input-text" placeholder="Masukkan nama lengkap" autocomplete="name" required></div>
                 <div class="input-group"><label id="username-label">Nomor Peserta / NIS</label><input type="text" id="reg-username" class="input-text" placeholder="Masukkan NIS (10 Digit Angka)" inputmode="numeric" maxlength="10" autocomplete="username" required></div>
                 <div class="input-group" id="group-kelas-siswa"><label>Pilih Kelas</label><select id="reg-kelas-siswa" class="input-text" required><option value="" disabled selected>Memuat data kelas...</option></select></div>
+                <div class="input-group" id="group-kelas-admin" style="display:none;"><label>Kelas (Mode Admin)</label><div id="reg-kelas-admin-container" class="checkbox-container">Memuat data...</div></div>
                 <div class="input-group" id="group-mapel-guru" style="display: none;"><label>Mata Pelajaran (Guru)</label><div id="reg-mapel-container" class="checkbox-container">Memuat data...</div></div>
                 <div class="input-group" id="group-kelas-guru" style="display: none;"><label>Kelas Ajar (Guru)</label><div id="reg-kelas-guru-container" class="checkbox-container">Memuat data...</div></div>
                 <div class="input-group"><label>Password</label><input type="password" id="reg-password" class="input-text" placeholder="Minimal 6 karakter" autocomplete="new-password" required></div>
@@ -94,7 +101,7 @@
                 
                 <button type="submit" class="btn-3d" id="btn-submit" data-default-text="DAFTAR MANUAL">DAFTAR MANUAL</button>
                 
-                <div style="margin-top: 20px; font-size: 0.9rem;">Sudah punya akun? <a href="index.html">Masuk di sini</a></div>
+                <div style="margin-top: 20px; font-size: 0.9rem;">Sudah punya akun? <a href="/">Masuk di sini</a></div>
             </form>
             
             <div class="login-footer">&copy; 2026 IT Support SMAICH. All rights reserved.</div>

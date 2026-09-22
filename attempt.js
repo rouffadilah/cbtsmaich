@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, async (user) => {
         // Semua akses soal/hasil kini mensyaratkan Firebase Authentication.
         if (!user) {
-            window.location.replace("index.html");
+            window.location.replace("/");
             return;
         }
         
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const inputNama = document.getElementById('input-nama-siswa');
                 if (inputNama) inputNama.value = examState.student.nama || user.displayName || user.email || '';
             } else {
-                window.location.replace("index.html");
+                window.location.replace("/");
             }
         } catch(e) { console.error(e); }
     });
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm("Yakin ingin membatalkan dan kembali ke halaman Login?")) {
             await signOut(auth);
             localStorage.clear();
-            window.location.replace("index.html");
+            window.location.replace("/");
         }
     });
 
@@ -783,7 +783,7 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
                 <div style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px 25px; border-radius: 8px; margin-top: 25px;">
                     <p style="color:#166534; font-size: 0.95rem; font-weight: 600; margin: 0;">Anda sudah bisa menutup tab browser ini atau menekan tombol di bawah untuk keluar dari akun.</p>
                 </div>
-                <button onclick="localStorage.clear(); window.location.replace('index.html')" class="btn-3d" style="margin-top: 25px; padding: 12px 25px; font-size: 1rem;"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+                <button onclick="localStorage.clear(); window.location.replace('/')" class="btn-3d" style="margin-top: 25px; padding: 12px 25px; font-size: 1rem;"><i class="fas fa-sign-out-alt"></i> Keluar</button>
             </div>
         `;
         

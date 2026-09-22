@@ -462,7 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     await auth.signOut();
                     setRegMessage('success', `Registrasi massal selesai. Berhasil: ${successCount} akun, gagal: ${errorCount}. Silakan kembali ke halaman login.`);
-                    setTimeout(() => { window.location.href = "index.html"; }, 700);
+                    setTimeout(() => { window.location.href = "/"; }, 700);
                 }
 
             } catch (error) {
@@ -614,7 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 await auth.signOut();
                 setRegMessage('success', `Akun ${roles[0].toUpperCase()} berhasil dibuat. Silakan login dengan username dan password baru.`);
-                setTimeout(() => { window.location.href = "index.html"; }, 700);
+                setTimeout(() => { window.location.href = "/"; }, 700);
             }
 
         } catch (error) {

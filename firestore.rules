@@ -30,15 +30,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Profil pengguna. Pengguna boleh membuat profilnya sendiri setelah Firebase Auth sukses.
-    // Role admin tidak boleh dibuat dari browser oleh pengguna biasa.
+    // Profil pengguna.
+    // - Pengguna biasa hanya boleh membuat profil miliknya sendiri dan tidak dapat membuat role admin.
+    // - Admin boleh membuat profil pengguna lain, termasuk memberikan multi-role / admin.
     match /users/{uid} {
       allow read: if isSelf(uid) || isAdmin();
-      allow create: if isSelf(uid) &&
-        request.resource.data.role is list &&
-        ('admin' in request.resource.data.role) == false &&
+      allow create: if (
+        isSelf(uid) &&
+        (request.resource.data.role == ['siswa'] || request.resource.data.role == ['guru']) &&
         request.resource.data.username is string &&
-        request.resource.data.nama is string;
+        request.resource.data.nama is string
+      ) || (
+        isAdmin() &&
+        request.resource.data.role is list &&
+        request.resource.data.username is string &&
+        request.resource.data.nama is string
+      );
       allow update: if isAdmin() || (
         isSelf(uid) &&
         resource.data.role == request.resource.data.role &&

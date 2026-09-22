@@ -5,7 +5,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { getFunctions } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
-const firebaseConfig = {
+export const firebaseConfig = {
     apiKey: "AIzaSyB8R0VNO0noUlkcUcjBkpsGFrYPdtA7KxM",
     authDomain: "cbt-sekolah-7fed0.firebaseapp.com",
     projectId: "cbt-sekolah-7fed0",
