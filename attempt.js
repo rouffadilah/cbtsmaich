@@ -6,7 +6,7 @@ import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://
 const examState = {
     student: null, mapelTerpilih: "", arraySoal: [], currentIndex: 0,
     jawabanSiswa: {}, raguRagu: {}, timerInterval: null, durasiDetik: 0,
-    attemptId: null, endAtMs: 0, pendingWrites: new Set(),
+    attemptId: null, endAtMs: 0, pendingWrites: new Set(), essayTimer: null,
     pelanggaran: 0, maxPelanggaran: 3, isExamActive: false,
     matchingOptions: {}
 };
@@ -284,7 +284,7 @@ function jalankanTimer() {
 }
 
 function simpanJawabanServer(questionId, answer, raguRagu = false) {
-    if (!examState.attemptId || !examState.isExamActive) return Promise.resolve();
+    if (!examState.attemptId) return Promise.resolve();
     const saveAnswer = httpsCallable(functions, 'saveAnswer');
     const promise = saveAnswer({ attemptId: examState.attemptId, questionId, answer, raguRagu });
     examState.pendingWrites.add(promise);
@@ -429,12 +429,9 @@ function tampilkanSoal(idx) {
 
             let optionsHtml = `<option value="">-- Pilih Pasangan --</option>`;
             const optionNumberMap = new Map();
-            semuaKanan.forEach(p => {
+            semuaKanan.forEach((p, optionIdx) => {
                 const val = String(p).trim();
-                if (!optionNumberMap.has(val)) {
-                    const n = String(p.nomor_kanan || optionNumberMap.size + 1);
-                    optionNumberMap.set(val, n);
-                }
+                if (!optionNumberMap.has(val)) optionNumberMap.set(val, String(optionIdx + 1));
             });
             semuaKanan.forEach((k, choiceIdx) => {
                 const safeK = String(k);
@@ -459,9 +456,9 @@ function tampilkanSoal(idx) {
         htmlContent += `</div>`;
         if (semuaKanan.length) {
             const summaryMap = new Map();
-            pasangan.forEach((p, i) => {
-                const val = String(p.kanan).trim();
-                if (!summaryMap.has(val)) summaryMap.set(val, String(p.nomor_kanan || summaryMap.size + 1));
+            semuaKanan.forEach((p, i) => {
+                const val = String(p).trim();
+                if (!summaryMap.has(val)) summaryMap.set(val, String(i + 1));
             });
             htmlContent += `<div style="margin-top:14px; padding:12px 14px; border:1px dashed #94a3b8; border-radius:10px; background:#f8fafc; font-size:0.86rem; color:#475569;"><b>Daftar pilihan:</b> ${semuaKanan.map(k => `<span style="display:inline-block; margin:4px 4px 0 0; padding:5px 9px; border-radius:999px; background:#e2e8f0;">${summaryMap.get(String(k).trim()) || ''}. ${k}</span>`).join('')}</div>`;
         }
@@ -518,11 +515,14 @@ function tampilkanSoal(idx) {
     else {
         const tx = document.getElementById('essay-ans');
         if (tx) {
-            tx.oninput = (e) => { 
-                examState.jawabanSiswa[soal.id] = e.target.value; 
+            tx.oninput = (e) => {
+                examState.jawabanSiswa[soal.id] = e.target.value;
                 simpanJawabanLokal();
-                simpanJawabanServer(soal.id, examState.jawabanSiswa[soal.id], !!examState.raguRagu[soal.id]).catch(()=>{});
-                renderNavigasi(); 
+                clearTimeout(examState.essayTimer);
+                examState.essayTimer = setTimeout(() => {
+                    simpanJawabanServer(soal.id, examState.jawabanSiswa[soal.id], !!examState.raguRagu[soal.id]).catch(()=>{});
+                }, 500);
+                renderNavigasi();
             };
         }
     }
@@ -598,6 +598,11 @@ if (btnSelesaiUjian) {
 
 async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);
+    clearTimeout(examState.essayTimer);
+    const currentSoal = examState.arraySoal[examState.currentIndex];
+    if (currentSoal && Object.prototype.hasOwnProperty.call(examState.jawabanSiswa, currentSoal.id)) {
+        simpanJawabanServer(currentSoal.id, examState.jawabanSiswa[currentSoal.id], !!examState.raguRagu[currentSoal.id]).catch(()=>{});
+    }
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
     document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><i class="fas fa-spinner fa-spin fa-4x" style="color:var(--primary); margin-bottom:20px;"></i><h2 style="color:var(--secondary); font-family:sans-serif; text-align:center;">Menyimpan Lembar Jawaban...</h2><p style="color:var(--text-muted);">Memastikan semua jawaban sudah tersimpan di server.</p></div>';
