@@ -64,7 +64,7 @@ async function getAttempt(uid, attemptId) {
 exports.startExam = onCall(async (request) => {
   const uid = requireAuth(request);
   const student = await getStudent(uid);
-  const { mapel, kelas, token = "", linkMode = false } = request.data || {};
+  const { mapel, kelas, token = "" } = request.data || {};
 
   if (!mapel || !kelas) throw new HttpsError("invalid-argument", "Mapel dan kelas wajib dipilih.");
 
@@ -85,13 +85,11 @@ exports.startExam = onCall(async (request) => {
     if (nowMs > endMs) throw new HttpsError("deadline-exceeded", "Waktu ujian sudah berakhir.");
   }
 
-  if (!linkMode) {
-    const tokenKey = `token_${mapel}_${kelas}`;
-    const tokenData = tokenSnap.exists ? tokenSnap.data()[tokenKey] : null;
-    const currentToken = typeof tokenData === "object" ? tokenData?.code : tokenData;
-    if (currentToken && String(token).toUpperCase().trim() !== String(currentToken).toUpperCase().trim()) {
-      throw new HttpsError("permission-denied", "Token ujian salah.");
-    }
+  const tokenKey = `token_${mapel}_${kelas}`;
+  const tokenData = tokenSnap.exists ? tokenSnap.data()[tokenKey] : null;
+  const currentToken = typeof tokenData === "object" ? tokenData?.code : tokenData;
+  if (currentToken && String(token).toUpperCase().trim() !== String(currentToken).toUpperCase().trim()) {
+    throw new HttpsError("permission-denied", "Token ujian salah.");
   }
 
   const qSnap = await db.collection("bank_soal").where("mataPelajaran", "==", mapel).get();
