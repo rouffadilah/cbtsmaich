@@ -226,12 +226,11 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memverifikasi...';
     btn.disabled = true;
     try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const linkMode = urlParams.get('mapel') != null || urlParams.get('kelas') != null;
+        
         if (namaSiswa) examState.student.nama = namaSiswa;
         SecurityManager.openFullscreen();
         const startExam = httpsCallable(functions, 'startExam');
-        const result = await startExam({ mapel: examState.mapelTerpilih, kelas: kelasSiswa, token: tokenInput, linkMode });
+        const result = await startExam({ mapel: examState.mapelTerpilih, kelas: kelasSiswa, token: tokenInput });
         const data = result.data;
         examState.attemptId = data.attemptId;
         examState.endAtMs = Number(data.endAt);
