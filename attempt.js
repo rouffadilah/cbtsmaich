@@ -136,12 +136,26 @@ const SecurityManager = {
         examState.pelanggaran++;
         const violationEl = document.getElementById('violation-count');
         if (violationEl) violationEl.innerText = examState.pelanggaran;
-        if (examState.pelanggaran >= examState.maxPelanggaran) {
+
+        let serverCount = examState.pelanggaran;
+        try {
+            if (examState.attemptId) {
+                const reportViolation = httpsCallable(functions, 'reportViolation');
+                const result = await reportViolation({ attemptId: examState.attemptId, reason: alasan });
+                serverCount = Number(result.data?.count || serverCount);
+                examState.pelanggaran = serverCount;
+                if (violationEl) violationEl.innerText = serverCount;
+            }
+        } catch (error) {
+            console.warn("Pelanggaran belum tersinkron ke server:", error);
+        }
+
+        if (serverCount >= examState.maxPelanggaran) {
             examState.isExamActive = false;
             await window.customAlert(`Ujian dihentikan karena mencapai batas maksimal ${examState.maxPelanggaran} kali pelanggaran.\n\nAlasan Terakhir: ${alasan}`, 'DISKUALIFIKASI');
             selesaiUjian("DISKUALIFIKASI");
         } else {
-            await window.customAlert(`${alasan}\n\nPeringatan ${examState.pelanggaran}/${examState.maxPelanggaran}!\nJika mencapai batas, ujian otomatis selesai dan Anda didiskualifikasi.`, 'PERINGATAN KEAMANAN');
+            await window.customAlert(`${alasan}\n\nPeringatan ${serverCount}/${examState.maxPelanggaran}!\nJika mencapai batas, ujian otomatis selesai dan Anda didiskualifikasi.`, 'PERINGATAN KEAMANAN');
             this.openFullscreen();
         }
     },
