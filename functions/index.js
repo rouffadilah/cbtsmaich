@@ -153,6 +153,26 @@ exports.saveAnswer = onCall(async (request) => {
   return { ok: true, serverTime: Date.now(), endAt: data.endAt.toMillis() };
 });
 
+exports.reportViolation = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const { attemptId, reason = "UNKNOWN" } = request.data || {};
+  const { ref, data } = await getAttempt(uid, attemptId);
+
+  if (data.status !== "ACTIVE") throw new HttpsError("failed-precondition", "Ujian sudah tidak aktif.");
+  if (Timestamp.now().toMillis() > data.endAt.toMillis()) throw new HttpsError("deadline-exceeded", "Waktu ujian telah berakhir.");
+
+  const count = Number(data.violationCount || 0) + 1;
+  await ref.update({
+    violationCount: count,
+    lastViolationReason: String(reason).slice(0, 200),
+    lastViolationAt: FieldValue.serverTimestamp(),
+    forceDisqualify: count >= 3,
+    updatedAt: FieldValue.serverTimestamp()
+  });
+
+  return { count, max: 3, forceDisqualify: count >= 3 };
+});
+
 exports.submitExam = onCall(async (request) => {
   const uid = requireAuth(request);
   const { attemptId, statusAkhir = "NORMAL" } = request.data || {};
