@@ -1,19 +1,20 @@
 import { auth, db } from './firebase-config.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const examState = {
     student: null, mapelTerpilih: "", arraySoal: [], currentIndex: 0,
     jawabanSiswa: {}, raguRagu: {}, timerInterval: null, durasiDetik: 0,
+    attemptId: null, endAtMs: 0, pendingWrites: new Set(),
     pelanggaran: 0, maxPelanggaran: 3, isExamActive: false,
     matchingOptions: {}
 };
 
 // --- FUNGSI AUTOSAVE PENYIMPANAN LOKAL ---
 const simpanJawabanLokal = () => {
-    if (!examState.student || !examState.mapelTerpilih) return;
-    // Buat kunci unik berdasarkan ID siswa dan Mapel
-    const localKey = `cbt_ans_${examState.student.uid}_${examState.mapelTerpilih}`;
+    if (!examState.student || !examState.attemptId) return;
+    const localKey = `cbt_ans_${examState.student.uid}_${examState.attemptId}`;
     const dataToSave = {
         jawabanSiswa: examState.jawabanSiswa,
         raguRagu: examState.raguRagu
@@ -211,178 +212,85 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.getElementById('btn-verifikasi').onclick = async () => {
-    // 1. CEK VALIDASI NAMA UNTUK MODE PUBLIK
     const inputNamaEl = document.getElementById('input-nama-siswa');
     const namaSiswa = inputNamaEl ? inputNamaEl.value.trim() : "";
-
-    if (!examState.student) {
-        return window.customAlert("Sesi login belum siap. Silakan masuk kembali.", "Peringatan");
-    }
-
-    // 2. CEK PILIHAN MAPEL & KELAS
+    if (!examState.student) return window.customAlert("Sesi login belum siap. Silakan masuk kembali.", "Peringatan");
     const elMapel = document.getElementById('select-mapel') || document.querySelector('select[id*="mapel"]');
     const elKelas = document.getElementById('student-class') || document.getElementById('select-kelas') || document.querySelector('select[id*="kelas"]');
     const elToken = document.getElementById('input-token');
-
     examState.mapelTerpilih = elMapel ? elMapel.value : "";
-    const tokenInput = elToken ? elToken.value.toUpperCase().trim() : "BYPASS";
+    const tokenInput = elToken ? elToken.value.toUpperCase().trim() : "";
     const kelasSiswa = elKelas ? elKelas.value : "";
-
-    if(!examState.mapelTerpilih || !kelasSiswa) return window.customAlert("Pilih Mapel dan Kelas Anda terlebih dahulu!", "Peringatan");
-    
-    // 3. Gunakan identitas dari Firebase Auth + profil Firestore sebagai sumber data utama.
-    if (namaSiswa && examState.student) examState.student.nama = namaSiswa;
-
-    SecurityManager.openFullscreen();
-
-    const btn = document.getElementById('btn-verifikasi'); 
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memverifikasi...'; btn.disabled = true;
-
+    if (!examState.mapelTerpilih || !kelasSiswa) return window.customAlert("Pilih Mapel dan Kelas Anda terlebih dahulu!", "Peringatan");
+    const btn = document.getElementById('btn-verifikasi');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memverifikasi...';
+    btn.disabled = true;
     try {
-        const isLinkMode = (new URLSearchParams(window.location.search)).get('mapel') != null;
-        const jadwalKey = `${examState.mapelTerpilih}_${kelasSiswa}`;
-
-     // --- OTOMATISASI JADWAL UJIAN ---
-        const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
-        const timeSnap = await getDoc(doc(db, "pengaturan", "waktu_ujian"));
-
-        const jadwalMulaiStr = jadwalSnap.exists() ? jadwalSnap.data()[jadwalKey] : null;
-        let durasiMenit = 90; // Default 90 menit jika tidak diatur
-        
-        if (timeSnap.exists() && timeSnap.data()[jadwalKey]) {
-            durasiMenit = parseInt(timeSnap.data()[jadwalKey]);
-        }
-        
-        // Simpan durasi ke variabel global agar timer countdown ujian berjalan
-        examState.durasiDetik = durasiMenit * 60;
-
-        // 4. PENGECEKAN WAKTU UJIAN (Hanya dicek jika guru MENGISI jadwal)
-        if (jadwalMulaiStr) {
-            const waktuMulai = new Date(jadwalMulaiStr).getTime();
-            const waktuSelesai = waktuMulai + (durasiMenit * 60 * 1000);
-            const waktuSekarang = new Date().getTime();
-
-            if (waktuSekarang < waktuMulai) {
-                const formatJadwal = new Date(jadwalMulaiStr).toLocaleString('id-ID', {day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
-                throw new Error(`Akses Ditolak: Ujian belum dimulai! Ujian ini dijadwalkan terbuka otomatis pada:\n${formatJadwal} WIB.`);
-            }
-
-            if (waktuSekarang > waktuSelesai) {
-                throw new Error("Akses Ditolak: Waktu pelaksanaan ujian ini sudah berakhir dan link telah otomatis ditutup.");
-            }
-        }
-
-        // 5. PENGECEKAN TOKEN (Hanya dicek jika guru MENGISI token di dashboard)
-        if (!isLinkMode) {
-            const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
-            const tokenKeyDb = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
-            
-            let isTokenRequired = false;
-            let currentTokenDb = "";
-
-            if (tokenSnap.exists() && tokenSnap.data()[tokenKeyDb]) {
-                const tokenData = tokenSnap.data()[tokenKeyDb];
-                currentTokenDb = typeof tokenData === 'object' ? tokenData.code : tokenData;
-                
-                // Cek apakah di database ada kodenya
-                if (currentTokenDb && currentTokenDb.trim() !== "") {
-                    isTokenRequired = true;
-                }
-            }
-
-            // Jika Pengawas mengaktifkan token, maka wajib mencocokkan input siswa
-            if (isTokenRequired) {
-                if (tokenInput !== currentTokenDb) {
-                    throw new Error("Token yang Anda masukkan SALAH!");
-                }
-            }
-        }
-        
-        // --- AMBIL SOAL DARI DATABASE ---
-        const qSoal = query(collection(db, "bank_soal"), where("mataPelajaran", "==", examState.mapelTerpilih));
-        const soalSnap = await getDocs(qSoal);
-        
-        examState.arraySoal = [];
-        soalSnap.forEach(d => {
-            let data = d.data();
-            let arrKelas = Array.isArray(data.kelas) ? data.kelas : [data.kelas];
-            // Filter agar hanya memunculkan soal untuk kelas siswa tersebut
-            if (arrKelas.includes(kelasSiswa) || arrKelas.includes("Umum") || arrKelas.length === 0) { 
-                examState.arraySoal.push({id: d.id, ...data}); 
-            }
-        });
-
-        if (examState.arraySoal.length === 0) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
-
-        // --- LOGIKA CEK STATUS ACAK SOAL ---
-        const acakSnap = await getDoc(doc(db, "pengaturan", "acak_soal"));
-        let isAcak = false;
-        if (acakSnap.exists() && acakSnap.data()[jadwalKey]) {
-            isAcak = acakSnap.data()[jadwalKey];
-        }
-
-        if (isAcak) {
-            // Algoritma Fisher-Yates Shuffle
-            for (let i = examState.arraySoal.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [examState.arraySoal[i], examState.arraySoal[j]] = [examState.arraySoal[j], examState.arraySoal[i]];
-            }
-        } else {
-            examState.arraySoal.sort((a, b) => (a.nomor_soal || 0) - (b.nomor_soal || 0));
-        }
-
-        // --- MUAT JAWABAN TERSIMPAN (AUTOSAVE) ---
-        const localKey = `cbt_ans_${examState.student.uid}_${examState.mapelTerpilih}`;
+        const urlParams = new URLSearchParams(window.location.search);
+        const linkMode = urlParams.get('mapel') != null || urlParams.get('kelas') != null;
+        if (namaSiswa) examState.student.nama = namaSiswa;
+        SecurityManager.openFullscreen();
+        const startExam = httpsCallable(functions, 'startExam');
+        const result = await startExam({ mapel: examState.mapelTerpilih, kelas: kelasSiswa, token: tokenInput, linkMode });
+        const data = result.data;
+        examState.attemptId = data.attemptId;
+        examState.endAtMs = Number(data.endAt);
+        examState.durasiDetik = Math.max(0, Math.floor((examState.endAtMs - Date.now()) / 1000));
+        examState.arraySoal = Array.isArray(data.questions) ? data.questions : [];
+        examState.jawabanSiswa = {};
+        examState.raguRagu = {};
+        examState.matchingOptions = {};
+        if (!examState.arraySoal.length) throw new Error("Soal belum tersedia untuk kelas & mapel ini.");
+        const localKey = `cbt_ans_${examState.student.uid}_${examState.attemptId}`;
         const savedData = localStorage.getItem(localKey);
         if (savedData) {
-            try {
-                const parsed = JSON.parse(savedData);
-                if (parsed.jawabanSiswa) examState.jawabanSiswa = parsed.jawabanSiswa;
-                if (parsed.raguRagu) examState.raguRagu = parsed.raguRagu;
-            } catch(e) { console.error("Gagal memuat autosave", e); }
+            try { const parsed = JSON.parse(savedData); examState.jawabanSiswa = parsed.jawabanSiswa || {}; examState.raguRagu = parsed.raguRagu || {}; } catch (e) {}
         }
-
-        // --- MASUK KE RUANG UJIAN ---
         SecurityManager.startStrictExamMode();
         examState.isExamActive = true;
-        
         WatermarkManager.init(examState.student.nama, examState.student.username);
-
         document.getElementById('pre-exam-ui').style.display = 'none';
         document.getElementById('exam-workspace').style.display = 'flex';
         document.getElementById('exam-mapel-title').innerText = `UJIAN: ${examState.mapelTerpilih.toUpperCase()}`;
-
         const examNameEl = document.getElementById('exam-student-name');
-        if (examNameEl) {
-            examNameEl.innerText = `${examState.student.nama} (${examState.student.username})`;
-        }
-
+        if (examNameEl) examNameEl.innerText = `${examState.student.nama} (${examState.student.username})`;
         renderNavigasi();
         tampilkanSoal(0);
         jalankanTimer();
-        
-    } catch(e) {
+    } catch (e) {
         SecurityManager.closeFullscreen();
-        window.customAlert(e.message, "Akses Ditolak");
+        window.customAlert(e?.message || "Gagal memulai ujian.", "Akses Ditolak");
     } finally {
-        btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN'; btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play-circle"></i> MULAI UJIAN';
+        btn.disabled = false;
     }
 };
 
 function jalankanTimer() {
     const display = document.getElementById('timer-display');
-    examState.timerInterval = setInterval(() => {
-        if (examState.durasiDetik <= 0) {
-            clearInterval(examState.timerInterval);
-            window.customAlert("Waktu ujian telah habis! Sistem akan mengumpulkan jawaban Anda secara otomatis.", "Selesai").then(() => selesaiUjian("WAKTU HABIS"));
-            return;
-        }
-        examState.durasiDetik--;
+    clearInterval(examState.timerInterval);
+    const tick = () => {
+        examState.durasiDetik = Math.max(0, Math.floor((examState.endAtMs - Date.now()) / 1000));
         const j = Math.floor(examState.durasiDetik / 3600).toString().padStart(2, '0');
         const m = Math.floor((examState.durasiDetik % 3600) / 60).toString().padStart(2, '0');
         const d = (examState.durasiDetik % 60).toString().padStart(2, '0');
-        display.innerText = `${j}:${m}:${d}`;
-    }, 1000);
+        if (display) display.innerText = `${j}:${m}:${d}`;
+        if (examState.durasiDetik <= 0) {
+            clearInterval(examState.timerInterval);
+            window.customAlert("Waktu ujian telah habis! Sistem akan mengumpulkan jawaban Anda secara otomatis.", "Selesai").then(() => selesaiUjian("WAKTU HABIS"));
+        }
+    };
+    tick();
+    examState.timerInterval = setInterval(tick, 1000);
+}
+
+function simpanJawabanServer(questionId, answer, raguRagu = false) {
+    if (!examState.attemptId || !examState.isExamActive) return Promise.resolve();
+    const saveAnswer = httpsCallable(functions, 'saveAnswer');
+    const promise = saveAnswer({ attemptId: examState.attemptId, questionId, answer, raguRagu });
+    examState.pendingWrites.add(promise);
+    promise.finally(() => examState.pendingWrites.delete(promise));
+    return promise;
 }
 
 function renderNavigasi() {
@@ -495,14 +403,14 @@ function tampilkanSoal(idx) {
 
         // Simpan urutan pilihan sekali per soal agar tidak berubah setiap kali siswa berpindah soal.
         if (!Array.isArray(examState.matchingOptions[soal.id])) {
-            const options = pasangan.map(p => String(p.kanan).trim()).filter(Boolean);
+            const options = Array.isArray(soal.opsiPasangan) ? soal.opsiPasangan.map(v => String(v).trim()).filter(Boolean) : pasangan.map(p => String(p.kanan).trim()).filter(Boolean);
             for (let i = options.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [options[i], options[j]] = [options[j], options[i]];
             }
             examState.matchingOptions[soal.id] = options;
         }
-        const semuaKanan = examState.matchingOptions[soal.id];
+        const semuaKanan = Array.isArray(soal.opsiPasangan) ? soal.opsiPasangan : (examState.matchingOptions[soal.id] || []);
 
         htmlContent += `
             <div style="font-size:0.92rem; color:var(--warning); font-weight:700; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
@@ -522,8 +430,8 @@ function tampilkanSoal(idx) {
 
             let optionsHtml = `<option value="">-- Pilih Pasangan --</option>`;
             const optionNumberMap = new Map();
-            pasangan.forEach(p => {
-                const val = String(p.kanan).trim();
+            semuaKanan.forEach(p => {
+                const val = String(p).trim();
                 if (!optionNumberMap.has(val)) {
                     const n = String(p.nomor_kanan || optionNumberMap.size + 1);
                     optionNumberMap.set(val, n);
@@ -573,6 +481,7 @@ function tampilkanSoal(idx) {
                 container.querySelectorAll('.option-label').forEach(lbl => lbl.classList.remove('selected'));
                 e.target.closest('.option-label').classList.add('selected');
                 simpanJawabanLokal();
+                simpanJawabanServer(soal.id, examState.jawabanSiswa[soal.id], !!examState.raguRagu[soal.id]).catch(()=>{});
                 renderNavigasi(); 
             };
         });
@@ -590,6 +499,7 @@ function tampilkanSoal(idx) {
                 }
                 examState.jawabanSiswa[soal.id] = arr;
                 simpanJawabanLokal();
+                simpanJawabanServer(soal.id, examState.jawabanSiswa[soal.id], !!examState.raguRagu[soal.id]).catch(()=>{});
                 renderNavigasi();
             };
         });
@@ -601,6 +511,7 @@ function tampilkanSoal(idx) {
                 jwbSiswaObj[e.target.getAttribute('data-kiri')] = e.target.value;
                 examState.jawabanSiswa[soal.id] = jwbSiswaObj;
                 simpanJawabanLokal();
+                simpanJawabanServer(soal.id, examState.jawabanSiswa[soal.id], !!examState.raguRagu[soal.id]).catch(()=>{});
                 renderNavigasi();
             };
         });
@@ -611,6 +522,7 @@ function tampilkanSoal(idx) {
             tx.oninput = (e) => { 
                 examState.jawabanSiswa[soal.id] = e.target.value; 
                 simpanJawabanLokal();
+                simpanJawabanServer(soal.id, examState.jawabanSiswa[soal.id], !!examState.raguRagu[soal.id]).catch(()=>{});
                 renderNavigasi(); 
             };
         }
@@ -622,6 +534,7 @@ function tampilkanSoal(idx) {
         cbRagu.onchange = (e) => { 
             examState.raguRagu[soal.id] = e.target.checked; 
             simpanJawabanLokal();
+            simpanJawabanServer(soal.id, examState.jawabanSiswa[soal.id], !!examState.raguRagu[soal.id]).catch(()=>{});
             renderNavigasi(); 
         };
     }
@@ -688,121 +601,16 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
-
-    const inputKelas = document.getElementById('student-class') || document.getElementById('select-kelas') || document.querySelector('select[id*="kelas"]');
-    const kelasSiswa = inputKelas ? inputKelas.value : (examState.student && examState.student.kelas ? (Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas) : "Umum");
-
-    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><i class="fas fa-spinner fa-spin fa-4x" style="color:var(--primary); margin-bottom:20px;"></i><h2 style="color:var(--secondary); font-family:sans-serif; text-align:center;">Menyimpan Lembar Jawaban...</h2><p style="color:var(--text-muted);">Mohon jangan tutup atau kembali dari halaman ini.</p></div>';
-
-    let totalBobotPG = 0;
-    let skorDiperolehPG = 0;
-
-    examState.arraySoal.forEach(s => {
-        const tipeSoal = (s.tipe || s.tipe_soal || 'PG').toUpperCase();
-        const bobot = parseFloat(s.bobot) || 1;
-        const jwb = examState.jawabanSiswa[s.id];
-
-        if(tipeSoal === 'PG') {
-            totalBobotPG += bobot;
-            const kunci = s.kunci_jawaban || s.jawaban_benar;
-            if(jwb === kunci) { skorDiperolehPG += bobot; }
-        } 
-        else if (tipeSoal === 'PGK') {
-            totalBobotPG += bobot;
-            let kunciArr = Array.isArray(s.kunci_jawaban) ? s.kunci_jawaban : [];
-            let jwbArr = Array.isArray(jwb) ? jwb : [];
-            if(kunciArr.length > 0 && jwbArr.length === kunciArr.length && kunciArr.every(k => jwbArr.includes(k))) {
-                skorDiperolehPG += bobot;
-            }
-        }
-        else if (tipeSoal === 'MENJODOHKAN') {
-            totalBobotPG += bobot;
-            if (s.pasangan && Array.isArray(s.pasangan)) {
-                let totalPairs = s.pasangan.length;
-                let correctPairs = 0;
-                let jwbObj = typeof jwb === 'object' ? jwb : {};
-                s.pasangan.forEach(p => {
-                    if (jwbObj[p.kiri] === p.kanan) correctPairs++;
-                });
-                if (totalPairs > 0) {
-                    skorDiperolehPG += (correctPairs / totalPairs) * bobot;
-                }
-            }
-        }
-    });
-    
-    let skorAkhir = 0;
-    if(totalBobotPG > 0) skorAkhir = Math.round((skorDiperolehPG / totalBobotPG) * 100);
-
-    const payload = {
-        uid: examState.student.uid,
-        nama: examState.student.nama,
-        username: examState.student.username,
-        kelas: kelasSiswa,
-        mataPelajaran: examState.mapelTerpilih,
-        jawaban: examState.jawabanSiswa,
-        pelanggaran: examState.pelanggaran,
-        skorPG: skorAkhir,
-        skor: skorAkhir, 
-        waktuSubmit: new Date().toISOString(),
-        statusPelanggaran: statusAkhir
-    };
-
+    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main);"><i class="fas fa-spinner fa-spin fa-4x" style="color:var(--primary); margin-bottom:20px;"></i><h2 style="color:var(--secondary); font-family:sans-serif; text-align:center;">Menyimpan Lembar Jawaban...</h2><p style="color:var(--text-muted);">Memastikan semua jawaban sudah tersimpan di server.</p></div>';
     try {
-        // SIMPAN KE FIREBASE
-        await addDoc(collection(db, "hasil_ujian"), payload);
-        
-        // HAPUS AUTOSAVE LOKAL KARENA UJIAN SELESAI
-        localStorage.removeItem(`cbt_ans_${examState.student.uid}_${examState.mapelTerpilih}`);
-        
-        // SIMPAN KE GOOGLE SHEETS
-        const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycby5mtBZIaTKv91Fx9qYNbcLCEql-1Rst3gyKIg0rXvULqd0F-uDe553ifSmUW_lly_g/exec"; 
-        
-        if (URL_GOOGLE_SCRIPT.startsWith("http")) {
-            const formData = new URLSearchParams();
-            formData.append("nama", payload.nama);
-            formData.append("email", payload.username); 
-            formData.append("kelas", payload.kelas);
-            formData.append("mapel", payload.mataPelajaran);
-            formData.append("nilai", payload.skor);
-            formData.append("status", payload.statusPelanggaran);
-
-            fetch(URL_GOOGLE_SCRIPT, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-            }).catch(err => console.log("Gagal sync ke Drive", err));
-        }
-
-        // --- TAMPILAN HALAMAN SUKSES ---
-        document.body.innerHTML = `
-            <div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main); text-align:center; padding: 20px;">
-                <i class="fas fa-check-circle fa-5x" style="color:var(--success); margin-bottom:20px;"></i>
-                <h2 style="color:var(--secondary); font-family:sans-serif; margin-bottom: 10px; font-size: 2rem;">Selamat!</h2>
-                <p style="color:var(--text-muted); font-size: 1.1rem; max-width: 500px;">Jawaban Anda telah berhasil direkam dengan aman oleh server.</p>
-                <div style="background: #f0fdf4; border: 1px dashed #4ade80; padding: 15px 25px; border-radius: 8px; margin-top: 25px;">
-                    <p style="color:#166534; font-size: 0.95rem; font-weight: 600; margin: 0;">Anda sudah bisa menutup tab browser ini atau menekan tombol di bawah untuk keluar dari akun.</p>
-                </div>
-                <button onclick="localStorage.clear(); window.location.replace('/')" class="btn-3d" style="margin-top: 25px; padding: 12px 25px; font-size: 1rem;"><i class="fas fa-sign-out-alt"></i> Keluar</button>
-            </div>
-        `;
-        
-        // (Opsional) Logout otomatis di latar belakang agar siswa tidak bisa menekan "Back"
-        if (examState.student && !examState.student.uid.startsWith("publik-")) {
-            signOut(auth).catch(()=>{});
-        }
-
-    } catch(e) {
-        // --- TAMPILAN HALAMAN GAGAL ---
-        document.body.innerHTML = `
-            <div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main); text-align:center; padding: 20px;">
-                <i class="fas fa-exclamation-triangle fa-5x" style="color:var(--danger); margin-bottom:20px;"></i>
-                <h2 style="color:var(--secondary); font-family:sans-serif; margin-bottom: 10px;">Gagal Menyimpan!</h2>
-                <p style="color:var(--text-muted); font-size: 1.1rem; max-width: 500px;">Terjadi kesalahan koneksi internet atau server sedang sibuk.</p>
-                <p style="color:var(--danger); font-size: 1rem; margin-top: 10px; font-weight: bold;">Silakan panggil pengawas ruangan dan JANGAN tutup halaman ini.</p>
-                <button onclick="window.location.reload()" class="btn-3d" style="margin-top: 30px; padding: 10px 20px; font-size: 1rem; background-color: var(--warning);"><i class="fas fa-sync-alt"></i> Coba Kirim Ulang</button>
-            </div>
-        `;
+        await Promise.allSettled([...examState.pendingWrites]);
+        const submitExam = httpsCallable(functions, 'submitExam');
+        const result = await submitExam({ attemptId: examState.attemptId, statusAkhir });
+        localStorage.removeItem(`cbt_ans_${examState.student.uid}_${examState.attemptId}`);
+        document.body.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main); text-align:center; padding:20px;"><i class="fas fa-check-circle fa-5x" style="color:var(--success); margin-bottom:20px;"></i><h2 style="color:var(--secondary);">Ujian Selesai</h2><p style="color:var(--text-muted); font-size:1.1rem; max-width:500px;">Jawaban telah direkam dan dinilai oleh server.</p><div style="background:#f0fdf4; border:1px dashed #4ade80; padding:15px 25px; border-radius:8px; margin-top:25px;"><p style="color:#166534; font-weight:700; margin:0;">Status: ${result.data?.status || statusAkhir}</p></div><button onclick="localStorage.clear(); window.location.replace('/')" class="btn-3d" style="margin-top:25px; padding:12px 25px;"><i class="fas fa-sign-out-alt"></i> Keluar</button></div>`;
+        if (examState.student && !examState.student.uid.startsWith("publik-")) signOut(auth).catch(()=>{});
+    } catch (e) {
+        document.body.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; background:var(--bg-main); text-align:center; padding:20px;"><i class="fas fa-exclamation-triangle fa-5x" style="color:var(--danger); margin-bottom:20px;"></i><h2 style="color:var(--secondary);">Gagal Menyimpan!</h2><p style="color:var(--text-muted); max-width:500px;">Server belum menerima pengumpulan. Jangan tutup halaman ini dan hubungi pengawas.</p><p style="color:var(--danger); font-weight:700;">${e?.message || "Terjadi kesalahan koneksi."}</p><button onclick="window.location.reload()" class="btn-3d" style="margin-top:30px; padding:10px 20px; background-color:var(--warning);"><i class="fas fa-sync-alt"></i> Coba Lagi</button></div>`;
     }
 }
 
