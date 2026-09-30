@@ -177,6 +177,7 @@ exports.submitExam = onCall(async (request) => {
   const uid = requireAuth(request);
   const { attemptId, statusAkhir = "NORMAL" } = request.data || {};
   const { ref, data: attempt } = await getAttempt(uid, attemptId);
+  const finalStatus = attempt.forceDisqualify ? "DISKUALIFIKASI" : statusAkhir;
 
   if (attempt.status !== "ACTIVE") {
     return { alreadySubmitted: true, status: attempt.status };
@@ -234,7 +235,7 @@ exports.submitExam = onCall(async (request) => {
     skorPG: score,
     skor: score,
     waktuSubmit: FieldValue.serverTimestamp(),
-    statusPelanggaran: statusAkhir,
+    statusPelanggaran: finalStatus,
     attemptId,
     createdAt: FieldValue.serverTimestamp()
   });
@@ -246,5 +247,5 @@ exports.submitExam = onCall(async (request) => {
     updatedAt: FieldValue.serverTimestamp()
   });
 
-  return { ok: true, resultId: resultRef.id, score, status: statusAkhir };
+  return { ok: true, resultId: resultRef.id, score, status: finalStatus };
 });
