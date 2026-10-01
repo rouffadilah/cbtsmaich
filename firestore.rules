@@ -10,6 +10,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Selalu membaca profil milik user yang sedang login.
+    // Match /users/{uid} mengizinkan self-read, sehingga helper ini
+    // tidak bergantung pada hak baca akun lain.
     function currentUser() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
@@ -41,13 +44,13 @@ service cloud.firestore {
     // PENGATURAN
     // =========================
     match /pengaturan/{docId} {
-      // Data yang memang diperlukan halaman login/dashboard.
+      // Data yang diperlukan login/dashboard.
       allow read: if signedIn() && docId in [
         'status_registrasi',
         'data_akademik'
       ];
 
-      // Konfigurasi ujian hanya untuk guru/admin.
+      // Konfigurasi ujian untuk guru/admin.
       allow read: if isStaff() && docId in [
         'waktu_ujian',
         'jadwal_ujian',
@@ -55,7 +58,6 @@ service cloud.firestore {
         'token_ujian'
       ];
 
-      // Perubahan pengaturan hanya admin.
       allow write: if isAdmin();
     }
 
@@ -63,10 +65,11 @@ service cloud.firestore {
     // USERS
     // =========================
     match /users/{uid} {
-      // Pengguna dapat membaca profilnya sendiri; admin dapat membaca seluruh pengguna.
-      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      // Self-read selalu boleh. Admin boleh membaca seluruh daftar pengguna.
+      allow read: if signedIn() && (
+        request.auth.uid == uid || isAdmin()
+      );
 
-      // Registrasi akun sendiri atau pembuatan akun oleh admin.
       allow create: if
         (
           signedIn() && request.auth.uid == uid &&
@@ -82,7 +85,6 @@ service cloud.firestore {
           request.resource.data.nama is string
         );
 
-      // Admin bebas mengubah akun. Pengguna biasa hanya boleh mengubah nama/username sendiri.
       allow update: if
         isAdmin()
         ||
@@ -108,13 +110,13 @@ service cloud.firestore {
     // HASIL UJIAN
     // =========================
     match /hasil_ujian/{hasilId} {
-      // Hasil ujian dibuat oleh backend/server, bukan browser.
+      // Browser tidak boleh membuat hasil secara langsung.
       allow create: if false;
 
-      // Guru/admin dapat membaca rekap. Siswa hanya hasil miliknya sendiri.
-      allow read: if isStaff() || (
-        signedIn() && resource.data.uid == request.auth.uid
-      );
+      // Dashboard guru/admin membutuhkan query seluruh hasil ujian.
+      // Siswa hanya dapat membaca hasil miliknya sendiri.
+      allow read: if isStaff();
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
 
       allow update, delete: if isAdmin();
     }
