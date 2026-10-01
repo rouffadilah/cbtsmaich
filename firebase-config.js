@@ -15,15 +15,15 @@ export const firebaseConfig = {
     measurementId: "G-GF6PJWK2S5"
 };
 
-// Penanda konfigurasi aktif — harus cocok dengan project Firebase sekolah.
 export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
 export const FIREBASE_APP_ID = firebaseConfig.appId;
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Export instances for use in other modules
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const functions = getFunctions(app); // Akses ke Cloud Functions
+export const functions = getFunctions(app);
+
+// Memuat lapisan koreksi dashboard tanpa mengubah alur ujian siswa.
+// dashboard-fix.js sendiri aktif hanya pada /dashboard.
+import './dashboard-fix.js';
