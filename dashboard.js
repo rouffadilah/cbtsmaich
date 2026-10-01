@@ -1291,6 +1291,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.replace("/"); return; }
+    console.log("=== DEBUG USER ===");
+    console.log("UID:", user.uid);
+    console.log("EMAIL:", user.email);
+
+    const debugUserSnap = await getDoc(doc(db, "users", user.uid));
+
+    console.log("USER DOC EXISTS:", debugUserSnap.exists());
+    console.log("USER DATA:", debugUserSnap.exists() ? debugUserSnap.data() : null);
     try {
         const userSnap = await getDoc(doc(db, "users", user.uid));
         if (!userSnap.exists()) { await signOut(auth); localStorage.clear(); window.location.replace("/"); return; }
