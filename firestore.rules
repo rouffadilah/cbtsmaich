@@ -3,6 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // =========================
+    // AUTH / ROLE HELPERS
+    // =========================
     function signedIn() {
       return request.auth != null;
     }
@@ -15,44 +18,55 @@ service cloud.firestore {
       return signedIn() && currentUser().exists();
     }
 
-    // Profil pengguna pada project ini menyimpan role sebagai array/list.
-    // Tetap dukung format lama berupa string.
-    function isAdmin() {
+    function hasRole(roleName) {
       return hasUserProfile() && (
-        (currentUser().data.role is list && currentUser().data.role.hasAny(['admin'])) ||
-        (currentUser().data.role is string && currentUser().data.role == 'admin')
-      ) || (
-        signedIn() && request.auth.uid == 'fI5m4g8OOYZKfPnrHVExopyyYr2'
+        (currentUser().data.role is list && roleName in currentUser().data.role) ||
+        (currentUser().data.role is string && currentUser().data.role == roleName)
       );
     }
 
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
     function isGuru() {
-      return hasUserProfile() && (
-        (currentUser().data.role is list && currentUser().data.role.hasAny(['guru'])) ||
-        (currentUser().data.role is string && currentUser().data.role == 'guru')
-      );
+      return hasRole('guru');
     }
 
     function isStaff() {
       return isAdmin() || isGuru();
     }
 
+    // =========================
+    // PENGATURAN
+    // =========================
     match /pengaturan/{docId} {
-      allow read: if docId in ['status_registrasi', 'data_akademik'];
+      // Data yang memang diperlukan halaman login/dashboard.
+      allow read: if signedIn() && docId in [
+        'status_registrasi',
+        'data_akademik'
+      ];
+
+      // Konfigurasi ujian hanya untuk guru/admin.
       allow read: if isStaff() && docId in [
         'waktu_ujian',
         'jadwal_ujian',
         'acak_soal',
         'token_ujian'
       ];
+
+      // Perubahan pengaturan hanya admin.
       allow write: if isAdmin();
     }
 
+    // =========================
+    // USERS
+    // =========================
     match /users/{uid} {
-      allow read: if signedIn() && (
-        request.auth.uid == uid || isAdmin()
-      );
+      // Pengguna dapat membaca profilnya sendiri; admin dapat membaca seluruh pengguna.
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
 
+      // Registrasi akun sendiri atau pembuatan akun oleh admin.
       allow create: if
         (
           signedIn() && request.auth.uid == uid &&
@@ -68,6 +82,7 @@ service cloud.firestore {
           request.resource.data.nama is string
         );
 
+      // Admin bebas mengubah akun. Pengguna biasa hanya boleh mengubah nama/username sendiri.
       allow update: if
         isAdmin()
         ||
@@ -81,28 +96,45 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // =========================
+    // BANK SOAL
+    // =========================
     match /bank_soal/{soalId} {
       allow read: if isStaff();
       allow create, update, delete: if isStaff();
     }
 
+    // =========================
+    // HASIL UJIAN
+    // =========================
+    match /hasil_ujian/{hasilId} {
+      // Hasil ujian dibuat oleh backend/server, bukan browser.
+      allow create: if false;
+
+      // Guru/admin dapat membaca rekap. Siswa hanya hasil miliknya sendiri.
+      allow read: if isStaff() || (
+        signedIn() && resource.data.uid == request.auth.uid
+      );
+
+      allow update, delete: if isAdmin();
+    }
+
+    // =========================
+    // ATTEMPTS / ANSWERS
+    // =========================
     match /exam_attempts/{attemptId} {
       allow read: if isStaff();
       allow write: if false;
+
       match /answers/{answerId} {
         allow read: if isStaff();
         allow write: if false;
       }
     }
 
-    match /hasil_ujian/{hasilId} {
-      allow create: if false;
-      allow read: if isStaff() || (
-        signedIn() && resource.data.uid == request.auth.uid
-      );
-      allow update, delete: if isAdmin();
-    }
-
+    // =========================
+    // AUDIT LOGS
+    // =========================
     match /audit_logs/{logId} {
       allow read, write: if isAdmin();
     }
