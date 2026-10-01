@@ -3,22 +3,38 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // =========================================================
+    // AUTH / ROLE
+    // =========================================================
     function signedIn() {
       return request.auth != null;
     }
 
+    function userProfileExists() {
+      return signedIn() && exists(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      );
+    }
+
     function currentUser() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return get(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      );
     }
 
-    function hasUserProfile() {
-      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
+    // Role pada project CBT-SMAICH disimpan sebagai ARRAY,
+    // contoh: ["siswa", "guru", "admin"].
+    // Tetap dukung string untuk data lama.
     function hasRole(roleName) {
-      return hasUserProfile() && (
-        (currentUser().data.get('role', []) is list && roleName in currentUser().data.get('role', [])) ||
-        (currentUser().data.get('role', '') is string && currentUser().data.get('role', '') == roleName)
+      return userProfileExists() && (
+        (
+          currentUser().data.role is list &&
+          roleName in currentUser().data.role
+        ) ||
+        (
+          currentUser().data.role is string &&
+          currentUser().data.role == roleName
+        )
       );
     }
 
@@ -34,66 +50,106 @@ service cloud.firestore {
       return isAdmin() || isGuru();
     }
 
-    function guruOwnsQuestion(data) {
-      return isGuru()
-        && currentUser().data.get('mapel', []) is list
-        && data.mataPelajaran is string
-        && data.mataPelajaran in currentUser().data.get('mapel', [])
-        && currentUser().data.get('kelas', []) is list
-        && (
-          (data.kelas is list && data.kelas.hasAny(currentUser().data.get('kelas', [])))
-          ||
-          (data.kelas is string && data.kelas in currentUser().data.get('kelas', []))
-          ||
-          (data.kelas is list && 'Umum' in data.kelas)
-        );
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
     }
 
-    function canManageQuestion(data) {
-      return isAdmin() || guruOwnsQuestion(data);
-    }
-
+    // =========================================================
+    // PENGATURAN
+    // =========================================================
     match /pengaturan/{docId} {
-      allow read: if signedIn() && docId in ['status_registrasi', 'data_akademik'];
-      allow read: if isStaff() && docId in ['waktu_ujian', 'jadwal_ujian', 'acak_soal', 'token_ujian'];
+      allow read: if signedIn() && docId in [
+        'status_registrasi',
+        'data_akademik'
+      ];
+
+      allow read: if isStaff() && docId in [
+        'waktu_ujian',
+        'jadwal_ujian',
+        'acak_soal',
+        'token_ujian'
+      ];
+
       allow write: if isAdmin();
     }
 
+    // =========================================================
+    // USERS
+    // =========================================================
     match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      // Admin dapat membaca seluruh pengguna untuk dashboard.
+      // Pengguna biasa hanya dapat membaca dokumennya sendiri.
+      allow read: if isAdmin() || isSelf(uid);
+
       allow create: if
-        (signedIn() && request.auth.uid == uid && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string)
-        ||
-        (isAdmin() && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string);
+        (
+          isSelf(uid) &&
+          request.resource.data.role is list &&
+          request.resource.data.username is string &&
+          request.resource.data.nama is string
+        ) ||
+        (
+          isAdmin() &&
+          request.resource.data.role is list &&
+          request.resource.data.username is string &&
+          request.resource.data.nama is string
+        );
+
       allow update: if
-        isAdmin()
-        ||
-        (signedIn() && request.auth.uid == uid && request.resource.data.role == resource.data.role && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nama', 'username', 'updatedAt']));
+        isAdmin() ||
+        (
+          isSelf(uid) &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'nama',
+            'username',
+            'updatedAt'
+          ])
+        );
+
       allow delete: if isAdmin();
     }
 
+    // =========================================================
+    // BANK SOAL
+    // =========================================================
     match /bank_soal/{soalId} {
       allow read: if isStaff();
-      allow create: if canManageQuestion(request.resource.data);
-      allow update: if canManageQuestion(resource.data) && canManageQuestion(request.resource.data);
-      allow delete: if canManageQuestion(resource.data);
+      allow create: if isStaff();
+      allow update, delete: if isStaff();
     }
 
+    // =========================================================
+    // HASIL UJIAN
+    // =========================================================
+    // Dashboard guru/admin membaca koleksi hasil ujian secara agregat.
+    // Siswa hanya dapat membaca hasil miliknya sendiri.
     match /hasil_ujian/{hasilId} {
+      allow read: if isStaff() || (
+        signedIn() && resource.data.uid == request.auth.uid
+      );
+
+      // Hasil ujian dibuat oleh backend/server, bukan browser.
       allow create: if false;
-      allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
       allow update, delete: if isAdmin();
     }
 
+    // =========================================================
+    // ATTEMPTS
+    // =========================================================
     match /exam_attempts/{attemptId} {
       allow read: if isStaff();
       allow write: if false;
+
       match /answers/{answerId} {
         allow read: if isStaff();
         allow write: if false;
       }
     }
 
+    // =========================================================
+    // AUDIT LOG
+    // =========================================================
     match /audit_logs/{logId} {
       allow read, write: if isAdmin();
     }
