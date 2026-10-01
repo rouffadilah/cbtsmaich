@@ -2,27 +2,55 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function userProfileExists() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
-    function currentUser() { return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function userProfileExists() {
+      return signedIn() && exists(profilePath());
+    }
+
+    function currentUser() {
+      return get(profilePath());
+    }
+
+    // Application roles are normally stored in `role`, but older profiles
+    // may use `roles`. Support both shapes so dashboard permissions remain
+    // consistent with the client-side normalizeRoles() helper.
+    function roleValue() {
+      return userProfileExists() && currentUser().data.keys().hasAny(['role', 'roles'])
+        ? (currentUser().data.keys().hasAny(['role'])
+            ? currentUser().data.role
+            : currentUser().data.roles)
+        : null;
+    }
+
     function hasRole(roleName) {
-      return userProfileExists() && (
-        ((currentUser().data.role is list) && (
-          roleName in currentUser().data.role ||
-          (roleName == 'guru' && ('Guru' in currentUser().data.role || 'GURU' in currentUser().data.role || 'Guru ' in currentUser().data.role || 'GURU ' in currentUser().data.role || 'guru ' in currentUser().data.role)) ||
-          (roleName == 'admin' && ('Admin' in currentUser().data.role || 'ADMIN' in currentUser().data.role || 'Admin ' in currentUser().data.role || 'ADMIN ' in currentUser().data.role || 'admin ' in currentUser().data.role))
-        )) ||
-        ((currentUser().data.role is string) && (
-          currentUser().data.role == roleName ||
-          (roleName == 'guru' && currentUser().data.role in ['Guru', 'GURU', 'Guru ', 'GURU ', 'guru ']) ||
-          (roleName == 'admin' && currentUser().data.role in ['Admin', 'ADMIN', 'Admin ', 'ADMIN ', 'admin '])
-        ))
+      return userProfileExists() && roleValue() != null && (
+        (roleValue() is list && roleName in roleValue()) ||
+        (roleValue() is string && roleValue() == roleName)
       );
     }
-    function isAdmin() { return hasRole('admin'); }
-    function isGuru() { return hasRole('guru'); }
-    function isStaff() { return isAdmin() || isGuru(); }
-    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isGuru() {
+      return hasRole('guru');
+    }
+
+    function isStaff() {
+      return isAdmin() || isGuru();
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
 
     match /pengaturan/{docId} {
       allow read: if signedIn() && docId in ['status_registrasi', 'data_akademik'];
@@ -32,27 +60,39 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if isAdmin() || isSelf(uid);
-      allow create: if (isSelf(uid) && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string) || (isAdmin() && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string);
-      allow update: if isAdmin() || (isSelf(uid) && request.resource.data.role == resource.data.role && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nama', 'username', 'updatedAt']));
+      allow create: if (isSelf(uid) && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string)
+        || (isAdmin() && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string);
+      allow update: if isAdmin()
+        || (isSelf(uid) && request.resource.data.role == resource.data.role
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nama', 'username', 'updatedAt']));
       allow delete: if isAdmin();
     }
 
-    match /bank_soal/{soalId} { allow read, create, update, delete: if isStaff(); }
+    match /bank_soal/{soalId} {
+      allow read, create, update, delete: if isStaff();
+    }
 
     match /hasil_ujian/{hasilId} {
+      // Staff may read all results; students may read only their own result.
       allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
-      allow create: if isStaff() || (signedIn() && request.resource.data.uid == request.auth.uid && request.resource.data.mataPelajaran is string && request.resource.data.jawaban is map);
+      allow create: if isStaff() || (signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.mataPelajaran is string
+        && request.resource.data.jawaban is map);
       allow update, delete: if isStaff();
     }
 
     match /exam_attempts/{attemptId} {
       allow read: if isStaff();
       allow write: if false;
-      match /answers/{answerId} { allow read: if isStaff(); allow write: if false; }
+      match /answers/{answerId} {
+        allow read: if isStaff();
+        allow write: if false;
+      }
     }
 
-    // Siswa hanya boleh membuat laporan pelanggaran untuk dirinya sendiri.
-    // Token pemulihan hanya boleh diterbitkan/diubah oleh admin atau guru.
+    // Students create only their own pending violation. Staff can monitor,
+    // issue/reset recovery tokens, and resolve the violation.
     match /security_violations/{violationId} {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
@@ -65,6 +105,8 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    match /audit_logs/{logId} { allow read, write: if isAdmin(); }
+    match /audit_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
   }
 }
