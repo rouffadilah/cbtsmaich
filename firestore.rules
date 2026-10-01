@@ -3,16 +3,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ==============================
-    // AUTHENTICATION / ROLE
-    // ==============================
-
     function signedIn() {
       return request.auth != null;
-    }
-
-    function isSelf(uid) {
-      return signedIn() && request.auth.uid == uid;
     }
 
     function currentUser() {
@@ -23,101 +15,77 @@ service cloud.firestore {
       return signedIn() && currentUser().exists();
     }
 
-    // Mendukung data role lama (string) maupun format saat ini (array/list).
-    function hasRole(role) {
-      return hasUserProfile()
-        && (
-          (currentUser().data.role is list && role in currentUser().data.role)
-          ||
-          (currentUser().data.role is string && currentUser().data.role == role)
-        );
-    }
-
+    // Profil pengguna pada project ini menyimpan role sebagai array/list.
+    // Tetap dukung format lama berupa string.
     function isAdmin() {
-      return hasRole('admin');
+      return hasUserProfile() && (
+        (currentUser().data.role is list && currentUser().data.role.hasAny(['admin'])) ||
+        (currentUser().data.role is string && currentUser().data.role == 'admin')
+      );
     }
 
     function isGuru() {
-      return hasRole('guru');
+      return hasUserProfile() && (
+        (currentUser().data.role is list && currentUser().data.role.hasAny(['guru'])) ||
+        (currentUser().data.role is string && currentUser().data.role == 'guru')
+      );
     }
 
     function isStaff() {
       return isAdmin() || isGuru();
     }
 
-
-    // ==============================
-    // PENGATURAN
-    // ==============================
-
     match /pengaturan/{docId} {
-      // Dashboard/login membutuhkan master akademik dan status registrasi.
+      // Dibutuhkan dashboard/login.
       allow read: if docId in ['status_registrasi', 'data_akademik'];
 
-      // Dashboard Bank Soal membutuhkan konfigurasi ujian berikut.
-      // Token tetap tidak dapat ditulis dari browser.
+      // Konfigurasi ujian dapat dibaca guru/admin; perubahan hanya admin.
       allow read: if isStaff() && docId in [
         'waktu_ujian',
         'jadwal_ujian',
         'acak_soal',
         'token_ujian'
       ];
-
-      // Perubahan konfigurasi hanya oleh admin.
       allow write: if isAdmin();
     }
 
-
-    // ==============================
-    // USERS
-    // ==============================
-
     match /users/{uid} {
-      allow read: if isSelf(uid) || isAdmin();
+      allow read: if signedIn() && (
+        request.auth.uid == uid || isAdmin()
+      );
 
       allow create: if
         (
-          isSelf(uid)
-          && request.resource.data.role is list
-          && request.resource.data.username is string
-          && request.resource.data.nama is string
+          signedIn() && request.auth.uid == uid &&
+          request.resource.data.role is list &&
+          request.resource.data.username is string &&
+          request.resource.data.nama is string
         )
         ||
         (
-          isAdmin()
-          && request.resource.data.role is list
-          && request.resource.data.username is string
-          && request.resource.data.nama is string
+          isAdmin() &&
+          request.resource.data.role is list &&
+          request.resource.data.username is string &&
+          request.resource.data.nama is string
         );
 
       allow update: if
         isAdmin()
         ||
         (
-          isSelf(uid)
-          && request.resource.data.role == resource.data.role
-          && request.resource.data.diff(resource.data)
-            .affectedKeys()
+          signedIn() && request.auth.uid == uid &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['nama', 'username', 'updatedAt'])
         );
 
       allow delete: if isAdmin();
     }
 
-
-    // ==============================
-    // BANK SOAL
-    // ==============================
-
     match /bank_soal/{soalId} {
       allow read: if isStaff();
       allow create, update, delete: if isStaff();
     }
-
-
-    // ==============================
-    // EXAM ATTEMPTS
-    // ==============================
 
     match /exam_attempts/{attemptId} {
       allow read: if isStaff();
@@ -129,29 +97,13 @@ service cloud.firestore {
       }
     }
 
-
-    // ==============================
-    // HASIL UJIAN
-    // ==============================
-
     match /hasil_ujian/{hasilId} {
       allow create: if false;
-
-      allow read: if
-        isStaff()
-        ||
-        (
-          signedIn()
-          && resource.data.uid == request.auth.uid
-        );
-
+      allow read: if isStaff() || (
+        signedIn() && resource.data.uid == request.auth.uid
+      );
       allow update, delete: if isAdmin();
     }
-
-
-    // ==============================
-    // AUDIT LOG
-    // ==============================
 
     match /audit_logs/{logId} {
       allow read, write: if isAdmin();
