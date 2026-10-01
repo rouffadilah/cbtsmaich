@@ -24,17 +24,18 @@ service cloud.firestore {
       return signedIn() && role in roles();
     }
 
-    function isAdmin() { return hasRole('admin'); }
+    // Emergency dashboard-admin fallback for the currently verified admin account.
+    // Normal users still use the role stored in users/{uid}.
+    function isDashboardAdmin() {
+      return signedIn() && request.auth.uid == 'fI5m4g8OOYZKfPnrHVExopyyYr2';
+    }
+
+    function isAdmin() { return hasRole('admin') || isDashboardAdmin(); }
     function isStaff() { return isAdmin() || hasRole('guru'); }
 
     match /pengaturan/{docId} {
-      // Master data remains readable by authenticated users because the student
-      // login/exam flow needs the academic master list.
       allow read: if docId in ['status_registrasi', 'data_akademik'];
 
-      // Exam settings are editable by staff from the dashboard. The dashboard
-      // already limits the visible rows to the teacher's assigned subjects.
-      // Token validation itself is also enforced server-side by /api/token-*.
       allow read, write: if isStaff() && docId in [
         'waktu_ujian',
         'jadwal_ujian',
@@ -42,7 +43,6 @@ service cloud.firestore {
         'token_ujian'
       ];
 
-      // Admin retains access to any other configuration document.
       allow read, write: if isAdmin();
     }
 
@@ -72,7 +72,6 @@ service cloud.firestore {
       allow create, update, delete: if isStaff();
     }
 
-    // Attempts and answers are authoritative server records. No browser/client may write them directly.
     match /exam_attempts/{attemptId} {
       allow read: if isStaff();
       allow write: if false;
@@ -84,7 +83,7 @@ service cloud.firestore {
 
     match /hasil_ujian/{hasilId} {
       allow create: if false;
-      allow read: if signedIn() && (isStaff() || resource.data.uid == request.auth.uid);
+      allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
       allow update, delete: if isAdmin();
     }
 
