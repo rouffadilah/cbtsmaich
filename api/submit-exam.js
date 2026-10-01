@@ -1,0 +1,7 @@
+const { submitExam } = require("../lib/exam");
+
+module.exports = async (req, res) => {
+  if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
+  try { return res.status(200).json(await submitExam(req)); }
+  catch (error) { console.error(error); return res.status(400).json({ error: error?.message || "Gagal mengumpulkan ujian." }); }
+};

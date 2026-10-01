@@ -14,25 +14,38 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(uid));
     }
 
+    function roles() {
+      return signedIn() && userDoc(request.auth.uid).exists()
+        ? userDoc(request.auth.uid).data.role
+        : [];
+    }
+
     function hasRole(role) {
-      return signedIn() &&
-        role in userDoc(request.auth.uid).data.role;
+      return signedIn() && role in roles();
     }
 
     function isAdmin() { return hasRole('admin'); }
     function isStaff() { return isAdmin() || hasRole('guru'); }
-    function isStudent() { return hasRole('siswa'); }
 
-    // Config yang diperlukan halaman login/registrasi. Hanya data konfigurasi non-rahasia.
     match /pengaturan/{docId} {
+      // Master data remains readable by authenticated users because the student
+      // login/exam flow needs the academic master list.
       allow read: if docId in ['status_registrasi', 'data_akademik'];
+
+      // Exam settings are editable by staff from the dashboard. The dashboard
+      // already limits the visible rows to the teacher's assigned subjects.
+      // Token validation itself is also enforced server-side by /api/token-*.
+      allow read, write: if isStaff() && docId in [
+        'waktu_ujian',
+        'jadwal_ujian',
+        'acak_soal',
+        'token_ujian'
+      ];
+
+      // Admin retains access to any other configuration document.
       allow read, write: if isAdmin();
-      allow write: if false;
     }
 
-    // Profil pengguna.
-    // - Pengguna biasa hanya boleh membuat profil miliknya sendiri dan tidak dapat membuat role admin.
-    // - Admin boleh membuat profil pengguna lain, termasuk memberikan multi-role / admin.
     match /users/{uid} {
       allow read: if isSelf(uid) || isAdmin();
       allow create: if (
@@ -54,21 +67,29 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Bank soal: siswa/staf terautentikasi boleh membaca. Hanya admin/guru yang menulis.
     match /bank_soal/{soalId} {
-      allow read: if signedIn() && (isStaff() || isStudent());
+      allow read: if isStaff();
       allow create, update, delete: if isStaff();
     }
 
-    // Hasil ujian: siswa hanya boleh membuat hasil untuk UID sendiri dan membaca hasilnya sendiri.
-    // Guru/admin boleh membaca semua dan menghapus semua.
+    // Attempts and answers are authoritative server records. No browser/client may write them directly.
+    match /exam_attempts/{attemptId} {
+      allow read: if isStaff();
+      allow write: if false;
+      match /answers/{answerId} {
+        allow read: if isStaff();
+        allow write: if false;
+      }
+    }
+
     match /hasil_ujian/{hasilId} {
-      allow create: if signedIn() &&
-        request.resource.data.uid == request.auth.uid;
-      allow read: if signedIn() &&
-        (isStaff() || resource.data.uid == request.auth.uid);
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create: if false;
+      allow read: if signedIn() && (isStaff() || resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow read, write: if isAdmin();
     }
   }
 }

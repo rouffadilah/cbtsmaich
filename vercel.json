@@ -13,7 +13,7 @@
       ]
     },
     {
-      "source": "/(manifest\\.json|.*\\.(js|css|png|jpg|jpeg|webp|svg|ico))",
+      "source": "/manifest.json",
       "headers": [
         {
           "key": "Cache-Control",
