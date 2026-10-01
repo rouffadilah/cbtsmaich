@@ -3,9 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =========================
-    // AUTH / ROLE HELPERS
-    // =========================
     function signedIn() {
       return request.auth != null;
     }
@@ -18,10 +15,20 @@ service cloud.firestore {
       return signedIn() && currentUser().exists();
     }
 
+    // Support legacy profiles that stored role as Guru/Admin with
+    // different capitalization, while keeping the allow-list explicit.
     function hasRole(roleName) {
       return hasUserProfile() && (
-        (currentUser().data.role is list && roleName in currentUser().data.role) ||
-        (currentUser().data.role is string && currentUser().data.role == roleName)
+        (currentUser().data.role is list && (
+          roleName in currentUser().data.role ||
+          (roleName == 'guru' && ('Guru' in currentUser().data.role || 'GURU' in currentUser().data.role)) ||
+          (roleName == 'admin' && ('Admin' in currentUser().data.role || 'ADMIN' in currentUser().data.role))
+        )) ||
+        (currentUser().data.role is string && (
+          currentUser().data.role == roleName ||
+          (roleName == 'guru' && currentUser().data.role in ['Guru', 'GURU']) ||
+          (roleName == 'admin' && currentUser().data.role in ['Admin', 'ADMIN'])
+        ))
       );
     }
 
@@ -37,9 +44,6 @@ service cloud.firestore {
       return isAdmin() || isGuru();
     }
 
-    // Guru hanya boleh mengelola soal untuk mapel yang memang diberikan
-    // kepadanya dan minimal satu kelas yang menjadi tanggung jawabnya.
-    // Format lama string dan format baru list tetap didukung.
     function guruOwnsQuestion(data) {
       return isGuru()
         && currentUser().data.mapel is list
@@ -59,9 +63,6 @@ service cloud.firestore {
       return isAdmin() || guruOwnsQuestion(data);
     }
 
-    // =========================
-    // PENGATURAN
-    // =========================
     match /pengaturan/{docId} {
       allow read: if signedIn() && docId in [
         'status_registrasi',
@@ -78,9 +79,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // =========================
-    // USERS
-    // =========================
     match /users/{uid} {
       allow read: if signedIn() && (
         request.auth.uid == uid || isAdmin()
@@ -114,9 +112,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // =========================
-    // BANK SOAL
-    // =========================
     match /bank_soal/{soalId} {
       allow read: if isStaff();
       allow create: if canManageQuestion(request.resource.data);
@@ -126,9 +121,6 @@ service cloud.firestore {
       allow delete: if canManageQuestion(resource.data);
     }
 
-    // =========================
-    // HASIL UJIAN
-    // =========================
     match /hasil_ujian/{hasilId} {
       allow create: if false;
       allow read: if isStaff();
@@ -136,9 +128,6 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // =========================
-    // ATTEMPTS / ANSWERS
-    // =========================
     match /exam_attempts/{attemptId} {
       allow read: if isStaff();
       allow write: if false;
@@ -149,9 +138,6 @@ service cloud.firestore {
       }
     }
 
-    // =========================
-    // AUDIT LOGS
-    // =========================
     match /audit_logs/{logId} {
       allow read, write: if isAdmin();
     }
