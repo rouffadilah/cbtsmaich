@@ -15,20 +15,20 @@ service cloud.firestore {
       return signedIn() && currentUser().exists();
     }
 
-    // Support legacy profiles that stored role as Guru/Admin with
-    // different capitalization, while keeping the allow-list explicit.
+    // Role matching is explicit so legacy profiles using different
+    // capitalization are still recognized by Firestore Rules.
     function hasRole(roleName) {
       return hasUserProfile() && (
-        (currentUser().data.role is list && (
-          roleName in currentUser().data.role ||
-          (roleName == 'guru' && ('Guru' in currentUser().data.role || 'GURU' in currentUser().data.role)) ||
-          (roleName == 'admin' && ('Admin' in currentUser().data.role || 'ADMIN' in currentUser().data.role))
-        )) ||
-        (currentUser().data.role is string && (
-          currentUser().data.role == roleName ||
-          (roleName == 'guru' && currentUser().data.role in ['Guru', 'GURU']) ||
-          (roleName == 'admin' && currentUser().data.role in ['Admin', 'ADMIN'])
-        ))
+        (currentUser().data.role is list &&
+          currentUser().data.role.hasAny(
+            roleName == 'guru' ? ['guru', 'Guru', 'GURU'] : ['admin', 'Admin', 'ADMIN']
+          )
+        ) ||
+        (currentUser().data.role is string &&
+          currentUser().data.role in (
+            roleName == 'guru' ? ['guru', 'Guru', 'GURU'] : ['admin', 'Admin', 'ADMIN']
+          )
+        )
       );
     }
 
@@ -122,9 +122,10 @@ service cloud.firestore {
     }
 
     match /hasil_ujian/{hasilId} {
-      allow create: if false;
+      // Staff may read exam results; students may only read their own result.
       allow read: if isStaff();
       allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if false;
       allow update, delete: if isAdmin();
     }
 
