@@ -3,177 +3,182 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =========================================================
-    // AUTHENTICATION & ROLE
-    // =========================================================
+    // ==============================
+    // AUTHENTICATION
+    // ==============================
 
     function signedIn() {
       return request.auth != null;
     }
 
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function currentUser() {
+      return get(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      );
+    }
+
+    function hasUserProfile() {
+      return signedIn() && currentUser().exists();
+    }
+
     function isAdmin() {
-      return signedIn()
-        && request.auth.token.admin == true;
+      return hasUserProfile()
+        && 'admin' in currentUser().data.role;
     }
 
     function isGuru() {
-      return signedIn()
-        && request.auth.token.guru == true;
+      return hasUserProfile()
+        && 'guru' in currentUser().data.role;
     }
 
     function isStaff() {
       return isAdmin() || isGuru();
     }
 
-    function isSelf(uid) {
-      return signedIn()
-        && request.auth.uid == uid;
-    }
 
-
-    // =========================================================
+    // ==============================
     // PENGATURAN
-    // =========================================================
+    // ==============================
 
     match /pengaturan/{docId} {
 
-      // Pengaturan umum yang diperlukan aplikasi
-      allow read: if signedIn()
-        && docId in [
-          'status_registrasi',
-          'data_akademik'
-        ];
+      // Konfigurasi publik yang diperlukan halaman login/dashboard
+      allow read: if docId in [
+        'status_registrasi',
+        'data_akademik'
+      ];
 
-      // Token tidak boleh dibaca langsung dari browser.
-      // Token dikelola melalui backend/API.
-      allow read, write: if false;
-
-      // Admin boleh mengelola konfigurasi.
+      // Semua pengaturan lain hanya admin
       allow read, write: if isAdmin();
     }
 
 
-    // =========================================================
+    // ==============================
     // USERS
-    // =========================================================
+    // ==============================
 
     match /users/{uid} {
 
-      // User boleh membaca profilnya sendiri.
-      // Admin/guru dapat membaca data user.
-      allow read: if isSelf(uid) || isStaff();
+      // User boleh melihat profil sendiri.
+      // Admin boleh melihat semua user.
+      allow read: if isSelf(uid) || isAdmin();
 
-      // Pembuatan akun oleh user sendiri.
-      allow create: if isSelf(uid)
-        && request.resource.data.username is string
-        && request.resource.data.nama is string
-        && request.resource.data.role is list;
+      // Registrasi siswa/guru
+      allow create: if
+        (
+          isSelf(uid)
+          &&
+          request.resource.data.role is list
+          &&
+          request.resource.data.username is string
+          &&
+          request.resource.data.nama is string
+        )
+        ||
+        (
+          isAdmin()
+          &&
+          request.resource.data.role is list
+          &&
+          request.resource.data.username is string
+          &&
+          request.resource.data.nama is string
+        );
 
-      // Admin boleh membuat user.
-      allow create: if isAdmin();
+      // Admin bebas mengubah user.
+      // User biasa hanya boleh mengubah data profil tertentu.
+      allow update: if
+        isAdmin()
+        ||
+        (
+          isSelf(uid)
+          &&
+          request.resource.data.role == resource.data.role
+          &&
+          request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasOnly([
+              'nama',
+              'username',
+              'updatedAt'
+            ])
+        );
 
-      // User boleh mengubah profil terbatas miliknya.
-      allow update: if isSelf(uid)
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.diff(resource.data)
-          .affectedKeys()
-          .hasOnly([
-            'nama',
-            'username',
-            'updatedAt'
-          ]);
-
-      // Admin boleh mengubah seluruh data user.
-      allow update: if isAdmin();
-
-      // Hanya admin yang boleh menghapus user.
       allow delete: if isAdmin();
     }
 
 
-    // =========================================================
+    // ==============================
     // BANK SOAL
-    // =========================================================
+    // ==============================
 
     match /bank_soal/{soalId} {
 
-      // Guru/admin dapat membaca bank soal.
+      // Guru dan admin dapat membaca soal
       allow read: if isStaff();
 
-      // Guru/admin dapat membuat soal.
-      allow create: if isStaff();
-
-      // Guru/admin dapat mengubah soal.
-      allow update: if isStaff();
-
-      // Guru/admin dapat menghapus soal.
-      allow delete: if isStaff();
+      // Guru dan admin dapat mengelola soal
+      allow create, update, delete: if isStaff();
     }
 
 
-    // =========================================================
+    // ==============================
     // EXAM ATTEMPTS
-    // =========================================================
+    // ==============================
 
     match /exam_attempts/{attemptId} {
 
-      // Staff dapat melihat attempt.
+      // Guru/admin dapat melihat attempt
       allow read: if isStaff();
 
-      // Semua proses attempt dilakukan melalui backend.
-      allow create, update, delete: if false;
+      // Tidak boleh ditulis langsung oleh browser
+      allow write: if false;
 
       match /answers/{answerId} {
 
         allow read: if isStaff();
 
-        // Jawaban siswa disimpan melalui backend.
-        allow create, update, delete: if false;
+        // Jawaban harus ditulis melalui backend/server
+        allow write: if false;
       }
     }
 
 
-    // =========================================================
+    // ==============================
     // HASIL UJIAN
-    // =========================================================
+    // ==============================
 
     match /hasil_ujian/{hasilId} {
 
-      // Hasil dibuat oleh backend.
+      // Hasil dibuat oleh backend
       allow create: if false;
 
-      // Guru/admin dapat membaca hasil.
-      // Siswa hanya dapat membaca hasil miliknya sendiri.
-      allow read: if signedIn()
-        && (
-          isStaff()
-          || resource.data.uid == request.auth.uid
+      // Guru/admin boleh membaca semua hasil.
+      // Siswa hanya boleh membaca hasil miliknya.
+      allow read: if
+        isStaff()
+        ||
+        (
+          signedIn()
+          &&
+          resource.data.uid == request.auth.uid
         );
 
-      // Hanya admin yang boleh mengubah/menghapus.
       allow update, delete: if isAdmin();
     }
 
 
-    // =========================================================
+    // ==============================
     // AUDIT LOG
-    // =========================================================
+    // ==============================
 
     match /audit_logs/{logId} {
 
-      allow read: if isAdmin();
-
-      // Audit log sebaiknya dibuat backend.
-      allow create, update, delete: if false;
-    }
-
-
-    // =========================================================
-    // DENY DEFAULT
-    // =========================================================
-
-    match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
   }
 }
