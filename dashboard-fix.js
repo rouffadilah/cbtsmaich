@@ -2,13 +2,41 @@ import { db } from './firebase-config.js';
 import { collection, getDocs, doc, getDoc, query, where, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
 
 const esc = (value) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+
+// Normalisasi jawaban agar semua tipe soal dapat dibandingkan secara konsisten.
+// Array tidak bergantung pada urutan; object dibandingkan berdasarkan isi yang telah dinormalisasi.
 const normalizeAnswer = (value) => {
-    if (Array.isArray(value)) return [...value].map(v => String(v).trim().toUpperCase()).sort().join('|');
-    if (value && typeof value === 'object') return JSON.stringify(value);
-    return String(value ?? '').trim().toUpperCase();
+    if (Array.isArray(value)) {
+        return [...value].map(v => normalizeAnswer(v)).sort().join('|');
+    }
+    if (value && typeof value === 'object') {
+        return JSON.stringify(Object.keys(value).sort().reduce((acc, key) => {
+            acc[key] = value[key];
+            return acc;
+        }, {}));
+    }
+    return String(value ?? '').trim().replace(/\s+/g, ' ').toUpperCase();
 };
-const isChoice = (tipe) => ['PG', 'PGK'].includes(String(tipe || 'PG').toUpperCase());
+
 const clampScore = (value, max) => Math.min(max, Math.max(0, Number(value) || 0));
+
+function hasAnswer(value) {
+    if (value === null || value === undefined) return false;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') return Object.keys(value).length > 0;
+    return String(value).trim() !== '' && String(value).trim() !== '-';
+}
+
+function hasKey(value) {
+    return value !== null && value !== undefined && String(value).trim() !== '' && String(value).trim() !== '-';
+}
+
+// Semua tipe soal tetap memiliki penilaian otomatis selama tersedia kunci jawaban.
+// Nilai ini hanya menjadi nilai awal; guru/admin tetap dapat mengeditnya.
+function calculateAutoQuestionScore(question, answer, key, weight) {
+    if (!hasAnswer(answer) || !hasKey(key)) return 0;
+    return normalizeAnswer(answer) === normalizeAnswer(key) ? weight : 0;
+}
 
 async function getResult(id) {
     const snap = await getDoc(doc(db, 'hasil_ujian', id));
@@ -116,7 +144,7 @@ async function enhanceResultModal(resultId) {
 
         let html = `<div id="per-soal-koreksi" style="display:flex;flex-direction:column;gap:14px;">
           <div style="position:sticky;top:0;z-index:5;padding:12px 14px;border-radius:12px;background:var(--card-bg,#f8fafc);border:1px solid var(--border-color,#e2e8f0);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-            <div><b style="font-size:1rem;">Koreksi Nilai Per Soal</b><div style="font-size:.82rem;color:var(--text-muted,#64748b);">Admin dan guru dapat memberi/mengubah nilai setiap soal. Nilai akhir dihitung otomatis berdasarkan bobot.</div></div>
+            <div><b style="font-size:1rem;">Koreksi Nilai Per Soal</b><div style="font-size:.82rem;color:var(--text-muted,#64748b);">Semua tipe soal dinilai otomatis berdasarkan kunci jawaban. Guru/admin tetap dapat mengedit nilai setiap soal. Nilai akhir dihitung otomatis berdasarkan bobot.</div></div>
             <div style="display:flex;align-items:center;gap:10px;"><span style="font-weight:700;">Nilai Akhir: <strong id="per-soal-nilai-akhir">${calculateScore(questions, saved)}</strong></span><button type="button" id="btn-simpan-semua-per-soal" class="btn-3d" style="background:#10b981;color:#fff;padding:9px 14px;border:0;border-radius:8px;cursor:pointer;"><i class="fas fa-save"></i> Simpan Penilaian</button></div>
           </div>`;
 
@@ -127,20 +155,21 @@ async function enhanceResultModal(resultId) {
             const weight = Math.max(0, Number(s.bobot) || 1);
             const answer = answers[s.id] ?? '-';
             const key = s.kunci_jawaban ?? s.jawaban_benar ?? '-';
-            const autoCorrect = isChoice(tipe) && normalizeAnswer(answer) !== '-' && normalizeAnswer(answer) === normalizeAnswer(key);
-            const calculatedDefault = isChoice(tipe) ? (autoCorrect ? weight : 0) : 0;
-            const defaultScore = saved[s.id] !== undefined ? clampScore(saved[s.id], weight) : calculatedDefault;
+            const autoScore = calculateAutoQuestionScore(s, answer, key, weight);
+            const hasSaved = saved[s.id] !== undefined && saved[s.id] !== null && saved[s.id] !== '';
+            const defaultScore = hasSaved ? clampScore(saved[s.id], weight) : autoScore;
+            const autoCorrect = autoScore >= weight && hasAnswer(answer) && hasKey(key);
             const questionText = String(s.teks_soal || s.pertanyaan || `Soal ${idx + 1}`).replace(/<[^>]*>/g, '');
-            const status = isChoice(tipe) ? (autoCorrect ? 'Benar' : 'Salah') : 'Perlu Koreksi';
-            const statusColor = isChoice(tipe) ? (autoCorrect ? '#059669' : '#dc2626') : '#d97706';
+            const status = !hasKey(key) ? 'Tidak ada kunci' : (autoCorrect ? 'Benar' : 'Salah');
+            const statusColor = !hasKey(key) ? '#64748b' : (autoCorrect ? '#059669' : '#dc2626');
 
             html += `<div class="koreksi-soal-card" style="border:1px solid #e2e8f0;border-radius:12px;padding:15px;background:var(--card-bg,#fff);">
               <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
                 <div style="flex:1;"><div style="font-weight:800;margin-bottom:7px;">Soal ${idx + 1} <span style="font-size:.75rem;padding:3px 7px;border-radius:6px;background:#e0e7ff;color:#4338ca;">${esc(tipe)}</span></div>
                   <div style="line-height:1.55;margin-bottom:9px;">${esc(questionText)}</div>
-                  <div style="font-size:.9rem;display:grid;gap:4px;"><div><span style="color:#059669;font-weight:700;">Jawaban Siswa:</span> ${esc(typeof answer === 'object' ? JSON.stringify(answer) : answer)}</div><div><span style="color:#059669;font-weight:700;">Kunci Jawaban:</span> ${esc(typeof key === 'object' ? JSON.stringify(key) : key)}</div><div style="font-weight:700;color:${statusColor};">Status: ${status}</div></div>
+                  <div style="font-size:.9rem;display:grid;gap:4px;"><div><span style="color:#059669;font-weight:700;">Jawaban Siswa:</span> ${esc(typeof answer === 'object' ? JSON.stringify(answer) : answer)}</div><div><span style="color:#059669;font-weight:700;">Kunci Jawaban:</span> ${esc(typeof key === 'object' ? JSON.stringify(key) : key)}</div><div style="font-weight:700;color:${statusColor};">Status Otomatis: ${status}</div></div>
                 </div>
-                <div style="min-width:170px;background:#f8fafc;border-radius:10px;padding:10px;"><label style="display:block;font-size:.78rem;font-weight:700;margin-bottom:5px;">Nilai Soal (maks. ${weight})</label><div style="display:flex;gap:7px;align-items:center;"><input type="number" min="0" max="${weight}" step="0.01" value="${defaultScore}" data-score-soal="${esc(s.id)}" aria-label="Nilai soal ${idx + 1}" style="width:90px;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-weight:800;text-align:center;"><span style="font-size:.72rem;color:#d97706;">${isChoice(tipe) ? 'otomatis • bisa diubah' : 'manual'}</span></div></div>
+                <div style="min-width:185px;background:#f8fafc;border-radius:10px;padding:10px;"><label style="display:block;font-size:.78rem;font-weight:700;margin-bottom:5px;">Nilai Soal (maks. ${weight})</label><div style="display:flex;gap:7px;align-items:center;"><input type="number" min="0" max="${weight}" step="0.01" value="${defaultScore}" data-score-soal="${esc(s.id)}" aria-label="Nilai soal ${idx + 1}" style="width:90px;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-weight:800;text-align:center;"><span style="font-size:.72rem;color:#d97706;">otomatis • bisa diubah</span></div></div>
               </div></div>`;
         });
 
@@ -187,7 +216,7 @@ function installPatch() {
         await enhanceResultModal(id);
     };
     window.__cbtPerSoalPatchInstalled = true;
-    console.info('[CBT] Koreksi per soal aktif untuk admin/guru; nilai akhir dihitung realtime.');
+    console.info('[CBT] Koreksi per soal aktif untuk admin/guru; semua tipe otomatis dan dapat diedit.');
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installPatch); else installPatch();
