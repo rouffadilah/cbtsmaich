@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body{min-height:100vh;background:#f1f5f9}.wrap{max-width:760px;margin:30px auto;padding:16px}.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,.08);margin-bottom:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:650px){.grid{grid-template-columns:1fr}}label{display:block;font-weight:700;margin-bottom:7px;color:#334155}select,input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}.token{font-size:2rem;font-weight:900;letter-spacing:6px;text-align:center;padding:20px;border-radius:14px;background:#eff6ff;color:#1d4ed8;margin:14px 0}.muted{color:#64748b;font-size:.9rem}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:9px;padding:11px 16px;font-weight:800;cursor:pointer}.primary{background:#2563eb;color:#fff}.success{background:#059669;color:#fff}.danger{background:#dc2626;color:#fff}.status{padding:10px;border-radius:9px;background:#f8fafc;margin-top:12px}.hidden{display:none!important}
+    body{min-height:100vh;background:#f1f5f9}.wrap{max-width:760px;margin:30px auto;padding:16px}.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,.08);margin-bottom:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:650px){.grid{grid-template-columns:1fr}}label{display:block;font-weight:700;margin-bottom:7px;color:#334155}select,input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}.token{font-size:2rem;font-weight:900;letter-spacing:6px;text-align:center;padding:20px;border-radius:14px;background:#eff6ff;color:#1d4ed8;margin:14px 0}.muted{color:#64748b;font-size:.9rem}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:9px;padding:11px 16px;font-weight:800;cursor:pointer}.primary{background:#2563eb;color:#fff}.success{background:#059669;color:#fff}.status{padding:10px;border-radius:9px;background:#f8fafc;margin-top:12px}.hidden{display:none!important}
   </style>
 </head>
 <body>
@@ -45,51 +45,15 @@ import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-
 const $ = id => document.getElementById(id);
 const mapelEl=$('mapel'), kelasEl=$('kelas'), modeEl=$('mode'), rotationEl=$('rotation'), customWrap=$('customWrap'), customEl=$('customCode');
 let currentUser=null;
-
-function msg(text, error=false){$('message').textContent=text;$('message').style.color=error?'#b91c1c':'#475569'}
+function msg(text,error=false){$('message').textContent=text;$('message').style.color=error?'#b91c1c':'#475569'}
 function showCustom(){customWrap.classList.toggle('hidden',modeEl.value!=='custom')}
 modeEl.addEventListener('change',showCustom);
-
-async function authFetch(url, options={}){
-  if(!currentUser) throw new Error('Sesi login belum siap.');
-  const idToken=await currentUser.getIdToken();
-  options.headers={...(options.headers||{}),Authorization:`Bearer ${idToken}`,'Content-Type':'application/json'};
-  const r=await fetch(url,options); let data={}; try{data=await r.json()}catch{}
-  if(!r.ok) throw new Error(data.error||'Permintaan gagal.');
-  return data;
-}
-
-async function loadMaster(){
-  const snap=await getDoc(doc(db,'pengaturan','data_akademik'));
-  if(!snap.exists()) return;
-  const d=snap.data();
-  (Array.isArray(d.mapel)?d.mapel:[]).forEach(v=>mapelEl.insertAdjacentHTML('beforeend',`<option value="${String(v).replace(/"/g,'&quot;')}">${v}</option>`));
-  (Array.isArray(d.kelas)?d.kelas:[]).forEach(v=>kelasEl.insertAdjacentHTML('beforeend',`<option value="${String(v).replace(/"/g,'&quot;')}">${v}</option>`));
-}
-
-async function refreshToken(){
-  if(!mapelEl.value||!kelasEl.value) return msg('Pilih mapel dan kelas terlebih dahulu.',true);
-  try{
-    const d=await authFetch(`/api/token-status?mapel=${encodeURIComponent(mapelEl.value)}&kelas=${encodeURIComponent(kelasEl.value)}`);
-    $('tokenBox').classList.remove('hidden'); $('currentToken').textContent=d.required?(d.code||'------'):'NONAKTIF';
-    if(d.expiresAt){const left=Math.max(0,Math.floor((Number(d.expiresAt)-Date.now())/1000));$('expiry').textContent=`Mode: ${d.mode} • Rotasi: ${d.rotationMinutes||'-'} menit • berlaku sekitar ${Math.floor(left/60)} menit ${left%60} detik lagi.`}else $('expiry').textContent=`Mode: ${d.mode} • Token tidak memiliki waktu kedaluwarsa.`;
-    modeEl.value=d.mode==='custom'?'custom':d.mode==='auto'?'auto':'disabled'; rotationEl.value=d.rotationMinutes||15; customEl.value=d.mode==='custom'?d.code:''; showCustom();
-  }catch(e){msg(e.message,true)}
-}
-
-async function saveConfig(){
-  if(!mapelEl.value||!kelasEl.value) return msg('Pilih mapel dan kelas terlebih dahulu.',true);
-  const payload={mapel:mapelEl.value,kelas:kelasEl.value,mode:modeEl.value,rotationMinutes:Number(rotationEl.value)||15,customCode:customEl.value.trim().toUpperCase()};
-  try{const d=await authFetch('/api/token-config',{method:'POST',body:JSON.stringify(payload)});msg(`Tersimpan. Token aktif: ${d.code||'NONAKTIF'}`);await refreshToken()}catch(e){msg(e.message,true)}
-}
-
-mapelEl.addEventListener('change',refreshToken); kelasEl.addEventListener('change',refreshToken); $('refresh').onclick=refreshToken; $('save').onclick=saveConfig; $('back').onclick=()=>location.href='/dashboard';
-
-onAuthStateChanged(auth,async user=>{
-  currentUser=user;
-  if(!user){location.replace('/');return}
-  try{await loadMaster()}catch(e){msg('Gagal memuat data akademik: '+e.message,true)}
-});
+async function authFetch(url, options={}){if(!currentUser) throw new Error('Sesi login belum siap.');const idToken=await currentUser.getIdToken();options.headers={...(options.headers||{}),Authorization:`Bearer ${idToken}`,'Content-Type':'application/json'};const r=await fetch(url,options);let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.error||'Permintaan gagal.');return data}
+async function loadMaster(){const snap=await getDoc(doc(db,'pengaturan','data_akademik'));if(!snap.exists())return;const d=snap.data();const mapel=Array.isArray(d.list_mapel)?d.list_mapel:(Array.isArray(d.mapel)?d.mapel:[]);const kelas=Array.isArray(d.list_kelas)?d.list_kelas:(Array.isArray(d.kelas)?d.kelas:[]);mapel.forEach(v=>mapelEl.insertAdjacentHTML('beforeend',`<option value="${String(v).replace(/"/g,'&quot;')}">${v}</option>`));kelas.forEach(v=>kelasEl.insertAdjacentHTML('beforeend',`<option value="${String(v).replace(/"/g,'&quot;')}">${v}</option>`))}
+async function refreshToken(){if(!mapelEl.value||!kelasEl.value)return msg('Pilih mapel dan kelas terlebih dahulu.',true);try{const d=await authFetch(`/api/token-status?mapel=${encodeURIComponent(mapelEl.value)}&kelas=${encodeURIComponent(kelasEl.value)}`);$('tokenBox').classList.remove('hidden');$('currentToken').textContent=d.required?(d.code||'------'):'NONAKTIF';if(d.expiresAt){const left=Math.max(0,Math.floor((Number(d.expiresAt)-Date.now())/1000));$('expiry').textContent=`Mode: ${d.mode} • Rotasi: ${d.rotationMinutes||'-'} menit • berlaku sekitar ${Math.floor(left/60)} menit ${left%60} detik lagi.`}else $('expiry').textContent=`Mode: ${d.mode} • Token tidak memiliki waktu kedaluwarsa.`;modeEl.value=d.mode==='custom'?'custom':d.mode==='auto'?'auto':'disabled';rotationEl.value=d.rotationMinutes||15;customEl.value=d.mode==='custom'?d.code:'';showCustom()}catch(e){msg(e.message,true)}}
+async function saveConfig(){if(!mapelEl.value||!kelasEl.value)return msg('Pilih mapel dan kelas terlebih dahulu.',true);const payload={mapel:mapelEl.value,kelas:kelasEl.value,mode:modeEl.value,rotationMinutes:Number(rotationEl.value)||15,customCode:customEl.value.trim().toUpperCase()};try{const d=await authFetch('/api/token-config',{method:'POST',body:JSON.stringify(payload)});msg(`Tersimpan. Token aktif: ${d.code||'NONAKTIF'}`);await refreshToken()}catch(e){msg(e.message,true)}}
+mapelEl.addEventListener('change',refreshToken);kelasEl.addEventListener('change',refreshToken);$('refresh').onclick=refreshToken;$('save').onclick=saveConfig;$('back').onclick=()=>location.href='/dashboard';
+onAuthStateChanged(auth,async user=>{currentUser=user;if(!user){location.replace('/');return}try{await loadMaster()}catch(e){msg('Gagal memuat data akademik: '+e.message,true)}});
 </script>
 </body>
 </html>
