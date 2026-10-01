@@ -28,10 +28,21 @@ service cloud.firestore {
     function isStaff() { return isAdmin() || hasRole('guru'); }
 
     match /pengaturan/{docId} {
+      // Master data remains readable by authenticated users because the student
+      // login/exam flow needs the academic master list.
       allow read: if docId in ['status_registrasi', 'data_akademik'];
-      // Token configuration is server-owned. Dashboard uses /api/token-* with Admin SDK.
-      allow read, write: if false;
-      // Other exam configuration remains admin-only.
+
+      // Exam settings are editable by staff from the dashboard. The dashboard
+      // already limits the visible rows to the teacher's assigned subjects.
+      // Token validation itself is also enforced server-side by /api/token-*.
+      allow read, write: if isStaff() && docId in [
+        'waktu_ujian',
+        'jadwal_ujian',
+        'acak_soal',
+        'token_ujian'
+      ];
+
+      // Admin retains access to any other configuration document.
       allow read, write: if isAdmin();
     }
 
