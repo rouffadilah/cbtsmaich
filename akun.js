@@ -140,11 +140,6 @@ const handleSubmit = async (event) => {
         const isNis = /^\d{10}$/.test(newUsername);
         const isIdGuru = /^[A-Z]\d{2}[A-Z]\d-\d{3}$/.test(newUsername);
 
-        // Validasi identitas mengikuti aturan registrasi:
-        // - Siswa saja: wajib NIS 10 digit.
-        // - Guru/custom saja: wajib ID Guru.
-        // - Multi-role Siswa + Guru/Admin: boleh memakai NIS ATAU ID Guru.
-        // - Akun Admin saja: username umum diperbolehkan.
         if (!isEmailIdentity) {
             if (hasSiswa && hasGuru) {
                 if (!(isNis || isIdGuru)) {
@@ -207,9 +202,6 @@ const handleSubmit = async (event) => {
         localStorage.setItem('userKelas', JSON.stringify(Array.isArray(activeProfile.kelas) ? activeProfile.kelas : []));
 
         document.querySelectorAll('[data-account-name]').forEach(el => { el.textContent = newName; });
-        if (authEmailChanged) {
-            // Tidak ada pesan aksi lanjutan; sesi Firebase sudah memakai email baru.
-        }
 
         const passwordText = passwordChanged ? ' Password juga berhasil diperbarui.' : '';
         status('success', `Profil akun berhasil diperbarui.${passwordText}`);
@@ -220,9 +212,8 @@ const handleSubmit = async (event) => {
 
         setTimeout(closeAccountModal, 700);
     } catch (error) {
-        // Jika email Auth sempat berubah tetapi Firestore gagal, coba rollback agar username tetap sinkron.
         try {
-            if (typeof authEmailChanged !== 'undefined' && authEmailChanged && activeUser && activeUser.email !== oldAuthEmail) {
+            if (authEmailChanged && activeUser && activeUser.email !== oldAuthEmail) {
                 await updateEmail(activeUser, oldAuthEmail);
             }
         } catch (rollbackError) {
@@ -267,3 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.openAccountModal = openAccountModal;
 window.closeAccountModal = closeAccountModal;
+
+// Load the targeted attempt-page UI fixes without changing attempt.js behavior.
+import './attempt-ui-fixes.js';
