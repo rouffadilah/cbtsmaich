@@ -1,0 +1,204 @@
+import { db } from './firebase-config.js';
+import { collection, getDocs, doc, getDoc, query, where, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
+
+/*
+ * CBT-SMAICH dashboard correction layer.
+ * Adds per-question scoring without replacing the existing dashboard module.
+ */
+
+const esc = (value) => String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
+const normalizeAnswer = (value) => {
+    if (Array.isArray(value)) return [...value].map(v => String(v).trim().toUpperCase()).sort().join('|');
+    if (value && typeof value === 'object') return JSON.stringify(value);
+    return String(value ?? '').trim().toUpperCase();
+};
+
+const isPG = (tipe) => String(tipe || 'PG').toUpperCase() === 'PG';
+
+async function getResult(id) {
+    const snap = await getDoc(doc(db, 'hasil_ujian', id));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+async function getQuestions(result) {
+    const q = query(collection(db, 'bank_soal'), where('mataPelajaran', '==', result.mataPelajaran));
+    const snap = await getDocs(q);
+    const kelasKey = Array.isArray(result.kelas) ? result.kelas.join(', ') : String(result.kelas || '');
+    const arr = [];
+    snap.forEach(d => {
+        const data = d.data();
+        const classes = Array.isArray(data.kelas) ? data.kelas : [data.kelas || 'Umum'];
+        const sameClass = classes.join(', ') === kelasKey || classes.includes(result.kelas) || classes.includes('Umum') || !result.kelas;
+        if (sameClass) arr.push({ id: d.id, ...data });
+    });
+    return arr;
+}
+
+function getSavedScoreMap(result) {
+    const raw = result.nilaiPerSoal || result.nilai_per_soal || {};
+    return raw && typeof raw === 'object' ? { ...raw } : {};
+}
+
+function calculateScore(questionArr, scoreMap) {
+    let totalWeight = 0;
+    let obtained = 0;
+    questionArr.forEach(s => {
+        const weight = Math.max(0, Number(s.bobot) || 1);
+        totalWeight += weight;
+        const score = Math.min(weight, Math.max(0, Number(scoreMap[s.id]) || 0));
+        obtained += score;
+    });
+    return totalWeight > 0 ? Math.round((obtained / totalWeight) * 100) : 0;
+}
+
+async function saveAllScores(resultId, questions, button) {
+    const inputs = [...document.querySelectorAll('#per-soal-koreksi [data-score-soal]')];
+    const scoreMap = {};
+    questions.forEach(s => {
+        const input = document.querySelector(`#per-soal-koreksi [data-score-soal="${CSS.escape(s.id)}"]`);
+        if (input) scoreMap[s.id] = Math.min(Number(input.max) || 1, Math.max(0, Number(input.value) || 0));
+    });
+
+    const finalScore = calculateScore(questions, scoreMap);
+    const oldHtml = button ? button.innerHTML : '';
+    if (button) { button.disabled = true; button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...'; }
+
+    try {
+        await updateDoc(doc(db, 'hasil_ujian', resultId), {
+            nilaiPerSoal: scoreMap,
+            skorPG: finalScore,
+            skor: finalScore,
+            dikoreksiManual: true,
+            waktuKoreksi: serverTimestamp()
+        });
+
+        const finalInput = document.getElementById('edit-nilai-siswa');
+        if (finalInput) finalInput.value = finalScore;
+
+        const scoreBadge = document.getElementById('per-soal-nilai-akhir');
+        if (scoreBadge) scoreBadge.textContent = finalScore;
+
+        if (window.customAlert) await window.customAlert(`Penilaian per soal berhasil disimpan. Nilai akhir: ${finalScore}`, 'success');
+        else alert(`Penilaian berhasil disimpan. Nilai akhir: ${finalScore}`);
+    } catch (error) {
+        console.error('Gagal menyimpan penilaian per soal:', error);
+        if (window.customAlert) await window.customAlert(`Gagal menyimpan penilaian: ${error.message}`, 'error');
+        else alert(`Gagal menyimpan penilaian: ${error.message}`);
+    } finally {
+        if (button) { button.disabled = false; button.innerHTML = oldHtml || '<i class="fas fa-save"></i> Simpan Penilaian'; }
+    }
+}
+
+async function enhanceResultModal(resultId) {
+    try {
+        const result = await getResult(resultId);
+        if (!result) return;
+        const container = document.getElementById('container-jawaban-siswa');
+        if (!container) return;
+
+        const questions = await getQuestions(result);
+        const answers = result.jawaban || {};
+        const saved = getSavedScoreMap(result);
+
+        let html = `
+            <div id="per-soal-koreksi" style="display:flex; flex-direction:column; gap:14px;">
+                <div style="position:sticky; top:0; z-index:5; padding:12px 14px; border-radius:12px; background:var(--card-bg,#f8fafc); border:1px solid var(--border-color,#e2e8f0); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                    <div>
+                        <b style="font-size:1rem;">Koreksi Nilai Per Soal</b>
+                        <div style="font-size:.82rem; color:var(--text-muted,#64748b);">Masukkan nilai tiap soal. Nilai maksimal mengikuti Bobot soal.</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-weight:700;">Nilai Akhir: <strong id="per-soal-nilai-akhir">${calculateScore(questions, saved)}</strong></span>
+                        <button type="button" id="btn-simpan-semua-per-soal" class="btn-3d" style="background:#10b981;color:#fff;padding:9px 14px;border:0;border-radius:8px;cursor:pointer;"><i class="fas fa-save"></i> Simpan Penilaian</button>
+                    </div>
+                </div>`;
+
+        if (!questions.length) {
+            html += `<div style="padding:20px;text-align:center;color:#64748b;">Tidak ditemukan bank soal untuk ujian ini.</div>`;
+        }
+
+        questions.forEach((s, idx) => {
+            const tipe = String(s.tipe || 'PG').toUpperCase();
+            const weight = Math.max(0, Number(s.bobot) || 1);
+            const answer = answers[s.id] ?? '-';
+            const key = s.kunci_jawaban ?? s.jawaban_benar ?? '-';
+            const autoCorrect = isPG(tipe) && normalizeAnswer(answer) !== '-' && normalizeAnswer(answer) === normalizeAnswer(key);
+            const defaultScore = saved[s.id] !== undefined ? Number(saved[s.id]) : (isPG(tipe) ? (autoCorrect ? weight : 0) : 0);
+            const maxScore = weight;
+            const questionText = (s.teks_soal || s.pertanyaan || `Soal ${idx + 1}`).replace(/<[^>]*>/g, '');
+            const status = isPG(tipe) ? (autoCorrect ? 'Benar' : 'Salah') : 'Perlu Koreksi';
+            const statusColor = isPG(tipe) ? (autoCorrect ? '#059669' : '#dc2626') : '#d97706';
+
+            html += `
+                <div class="koreksi-soal-card" style="border:1px solid #e2e8f0;border-radius:12px;padding:15px;background:var(--card-bg,#fff);">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+                        <div style="flex:1;">
+                            <div style="font-weight:800;margin-bottom:7px;">Soal ${idx + 1} <span style="font-size:.75rem;padding:3px 7px;border-radius:6px;background:#e0e7ff;color:#4338ca;">${esc(s.tipe || 'PG')}</span></div>
+                            <div style="line-height:1.55;margin-bottom:9px;">${esc(questionText)}</div>
+                            <div style="font-size:.9rem;display:grid;gap:4px;">
+                                <div><span style="color:#059669;font-weight:700;">Jawaban Siswa:</span> ${esc(typeof answer === 'object' ? JSON.stringify(answer) : answer)}</div>
+                                <div><span style="color:#059669;font-weight:700;">Kunci Jawaban:</span> ${esc(typeof key === 'object' ? JSON.stringify(key) : key)}</div>
+                                <div style="font-weight:700;color:${statusColor};">Status: ${status}</div>
+                            </div>
+                        </div>
+                        <div style="min-width:150px;background:#f8fafc;border-radius:10px;padding:10px;">
+                            <label style="display:block;font-size:.78rem;font-weight:700;margin-bottom:5px;">Nilai Soal (maks. ${maxScore})</label>
+                            <div style="display:flex;gap:7px;align-items:center;">
+                                <input type="number" min="0" max="${maxScore}" step="0.01" value="${Math.min(maxScore, Math.max(0, defaultScore))}" data-score-soal="${esc(s.id)}" ${isPG(tipe) ? 'readonly' : ''} style="width:90px;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-weight:800;text-align:center;">
+                                ${isPG(tipe) ? '<span style="font-size:.72rem;color:#64748b;">otomatis</span>' : '<span style="font-size:.72rem;color:#d97706;">manual</span>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+
+        html += `</div>`;
+        container.innerHTML = html;
+
+        document.getElementById('btn-simpan-semua-per-soal')?.addEventListener('click', (e) => saveAllScores(resultId, questions, e.currentTarget));
+
+        // Update nilai akhir langsung ketika nilai manual diubah.
+        container.querySelectorAll('[data-score-soal]').forEach(input => {
+            input.addEventListener('input', () => {
+                const map = {};
+                questions.forEach(s => {
+                    const el = container.querySelector(`[data-score-soal="${CSS.escape(s.id)}"]`);
+                    if (el) map[s.id] = Number(el.value) || 0;
+                });
+                const badge = document.getElementById('per-soal-nilai-akhir');
+                if (badge) badge.textContent = calculateScore(questions, map);
+            });
+        });
+    } catch (error) {
+        console.error('Gagal menyiapkan koreksi per soal:', error);
+    }
+}
+
+function installPatch() {
+    if (window.__cbtPerSoalPatchInstalled) return;
+    if (typeof window.lihatDetailJawaban !== 'function') {
+        setTimeout(installPatch, 100);
+        return;
+    }
+
+    const original = window.lihatDetailJawaban;
+    window.lihatDetailJawaban = async function(id) {
+        await original(id);
+        // dashboard.js selesai merender detail terlebih dahulu.
+        await new Promise(resolve => setTimeout(resolve, 50));
+        await enhanceResultModal(id);
+    };
+
+    window.__cbtPerSoalPatchInstalled = true;
+    console.info('[CBT] Koreksi per soal aktif.');
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installPatch);
+else installPatch();
+setTimeout(installPatch, 500);
