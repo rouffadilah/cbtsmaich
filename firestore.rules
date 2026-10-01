@@ -2,141 +2,69 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // =========================================================
-    // AUTH / ROLE
-    // =========================================================
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function userProfileExists() {
-      return signedIn() && exists(
-        /databases/$(database)/documents/users/$(request.auth.uid)
-      );
-    }
-
-    function currentUser() {
-      return get(
-        /databases/$(database)/documents/users/$(request.auth.uid)
-      );
-    }
-
-    // Mendukung data akun lama: guru/Guru/GURU dan admin/Admin/ADMIN,
-    // baik role disimpan sebagai list maupun string.
+    function signedIn() { return request.auth != null; }
+    function userProfileExists() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function currentUser() { return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
     function hasRole(roleName) {
       return userProfileExists() && (
-        (
-          currentUser().data.role is list &&
-          (
-            roleName in currentUser().data.role ||
-            (roleName == 'guru' && (
-              'Guru' in currentUser().data.role ||
-              'GURU' in currentUser().data.role ||
-              'Guru ' in currentUser().data.role ||
-              'GURU ' in currentUser().data.role ||
-              'guru ' in currentUser().data.role
-            )) ||
-            (roleName == 'admin' && (
-              'Admin' in currentUser().data.role ||
-              'ADMIN' in currentUser().data.role ||
-              'Admin ' in currentUser().data.role ||
-              'ADMIN ' in currentUser().data.role ||
-              'admin ' in currentUser().data.role
-            ))
-          )
-        ) ||
-        (
-          currentUser().data.role is string &&
-          (
-            currentUser().data.role == roleName ||
-            (roleName == 'guru' && currentUser().data.role in ['Guru', 'GURU', 'Guru ', 'GURU ', 'guru ']) ||
-            (roleName == 'admin' && currentUser().data.role in ['Admin', 'ADMIN', 'Admin ', 'ADMIN ', 'admin '])
-          )
-        )
+        ((currentUser().data.role is list) && (
+          roleName in currentUser().data.role ||
+          (roleName == 'guru' && ('Guru' in currentUser().data.role || 'GURU' in currentUser().data.role || 'Guru ' in currentUser().data.role || 'GURU ' in currentUser().data.role || 'guru ' in currentUser().data.role)) ||
+          (roleName == 'admin' && ('Admin' in currentUser().data.role || 'ADMIN' in currentUser().data.role || 'Admin ' in currentUser().data.role || 'ADMIN ' in currentUser().data.role || 'admin ' in currentUser().data.role))
+        )) ||
+        ((currentUser().data.role is string) && (
+          currentUser().data.role == roleName ||
+          (roleName == 'guru' && currentUser().data.role in ['Guru', 'GURU', 'Guru ', 'GURU ', 'guru ']) ||
+          (roleName == 'admin' && currentUser().data.role in ['Admin', 'ADMIN', 'Admin ', 'ADMIN ', 'admin '])
+        ))
       );
     }
-
     function isAdmin() { return hasRole('admin'); }
     function isGuru() { return hasRole('guru'); }
     function isStaff() { return isAdmin() || isGuru(); }
     function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
 
-    // =========================================================
-    // PENGATURAN
-    // =========================================================
     match /pengaturan/{docId} {
       allow read: if signedIn() && docId in ['status_registrasi', 'data_akademik'];
       allow read: if isStaff() && docId in ['waktu_ujian', 'jadwal_ujian', 'acak_soal', 'token_ujian'];
       allow write: if isAdmin();
     }
 
-    // =========================================================
-    // USERS
-    // =========================================================
     match /users/{uid} {
       allow read: if isAdmin() || isSelf(uid);
-      allow create: if (
-        isSelf(uid) &&
-        request.resource.data.role is list &&
-        request.resource.data.username is string &&
-        request.resource.data.nama is string
-      ) || (
-        isAdmin() &&
-        request.resource.data.role is list &&
-        request.resource.data.username is string &&
-        request.resource.data.nama is string
-      );
-      allow update: if isAdmin() || (
-        isSelf(uid) &&
-        request.resource.data.role == resource.data.role &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nama', 'username', 'updatedAt'])
-      );
+      allow create: if (isSelf(uid) && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string) || (isAdmin() && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string);
+      allow update: if isAdmin() || (isSelf(uid) && request.resource.data.role == resource.data.role && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nama', 'username', 'updatedAt']));
       allow delete: if isAdmin();
     }
 
-    // =========================================================
-    // BANK SOAL
-    // =========================================================
-    match /bank_soal/{soalId} {
-      allow read, create, update, delete: if isStaff();
-    }
+    match /bank_soal/{soalId} { allow read, create, update, delete: if isStaff(); }
 
-    // =========================================================
-    // HASIL UJIAN
-    // =========================================================
     match /hasil_ujian/{hasilId} {
       allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
-
-      // Siswa hanya boleh membuat hasil untuk akun sendiri.
-      allow create: if isStaff() || (
-        signedIn() &&
-        request.resource.data.uid == request.auth.uid &&
-        request.resource.data.mataPelajaran is string &&
-        request.resource.data.jawaban is map
-      );
-
-      // Guru/admin dapat mengoreksi nilai, termasuk nilai per soal.
+      allow create: if isStaff() || (signedIn() && request.resource.data.uid == request.auth.uid && request.resource.data.mataPelajaran is string && request.resource.data.jawaban is map);
       allow update, delete: if isStaff();
     }
 
-    // =========================================================
-    // ATTEMPTS
-    // =========================================================
     match /exam_attempts/{attemptId} {
       allow read: if isStaff();
       allow write: if false;
-      match /answers/{answerId} {
-        allow read: if isStaff();
-        allow write: if false;
-      }
+      match /answers/{answerId} { allow read: if isStaff(); allow write: if false; }
     }
 
-    // =========================================================
-    // AUDIT LOG
-    // =========================================================
-    match /audit_logs/{logId} {
-      allow read, write: if isAdmin();
+    // Siswa hanya boleh membuat laporan pelanggaran untuk dirinya sendiri.
+    // Token pemulihan hanya boleh diterbitkan/diubah oleh admin atau guru.
+    match /security_violations/{violationId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.resumeToken == null
+        && request.resource.data.nama is string
+        && request.resource.data.reason is string;
+      allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update: if isStaff();
+      allow delete: if isAdmin();
     }
+
+    match /audit_logs/{logId} { allow read, write: if isAdmin(); }
   }
 }
