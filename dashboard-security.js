@@ -10,13 +10,26 @@ import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp }
     const latestByUid = new Map();
     const token = () => String(Math.floor(100000 + Math.random() * 900000));
 
+    // Notifikasi pelanggaran + token pemulihan hanya ditampilkan pada
+    // halaman/section Bank Soal. Saat berpindah ke section lain, panel hilang.
+    function isBankSoalSectionActive() {
+        const section = document.getElementById('section-soal');
+        return !!section && section.classList.contains('active');
+    }
+
     function ensureUi() {
         if (document.getElementById('cbt-security-alerts')) return document.getElementById('cbt-security-alerts');
         const box = document.createElement('div');
         box.id = 'cbt-security-alerts';
-        box.style.cssText = 'position:fixed;right:18px;top:18px;width:min(430px,calc(100vw - 36px));max-height:calc(100vh - 36px);overflow:auto;z-index:2147482000;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+        box.style.cssText = 'position:fixed;right:18px;top:18px;width:min(430px,calc(100vw - 36px));max-height:calc(100vh - 36px);overflow:auto;z-index:2147482000;display:none;flex-direction:column;gap:10px;pointer-events:none;';
         document.body.appendChild(box);
         return box;
+    }
+
+    function syncVisibility() {
+        const root = document.getElementById('cbt-security-alerts');
+        if (!root) return;
+        root.style.display = isBankSoalSectionActive() && root.children.length ? 'flex' : 'none';
     }
 
     function escapeHtml(value) {
@@ -35,7 +48,7 @@ import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp }
         const root = ensureUi();
         root.innerHTML = '';
         activeRecords().forEach(data => renderAlert(data.id, data));
-        root.style.display = activeRecords().length ? 'flex' : 'none';
+        syncVisibility();
     }
 
     function renderAlert(id, data) {
@@ -85,7 +98,6 @@ import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp }
                     if (latestByUid.get(uid)?.id === id) latestByUid.delete(uid);
                     return;
                 }
-                // One active recovery request per student: keep only the newest.
                 const previous = latestByUid.get(uid);
                 const previousTime = previous?.createdAt?.toMillis?.() || 0;
                 const currentTime = data.createdAt?.toMillis?.() || Date.now();
@@ -100,11 +112,20 @@ import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp }
         }, error => console.error('[CBT Security] Gagal memantau pelanggaran:',error));
     }
 
+    function watchSectionNavigation() {
+        const sync = () => syncVisibility();
+        window.addEventListener('hashchange', sync);
+        const observer = new MutationObserver(sync);
+        observer.observe(document.body, { subtree:true, attributes:true, attributeFilter:['class'] });
+        sync();
+    }
+
     async function boot() {
         try {
             const firebase = await import('./firebase-config.js');
             auth = firebase.auth;
             db = firebase.db;
+            watchSectionNavigation();
             if (auth) onAuthStateChanged(auth,user=>{ if(user) start(); });
         } catch(error) {
             console.error('[CBT Security] Gagal memuat Firebase:',error);
