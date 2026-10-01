@@ -20,15 +20,15 @@ service cloud.firestore {
         (
           roleName == 'guru' &&
           (
-            (currentUser().data.role is list && currentUser().data.role.hasAny(['guru', 'Guru', 'GURU'])) ||
-            (currentUser().data.role is string && currentUser().data.role in ['guru', 'Guru', 'GURU'])
+            (currentUser().data.role is list && currentUser().data.role.hasAny(['guru', 'Guru', 'GURU', 'guru ', 'Guru ', 'GURU '])) ||
+            (currentUser().data.role is string && currentUser().data.role in ['guru', 'Guru', 'GURU', 'guru ', 'Guru ', 'GURU '])
           )
         ) ||
         (
           roleName == 'admin' &&
           (
-            (currentUser().data.role is list && currentUser().data.role.hasAny(['admin', 'Admin', 'ADMIN'])) ||
-            (currentUser().data.role is string && currentUser().data.role in ['admin', 'Admin', 'ADMIN'])
+            (currentUser().data.role is list && currentUser().data.role.hasAny(['admin', 'Admin', 'ADMIN', 'admin ', 'Admin ', 'ADMIN '])) ||
+            (currentUser().data.role is string && currentUser().data.role in ['admin', 'Admin', 'ADMIN', 'admin ', 'Admin ', 'ADMIN '])
           )
         )
       );
