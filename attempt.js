@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-config.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
+import { httpsCallable } from "./vercel-functions-shim.js";
 import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const examState = {
@@ -396,8 +396,6 @@ function tampilkanSoal(idx) {
         const pasangan = Array.isArray(soal.pasangan) ? soal.pasangan.filter(p => p && p.kiri != null && p.kanan != null) : [];
         const jwbSiswaObj = (examState.jawabanSiswa[soal.id] && typeof examState.jawabanSiswa[soal.id] === 'object')
             ? examState.jawabanSiswa[soal.id] : {};
-
-        // Ambil label A=Teknis; B=Ekonomi; ... dari teks soal jika sisi kiri hanya berisi huruf A/B/C/D.
         const labelMap = {};
         const stem = String(teksSoal || '');
         const labelRegex = /([A-E])\s*=\s*([^;,.]+?)(?=\s*(?:;|,|\.|$))/gi;
@@ -405,7 +403,6 @@ function tampilkanSoal(idx) {
         while ((labelMatch = labelRegex.exec(stem)) !== null) {
             labelMap[labelMatch[1].toUpperCase()] = labelMatch[2].trim();
         }
-
         const resolveLeftLabel = (key, idx) => {
             const raw = String(key ?? '').trim();
             const letter = raw.toUpperCase();
@@ -413,8 +410,6 @@ function tampilkanSoal(idx) {
             if (/^[A-E]$/.test(letter)) return `${letter}.`;
             return raw || `Pernyataan ${idx + 1}`;
         };
-
-        // Simpan urutan pilihan sekali per soal agar tidak berubah setiap kali siswa berpindah soal.
         if (!Array.isArray(examState.matchingOptions[soal.id])) {
             const options = Array.isArray(soal.opsiPasangan) ? soal.opsiPasangan.map(v => String(v).trim()).filter(Boolean) : pasangan.map(p => String(p.kanan).trim()).filter(Boolean);
             for (let i = options.length - 1; i > 0; i--) {
@@ -424,7 +419,6 @@ function tampilkanSoal(idx) {
             examState.matchingOptions[soal.id] = options;
         }
         const semuaKanan = Array.isArray(soal.opsiPasangan) ? soal.opsiPasangan : (examState.matchingOptions[soal.id] || []);
-
         htmlContent += `
             <div style="font-size:0.92rem; color:var(--warning); font-weight:700; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
                 <i class="fas fa-hand-pointer"></i> Cocokkan setiap pernyataan di sebelah kiri dengan satu pasangan jawaban di sebelah kanan.
@@ -433,27 +427,19 @@ function tampilkanSoal(idx) {
                 <div style="padding:12px 16px; background:#eff6ff; border-bottom:1px solid #dbeafe; font-weight:800; color:#1e3a8a;">Pernyataan</div>
                 <div style="padding:12px 8px; background:#f8fafc; border-bottom:1px solid #dbeafe; text-align:center; font-weight:800; color:#64748b;">&nbsp;</div>
                 <div style="padding:12px 16px; background:#eff6ff; border-bottom:1px solid #dbeafe; font-weight:800; color:#1e3a8a;">Pilih Pasangan</div>`;
-
         pasangan.forEach((p, idx) => {
             const kiri = String(p.kiri).trim();
             const selectedKanan = jwbSiswaObj[kiri] || '';
-            const alreadyUsedElsewhere = new Set(Object.entries(jwbSiswaObj)
-                .filter(([k, v]) => k !== kiri && v)
-                .map(([, v]) => String(v)));
-
+            const alreadyUsedElsewhere = new Set(Object.entries(jwbSiswaObj).filter(([k, v]) => k !== kiri && v).map(([, v]) => String(v)));
             let optionsHtml = `<option value="">-- Pilih Pasangan --</option>`;
             const optionNumberMap = new Map();
-            semuaKanan.forEach((p, optionIdx) => {
-                const val = String(p).trim();
-                if (!optionNumberMap.has(val)) optionNumberMap.set(val, String(optionIdx + 1));
-            });
+            semuaKanan.forEach((p, optionIdx) => { const val = String(p).trim(); if (!optionNumberMap.has(val)) optionNumberMap.set(val, String(optionIdx + 1)); });
             semuaKanan.forEach((k, choiceIdx) => {
                 const safeK = String(k);
                 const disabled = alreadyUsedElsewhere.has(safeK) && safeK !== selectedKanan ? 'disabled' : '';
                 const displayNo = optionNumberMap.get(safeK) || String(choiceIdx + 1);
                 optionsHtml += `<option value="${safeK.replace(/\"/g, '&quot;')}" ${selectedKanan === safeK ? 'selected' : ''} ${disabled}>${displayNo}. ${safeK}</option>`;
             });
-
             htmlContent += `
                 <div style="padding:14px 16px; border-top:1px solid #e2e8f0; display:flex; align-items:center; gap:10px; background:#ffffff;">
                     <span style="display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px; padding:0 8px; border-radius:8px; background:#0ea5e9; color:white; font-weight:800; flex:none;">${/^[A-E]$/.test(kiri.toUpperCase()) ? kiri.toUpperCase() : idx + 1}</span>
@@ -466,14 +452,10 @@ function tampilkanSoal(idx) {
                     </select>
                 </div>`;
         });
-
         htmlContent += `</div>`;
         if (semuaKanan.length) {
             const summaryMap = new Map();
-            semuaKanan.forEach((p, i) => {
-                const val = String(p).trim();
-                if (!summaryMap.has(val)) summaryMap.set(val, String(i + 1));
-            });
+            semuaKanan.forEach((p, i) => { const val = String(p).trim(); if (!summaryMap.has(val)) summaryMap.set(val, String(i + 1)); });
             htmlContent += `<div style="margin-top:14px; padding:12px 14px; border:1px dashed #94a3b8; border-radius:10px; background:#f8fafc; font-size:0.86rem; color:#475569;"><b>Daftar pilihan:</b> ${semuaKanan.map(k => `<span style="display:inline-block; margin:4px 4px 0 0; padding:5px 9px; border-radius:999px; background:#e2e8f0;">${summaryMap.get(String(k).trim()) || ''}. ${k}</span>`).join('')}</div>`;
         }
     }
@@ -481,9 +463,7 @@ function tampilkanSoal(idx) {
         const nilaiInput = examState.jawabanSiswa[soal.id] || '';
         htmlContent += `<textarea id="essay-ans" class="input-text" rows="5" placeholder="Ketik jawaban uraian Anda di sini..." style="resize:vertical;">${nilaiInput}</textarea>`;
     }
-
     container.innerHTML = htmlContent;
-
     if (tipeSoal === 'PG') {
         container.querySelectorAll('input[name="answer_pg"]').forEach(radio => {
             radio.onchange = (e) => { 
@@ -540,7 +520,6 @@ function tampilkanSoal(idx) {
             };
         }
     }
-
     const cbRagu = document.getElementById('cb-ragu');
     if (cbRagu) {
         cbRagu.checked = !!examState.raguRagu[soal.id];
@@ -551,40 +530,20 @@ function tampilkanSoal(idx) {
             renderNavigasi(); 
         };
     }
-
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
-
-    if (examState.currentIndex === 0) {
-        if(btnPrev) btnPrev.style.visibility = 'hidden';
-    } else {
-        if(btnPrev) {
-            btnPrev.style.visibility = 'visible';
-            btnPrev.onclick = () => tampilkanSoal(examState.currentIndex - 1);
-        }
-    }
-
+    if (examState.currentIndex === 0) { if(btnPrev) btnPrev.style.visibility = 'hidden'; }
+    else { if(btnPrev) { btnPrev.style.visibility = 'visible'; btnPrev.onclick = () => tampilkanSoal(examState.currentIndex - 1); } }
     if (examState.currentIndex === examState.arraySoal.length - 1) {
-        if(btnNext) {
-            btnNext.innerHTML = '<i class="fas fa-check"></i>';
-            btnNext.style.backgroundColor = 'var(--danger)'; 
-            btnNext.title = 'Selesai Ujian';
-            btnNext.onclick = checkSelesaiUjian;
-        }
+        if(btnNext) { btnNext.innerHTML = '<i class="fas fa-check"></i>'; btnNext.style.backgroundColor = 'var(--danger)'; btnNext.title = 'Selesai Ujian'; btnNext.onclick = checkSelesaiUjian; }
     } else {
-        if(btnNext) {
-            btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>';
-            btnNext.style.backgroundColor = ''; 
-            btnNext.title = 'Selanjutnya';
-            btnNext.onclick = () => tampilkanSoal(examState.currentIndex + 1);
-        }
+        if(btnNext) { btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>'; btnNext.style.backgroundColor = ''; btnNext.title = 'Selanjutnya'; btnNext.onclick = () => tampilkanSoal(examState.currentIndex + 1); }
     }
 }
 
 async function checkSelesaiUjian() {
     const jumlahSoal = examState.arraySoal.length;
     let dijawab = 0;
-
     examState.arraySoal.forEach(s => {
         let ans = examState.jawabanSiswa[s.id];
         let tipe = (s.tipe || s.tipe_soal || 'PG').toUpperCase();
@@ -593,22 +552,15 @@ async function checkSelesaiUjian() {
         else if (tipe === 'MENJODOHKAN' && typeof ans === 'object' && Object.values(ans).some(v => v !== '')) dijawab++;
         else if (tipe === 'ESSAY' && ans && ans.trim() !== '') dijawab++;
     });
-
     const adaRagu = Object.values(examState.raguRagu).includes(true);
-
     let infoMsg = `Anda telah menjawab ${dijawab} dari ${jumlahSoal} soal.`;
     if (dijawab < jumlahSoal) infoMsg += `\n\n⚠️ Masih ada ${jumlahSoal - dijawab} soal KOSONG yang belum Anda jawab.`;
     if (adaRagu) infoMsg += `\n\n⚠️ Terdapat soal yang masih ditandai RAGU-RAGU.`;
-
-    if (confirm(`${infoMsg}\n\nApakah Anda YAKIN ingin mengumpulkan lembar jawaban ini sekarang?`)) {
-        selesaiUjian("NORMAL");
-    }
+    if (confirm(`${infoMsg}\n\nApakah Anda YAKIN ingin mengumpulkan lembar jawaban ini sekarang?`)) selesaiUjian("NORMAL");
 }
 
 const btnSelesaiUjian = document.getElementById('btn-selesai-ujian');
-if (btnSelesaiUjian) {
-    btnSelesaiUjian.onclick = checkSelesaiUjian;
-}
+if (btnSelesaiUjian) btnSelesaiUjian.onclick = checkSelesaiUjian;
 
 async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);
@@ -636,7 +588,6 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
 // OVERRIDE: KELAS MANUAL, BYPASS TOKEN & AUTO-SELECT LINK
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Pastikan input kelas diubah menjadi dropdown untuk siswa yang tidak login
     let elKelas = document.getElementById('student-class');
     if (elKelas && elKelas.tagName !== 'SELECT') {
         const newSelect = document.createElement('select');
@@ -646,103 +597,64 @@ document.addEventListener('DOMContentLoaded', async () => {
         newSelect.style.backgroundColor = '#ffffff';
         elKelas.parentNode.replaceChild(newSelect, elKelas);
     }
-
     const selectKelas = document.getElementById('student-class') || document.querySelector('select[id*="kelas"]');
     const selectMapel = document.getElementById('select-mapel') || document.querySelector('select[id*="mapel"]');
     const inputToken = document.getElementById('input-token') || document.querySelector('input[placeholder*="Token"]'); 
     const containerToken = inputToken ? inputToken.parentElement : null;
-    
     if(!selectKelas || !selectMapel) return;
-
-    // 2. Baca Parameter URL
     const urlParams = new URLSearchParams(window.location.search);
     const urlMapel = urlParams.get('mapel');
     const urlKelas = urlParams.get('kelas');
-
-    // 3. Sembunyikan Token SEPENUHNYA jika menggunakan Link Mode
+    // Link parameters may preselect mapel/kelas, but NEVER bypass the server token check.
     if (urlMapel || urlKelas) {
-        if (containerToken) containerToken.style.display = 'none';
-        if (inputToken) inputToken.value = 'BYPASS';
+        if (containerToken) containerToken.style.display = 'block';
+        if (inputToken) inputToken.value = '';
     }
-
-    // 4. Tarik data Mapel dan Kelas dari database
     try {
         const docRef = doc(db, "pengaturan", "data_akademik");
         const docSnap = await getDoc(docRef);
-        
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
             if (data.list_kelas) {
                 selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Anda --</option>' + data.list_kelas.map(k => `<option value="${k}">${k}</option>`).join('');
                 selectKelas.disabled = false;
             }
-            
-            if (data.list_mapel && selectMapel.options.length <= 1) {
-                selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mapel Ujian --</option>' + data.list_mapel.map(m => `<option value="${m}">${m}</option>`).join('');
-            }
+            if (data.list_mapel && selectMapel.options.length <= 1) selectMapel.innerHTML = '<option value="" disabled selected>-- Pilih Mapel Ujian --</option>' + data.list_mapel.map(m => `<option value="${m}">${m}</option>`).join('');
         }
-    } catch(e) { 
-        console.error("Gagal memuat data akademik:", e); 
-    }
-
-    // 5. Lakukan Auto-Select berdasarkan Parameter URL
+    } catch(e) { console.error("Gagal memuat data akademik:", e); }
     if (urlMapel) {
         let options = Array.from(selectMapel.options);
         let match = options.find(opt => opt.value.toLowerCase().includes(urlMapel.toLowerCase()));
-        if (match) {
-            selectMapel.value = match.value;
-            // Kunci dropdown agar siswa tidak bisa asal mengganti mapel
-            selectMapel.style.pointerEvents = 'none';
-            selectMapel.style.backgroundColor = '#f1f5f9';
-        }
+        if (match) { selectMapel.value = match.value; selectMapel.style.pointerEvents = 'none'; selectMapel.style.backgroundColor = '#f1f5f9'; }
     }
-    
     if (urlKelas) {
         let options = Array.from(selectKelas.options);
         let match = options.find(opt => opt.value.toLowerCase() === urlKelas.toLowerCase() || opt.value.toLowerCase().includes(urlKelas.toLowerCase()));
-        if (match) {
-            selectKelas.value = match.value;
-            // Kunci dropdown agar siswa tidak bisa asal mengganti kelas
-            selectKelas.style.pointerEvents = 'none';
-            selectKelas.style.backgroundColor = '#f1f5f9';
-        }
+        if (match) { selectKelas.value = match.value; selectKelas.style.pointerEvents = 'none'; selectKelas.style.backgroundColor = '#f1f5f9'; }
     }
-
-    // 6. Logika Pengecekan Token (Hanya dijalankan jika BUKAN Link Mode)
     const checkTokenStatus = async () => {
-        // Jika sedang pakai mode link URL, abaikan dan biarkan token disembunyikan
-        if (urlMapel || urlKelas) return;
-
         const kelas = selectKelas.value;
         const mapel = selectMapel.value;
         if(!kelas || !mapel || !containerToken) return;
-
         try {
             const tSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
             if(tSnap.exists()) {
                 const tokenData = tSnap.data();
                 const tokenKey = `token_${mapel}_${kelas}`;
-                
                 if(tokenData[tokenKey] && tokenData[tokenKey].code && tokenData[tokenKey].code.trim() !== '') {
                     containerToken.style.display = 'block'; 
                     if(inputToken) inputToken.value = '';
                 } else {
                     containerToken.style.display = 'none'; 
-                    if(inputToken) inputToken.value = 'BYPASS'; 
+                    if(inputToken) inputToken.value = '';
                 }
             } else {
                 containerToken.style.display = 'none'; 
-                if(inputToken) inputToken.value = 'BYPASS';
+                if(inputToken) inputToken.value = '';
             }
         } catch(e) { console.log(e); }
     };
-
     selectKelas.addEventListener('change', checkTokenStatus);
     selectMapel.addEventListener('change', checkTokenStatus);
-
-    // Cek token saat pertama kali load (Hanya jika manual/bukan mode link)
-    if (!urlMapel && !urlKelas) {
-        setTimeout(checkTokenStatus, 500);
-    }
+    setTimeout(checkTokenStatus, 500);
 });
