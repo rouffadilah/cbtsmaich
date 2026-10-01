@@ -1,77 +1,179 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // =========================================================
+    // AUTHENTICATION & ROLE
+    // =========================================================
 
     function signedIn() {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.admin == true;
+    }
+
+    function isGuru() {
+      return signedIn()
+        && request.auth.token.guru == true;
+    }
+
+    function isStaff() {
+      return isAdmin() || isGuru();
+    }
+
     function isSelf(uid) {
-      return signedIn() && request.auth.uid == uid;
+      return signedIn()
+        && request.auth.uid == uid;
     }
 
-    function userDoc(uid) {
-      return get(/databases/$(database)/documents/users/$(uid));
-    }
 
-    function hasRole(role) {
-      return signedIn() &&
-        role in userDoc(request.auth.uid).data.role;
-    }
+    // =========================================================
+    // PENGATURAN
+    // =========================================================
 
-    function isAdmin() { return hasRole('admin'); }
-    function isStaff() { return isAdmin() || hasRole('guru'); }
-    function isStudent() { return hasRole('siswa'); }
-
-    // Pengaturan yang dipakai dashboard/login.
-    // Guru/admin boleh membaca konfigurasi ujian agar dashboard dapat dimuat.
-    // Penulisan pengaturan ujian boleh dilakukan guru/admin; konfigurasi akademik/registrasi
-    // tetap hanya dapat diubah admin.
     match /pengaturan/{docId} {
-      allow read: if isStaff();
-      allow write: if isAdmin() ||
-        (isStaff() && docId in ['waktu_ujian', 'jadwal_ujian', 'token_ujian', 'acak_soal']);
+
+      // Pengaturan umum yang diperlukan aplikasi
+      allow read: if signedIn()
+        && docId in [
+          'status_registrasi',
+          'data_akademik'
+        ];
+
+      // Token tidak boleh dibaca langsung dari browser.
+      // Token dikelola melalui backend/API.
+      allow read, write: if false;
+
+      // Admin boleh mengelola konfigurasi.
+      allow read, write: if isAdmin();
     }
 
-    // Profil pengguna.
-    // Guru/admin perlu membaca daftar pengguna untuk statistik/dashboard.
-    // Perubahan data pengguna tetap dikendalikan admin, kecuali pengguna mengubah profilnya sendiri.
+
+    // =========================================================
+    // USERS
+    // =========================================================
+
     match /users/{uid} {
+
+      // User boleh membaca profilnya sendiri.
+      // Admin/guru dapat membaca data user.
       allow read: if isSelf(uid) || isStaff();
-      allow create: if (
-        isSelf(uid) &&
-        (request.resource.data.role == ['siswa'] || request.resource.data.role == ['guru']) &&
-        request.resource.data.username is string &&
-        request.resource.data.nama is string
-      ) || (
-        isAdmin() &&
-        request.resource.data.role is list &&
-        request.resource.data.username is string &&
-        request.resource.data.nama is string
-      );
-      allow update: if isAdmin() || (
-        isSelf(uid) &&
-        resource.data.role == request.resource.data.role &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nama', 'username', 'updatedAt'])
-      );
-      allow delete: if isAdmin();
-    }
 
-    // Bank soal: siswa/staf terautentikasi boleh membaca. Hanya admin/guru yang menulis.
-    match /bank_soal/{soalId} {
-      allow read: if signedIn() && (isStaff() || isStudent());
-      allow create, update, delete: if isStaff();
-    }
+      // Pembuatan akun oleh user sendiri.
+      allow create: if isSelf(uid)
+        && request.resource.data.username is string
+        && request.resource.data.nama is string
+        && request.resource.data.role is list;
 
-    // Hasil ujian: siswa hanya boleh membuat hasil untuk UID sendiri dan membaca hasilnya sendiri.
-    // Guru/admin boleh membaca hasil untuk statistik dashboard.
-    match /hasil_ujian/{hasilId} {
-      allow create: if signedIn() &&
-        request.resource.data.uid == request.auth.uid;
-      allow read: if signedIn() &&
-        (isStaff() || resource.data.uid == request.auth.uid);
+      // Admin boleh membuat user.
+      allow create: if isAdmin();
+
+      // User boleh mengubah profil terbatas miliknya.
+      allow update: if isSelf(uid)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            'nama',
+            'username',
+            'updatedAt'
+          ]);
+
+      // Admin boleh mengubah seluruh data user.
       allow update: if isAdmin();
+
+      // Hanya admin yang boleh menghapus user.
       allow delete: if isAdmin();
+    }
+
+
+    // =========================================================
+    // BANK SOAL
+    // =========================================================
+
+    match /bank_soal/{soalId} {
+
+      // Guru/admin dapat membaca bank soal.
+      allow read: if isStaff();
+
+      // Guru/admin dapat membuat soal.
+      allow create: if isStaff();
+
+      // Guru/admin dapat mengubah soal.
+      allow update: if isStaff();
+
+      // Guru/admin dapat menghapus soal.
+      allow delete: if isStaff();
+    }
+
+
+    // =========================================================
+    // EXAM ATTEMPTS
+    // =========================================================
+
+    match /exam_attempts/{attemptId} {
+
+      // Staff dapat melihat attempt.
+      allow read: if isStaff();
+
+      // Semua proses attempt dilakukan melalui backend.
+      allow create, update, delete: if false;
+
+      match /answers/{answerId} {
+
+        allow read: if isStaff();
+
+        // Jawaban siswa disimpan melalui backend.
+        allow create, update, delete: if false;
+      }
+    }
+
+
+    // =========================================================
+    // HASIL UJIAN
+    // =========================================================
+
+    match /hasil_ujian/{hasilId} {
+
+      // Hasil dibuat oleh backend.
+      allow create: if false;
+
+      // Guru/admin dapat membaca hasil.
+      // Siswa hanya dapat membaca hasil miliknya sendiri.
+      allow read: if signedIn()
+        && (
+          isStaff()
+          || resource.data.uid == request.auth.uid
+        );
+
+      // Hanya admin yang boleh mengubah/menghapus.
+      allow update, delete: if isAdmin();
+    }
+
+
+    // =========================================================
+    // AUDIT LOG
+    // =========================================================
+
+    match /audit_logs/{logId} {
+
+      allow read: if isAdmin();
+
+      // Audit log sebaiknya dibuat backend.
+      allow create, update, delete: if false;
+    }
+
+
+    // =========================================================
+    // DENY DEFAULT
+    // =========================================================
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
