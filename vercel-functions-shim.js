@@ -6,7 +6,6 @@ const endpointMap = {
 };
 
 // Compatibility value for legacy attempt.js calls: httpsCallable(functions, ...).
-// Vercel endpoints do not need a Firebase Functions instance.
 if (typeof globalThis.functions === "undefined") globalThis.functions = null;
 
 const revisionState = new Map();
@@ -24,6 +23,14 @@ export function httpsCallable(_functions, name) {
     const { auth } = await import("./firebase-config.js");
     const user = auth.currentUser;
     if (!user) throw new Error("Sesi login tidak valid.");
+
+    // Sebelum submit, tunggu semua autosave yang sedang berjalan.
+    // Jika ada autosave gagal, jangan submit agar backup lokal tetap aman.
+    if (name === "submitExam" && pendingRequests.size) {
+      const settled = await Promise.allSettled([...pendingRequests]);
+      const failed = settled.find(item => item.status === "rejected");
+      if (failed) throw new Error("Masih ada jawaban yang gagal disimpan ke server. Periksa koneksi lalu coba kirim ulang.");
+    }
 
     const payload = { ...data };
     if (name === "saveAnswer" && payload.attemptId && payload.questionId) {
