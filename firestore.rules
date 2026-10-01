@@ -75,8 +75,6 @@ service cloud.firestore {
         'token_ujian'
       ];
 
-      // Perubahan master/config tetap dibatasi admin karena dokumen-dokumen
-      // ini berisi konfigurasi lintas kelas dan lintas mata pelajaran.
       allow write: if isAdmin();
     }
 
@@ -120,17 +118,11 @@ service cloud.firestore {
     // BANK SOAL
     // =========================
     match /bank_soal/{soalId} {
-      // Untuk sementara pembacaan tetap diberikan kepada staff karena
-      // dashboard lama masih melakukan agregasi bank soal secara global.
-      // Hak tulis sudah diperketat berdasarkan mapel + kelas di bawah.
       allow read: if isStaff();
-
       allow create: if canManageQuestion(request.resource.data);
-
       allow update: if
         canManageQuestion(resource.data)
         && canManageQuestion(request.resource.data);
-
       allow delete: if canManageQuestion(resource.data);
     }
 
@@ -138,12 +130,9 @@ service cloud.firestore {
     // HASIL UJIAN
     // =========================
     match /hasil_ujian/{hasilId} {
-      // Browser tidak boleh membuat hasil secara langsung.
       allow create: if false;
-
       allow read: if isStaff();
       allow read: if signedIn() && resource.data.uid == request.auth.uid;
-
       allow update, delete: if isAdmin();
     }
 
