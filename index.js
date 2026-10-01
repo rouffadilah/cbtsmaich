@@ -1,20 +1,13 @@
 // index.js
 import { auth, db } from './firebase-config.js';
-// PERUBAHAN: Kembali menggunakan signInWithPopup dan menambahkan onAuthStateChanged
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// ==========================================
-// 1. VARIABEL DOM
-// ==========================================
 const loginForm = document.getElementById("login-form");
 const btnSubmit = document.getElementById("btn-submit");
 const loginStatus = document.getElementById("login-status");
 const btnLoginGoogle = document.getElementById("btn-login-google");
 
-// ==========================================
-// 2. FUNGSI UTILITAS
-// ==========================================
 const setLoginMessage = (type, message) => {
     if (!loginStatus) return;
     loginStatus.className = `auth-status ${type}`;
@@ -24,37 +17,29 @@ const setLoginMessage = (type, message) => {
 const setSubmittingState = (isSubmitting) => {
     if (!btnSubmit) return;
     btnSubmit.disabled = isSubmitting;
-    
-    if (!btnSubmit.dataset.defaultText) {
-        btnSubmit.dataset.defaultText = btnSubmit.innerHTML;
-    }
-    
+    if (!btnSubmit.dataset.defaultText) btnSubmit.dataset.defaultText = btnSubmit.innerHTML;
     btnSubmit.innerHTML = isSubmitting ? '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...' : btnSubmit.dataset.defaultText;
 };
 
 const normalizeArrayData = (data) => {
-    if (Array.isArray(data)) return data;
-    if (typeof data === 'string' && data.trim() !== '') return [data];
+    if (Array.isArray(data)) return data.map(v => String(v).trim()).filter(Boolean);
+    if (typeof data === 'string' && data.trim() !== '') return [data.trim()];
     return [];
 };
 
-// ==========================================
-// 3. CEK STATUS LOGIN OTOMATIS
-// ==========================================
-// Jika user sebenarnya sudah berhasil login, langsung arahkan ke halamannya
+const normalizeRoles = data => normalizeArrayData(data).map(v => v.toLowerCase());
+
+// Firebase Auth + Firestore profile are the only authorization sources.
+// localStorage is intentionally not used for role decisions.
 onAuthStateChanged(auth, async (user) => {
     if (!user) return;
     try {
         const snap = await getDoc(doc(db, "users", user.uid));
         if (!snap.exists()) return;
-        const userData = snap.data();
-        const roles = normalizeArrayData(userData.role);
-        localStorage.setItem("userRole", JSON.stringify(roles));
-        localStorage.setItem("userMapel", JSON.stringify(normalizeArrayData(userData.mapel)));
-        localStorage.setItem("userKelas", JSON.stringify(normalizeArrayData(userData.kelas)));
+        const roles = normalizeRoles(snap.data().role);
         if (roles.includes("admin") || roles.includes("guru")) {
             window.location.replace("/dashboard");
-        } else if (roles.includes("siswa")) {
+        } else {
             window.location.replace("/attempt");
         }
     } catch (error) {
@@ -62,55 +47,34 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// ==========================================
-// 4. LOGIKA GOOGLE LOGIN (POPUP MODE)
-// ==========================================
 const provider = new GoogleAuthProvider();
 
 if (btnLoginGoogle) {
     btnLoginGoogle.addEventListener("click", async (e) => {
-        e.preventDefault(); 
+        e.preventDefault();
         setSubmittingState(true);
         setLoginMessage('info', 'Membuka jendela Google...');
-        
         try {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
-            
-            setLoginMessage('info', 'Berhasil! Menyiapkan data akun Anda...');
-            
             const userDocRef = doc(db, "users", user.uid);
             const userDocSnap = await getDoc(userDocRef);
 
-            let roles = ['siswa'];
-            let userData = null;
-
-            // Jika user baru pertama kali login dengan Google
+            let userData;
             if (!userDocSnap.exists()) {
                 userData = {
                     nama: user.displayName || "Siswa Baru",
-                    username: user.email, 
-                    role: roles,
-                    kelas: ['Umum'] 
+                    username: user.email || "",
+                    role: ['siswa'],
+                    kelas: ['Umum']
                 };
                 await setDoc(userDocRef, userData);
             } else {
-                userData = userDocSnap.data();
-                roles = normalizeArrayData(userData.role || ['siswa']);
+                userData = userDocSnap.data() || {};
             }
 
-            // Simpan role ke local storage
-            localStorage.setItem("userRole", JSON.stringify(roles));
-            
-            if (roles.includes('guru') || roles.includes('admin')) {
-                const mapels = normalizeArrayData(userData?.mapel);
-                const kelases = normalizeArrayData(userData?.kelas);
-                localStorage.setItem("userMapel", JSON.stringify(mapels));
-                localStorage.setItem("userKelas", JSON.stringify(kelases));
-                window.location.replace("/dashboard");
-            } else {
-                window.location.replace("/attempt");
-            }
+            const roles = normalizeRoles(userData.role || ['siswa']);
+            window.location.replace(roles.includes('guru') || roles.includes('admin') ? "/dashboard" : "/attempt");
         } catch (error) {
             console.error("Popup Error:", error);
             setLoginMessage('error', "Gagal masuk: " + error.message);
@@ -120,13 +84,9 @@ if (btnLoginGoogle) {
     });
 }
 
-// ==========================================
-// 5. LOGIKA LOGIN MANUAL (USERNAME/EMAIL + PASSWORD)
-// ==========================================
 if (loginForm) {
     loginForm.addEventListener("submit", async (event) => {
-        event.preventDefault(); 
-        
+        event.preventDefault();
         setSubmittingState(true);
         setLoginMessage('info', 'Memverifikasi kredensial Anda...');
 
@@ -145,27 +105,15 @@ if (loginForm) {
                 return;
             }
 
-            const userData = userDoc.data();
-            const roles = normalizeArrayData(userData.role);
-            
-            localStorage.setItem("userRole", JSON.stringify(roles));
-            
-            if (roles.includes('guru') || roles.includes('admin')) {
-                const mapels = normalizeArrayData(userData.mapel);
-                const kelases = normalizeArrayData(userData.kelas);
-                localStorage.setItem("userMapel", JSON.stringify(mapels));
-                localStorage.setItem("userKelas", JSON.stringify(kelases));
-                
-                setLoginMessage('success', 'Berhasil masuk. Mengalihkan ke dashboard...');
-                window.location.replace("/dashboard"); 
-            } else {
-                setLoginMessage('success', 'Berhasil masuk. Mengalihkan ke ujian...');
-                window.location.replace("/attempt"); 
-            }
+            const userData = userDoc.data() || {};
+            const roles = normalizeRoles(userData.role);
+            const isStaff = roles.includes('guru') || roles.includes('admin');
 
+            setLoginMessage('success', isStaff ? 'Berhasil masuk. Mengalihkan ke dashboard...' : 'Berhasil masuk. Mengalihkan ke ujian...');
+            window.location.replace(isStaff ? "/dashboard" : "/attempt");
         } catch (error) {
             console.error("Proses Login Manual Gagal:", error);
-            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            if (['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password'].includes(error.code)) {
                 setLoginMessage('error', 'Username atau password tidak valid. Silakan coba lagi.');
             } else if (error.code === 'permission-denied') {
                 setLoginMessage('error', 'Akses database ditolak. Periksa status server.');
