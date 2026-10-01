@@ -7,7 +7,8 @@ const normalizeAnswer = (value) => {
     if (value && typeof value === 'object') return JSON.stringify(value);
     return String(value ?? '').trim().toUpperCase();
 };
-const isPG = (tipe) => String(tipe || 'PG').toUpperCase() === 'PG';
+const isChoice = (tipe) => ['PG', 'PGK'].includes(String(tipe || 'PG').toUpperCase());
+const clampScore = (value, max) => Math.min(max, Math.max(0, Number(value) || 0));
 
 async function getResult(id) {
     const snap = await getDoc(doc(db, 'hasil_ujian', id));
@@ -17,13 +18,15 @@ async function getResult(id) {
 async function getQuestions(result) {
     const q = query(collection(db, 'bank_soal'), where('mataPelajaran', '==', result.mataPelajaran));
     const snap = await getDocs(q);
-    const kelasKey = Array.isArray(result.kelas) ? result.kelas.join(', ') : String(result.kelas || '');
+    const resultClasses = Array.isArray(result.kelas) ? result.kelas.map(String) : [String(result.kelas || '')];
     const arr = [];
     snap.forEach(d => {
         const data = d.data();
-        const classes = Array.isArray(data.kelas) ? data.kelas : [data.kelas || 'Umum'];
-        if (classes.join(', ') === kelasKey || classes.includes(result.kelas) || classes.includes('Umum') || !result.kelas) arr.push({ id: d.id, ...data });
+        const classes = Array.isArray(data.kelas) ? data.kelas.map(String) : [String(data.kelas || 'Umum')];
+        const matchesClass = !result.kelas || classes.includes('Umum') || resultClasses.some(k => classes.includes(k));
+        if (matchesClass) arr.push({ id: d.id, ...data });
     });
+    arr.sort((a, b) => (Number(a.nomor_soal) || 0) - (Number(b.nomor_soal) || 0));
     return arr;
 }
 
@@ -33,24 +36,42 @@ function getSavedScoreMap(result) {
 }
 
 function calculateScore(questionArr, scoreMap) {
-    let totalWeight = 0, obtained = 0;
+    let totalWeight = 0;
+    let obtained = 0;
     questionArr.forEach(s => {
         const weight = Math.max(0, Number(s.bobot) || 1);
         totalWeight += weight;
-        obtained += Math.min(weight, Math.max(0, Number(scoreMap[s.id]) || 0));
+        obtained += clampScore(scoreMap[s.id], weight);
     });
-    return totalWeight > 0 ? Math.round((obtained / totalWeight) * 100) : 0;
+    return totalWeight > 0 ? Math.round((obtained / totalWeight) * 10000) / 100 : 0;
+}
+
+function syncLocalResult(resultId, scoreMap, finalScore) {
+    if (Array.isArray(window.allHasilUjian)) {
+        const row = window.allHasilUjian.find(x => x.id === resultId);
+        if (row) {
+            row.nilaiPerSoal = { ...scoreMap };
+            row.skorPG = finalScore;
+            row.skor = finalScore;
+            row.dikoreksiManual = true;
+        }
+    }
 }
 
 async function saveAllScores(resultId, questions, button) {
     const scoreMap = {};
     questions.forEach(s => {
         const input = document.querySelector(`#per-soal-koreksi [data-score-soal="${CSS.escape(s.id)}"]`);
-        if (input) scoreMap[s.id] = Math.min(Number(input.max) || 1, Math.max(0, Number(input.value) || 0));
+        if (input) scoreMap[s.id] = clampScore(input.value, Number(input.max) || 1);
     });
+
     const finalScore = calculateScore(questions, scoreMap);
     const oldHtml = button?.innerHTML || '';
-    if (button) { button.disabled = true; button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...'; }
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    }
+
     try {
         await updateDoc(doc(db, 'hasil_ujian', resultId), {
             nilaiPerSoal: scoreMap,
@@ -59,18 +80,25 @@ async function saveAllScores(resultId, questions, button) {
             dikoreksiManual: true,
             waktuKoreksi: serverTimestamp()
         });
+
+        syncLocalResult(resultId, scoreMap, finalScore);
+
         const finalInput = document.getElementById('edit-nilai-siswa');
         if (finalInput) finalInput.value = finalScore;
         const badge = document.getElementById('per-soal-nilai-akhir');
         if (badge) badge.textContent = finalScore;
-        if (window.customAlert) await window.customAlert(`Penilaian per soal berhasil disimpan. Nilai akhir: ${finalScore}`, 'success');
+
+        if (window.customAlert) await window.customAlert(`Penilaian berhasil disimpan. Nilai akhir: ${finalScore}`, 'success');
         else alert(`Penilaian berhasil disimpan. Nilai akhir: ${finalScore}`);
     } catch (error) {
         console.error('Gagal menyimpan penilaian per soal:', error);
         if (window.customAlert) await window.customAlert(`Gagal menyimpan penilaian: ${error.message}`, 'error');
         else alert(`Gagal menyimpan penilaian: ${error.message}`);
     } finally {
-        if (button) { button.disabled = false; button.innerHTML = oldHtml || '<i class="fas fa-save"></i> Simpan Penilaian'; }
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = oldHtml || '<i class="fas fa-save"></i> Simpan Penilaian';
+        }
     }
 }
 
@@ -78,52 +106,80 @@ async function enhanceResultModal(resultId) {
     try {
         const result = await getResult(resultId);
         if (!result) return;
+
         const container = document.getElementById('container-jawaban-siswa');
         if (!container) return;
+
         const questions = await getQuestions(result);
         const answers = result.jawaban || {};
         const saved = getSavedScoreMap(result);
+
         let html = `<div id="per-soal-koreksi" style="display:flex;flex-direction:column;gap:14px;">
           <div style="position:sticky;top:0;z-index:5;padding:12px 14px;border-radius:12px;background:var(--card-bg,#f8fafc);border:1px solid var(--border-color,#e2e8f0);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-            <div><b style="font-size:1rem;">Koreksi Nilai Per Soal</b><div style="font-size:.82rem;color:var(--text-muted,#64748b);">Nilai maksimal mengikuti Bobot soal. PG otomatis, soal uraian dinilai manual.</div></div>
+            <div><b style="font-size:1rem;">Koreksi Nilai Per Soal</b><div style="font-size:.82rem;color:var(--text-muted,#64748b);">Admin dan guru dapat memberi/mengubah nilai setiap soal. Nilai akhir dihitung otomatis berdasarkan bobot.</div></div>
             <div style="display:flex;align-items:center;gap:10px;"><span style="font-weight:700;">Nilai Akhir: <strong id="per-soal-nilai-akhir">${calculateScore(questions, saved)}</strong></span><button type="button" id="btn-simpan-semua-per-soal" class="btn-3d" style="background:#10b981;color:#fff;padding:9px 14px;border:0;border-radius:8px;cursor:pointer;"><i class="fas fa-save"></i> Simpan Penilaian</button></div>
           </div>`;
+
         if (!questions.length) html += `<div style="padding:20px;text-align:center;color:#64748b;">Tidak ditemukan bank soal untuk ujian ini.</div>`;
+
         questions.forEach((s, idx) => {
             const tipe = String(s.tipe || 'PG').toUpperCase();
             const weight = Math.max(0, Number(s.bobot) || 1);
             const answer = answers[s.id] ?? '-';
             const key = s.kunci_jawaban ?? s.jawaban_benar ?? '-';
-            const autoCorrect = isPG(tipe) && normalizeAnswer(answer) !== '-' && normalizeAnswer(answer) === normalizeAnswer(key);
-            const defaultScore = saved[s.id] !== undefined ? Number(saved[s.id]) : (isPG(tipe) ? (autoCorrect ? weight : 0) : 0);
-            const questionText = (s.teks_soal || s.pertanyaan || `Soal ${idx + 1}`).replace(/<[^>]*>/g, '');
-            const status = isPG(tipe) ? (autoCorrect ? 'Benar' : 'Salah') : 'Perlu Koreksi';
-            const statusColor = isPG(tipe) ? (autoCorrect ? '#059669' : '#dc2626') : '#d97706';
+            const autoCorrect = isChoice(tipe) && normalizeAnswer(answer) !== '-' && normalizeAnswer(answer) === normalizeAnswer(key);
+            const calculatedDefault = isChoice(tipe) ? (autoCorrect ? weight : 0) : 0;
+            const defaultScore = saved[s.id] !== undefined ? clampScore(saved[s.id], weight) : calculatedDefault;
+            const questionText = String(s.teks_soal || s.pertanyaan || `Soal ${idx + 1}`).replace(/<[^>]*>/g, '');
+            const status = isChoice(tipe) ? (autoCorrect ? 'Benar' : 'Salah') : 'Perlu Koreksi';
+            const statusColor = isChoice(tipe) ? (autoCorrect ? '#059669' : '#dc2626') : '#d97706';
+
             html += `<div class="koreksi-soal-card" style="border:1px solid #e2e8f0;border-radius:12px;padding:15px;background:var(--card-bg,#fff);">
               <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
-                <div style="flex:1;"><div style="font-weight:800;margin-bottom:7px;">Soal ${idx + 1} <span style="font-size:.75rem;padding:3px 7px;border-radius:6px;background:#e0e7ff;color:#4338ca;">${esc(s.tipe || 'PG')}</span></div>
+                <div style="flex:1;"><div style="font-weight:800;margin-bottom:7px;">Soal ${idx + 1} <span style="font-size:.75rem;padding:3px 7px;border-radius:6px;background:#e0e7ff;color:#4338ca;">${esc(tipe)}</span></div>
                   <div style="line-height:1.55;margin-bottom:9px;">${esc(questionText)}</div>
                   <div style="font-size:.9rem;display:grid;gap:4px;"><div><span style="color:#059669;font-weight:700;">Jawaban Siswa:</span> ${esc(typeof answer === 'object' ? JSON.stringify(answer) : answer)}</div><div><span style="color:#059669;font-weight:700;">Kunci Jawaban:</span> ${esc(typeof key === 'object' ? JSON.stringify(key) : key)}</div><div style="font-weight:700;color:${statusColor};">Status: ${status}</div></div>
                 </div>
-                <div style="min-width:150px;background:#f8fafc;border-radius:10px;padding:10px;"><label style="display:block;font-size:.78rem;font-weight:700;margin-bottom:5px;">Nilai Soal (maks. ${weight})</label><div style="display:flex;gap:7px;align-items:center;"><input type="number" min="0" max="${weight}" step="0.01" value="${Math.min(weight, Math.max(0, defaultScore))}" data-score-soal="${esc(s.id)}" ${isPG(tipe) ? 'readonly' : ''} style="width:90px;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-weight:800;text-align:center;"><span style="font-size:.72rem;color:${isPG(tipe) ? '#64748b' : '#d97706'};">${isPG(tipe) ? 'otomatis' : 'manual'}</span></div></div>
+                <div style="min-width:170px;background:#f8fafc;border-radius:10px;padding:10px;"><label style="display:block;font-size:.78rem;font-weight:700;margin-bottom:5px;">Nilai Soal (maks. ${weight})</label><div style="display:flex;gap:7px;align-items:center;"><input type="number" min="0" max="${weight}" step="0.01" value="${defaultScore}" data-score-soal="${esc(s.id)}" aria-label="Nilai soal ${idx + 1}" style="width:90px;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-weight:800;text-align:center;"><span style="font-size:.72rem;color:#d97706;">${isChoice(tipe) ? 'otomatis • bisa diubah' : 'manual'}</span></div></div>
               </div></div>`;
         });
+
         html += '</div>';
         container.innerHTML = html;
+
         document.getElementById('btn-simpan-semua-per-soal')?.addEventListener('click', e => saveAllScores(resultId, questions, e.currentTarget));
-        container.querySelectorAll('[data-score-soal]').forEach(input => input.addEventListener('input', () => {
+
+        const recalc = () => {
             const map = {};
-            questions.forEach(s => { const el = container.querySelector(`[data-score-soal="${CSS.escape(s.id)}"]`); if (el) map[s.id] = Number(el.value) || 0; });
+            questions.forEach(s => {
+                const el = container.querySelector(`[data-score-soal="${CSS.escape(s.id)}"]`);
+                if (el) map[s.id] = clampScore(el.value, Number(el.max) || 1);
+            });
+            const finalScore = calculateScore(questions, map);
             const badge = document.getElementById('per-soal-nilai-akhir');
-            if (badge) badge.textContent = calculateScore(questions, map);
-        }));
-    } catch (error) { console.error('Gagal menyiapkan koreksi per soal:', error); }
+            if (badge) badge.textContent = finalScore;
+            const finalInput = document.getElementById('edit-nilai-siswa');
+            if (finalInput) finalInput.value = finalScore;
+        };
+
+        container.querySelectorAll('[data-score-soal]').forEach(input => {
+            input.addEventListener('input', recalc);
+            input.addEventListener('change', recalc);
+        });
+        recalc();
+    } catch (error) {
+        console.error('Gagal menyiapkan koreksi per soal:', error);
+    }
 }
 
 function installPatch() {
     if (!location.pathname.includes('dashboard')) return;
     if (window.__cbtPerSoalPatchInstalled) return;
-    if (typeof window.lihatDetailJawaban !== 'function') { setTimeout(installPatch, 100); return; }
+    if (typeof window.lihatDetailJawaban !== 'function') {
+        setTimeout(installPatch, 100);
+        return;
+    }
+
     const original = window.lihatDetailJawaban;
     window.lihatDetailJawaban = async function(id) {
         await original(id);
@@ -131,7 +187,7 @@ function installPatch() {
         await enhanceResultModal(id);
     };
     window.__cbtPerSoalPatchInstalled = true;
-    console.info('[CBT] Koreksi per soal aktif.');
+    console.info('[CBT] Koreksi per soal aktif untuk admin/guru; nilai akhir dihitung realtime.');
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installPatch); else installPatch();
