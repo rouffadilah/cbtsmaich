@@ -27,3 +27,4 @@ export const functions = getFunctions(app);
 import './dashboard-fix.js';
 import './attempt-security-nav-fix.js';
 import './dashboard-security.js';
+import './akun-export.js';
