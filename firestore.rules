@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ==============================
-    // AUTHENTICATION
+    // AUTHENTICATION / ROLE
     // ==============================
 
     function signedIn() {
@@ -16,23 +16,29 @@ service cloud.firestore {
     }
 
     function currentUser() {
-      return get(
-        /databases/$(database)/documents/users/$(request.auth.uid)
-      );
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function hasUserProfile() {
       return signedIn() && currentUser().exists();
     }
 
-    function isAdmin() {
+    // Mendukung data role lama (string) maupun format saat ini (array/list).
+    function hasRole(role) {
       return hasUserProfile()
-        && 'admin' in currentUser().data.role;
+        && (
+          (currentUser().data.role is list && role in currentUser().data.role)
+          ||
+          (currentUser().data.role is string && currentUser().data.role == role)
+        );
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
     }
 
     function isGuru() {
-      return hasUserProfile()
-        && 'guru' in currentUser().data.role;
+      return hasRole('guru');
     }
 
     function isStaff() {
@@ -45,15 +51,20 @@ service cloud.firestore {
     // ==============================
 
     match /pengaturan/{docId} {
+      // Dashboard/login membutuhkan master akademik dan status registrasi.
+      allow read: if docId in ['status_registrasi', 'data_akademik'];
 
-      // Konfigurasi publik yang diperlukan halaman login/dashboard
-      allow read: if docId in [
-        'status_registrasi',
-        'data_akademik'
+      // Dashboard Bank Soal membutuhkan konfigurasi ujian berikut.
+      // Token tetap tidak dapat ditulis dari browser.
+      allow read: if isStaff() && docId in [
+        'waktu_ujian',
+        'jadwal_ujian',
+        'acak_soal',
+        'token_ujian'
       ];
 
-      // Semua pengaturan lain hanya admin
-      allow read, write: if isAdmin();
+      // Perubahan konfigurasi hanya oleh admin.
+      allow write: if isAdmin();
     }
 
 
@@ -62,50 +73,32 @@ service cloud.firestore {
     // ==============================
 
     match /users/{uid} {
-
-      // User boleh melihat profil sendiri.
-      // Admin boleh melihat semua user.
       allow read: if isSelf(uid) || isAdmin();
 
-      // Registrasi siswa/guru
       allow create: if
         (
           isSelf(uid)
-          &&
-          request.resource.data.role is list
-          &&
-          request.resource.data.username is string
-          &&
-          request.resource.data.nama is string
+          && request.resource.data.role is list
+          && request.resource.data.username is string
+          && request.resource.data.nama is string
         )
         ||
         (
           isAdmin()
-          &&
-          request.resource.data.role is list
-          &&
-          request.resource.data.username is string
-          &&
-          request.resource.data.nama is string
+          && request.resource.data.role is list
+          && request.resource.data.username is string
+          && request.resource.data.nama is string
         );
 
-      // Admin bebas mengubah user.
-      // User biasa hanya boleh mengubah data profil tertentu.
       allow update: if
         isAdmin()
         ||
         (
           isSelf(uid)
-          &&
-          request.resource.data.role == resource.data.role
-          &&
-          request.resource.data.diff(resource.data)
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.diff(resource.data)
             .affectedKeys()
-            .hasOnly([
-              'nama',
-              'username',
-              'updatedAt'
-            ])
+            .hasOnly(['nama', 'username', 'updatedAt'])
         );
 
       allow delete: if isAdmin();
@@ -117,11 +110,7 @@ service cloud.firestore {
     // ==============================
 
     match /bank_soal/{soalId} {
-
-      // Guru dan admin dapat membaca soal
       allow read: if isStaff();
-
-      // Guru dan admin dapat mengelola soal
       allow create, update, delete: if isStaff();
     }
 
@@ -131,18 +120,11 @@ service cloud.firestore {
     // ==============================
 
     match /exam_attempts/{attemptId} {
-
-      // Guru/admin dapat melihat attempt
       allow read: if isStaff();
-
-      // Tidak boleh ditulis langsung oleh browser
       allow write: if false;
 
       match /answers/{answerId} {
-
         allow read: if isStaff();
-
-        // Jawaban harus ditulis melalui backend/server
         allow write: if false;
       }
     }
@@ -153,19 +135,14 @@ service cloud.firestore {
     // ==============================
 
     match /hasil_ujian/{hasilId} {
-
-      // Hasil dibuat oleh backend
       allow create: if false;
 
-      // Guru/admin boleh membaca semua hasil.
-      // Siswa hanya boleh membaca hasil miliknya.
       allow read: if
         isStaff()
         ||
         (
           signedIn()
-          &&
-          resource.data.uid == request.auth.uid
+          && resource.data.uid == request.auth.uid
         );
 
       allow update, delete: if isAdmin();
@@ -177,7 +154,6 @@ service cloud.firestore {
     // ==============================
 
     match /audit_logs/{logId} {
-
       allow read, write: if isAdmin();
     }
   }
