@@ -11,26 +11,14 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // Firestore Rules: gunakan exists(path), bukan currentUser().exists().
-    // Ini penting agar pemeriksaan profil pengguna benar-benar dapat dievaluasi.
     function hasUserProfile() {
       return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // Role dibuat toleran terhadap kapitalisasi yang mungkin sudah tersimpan
-    // pada akun lama (guru/Guru/GURU dan admin/Admin/ADMIN).
     function hasRole(roleName) {
       return hasUserProfile() && (
-        (currentUser().data.role is list && (
-          roleName in currentUser().data.role ||
-          (roleName == 'guru' && ('Guru' in currentUser().data.role || 'GURU' in currentUser().data.role || 'GURU ' in currentUser().data.role || 'Guru ' in currentUser().data.role)) ||
-          (roleName == 'admin' && ('Admin' in currentUser().data.role || 'ADMIN' in currentUser().data.role || 'ADMIN ' in currentUser().data.role || 'Admin ' in currentUser().data.role))
-        )) ||
-        (currentUser().data.role is string && (
-          currentUser().data.role == roleName ||
-          (roleName == 'guru' && currentUser().data.role in ['Guru', 'GURU', 'Guru ', 'GURU ']) ||
-          (roleName == 'admin' && currentUser().data.role in ['Admin', 'ADMIN', 'Admin ', 'ADMIN '])
-        ))
+        (currentUser().data.get('role', []) is list && roleName in currentUser().data.get('role', [])) ||
+        (currentUser().data.get('role', '') is string && currentUser().data.get('role', '') == roleName)
       );
     }
 
@@ -48,14 +36,14 @@ service cloud.firestore {
 
     function guruOwnsQuestion(data) {
       return isGuru()
-        && currentUser().data.mapel is list
+        && currentUser().data.get('mapel', []) is list
         && data.mataPelajaran is string
-        && data.mataPelajaran in currentUser().data.mapel
-        && currentUser().data.kelas is list
+        && data.mataPelajaran in currentUser().data.get('mapel', [])
+        && currentUser().data.get('kelas', []) is list
         && (
-          (data.kelas is list && data.kelas.hasAny(currentUser().data.kelas))
+          (data.kelas is list && data.kelas.hasAny(currentUser().data.get('kelas', [])))
           ||
-          (data.kelas is string && data.kelas in currentUser().data.kelas)
+          (data.kelas is string && data.kelas in currentUser().data.get('kelas', []))
           ||
           (data.kelas is list && 'Umum' in data.kelas)
         );
@@ -73,17 +61,14 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-
       allow create: if
         (signedIn() && request.auth.uid == uid && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string)
         ||
         (isAdmin() && request.resource.data.role is list && request.resource.data.username is string && request.resource.data.nama is string);
-
       allow update: if
         isAdmin()
         ||
         (signedIn() && request.auth.uid == uid && request.resource.data.role == resource.data.role && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nama', 'username', 'updatedAt']));
-
       allow delete: if isAdmin();
     }
 
@@ -96,8 +81,7 @@ service cloud.firestore {
 
     match /hasil_ujian/{hasilId} {
       allow create: if false;
-      allow read: if isStaff();
-      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
       allow update, delete: if isAdmin();
     }
 
