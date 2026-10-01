@@ -26,13 +26,11 @@ service cloud.firestore {
 
     function isAdmin() { return hasRole('admin'); }
     function isStaff() { return isAdmin() || hasRole('guru'); }
-    function isStudent() { return hasRole('siswa'); }
 
     match /pengaturan/{docId} {
-      // Data akademik is safe for the login/registration UI.
       allow read: if docId in ['status_registrasi', 'data_akademik'];
-      // Token settings are visible/editable only by staff. Students never read them.
-      allow read, write: if docId == 'token_ujian' && isStaff();
+      // Token configuration is server-owned. Dashboard uses /api/token-* with Admin SDK.
+      allow read, write: if false;
       // Other exam configuration remains admin-only.
       allow read, write: if isAdmin();
     }
@@ -63,10 +61,13 @@ service cloud.firestore {
       allow create, update, delete: if isStaff();
     }
 
+    // Attempts and answers are authoritative server records. No browser/client may write them directly.
     match /exam_attempts/{attemptId} {
-      allow read, write: if isStaff();
+      allow read: if isStaff();
+      allow write: if false;
       match /answers/{answerId} {
-        allow read, write: if isStaff();
+        allow read: if isStaff();
+        allow write: if false;
       }
     }
 
