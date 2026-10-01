@@ -27,3 +27,7 @@ export const functions = getFunctions(app);
 // Memuat lapisan koreksi dashboard tanpa mengubah alur ujian siswa.
 // dashboard-fix.js sendiri aktif hanya pada /dashboard.
 import './dashboard-fix.js';
+
+// Perbaikan student exam: navigasi nomor soal + hardening lapisan keamanan.
+// File ini aktif hanya pada halaman /attempt.
+import './attempt-security-nav-fix.js';
