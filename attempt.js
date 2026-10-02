@@ -100,10 +100,11 @@ const SecurityManager = {
             }
         });
         history.pushState(null, null, window.location.href);
-        window.onpopstate = () => { 
-            history.pushState(null, null, window.location.href); 
-            if(examState.isExamActive && !this.isPrivileged) {
-                this.handleViolation("Sistem mendeteksi Anda mencoba menekan navigasi Kembali (Back)!");
+        window.onpopstate = () => {
+            // Tombol Back bukan pelanggaran. Tahan navigasi agar siswa tetap berada di ruang ujian.
+            history.pushState(null, null, window.location.href);
+            if (examState.isExamActive) {
+                window.customAlert?.("Navigasi Kembali dinonaktifkan selama ujian. Gunakan tombol navigasi soal untuk berpindah soal.", "UJIAN SEDANG BERLANGSUNG");
             }
         };
         window.addEventListener('beforeunload', (e) => {
@@ -508,7 +509,7 @@ function tampilkanSoal(idx) {
             <div style="font-size:0.92rem; color:var(--warning); font-weight:700; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
                 <i class="fas fa-hand-pointer"></i> Cocokkan setiap pernyataan di sebelah kiri dengan satu pasangan jawaban di sebelah kanan.
             </div>
-            <div style="display:grid; grid-template-columns:minmax(0, 1fr) 110px minmax(0, 1.25fr); gap:0; border:1px solid #cbd5e1; border-radius:14px; overflow:hidden; background:#fff; box-shadow:0 2px 8px rgba(15,23,42,0.05);">
+            <div class="matching-grid" style="display:grid; grid-template-columns:minmax(0, 1fr) 110px minmax(0, 1.25fr); gap:0; border:1px solid #cbd5e1; border-radius:14px; overflow:hidden; background:#fff; box-shadow:0 2px 8px rgba(15,23,42,0.05);">
                 <div style="padding:12px 16px; background:#eff6ff; border-bottom:1px solid #dbeafe; font-weight:800; color:#1e3a8a;">Pernyataan</div>
                 <div style="padding:12px 8px; background:#f8fafc; border-bottom:1px solid #dbeafe; text-align:center; font-weight:800; color:#64748b;">&nbsp;</div>
                 <div style="padding:12px 16px; background:#eff6ff; border-bottom:1px solid #dbeafe; font-weight:800; color:#1e3a8a;">Pilih Pasangan</div>`;
@@ -537,12 +538,12 @@ function tampilkanSoal(idx) {
             });
 
             htmlContent += `
-                <div style="padding:14px 16px; border-top:1px solid #e2e8f0; display:flex; align-items:center; gap:10px; background:#ffffff;">
+                <div class="matching-left" style="padding:14px 16px; border-top:1px solid #e2e8f0; display:flex; align-items:center; gap:10px; background:#ffffff;">
                     <span style="display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px; padding:0 8px; border-radius:8px; background:#0ea5e9; color:white; font-weight:800; flex:none;">${/^[A-E]$/.test(kiri.toUpperCase()) ? kiri.toUpperCase() : idx + 1}</span>
                     <span style="font-weight:650; color:var(--secondary); line-height:1.5;">${resolveLeftLabel(kiri, idx)}</span>
                 </div>
-                <div style="border-top:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; color:#94a3b8; background:#f8fafc;"><i class="fas fa-arrow-right"></i></div>
-                <div style="padding:10px 14px; border-top:1px solid #e2e8f0; background:#ffffff;">
+                <div class="matching-arrow" style="border-top:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; color:#94a3b8; background:#f8fafc;"><i class="fas fa-arrow-right"></i></div>
+                <div class="matching-right" style="padding:10px 14px; border-top:1px solid #e2e8f0; background:#ffffff;">
                     <select class="input-text select-jodoh" data-kiri="${kiri.replace(/\"/g, '&quot;')}" style="width:100%; min-height:48px; border:2px solid #22c55e; border-radius:10px; background:#fff; padding:10px 12px; font-weight:600; color:#0f172a;">
                         ${optionsHtml}
                     </select>
