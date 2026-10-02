@@ -62,6 +62,20 @@ import { collection, addDoc, doc, getDoc, onSnapshot, updateDoc, serverTimestamp
         const style = document.createElement('style');
         style.id = 'cbt-security-recovery-style';
         style.textContent = `
+            /* Mobile exam layout repair */
+            @media screen and (max-width:1024px){
+                html,body{width:100%;max-width:100%;overflow-x:hidden!important;}
+                #exam-workspace{width:100%!important;max-width:100%!important;overflow:hidden!important;}
+                #exam-workspace .exam-body{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;height:calc(100dvh - 92px)!important;overflow:hidden!important;}
+                #exam-workspace .question-area{display:flex!important;width:100%!important;max-width:none!important;min-width:0!important;height:100%!important;box-sizing:border-box!important;overflow-x:hidden!important;overflow-y:auto!important;padding:18px 14px!important;border-right:0!important;}
+                #exam-workspace .question-area>*{max-width:100%!important;min-width:0!important;}
+                #exam-workspace #soal-content{width:100%!important;min-width:0!important;overflow-wrap:anywhere!important;word-break:break-word!important;}
+                #exam-workspace .nav-bottom-container{width:100%!important;box-sizing:border-box!important;flex-shrink:0!important;}
+                #exam-workspace .sidebar-area{position:fixed!important;right:-100%!important;left:auto!important;top:0!important;width:min(88vw,360px)!important;max-width:360px!important;height:100dvh!important;box-sizing:border-box!important;z-index:2001!important;transition:right .25s ease!important;overflow-y:auto!important;}
+                #exam-workspace .sidebar-area.open{right:0!important;}
+                #exam-workspace #grid-nav-soal{width:100%!important;grid-template-columns:repeat(5,minmax(42px,1fr))!important;overflow-y:auto!important;}
+                #exam-workspace #overlay-sidebar{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;z-index:1500!important;background:rgba(15,23,42,.55)!important;}
+            }
             #cbt-security-lock{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,.97);color:#fff;font-family:Inter,system-ui,sans-serif}
             #cbt-security-lock .security-box{width:min(560px,94vw);padding:30px;border:1px solid #475569;border-radius:20px;background:#20283a;box-shadow:0 25px 80px rgba(0,0,0,.45);text-align:center}
             #cbt-security-lock .security-icon{font-size:48px;margin-bottom:12px}
