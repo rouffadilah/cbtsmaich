@@ -2530,7 +2530,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.getElementById('btn-mode-siswa')?.addEventListener('click', () => { window.location.href = '/attempt'; });
+    document.getElementById('btn-mode-siswa')?.addEventListener('click', () => { window.location.href = '/attempt?preview=1'; });
     const filterGmailInputs = ['search-gmail-email', 'search-gmail-nama', 'search-gmail-role'];
     filterGmailInputs.forEach(id => { document.getElementById(id)?.addEventListener('input', window.renderTablePengguna); });
 });
