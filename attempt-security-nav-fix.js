@@ -75,6 +75,14 @@ import { collection, addDoc, doc, getDoc, onSnapshot, updateDoc, serverTimestamp
                 #exam-workspace .sidebar-area.open{right:0!important;}
                 #exam-workspace #grid-nav-soal{width:100%!important;grid-template-columns:repeat(5,minmax(42px,1fr))!important;overflow-y:auto!important;}
                 #exam-workspace #overlay-sidebar{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;z-index:1500!important;background:rgba(15,23,42,.55)!important;}
+
+                /* Matching questions: stack into readable cards on phones. */
+                #exam-workspace #soal-content [style*="grid-template-columns: 1fr 45px 1.2fr"]{display:block!important;width:100%!important;border-radius:12px!important;overflow:hidden!important;}
+                #exam-workspace #soal-content [style*="grid-template-columns: 1fr 45px 1.2fr"]>div{width:100%!important;max-width:100%!important;box-sizing:border-box!important;min-width:0!important;}
+                #exam-workspace #soal-content [style*="grid-template-columns: 1fr 45px 1.2fr"]>div:nth-child(3n+1){padding:12px 14px!important;display:flex!important;align-items:center!important;gap:10px!important;overflow-wrap:anywhere!important;word-break:normal!important;}
+                #exam-workspace #soal-content [style*="grid-template-columns: 1fr 45px 1.2fr"]>div:nth-child(3n+2){display:none!important;}
+                #exam-workspace #soal-content [style*="grid-template-columns: 1fr 45px 1.2fr"]>div:nth-child(3n){padding:0 14px 14px!important;border-top:0!important;}
+                #exam-workspace #soal-content .select-jodoh{width:100%!important;max-width:100%!important;min-height:48px!important;font-size:16px!important;white-space:normal!important;}
             }
             #cbt-security-lock{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,.97);color:#fff;font-family:Inter,system-ui,sans-serif}
             #cbt-security-lock .security-box{width:min(560px,94vw);padding:30px;border:1px solid #475569;border-radius:20px;background:#20283a;box-shadow:0 25px 80px rgba(0,0,0,.45);text-align:center}
@@ -180,10 +188,6 @@ import { collection, addDoc, doc, getDoc, onSnapshot, updateDoc, serverTimestamp
                 reportViolation('Membuka tab/aplikasi lain atau meninggalkan fokus halaman ujian.').catch(console.error);
             }
             // Saat kembali ke tab, JANGAN membuka ujian otomatis. Token pengawas diperlukan.
-        }, true);
-
-        window.addEventListener('blur', () => {
-            if (isExamRunning() && !document.hidden) reportViolation('Jendela ujian kehilangan fokus.').catch(console.error);
         }, true);
 
         document.addEventListener('fullscreenchange', () => {
