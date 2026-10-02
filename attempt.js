@@ -5,7 +5,7 @@ import { collection, getDocs, addDoc, doc, getDoc, query, where } from "https://
 const examState = {
     student: null, mapelTerpilih: "", arraySoal: [], currentIndex: 0,
     jawabanSiswa: {}, raguRagu: {}, timerInterval: null, durasiDetik: 0,
-    pelanggaran: 0, maxPelanggaran: 3, isExamActive: false,
+    pelanggaran: 0, maxPelanggaran: 3, isExamActive: false, previewMode: false,
     matchingOptions: {}
 };
 
@@ -171,6 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userDoc.exists()) {
                 const userData = userDoc.data();
                 SecurityManager.setPrivileged(userData.role);
+                const previewParam = new URLSearchParams(window.location.search).get('preview') === '1';
+                examState.previewMode = previewParam && SecurityManager.isPrivileged;
                 examState.student = { uid: user.uid, ...userData };
                 
                 const welcomeEl = document.getElementById('welcome-student');
@@ -242,6 +244,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
     try {
         const isLinkMode = (new URLSearchParams(window.location.search)).get('mapel') != null;
         const jadwalKey = `${examState.mapelTerpilih}_${kelasSiswa}`;
+        if (examState.previewMode) console.info('[CBT Preview] Mode preview aktif: jadwal/token produksi dilewati dan hasil tidak disimpan.');
 
      // --- OTOMATISASI JADWAL UJIAN ---
         const jadwalSnap = await getDoc(doc(db, "pengaturan", "jadwal_ujian"));
@@ -258,7 +261,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         examState.durasiDetik = durasiMenit * 60;
 
         // 4. PENGECEKAN WAKTU UJIAN (Hanya dicek jika guru MENGISI jadwal)
-        if (jadwalMulaiStr) {
+        if (!examState.previewMode && jadwalMulaiStr) {
             const waktuMulai = new Date(jadwalMulaiStr).getTime();
             const waktuSelesai = waktuMulai + (durasiMenit * 60 * 1000);
             const waktuSekarang = new Date().getTime();
@@ -274,7 +277,7 @@ document.getElementById('btn-verifikasi').onclick = async () => {
         }
 
         // 5. PENGECEKAN TOKEN (Hanya dicek jika guru MENGISI token di dashboard)
-        if (!isLinkMode) {
+        if (!examState.previewMode && !isLinkMode) {
             const tokenSnap = await getDoc(doc(db, "pengaturan", "token_ujian"));
             const tokenKeyDb = `token_${examState.mapelTerpilih}_${kelasSiswa}`;
             
@@ -689,6 +692,11 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     clearInterval(examState.timerInterval);
     examState.isExamActive = false;
     SecurityManager.closeFullscreen();
+
+    if (examState.previewMode) {
+        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;min-height:100vh;flex-direction:column;background:var(--bg-main);text-align:center;padding:24px;font-family:Inter,sans-serif;"><div style="font-size:64px;margin-bottom:12px;">🧪</div><h2 style="color:var(--secondary);margin:0 0 10px;">Preview Ujian Selesai</h2><p style="color:var(--text-muted);max-width:520px;line-height:1.6;">Mode Preview tidak menyimpan nilai, jawaban, pelanggaran, atau hasil ke data siswa.</p><button onclick="window.location.href='/dashboard#section-beranda'" class="btn-3d" style="margin-top:20px;padding:12px 24px;">Kembali ke Dashboard</button></div>';
+        return;
+    }
 
     const inputKelas = document.getElementById('student-class') || document.getElementById('select-kelas') || document.querySelector('select[id*="kelas"]');
     const kelasSiswa = inputKelas ? inputKelas.value : (examState.student && examState.student.kelas ? (Array.isArray(examState.student.kelas) ? examState.student.kelas[0] : examState.student.kelas) : "Umum");
