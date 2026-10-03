@@ -1,7 +1,8 @@
 // CBT SMAICH - Responsive matching question layout
 // Mobile: statement full-width, downward arrow, answer selector below.
+// Matching helper list and A=... option map are hidden from students.
 (function () {
-    const STYLE_ID = 'cbt-matching-mobile-fix-v1';
+    const STYLE_ID = 'cbt-matching-mobile-fix-v2';
 
     function installStyles() {
         if (document.getElementById(STYLE_ID)) return;
@@ -21,7 +22,6 @@
                     box-shadow: none !important;
                 }
 
-                /* Header */
                 #exam-workspace #soal-content .matching-grid > div:nth-child(1),
                 #exam-workspace #soal-content .matching-grid > div:nth-child(3) {
                     grid-column: 1 / -1 !important;
@@ -39,12 +39,10 @@
                     text-align: left !important;
                 }
 
-                /* Kolom tengah desktop tidak diperlukan di HP. */
                 #exam-workspace #soal-content .matching-grid > div:nth-child(2) {
                     display: none !important;
                 }
 
-                /* Setiap pernyataan menjadi blok penuh. */
                 #exam-workspace #soal-content .matching-grid > .matching-left {
                     grid-column: 1 / -1 !important;
                     width: 100% !important;
@@ -79,7 +77,6 @@
                     flex: 0 0 auto !important;
                 }
 
-                /* Panah desktop diubah menjadi panah ke bawah. */
                 #exam-workspace #soal-content .matching-grid > .matching-arrow {
                     grid-column: 1 / -1 !important;
                     display: flex !important;
@@ -105,7 +102,6 @@
                     font-weight: 900 !important;
                 }
 
-                /* Dropdown selalu di bawah pernyataan. */
                 #exam-workspace #soal-content .matching-grid > .matching-right {
                     grid-column: 1 / -1 !important;
                     width: 100% !important;
@@ -130,20 +126,53 @@
                     white-space: normal !important;
                     overflow-wrap: anywhere !important;
                 }
-
-                /* Daftar pilihan tetap rapi di layar kecil. */
-                #exam-workspace #soal-content > div:last-child {
-                    max-width: 100% !important;
-                    box-sizing: border-box !important;
-                    overflow-wrap: anywhere !important;
-                }
             }
         `;
         document.head.appendChild(style);
     }
 
+    function removeMatchingHelpers() {
+        const content = document.querySelector('#exam-workspace #soal-content');
+        if (!content || !content.querySelector('.matching-grid')) return;
+
+        // Hapus "Daftar pilihan: 1. ..., 2. ..." dari tampilan siswa.
+        Array.from(content.children).forEach(child => {
+            const text = (child.textContent || '').trim();
+            if (/^Daftar pilihan\s*:/i.test(text)) child.remove();
+        });
+
+        // Mapping seperti "A=Flowchart; B=DFD Level 0; ..." tetap dipakai
+        // oleh attempt.js untuk membentuk label di kolom Pernyataan,
+        // tetapi tidak ditampilkan lagi sebagai bagian dari teks soal.
+        const grid = content.querySelector('.matching-grid');
+        let previous = grid ? grid.previousElementSibling : null;
+        while (previous) {
+            const text = previous.textContent || '';
+            if (/\b[A-E]\s*=\s*/i.test(text)) {
+                const walker = document.createTreeWalker(previous, NodeFilter.SHOW_TEXT);
+                let node;
+                while ((node = walker.nextNode())) {
+                    const match = node.nodeValue.search(/\bA\s*=\s*/i);
+                    if (match >= 0) {
+                        node.nodeValue = node.nodeValue.slice(0, match).replace(/[\s:;,.-]+$/, '').trimEnd();
+                        let sibling = node.parentNode?.nextSibling;
+                        while (sibling) {
+                            const next = sibling.nextSibling;
+                            sibling.remove();
+                            sibling = next;
+                        }
+                        break;
+                    }
+                }
+                break;
+            }
+            previous = previous.previousElementSibling;
+        }
+    }
+
     function apply() {
         installStyles();
+        removeMatchingHelpers();
     }
 
     if (document.readyState === 'loading') {
@@ -153,7 +182,10 @@
     }
 
     // attempt.js menggambar ulang #soal-content setiap berpindah soal.
-    // CSS di atas tetap berlaku, tetapi observer memastikan style terpasang setelah render ulang.
-    const observer = new MutationObserver(() => installStyles());
+    // Jalankan kembali setelah setiap render agar helper tetap tersembunyi.
+    const observer = new MutationObserver(() => {
+        installStyles();
+        removeMatchingHelpers();
+    });
     observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
