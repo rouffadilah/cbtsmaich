@@ -26,6 +26,6 @@ export const functions = getFunctions(app);
 
 import './dashboard-fix.js';
 import './attempt-security-nav-fix.js?v=20261003.2';
-import './matching-mobile-fix.js?v=20261003.1';
+import './matching-mobile-fix.js?v=20261003.2';
 import './dashboard-security.js';
 import './akun-export.js';
