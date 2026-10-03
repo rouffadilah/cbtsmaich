@@ -694,7 +694,7 @@ async function selesaiUjian(statusAkhir = "NORMAL") {
     SecurityManager.closeFullscreen();
 
     if (examState.previewMode) {
-        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;min-height:100vh;flex-direction:column;background:var(--bg-main);text-align:center;padding:24px;font-family:Inter,sans-serif;"><div style="font-size:64px;margin-bottom:12px;">🧪</div><h2 style="color:var(--secondary);margin:0 0 10px;">Preview Ujian Selesai</h2><p style="color:var(--text-muted);max-width:520px;line-height:1.6;">Mode Preview tidak menyimpan nilai, jawaban, pelanggaran, atau hasil ke data siswa.</p><button onclick="window.location.href='/dashboard#section-beranda'" class="btn-3d" style="margin-top:20px;padding:12px 24px;">Kembali ke Dashboard</button></div>';
+        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;min-height:100vh;flex-direction:column;background:var(--bg-main);text-align:center;padding:24px;font-family:Inter,sans-serif;"><div style="font-size:64px;margin-bottom:12px;">🧪</div><h2 style="color:var(--secondary);margin:0 0 10px;">Preview Ujian Selesai</h2><p style="color:var(--text-muted);max-width:520px;line-height:1.6;">Mode Preview tidak menyimpan nilai, jawaban, pelanggaran, atau hasil ke data siswa.</p><button onclick="window.location.href=\"/dashboard#section-beranda\"" class="btn-3d" style="margin-top:20px;padding:12px 24px;">Kembali ke Dashboard</button></div>';
         return;
     }
 
