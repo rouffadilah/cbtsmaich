@@ -25,6 +25,6 @@ export const storage = getStorage(app);
 export const functions = getFunctions(app);
 
 import './dashboard-fix.js';
-import './attempt-security-nav-fix.js';
+import './attempt-security-nav-fix.js?v=20261003.2';
 import './dashboard-security.js';
 import './akun-export.js';
