@@ -55,57 +55,152 @@
         .q-box.active { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
 
         /* TAMPILAN HP (MOBILE) */
-            @media screen and (max-width: 1024px) {
-                .exam-header { 
-                    flex-direction: column !important; 
-                    padding: 12px 15px !important; 
-                    gap: 8px !important; 
-                    align-items: stretch !important;
-                }
-                .exam-header-center { 
-                    order: 1; 
-                    width: 100%; 
-                    margin-bottom: 5px; 
-                }
-                .exam-header-center img { height: 38px; }
-                
-                .exam-header-bottom {
-                    order: 2; 
-                    display: flex;
-                    justify-content: center; /* Posisikan item ke tengah */
-                    align-items: center;
-                    width: 100%;
-                    position: relative; /* Agar tombol grid bisa menempel di kanan */
-                }
-                .exam-header-left { 
-                    order: unset; 
-                    flex: 1; 
-                    margin-right: 0; 
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center; /* Teks ke tengah */
-                    text-align: center;
-                }
-                .exam-header-right { 
-                    order: unset; 
-                    flex: 0 0 auto; 
-                    position: absolute;
-                    right: 0; /* Paksa tombol selalu di ujung kanan */
-                    top: 50%;
-                    transform: translateY(-50%);
-                }
+        @media screen and (max-width: 1024px) {
+            .exam-header { 
+                flex-direction: column !important; 
+                padding: 12px 15px !important; 
+                gap: 8px !important; 
+                align-items: stretch !important;
             }
-    
-            /* Tampilan Menjodohkan responsif */
-            @media (max-width: 768px) {
-                .matching-mobile-note { font-size: 0.82rem; }
+            .exam-header-center { 
+                order: 1; 
+                width: 100%; 
+                margin-bottom: 5px; 
             }
+            .exam-header-center img { height: 38px; }
+            .exam-header-bottom {
+                order: 2; 
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                position: relative;
+            }
+            .exam-header-left { 
+                order: unset; 
+                flex: 1; 
+                margin-right: 0; 
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .exam-header-right { 
+                order: unset; 
+                flex: 0 0 auto; 
+                position: absolute;
+                right: 0;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+        }
+
+        /* Tampilan Menjodohkan responsif */
+        @media (max-width: 768px) {
+            .matching-mobile-note { font-size: 0.82rem; }
+
+            /* Ubah tabel menjodohkan menjadi dua kolom pada HP:
+               pernyataan di kiri, pilihan di kanan. Panah disembunyikan
+               agar ruang teks tidak terpotong. */
+            .matching-grid {
+                grid-template-columns: minmax(0, 1.15fr) minmax(125px, 0.85fr) !important;
+                gap: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: hidden !important;
+                border-radius: 12px !important;
+            }
+
+            .matching-grid > div:nth-child(2) {
+                display: none !important;
+            }
+
+            .matching-grid > div:nth-child(3) {
+                grid-column: 2 !important;
+            }
+
+            .matching-grid > div:nth-child(3) .select-jodoh,
+            .matching-right .select-jodoh {
+                min-width: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: 46px !important;
+                padding: 8px 28px 8px 9px !important;
+                font-size: 0.78rem !important;
+                line-height: 1.25 !important;
+                white-space: normal !important;
+            }
+
+            .matching-left {
+                min-width: 0 !important;
+                width: 100% !important;
+                padding: 11px 9px !important;
+                gap: 7px !important;
+                align-items: flex-start !important;
+                overflow: hidden !important;
+            }
+
+            .matching-left > span:last-child {
+                min-width: 0 !important;
+                width: 100% !important;
+                overflow-wrap: anywhere !important;
+                word-break: break-word !important;
+                white-space: normal !important;
+                font-size: 0.82rem !important;
+                line-height: 1.35 !important;
+            }
+
+            .matching-left > span:first-child {
+                min-width: 30px !important;
+                width: 30px !important;
+                height: 30px !important;
+                padding: 0 !important;
+                font-size: 0.82rem !important;
+                flex: 0 0 30px !important;
+            }
+
+            .matching-right {
+                min-width: 0 !important;
+                width: 100% !important;
+                padding: 8px 7px !important;
+                overflow: hidden !important;
+            }
+
+            .matching-grid > div:first-child,
+            .matching-grid > div:nth-child(3) {
+                padding: 10px 8px !important;
+                font-size: 0.78rem !important;
+                line-height: 1.25 !important;
+                min-width: 0 !important;
+                overflow-wrap: anywhere !important;
+            }
+
+            /* Header tabel tetap dua kolom */
+            .matching-grid > div:first-child { grid-column: 1 !important; }
+            .matching-grid > div:nth-child(3) { grid-column: 2 !important; }
+
+            /* Baris pilihan: kiri dan kanan selalu sejajar */
+            .matching-grid .matching-left { grid-column: 1 !important; }
+            .matching-grid .matching-right { grid-column: 2 !important; }
+        }
+
+        @media (max-width: 390px) {
+            .matching-grid {
+                grid-template-columns: minmax(0, 1fr) minmax(112px, 0.9fr) !important;
+            }
+            .matching-left { padding: 9px 6px !important; gap: 5px !important; }
+            .matching-right { padding: 7px 5px !important; }
+            .matching-left > span:last-child { font-size: 0.76rem !important; }
+            .matching-left > span:first-child { min-width: 27px !important; width: 27px !important; height: 27px !important; font-size: 0.75rem !important; flex-basis: 27px !important; }
+            .matching-grid > div:first-child,
+            .matching-grid > div:nth-child(3) { font-size: 0.74rem !important; padding: 8px 6px !important; }
+            .matching-grid .select-jodoh { font-size: 0.72rem !important; padding-left: 7px !important; padding-right: 24px !important; }
+        }
 </style>
 </head>
 <body>
     <script>
         (function() {
-            // 1. Logika Auto-Theme Berdasarkan Waktu
             const currentHour = new Date().getHours();
             const isNightTime = currentHour >= 18 || currentHour < 6;
             const savedTheme = localStorage.getItem('theme');
@@ -117,7 +212,6 @@
                 if (!savedTheme) localStorage.setItem('theme', 'light');
             }
 
-            // 2. Logika Fullscreen Otomatis Giras (Mode ANBK)
             function pemicuFullscreenANBK() {
                 const docEl = document.documentElement;
                 const isFull = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
@@ -127,14 +221,11 @@
                     else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
                 }
             }
-            // HANYA GUNAKAN EVENT KLIK/SENTUH AGAR TIDAK ERROR DI CONSOLE
             ['click', 'touchstart', 'keydown', 'dblclick'].forEach(evt => {
                 document.addEventListener(evt, pemicuFullscreenANBK, { passive: true });
             });
 
-            // 3. Logika Jam & Tanggal Real-time di Bawah Logo
             function inisialisasiJamSistem() {
-                // Target semua elemen jam baik menggunakan ID maupun Class
                 const clockEls = document.querySelectorAll('#realtime-clock, .realtime-clock, .realtime-clock-display');
                 if (clockEls.length === 0) return;
                 function perbaruiWaktu() {
@@ -142,7 +233,6 @@
                     const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                     const strTanggal = sekarang.toLocaleDateString('id-ID', opsiTanggal);
                     const strJam = sekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
-                    
                     clockEls.forEach(el => {
                         el.innerHTML = `<i class="far fa-calendar-alt"></i> ${strTanggal} &nbsp;|&nbsp; <i class="far fa-clock"></i> ${strJam} WIB`;
                     });
@@ -166,46 +256,20 @@
                 <div class="login-header" style="margin-bottom: 20px;">
                     <span class="login-badge" style="margin-bottom: 12px;"><i class="fas fa-file-signature"></i> Portal Ujian</span>
                     <img src="logo-smaich.png" alt="Logo SMA ICH" class="main-logo" style="margin: 0 auto 8px auto; height: 70px;" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
-                    
                     <div id="realtime-clock" class="realtime-clock" style="margin: 0; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Menghubungkan waktu server...</div>
                 </div>
-
                 <h2 id="welcome-student" style="margin-bottom: 20px; font-size: 0.85rem; font-weight: 400; color: var(--secondary);">Memuat Data...</h2>
-
                 <div class="warning-box" style="margin-bottom: 25px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: 12px 15px; font-size: 0.8rem; text-align: left; line-height: 1.5;">
                     <div style="font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;"><i class="fas fa-shield-alt"></i> Pengawasan Aktif</div>
                     Keluar dari layar penuh atau membuka tab lain akan otomatis memicu pelanggaran sistem.
                 </div>
-
-                <!-- Input Nama Siswa untuk Mode Tanpa Login -->
-                <div style="margin-bottom: 15px;">
-                    <input type="text" id="input-nama-siswa" class="input-text" placeholder="Nama Lengkap" style="width: 100%; padding: 12px 15px; font-size: 0.95rem;" required>
-                </div>
-
-                <div class="input-group" style="margin-bottom: 15px;">
-                    <select id="student-class" class="input-text" style="font-weight: 600; padding: 12px 15px; font-size: 0.95rem;">
-                        <option value="" disabled selected>-- Pilih Kelas Anda --</option>
-                    </select>
-                </div>
-
-                <div class="input-group" style="margin-bottom: 15px;">
-                    <select id="select-mapel" class="input-text" style="font-weight: 600; padding: 12px 15px; font-size: 0.95rem;">
-                        <option value="" disabled selected>-- Pilih Mapel Ujian --</option>
-                    </select>
-                </div>
-
-                <div class="input-group" style="margin-bottom: 25px;">
-                    <input type="text" id="input-token" class="input-text" placeholder="TOKEN UJIAN" style="text-transform: uppercase; font-size: 1.15rem; font-weight: 800; letter-spacing: 4px; text-align: center; color: var(--danger); padding: 12px 15px;">
-                </div>
-
-                <!-- Tombol Action -->
+                <div style="margin-bottom: 15px;"><input type="text" id="input-nama-siswa" class="input-text" placeholder="Nama Lengkap" style="width: 100%; padding: 12px 15px; font-size: 0.95rem;" required></div>
+                <div class="input-group" style="margin-bottom: 15px;"><select id="student-class" class="input-text" style="font-weight: 600; padding: 12px 15px; font-size: 0.95rem;"><option value="" disabled selected>-- Pilih Kelas Anda --</option></select></div>
+                <div class="input-group" style="margin-bottom: 15px;"><select id="select-mapel" class="input-text" style="font-weight: 600; padding: 12px 15px; font-size: 0.95rem;"><option value="" disabled selected>-- Pilih Mapel Ujian --</option></select></div>
+                <div class="input-group" style="margin-bottom: 25px;"><input type="text" id="input-token" class="input-text" placeholder="TOKEN UJIAN" style="text-transform: uppercase; font-size: 1.15rem; font-weight: 800; letter-spacing: 4px; text-align: center; color: var(--danger); padding: 12px 15px;"></div>
                 <div style="display: flex; justify-content: center; gap: 15px; margin-top: 10px;">
-                    <button id="btn-batal-kembali" class="btn-exit-modern" style="padding: 10px 20px; font-size: 0.95rem; min-width: 120px; justify-content: center;">
-                        Keluar
-                    </button>
-                    <button id="btn-verifikasi" class="btn-3d" style="padding: 10px 20px; font-size: 0.95rem; margin: 0; min-width: 120px;">
-                        Mulai
-                    </button>
+                    <button id="btn-batal-kembali" class="btn-exit-modern" style="padding: 10px 20px; font-size: 0.95rem; min-width: 120px; justify-content: center;">Keluar</button>
+                    <button id="btn-verifikasi" class="btn-3d" style="padding: 10px 20px; font-size: 0.95rem; margin: 0; min-width: 120px;">Mulai</button>
                 </div>
             </div>
         </div>
@@ -213,140 +277,67 @@
 
     <div id="exam-workspace">
         <style>
-            .exam-header { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-                padding: 10px 25px; 
-                background: var(--card-bg); 
-                border-bottom: 1px solid var(--border-color); 
-                box-shadow: 0 2px 10px rgba(0,0,0,0.03); 
-                z-index: 10; 
-            }
+            .exam-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 25px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 10px rgba(0,0,0,0.03); z-index: 10; }
             .exam-header-left { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; order: 1; }
             .exam-header-center { flex: 1; display: flex; justify-content: center; align-items: center; order: 2; }
             .exam-header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; order: 3; }
             .exam-header-center img { height: 42px; width: auto; object-fit: contain; }
-            
-            /* TAMPILAN HP (MOBILE) */
             @media screen and (max-width: 1024px) {
-                .exam-header { 
-                    flex-direction: column !important; 
-                    padding: 12px 15px !important; 
-                    gap: 8px !important; 
-                    align-items: stretch !important;
-                }
-                .exam-header-center { 
-                    order: 1; /* Pindah ke urutan paling atas */
-                    width: 100%; 
-                    margin-bottom: 5px; 
-                }
-                .exam-header-center img { height: 38px; } /* Ukuran optimal di HP */
-                
-                .exam-header-bottom {
-                    order: 2; /* Pindah ke bawah logo */
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    width: 100%;
-                }
+                .exam-header { flex-direction: column !important; padding: 12px 15px !important; gap: 8px !important; align-items: stretch !important; }
+                .exam-header-center { order: 1; width: 100%; margin-bottom: 5px; }
+                .exam-header-center img { height: 38px; }
+                .exam-header-bottom { order: 2; display: flex; justify-content: space-between; align-items: center; width: 100%; }
                 .exam-header-left { order: unset; flex: 1; margin-right: 10px; }
                 .exam-header-right { order: unset; flex: 0 0 auto; }
             }
-            
-            /* TAMPILAN LAPTOP (DESKTOP) */
-            @media screen and (min-width: 1025px) {
-                .exam-header-bottom { display: contents; } /* Gabungkan kembali menjadi satu baris */
-            }
+            @media screen and (min-width: 1025px) { .exam-header-bottom { display: contents; } }
         </style>
-
         <header class="exam-header">
-            <div class="exam-header-center">
-                <img src="logo-smaich.png" alt="Logo" onerror="this.src='https://via.placeholder.com/120x40?text=CBT'">
-            </div>
-            
+            <div class="exam-header-center"><img src="logo-smaich.png" alt="Logo" onerror="this.src='https://via.placeholder.com/120x40?text=CBT'"></div>
             <div class="exam-header-bottom">
                 <div class="exam-header-left">
                     <h3 id="exam-mapel-title" style="margin: 0; font-size: 0.85rem; color: var(--secondary); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</h3>
                     <p id="exam-student-name" style="margin: 0; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</p>
                     <div class="realtime-clock-display" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
                 </div>
-                
-                <div class="exam-header-right">
-                    <button id="btn-toggle-sidebar" class="btn-toggle-nav btn-3d btn-secondary" style="padding: 8px 10px; margin: 0; font-size: 1rem;"><i class="fas fa-th-large"></i></button>
-                </div>
+                <div class="exam-header-right"><button id="btn-toggle-sidebar" class="btn-toggle-nav btn-3d btn-secondary" style="padding: 8px 10px; margin: 0; font-size: 1rem;"><i class="fas fa-th-large"></i></button></div>
             </div>
         </header>
-
         <div class="exam-body">
             <main class="question-area">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px dashed var(--border-color);">
                     <div style="font-size: 1.2rem; font-weight: 800; color: var(--secondary);">Soal No. <span id="current-q-num" style="color: var(--primary); font-size: 1.5rem;">1</span></div>
-                    
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--card-bg);">
-                            <i class="fas fa-stopwatch" style="color: var(--danger); font-size: 0.9rem;"></i>
-                            <span id="timer-display" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--danger); letter-spacing: 1px;">00:00:00</span>
-                        </div>
-                        
+                        <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--card-bg);"><i class="fas fa-stopwatch" style="color: var(--danger); font-size: 0.9rem;"></i><span id="timer-display" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--danger); letter-spacing: 1px;">00:00:00</span></div>
                         <div id="badge-tipe-soal" style="background: var(--info); color: white; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.5px;">-</div>
                     </div>
                 </div>
-                
-                <div id="soal-content" style="flex: 1;">
-                    </div>
-
+                <div id="soal-content" style="flex: 1;"></div>
                 <div class="nav-bottom-container">
                     <button id="btn-prev" class="btn-3d btn-secondary" style="margin: 0; font-size: 1.2rem; width: 60px;"><i class="fas fa-chevron-left"></i></button>
-                    
-                    <label class="btn-3d" style="background-color: var(--warning); margin: 0; display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 20px;">
-                        <input type="checkbox" id="cb-ragu" style="transform: scale(1.3); margin: 0;"> Ragu-ragu
-                    </label>
-                    
+                    <label class="btn-3d" style="background-color: var(--warning); margin: 0; display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 20px;"><input type="checkbox" id="cb-ragu" style="transform: scale(1.3); margin: 0;"> Ragu-ragu</label>
                     <button id="btn-next" class="btn-3d" style="margin: 0; font-size: 1.2rem; width: 60px;"><i class="fas fa-chevron-right"></i></button>
                 </div>
             </main>
-
             <aside id="sidebar-nav" class="sidebar-area">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--secondary);"><i class="fas fa-list-ol"></i> Navigasi Soal</h3>
-                    <button id="btn-close-sidebar" style="display: none; background: transparent; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;"><i class="fas fa-times"></i></button>
-                </div>
-                
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; font-size: 0.8rem; background: white; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <div style="display: flex; align-items: center; gap: 5px;"><div style="width:12px; height:12px; background:var(--success); border-radius:3px;"></div> Terjawab</div>
-                    <div style="display: flex; align-items: center; gap: 5px;"><div style="width:12px; height:12px; background:white; border:1px solid #cbd5e1; border-radius:3px;"></div> Belum</div>
-                    <div style="display: flex; align-items: center; gap: 5px;"><div style="width:12px; height:12px; background:var(--warning); border-radius:3px;"></div> Ragu</div>
-                </div>
-
-                <div id="grid-nav-soal" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 8px; overflow-y: auto; align-content: start;">
-                    </div>
-                
-                <div style="margin-top: auto; padding-top: 20px; text-align: center;">
-                    <div style="font-size: 0.8rem; color: var(--danger); margin-bottom: 10px; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> Pelanggaran: <span id="violation-count">0</span>/3</div>
-                    <button id="btn-selesai-ujian" class="btn-3d" style="width: 100%; margin: 0; background-color: var(--danger);"><i class="fas fa-flag-checkered"></i> Selesai</button>
-                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h3 style="margin: 0; font-size: 1.1rem; color: var(--secondary);"><i class="fas fa-list-ol"></i> Navigasi Soal</h3><button id="btn-close-sidebar" style="display: none; background: transparent; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;"><i class="fas fa-times"></i></button></div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; font-size: 0.8rem; background: white; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);"><div style="display: flex; align-items: center; gap: 5px;"><div style="width:12px; height:12px; background:var(--success); border-radius:3px;"></div> Terjawab</div><div style="display: flex; align-items: center; gap: 5px;"><div style="width:12px; height:12px; background:white; border:1px solid #cbd5e1; border-radius:3px;"></div> Belum</div><div style="display: flex; align-items: center; gap: 5px;"><div style="width:12px; height:12px; background:var(--warning); border-radius:3px;"></div> Ragu</div></div>
+                <div id="grid-nav-soal" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 8px; overflow-y: auto; align-content: start;"></div>
+                <div style="margin-top: auto; padding-top: 20px; text-align: center;"><div style="font-size: 0.8rem; color: var(--danger); margin-bottom: 10px; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> Pelanggaran: <span id="violation-count">0</span>/3</div><button id="btn-selesai-ujian" class="btn-3d" style="width: 100%; margin: 0; background-color: var(--danger);"><i class="fas fa-flag-checkered"></i> Selesai</button></div>
             </aside>
             <div id="overlay-sidebar" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;"></div>
         </div>
-
-        <button id="btn-fab-nav" style="display: none; position: fixed; bottom: 80px; right: 20px; width: 55px; height: 55px; border-radius: 50%; background: var(--secondary); color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 99; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer;">
-            <i class="fas fa-th-large"></i>
-        </button>
+        <button id="btn-fab-nav" style="display: none; position: fixed; bottom: 80px; right: 20px; width: 55px; height: 55px; border-radius: 50%; background: var(--secondary); color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 99; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer;"><i class="fas fa-th-large"></i></button>
     </div>
 
     <div id="modal-akun-saya" class="modal" style="display: none; position: fixed; inset: 0; align-items: center; justify-content: center; z-index: 11000; background: rgba(15,23,42,0.82); padding: 20px;">
         <div class="modal-content" style="background: var(--card-bg, #fff); width: 520px; max-width: 100%; max-height: 90vh; overflow-y: auto; padding: 28px 24px; border-radius: 14px; box-shadow: var(--shadow-lg);">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px;">
-                <h3 style="margin:0; color:var(--secondary);"><i class="fas fa-user-circle"></i> Akun Saya</h3>
-                <button type="button" id="btn-close-akun-saya" class="btn-icon" title="Tutup"><i class="fas fa-times"></i></button>
-            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px;"><h3 style="margin:0; color:var(--secondary);"><i class="fas fa-user-circle"></i> Akun Saya</h3><button type="button" id="btn-close-akun-saya" class="btn-icon" title="Tutup"><i class="fas fa-times"></i></button></div>
             <div id="account-status" class="auth-status info" role="status" aria-live="polite">Perbarui data akun Anda.</div>
             <form id="form-akun-saya">
                 <div class="input-group"><label>Nama Lengkap</label><input type="text" id="account-name" class="input-text" autocomplete="name" required></div>
                 <div class="input-group"><label>Username / NIS / ID Guru</label><input type="text" id="account-username" class="input-text" autocomplete="username" required></div>
                 <div class="input-group"><label>Role</label><input type="text" id="account-role" class="input-text" readonly style="background:var(--bg-main,#f8fafc); font-weight:700;"></div>
-
                 <div id="account-password-section" style="display:none; margin-top: 22px; padding-top: 18px; border-top:1px solid var(--border-color);">
                     <h4 style="margin:0 0 12px; color:var(--secondary);"><i class="fas fa-key"></i> Keamanan Password</h4>
                     <p style="font-size:.8rem; color:var(--text-muted); margin:0 0 12px;">Password lama diperlukan saat mengganti username atau password.</p>
@@ -354,7 +345,6 @@
                     <div class="input-group"><label>Password Baru (opsional)</label><input type="password" id="account-new-password" class="input-text" autocomplete="new-password" placeholder="Minimal 6 karakter"></div>
                     <div class="input-group"><label>Konfirmasi Password Baru</label><input type="password" id="account-confirm-password" class="input-text" autocomplete="new-password" placeholder="Ulangi password baru"></div>
                 </div>
-
                 <button type="submit" id="btn-save-akun-saya" class="btn-3d" style="width:100%; margin-top:10px; background-color:var(--success);"><i class="fas fa-save"></i> Simpan Perubahan</button>
             </form>
         </div>
@@ -372,32 +362,20 @@
     <script type="module" src="attempt.js?v=20261003.1"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Cek preferensi tema saat halaman dimuat
             const savedTheme = localStorage.getItem('theme');
             const btnDarkMode = document.getElementById('btn-attempt-dark-mode');
             const iconDarkMode = btnDarkMode ? btnDarkMode.querySelector('i') : null;
-
-            // Jika sebelumnya sudah diset dark mode, aktifkan langsung
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
                 if (iconDarkMode) iconDarkMode.classList.replace('fa-moon', 'fa-sun');
             }
-
-            // 2. Logika Toggle saat tombol diklik
             if (btnDarkMode) {
                 btnDarkMode.addEventListener('click', () => {
                     document.body.classList.toggle('dark-mode');
                     const isDark = document.body.classList.contains('dark-mode');
-                    
-                    // Simpan ke memori browser
                     localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                    
-                    // Ganti ikon
-                    if (isDark) { 
-                        iconDarkMode.classList.replace('fa-moon', 'fa-sun'); 
-                    } else { 
-                        iconDarkMode.classList.replace('fa-sun', 'fa-moon'); 
-                    }
+                    if (isDark) iconDarkMode.classList.replace('fa-moon', 'fa-sun');
+                    else iconDarkMode.classList.replace('fa-sun', 'fa-moon');
                 });
             }
         });
