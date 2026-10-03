@@ -1,6 +1,13 @@
 name: Fix attempt.js syntax and cache
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/fix-attempt-dropdown.yml'
+      - 'attempt.js'
+      - 'attempt.html'
   workflow_dispatch:
 
 permissions:
@@ -21,9 +28,8 @@ jobs:
           s = p.read_text(encoding='utf-8')
           old = "<button onclick=\"window.location.href='/dashboard#section-beranda'\" class=\"btn-3d\" style=\"margin-top:20px;padding:12px 24px;\">Kembali ke Dashboard</button>"
           new = "<button onclick=\"window.location.href=\\\"/dashboard#section-beranda\\\"\" class=\"btn-3d\" style=\"margin-top:20px;padding:12px 24px;\">Kembali ke Dashboard</button>"
-          if old not in s:
-              raise SystemExit('Target syntax string not found; aborting without changes.')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          if old in s:
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
           PY
 
       - name: Bump attempt.js cache version
@@ -44,13 +50,18 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add attempt.js attempt.html
-          git diff --cached --quiet && echo 'No changes needed.' && exit 0
-          git commit -m 'fix: restore attempt page data loading'
-          git push
+          if git diff --cached --quiet; then
+            echo 'No repair changes needed.'
+          else
+            git commit -m 'fix: restore attempt page data loading'
+            git push
+          fi
 
-      - name: Remove temporary workflow
+      - name: Remove temporary workflow after repair
+        if: ${{ hashFiles('attempt.js') != '' }}
         run: |
-          rm -f .github/workflows/fix-attempt-dropdown.yml
-          git add .github/workflows/fix-attempt-dropdown.yml
-          git commit -m 'chore: remove temporary repair workflow'
-          git push
+          if git ls-files --error-unmatch .github/workflows/fix-attempt-dropdown.yml >/dev/null 2>&1; then
+            git rm .github/workflows/fix-attempt-dropdown.yml
+            git commit -m 'chore: remove temporary repair workflow'
+            git push
+          fi
