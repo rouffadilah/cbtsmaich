@@ -4,6 +4,36 @@
 (function () {
     const STYLE_ID = 'cbt-matching-mobile-fix-v2';
 
+    // Bersihkan autosave lama yang berisi null pada jawaban.
+    // Pada soal menjodohkan, null membuat Object.entries(null) melempar error
+    // sehingga seluruh area pasangan tidak sempat dirender.
+    function sanitizeSavedAnswers() {
+        try {
+            Object.keys(localStorage).forEach(key => {
+                if (!key.startsWith('cbt_ans_')) return;
+                const raw = localStorage.getItem(key);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                if (!data || typeof data !== 'object' || !data.jawabanSiswa || typeof data.jawabanSiswa !== 'object') return;
+
+                let changed = false;
+                Object.keys(data.jawabanSiswa).forEach(qid => {
+                    if (data.jawabanSiswa[qid] === null) {
+                        // null berarti belum dijawab; string kosong aman untuk semua tipe.
+                        data.jawabanSiswa[qid] = '';
+                        changed = true;
+                    }
+                });
+
+                if (changed) localStorage.setItem(key, JSON.stringify(data));
+            });
+        } catch (e) {
+            console.warn('[CBT] Gagal membersihkan autosave jawaban:', e);
+        }
+    }
+
+    sanitizeSavedAnswers();
+
     function installStyles() {
         if (document.getElementById(STYLE_ID)) return;
         const style = document.createElement('style');
@@ -40,7 +70,26 @@
                 }
 
                 #exam-workspace #soal-content .matching-grid > div:nth-child(2) {
+                    display: flex !important;
+                    grid-column: 1 / -1 !important;
+                    width: 100% !important;
+                    min-height: 30px !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    background: #1f2937 !important;
+                    color: #93c5fd !important;
+                    border: 0 !important;
+                }
+
+                #exam-workspace #soal-content .matching-grid > div:nth-child(2) i {
                     display: none !important;
+                }
+
+                #exam-workspace #soal-content .matching-grid > div:nth-child(2)::after {
+                    content: '↓' !important;
+                    font-size: 26px !important;
+                    line-height: 1 !important;
+                    font-weight: 900 !important;
                 }
 
                 #exam-workspace #soal-content .matching-grid > .matching-left {
@@ -75,31 +124,6 @@
 
                 #exam-workspace #soal-content .matching-grid > .matching-left > span:first-child {
                     flex: 0 0 auto !important;
-                }
-
-                #exam-workspace #soal-content .matching-grid > .matching-arrow {
-                    grid-column: 1 / -1 !important;
-                    display: flex !important;
-                    width: 100% !important;
-                    min-height: 30px !important;
-                    box-sizing: border-box !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    background: #1f2937 !important;
-                    color: #93c5fd !important;
-                    border-top: 0 !important;
-                    border-bottom: 0 !important;
-                }
-
-                #exam-workspace #soal-content .matching-grid > .matching-arrow i {
-                    display: none !important;
-                }
-
-                #exam-workspace #soal-content .matching-grid > .matching-arrow::after {
-                    content: '↓' !important;
-                    font-size: 26px !important;
-                    line-height: 1 !important;
-                    font-weight: 900 !important;
                 }
 
                 #exam-workspace #soal-content .matching-grid > .matching-right {
@@ -141,9 +165,7 @@
             if (/^Daftar pilihan\s*:/i.test(text)) child.remove();
         });
 
-        // Mapping seperti "A=Flowchart; B=DFD Level 0; ..." tetap dipakai
-        // oleh attempt.js untuk membentuk label di kolom Pernyataan,
-        // tetapi tidak ditampilkan lagi sebagai bagian dari teks soal.
+        // Mapping A=... tidak ditampilkan lagi pada teks soal.
         const grid = content.querySelector('.matching-grid');
         let previous = grid ? grid.previousElementSibling : null;
         while (previous) {
@@ -171,6 +193,7 @@
     }
 
     function apply() {
+        sanitizeSavedAnswers();
         installStyles();
         removeMatchingHelpers();
     }
@@ -182,7 +205,6 @@
     }
 
     // attempt.js menggambar ulang #soal-content setiap berpindah soal.
-    // Jalankan kembali setelah setiap render agar helper tetap tersembunyi.
     const observer = new MutationObserver(() => {
         installStyles();
         removeMatchingHelpers();
