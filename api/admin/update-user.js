@@ -2,9 +2,9 @@ const admin = require('firebase-admin');
 
 function getAdminApp() {
   if (admin.apps.length) return admin.app();
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON belum dikonfigurasi di Vercel.');
-  const serviceAccount = JSON.parse(raw);
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT belum dikonfigurasi di Vercel.');
+  const serviceAccount = typeof raw === 'string' ? JSON.parse(raw) : raw;
   return admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     projectId: process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id,
