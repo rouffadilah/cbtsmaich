@@ -29,3 +29,9 @@ import './attempt-security-nav-fix.js?v=20261003.2';
 import './matching-mobile-fix-v3.js?v=20261003.4';
 import './dashboard-security.js';
 import './akun-export.js';
+
+// Admin account editor is loaded dynamically after Firebase is initialized,
+// avoiding a circular ES-module dependency.
+if (typeof window !== 'undefined') {
+    import('./admin-user-management.js?v=20261005.1').catch(err => console.warn('Admin account editor tidak dimuat:', err));
+}
