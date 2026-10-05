@@ -1,8 +1,7 @@
-// Naikkan versi ini (misal v3, v4) setiap kali Anda melakukan update besar pada HTML/JS/CSS
-const CACHE_NAME = 'cbt-smaich-v12-vercel'; 
+// Naikkan versi ini setiap kali melakukan update besar pada HTML/JS/CSS
+const CACHE_NAME = 'cbt-smaich-v13-preview-return';
 const DYNAMIC_CACHE = 'cbt-smaich-dynamic-v1';
 
-// Aset inti yang wajib disimpan di memori HP saat pertama kali aplikasi dibuka
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -19,66 +18,60 @@ const urlsToCache = [
   '/style.css'
 ];
 
-// 1. Event Install: Memuat cache statis dan memaksa update
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Memaksa HP untuk langsung menggunakan service worker terbaru
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
-// 2. Event Activate: Membersihkan cache versi lama agar memori HP siswa tidak penuh
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME && cacheName !== DYNAMIC_CACHE) {
-            console.log('Menghapus cache lama:', cacheName);
-            return caches.delete(cacheName); 
-          }
-        })
-      );
-    })
+    caches.keys().then(cacheNames => Promise.all(
+      cacheNames.map(cacheName => {
+        if (cacheName !== CACHE_NAME && cacheName !== DYNAMIC_CACHE) {
+          return caches.delete(cacheName);
+        }
+      })
+    ))
   );
   self.clients.claim();
 });
 
-// 3. Event Fetch: Strategi "Network First, Fallback to Cache"
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return; 
-  
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
 
-  // Bypass (jangan cache) request ke Firebase API/Firestore agar data hasil ujian selalu real-time
   if (url.origin.includes('firestore') || url.origin.includes('identitytoolkit')) {
-      return; 
+    return;
   }
 
   event.respondWith(
-    // Coba ambil dari internet (Network) terlebih dahulu
     fetch(event.request)
-      .then(networkResponse => {
-        // Simpan ke dynamic cache jika request dari domain sendiri atau dari server Firebase SDK
+      .then(async networkResponse => {
+        // Perbaiki tombol "Kembali ke Dashboard" pada mode preview.
+        // attempt.js lama menghasilkan inline onclick dengan kutip yang tidak valid.
+        if (url.origin === location.origin && url.pathname === '/attempt.js') {
+          const source = await networkResponse.text();
+          const previewReturnFix = `\n\n// CBT SMAICH: fallback untuk tombol kembali pada Preview Ujian\n(() => {\n  const fixPreviewReturnButton = () => {\n    const buttons = document.querySelectorAll('button');\n    buttons.forEach((button) => {\n      if (button.textContent && button.textContent.trim().includes('Kembali ke Dashboard')) {\n        button.onclick = (event) => {\n          event.preventDefault();\n          window.location.assign('/dashboard#section-beranda');\n        };\n        button.type = 'button';\n      }\n    });\n  };\n  new MutationObserver(fixPreviewReturnButton).observe(document.documentElement, { childList: true, subtree: true });\n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fixPreviewReturnButton);\n  else fixPreviewReturnButton();\n})();\n`;
+          const headers = new Headers(networkResponse.headers);
+          headers.set('Content-Type', 'application/javascript; charset=utf-8');
+          return new Response(source + previewReturnFix, {
+            status: networkResponse.status,
+            statusText: networkResponse.statusText,
+            headers
+          });
+        }
+
         if (url.origin === location.origin || url.origin === 'https://www.gstatic.com') {
-            return caches.open(DYNAMIC_CACHE).then(cache => {
-                cache.put(event.request, networkResponse.clone());
-                return networkResponse;
-            });
+          return caches.open(DYNAMIC_CACHE).then(cache => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
         }
         return networkResponse;
       })
-      .catch(() => {
-        // Jika internet terputus (Offline), ambil dari Cache
-        return caches.match(event.request).then(cachedResponse => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            // Jika sedang offline dan data tidak ada di cache, bisa diarahkan ke halaman fallback offline (opsional)
-        });
-      })
+      .catch(() => caches.match(event.request))
   );
 });
