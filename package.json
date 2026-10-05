@@ -1,0 +1,8 @@
+{
+  "name": "cbt-smaich",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "firebase-admin": "^13.5.0"
+  }
+}
